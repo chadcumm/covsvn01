@@ -1,0 +1,872 @@
+ 
+/**************************************************************
+; DVDev DECLARED SUBROUTINES
+**************************************************************/
+ 
+declare _CreateFonts(dummy) = null with Protect
+declare _CreatePens(dummy) = null with Protect
+declare PageBreak(dummy) = null with Protect
+declare FinalizeReport(sSendReport=vc) = null with Protect
+declare DispMsgDataSection0(nCalc=i2) = f8 with Protect
+declare DispMsgDataSection0ABS(nCalc=i2,OffsetX=f8,OffsetY=f8) = f8 with Protect
+declare HeadPageSummarySection(nCalc=i2) = f8 with Protect
+declare HeadPageSummarySectionABS(nCalc=i2,OffsetX=f8,OffsetY=f8) = f8 with Protect
+declare HeadPageDetailSection(nCalc=i2) = f8 with Protect
+declare HeadPageDetailSectionABS(nCalc=i2,OffsetX=f8,OffsetY=f8) = f8 with Protect
+declare DetailSummarySection(nCalc=i2) = f8 with Protect
+declare DetailSummarySectionABS(nCalc=i2,OffsetX=f8,OffsetY=f8) = f8 with Protect
+declare DetailDetailSection(nCalc=i2,maxHeight=f8,bContinue=i2(Ref)) = f8 with Protect
+declare DetailDetailSectionABS(nCalc=i2,OffsetX=f8,OffsetY=f8,maxHeight=f8,bContinue=i2(Ref)) = f8 with Protect
+declare FootSummarySection(nCalc=i2) = f8 with Protect
+declare FootSummarySectionABS(nCalc=i2,OffsetX=f8,OffsetY=f8) = f8 with Protect
+declare FootDetailSection(nCalc=i2) = f8 with Protect
+declare FootDetailSectionABS(nCalc=i2,OffsetX=f8,OffsetY=f8) = f8 with Protect
+declare FootReportSection0(nCalc=i2) = f8 with Protect
+declare FootReportSection0ABS(nCalc=i2,OffsetX=f8,OffsetY=f8) = f8 with Protect
+declare InitializeReport(dummy) = null with Protect
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+ 
+declare _hReport = i4 with NoConstant(0),protect
+declare _YOffset = f8 with NoConstant(0.0),protect
+declare _XOffset = f8 with NoConstant(0.0),protect
+declare Rpt_Render = i2 with Constant(0),protect
+declare _CRLF = vc with Constant(concat(char(13),char(10))),protect
+declare RPT_CalcHeight = i2 with Constant(1),protect
+declare _YShift = f8 with NoConstant(0.0),protect
+declare _XShift = f8 with NoConstant(0.0),protect
+declare _SendTo = vc with NoConstant(""),protect
+declare _rptErr = i2 with NoConstant(0),protect
+declare _rptStat = i2 with NoConstant(0),protect
+declare _oldFont = i4 with NoConstant(0),protect
+declare _oldPen = i4 with NoConstant(0),protect
+declare _dummyFont = i4 with NoConstant(0),protect
+declare _dummyPen = i4 with NoConstant(0),protect
+declare _fDrawHeight = f8 with NoConstant(0.0),protect
+declare _rptPage = i4 with NoConstant(0),protect
+declare _DIOTYPE = i2 with NoConstant(8),protect
+declare _OutputType = i2 with noConstant(RPT_PostScript),protect
+declare _RemFieldName7 = i4 with NoConstant(1),protect
+declare _RemFieldName10 = i4 with NoConstant(1),protect
+declare _bHoldContinue = i2 with NoConstant(0),protect
+declare _bContDetailDetailSection = i2 with NoConstant(0),protect
+declare _Times8B0 = i4 with NoConstant(0),protect
+declare _Times80 = i4 with NoConstant(0),protect
+declare _Times10B0 = i4 with NoConstant(0),protect
+declare _Times12B0 = i4 with NoConstant(0),protect
+declare _Times100 = i4 with NoConstant(0),protect
+declare _pen14S0C0 = i4 with NoConstant(0),protect
+ 
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+ 
+subroutine PageBreak(dummy)
+set _rptPage = uar_rptEndPage(_hReport)
+set _rptPage = uar_rptStartPage(_hReport)
+set _YOffset = RptReport->m_marginTop
+end ; PageBreak
+ 
+subroutine FinalizeReport(sSendReport)
+set _rptPage = uar_rptEndPage(_hReport)
+set _rptStat = uar_rptEndReport(_hReport)
+declare sFilename = vc with NoConstant(trim(sSendReport)),private
+declare bPrint = i2 with NoConstant(0),private
+if(textlen(sFilename)>0)
+set bPrint = CheckQueue(sFilename)
+  if(bPrint)
+    execute cpm_create_file_name "RPT","PS"
+    set sFilename = cpm_cfn_info->file_name_path
+  endif
+endif
+set _rptStat = uar_rptPrintToFile(_hReport,nullterm(sFileName))
+if(bPrint)
+  set spool value(sFilename) value(sSendReport) with deleted,DIO=value(_DIOTYPE)
+endif
+declare _errorFound = i2 with noConstant(0),protect
+declare _errCnt = i2 with noConstant(0),protect
+set _errorFound = uar_RptFirstError( _hReport , RptError )
+while ( _errorFound = RPT_ErrorFound and _errCnt < 512 )
+   set _errCnt = _errCnt+1
+   set stat = AlterList(RptErrors->Errors,_errCnt)
+set RptErrors->Errors[_errCnt].m_severity = RptError->m_severity
+     set RptErrors->Errors[_errCnt].m_text =  RptError->m_text
+     set RptErrors->Errors[_errCnt].m_source = RptError->m_source
+   set _errorFound = uar_RptNextError( _hReport , RptError )
+endwhile
+set _rptStat = uar_rptDestroyReport(_hReport)
+end ; FinalizeReport
+ 
+subroutine DispMsgDataSection0(nCalc)
+declare a1=f8 with noconstant(0.0),private
+set a1=(DispMsgDataSection0ABS(nCalc,_XOffset,_YOffset))
+return (a1)
+end ;subroutine DispMsgDataSection0(nCalc)
+ 
+subroutine DispMsgDataSection0ABS(nCalc,OffsetX,OffsetY)
+declare sectionHeight = f8 with noconstant(1.000000), private
+declare __FIELDNAME0 = vc with NoConstant(build2(trim(display_message,3),char(0))),protect
+if (nCalc = RPT_RENDER)
+set RptSD->m_flags = 20
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_lineSpacing = RPT_SINGLE
+set RptSD->m_rotationAngle = 0
+set RptSD->m_y = OffsetY + 0.188
+set RptSD->m_x = OffsetX + 2.500
+set RptSD->m_width = 5.500
+set RptSD->m_height = 0.750
+set _oldFont = uar_rptSetFont(_hReport, _Times12B0)
+set _oldPen = uar_rptSetPen(_hReport,_pen14S0C0)
+; DRAW TEXT --- FieldName0
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME0)
+set _DummyFont = uar_rptSetFont(_hReport, _oldFont)
+set _DummyPen = uar_rptSetPen(_hReport,_oldPen)
+	set _YOffset = OffsetY + sectionHeight
+endif
+return(sectionHeight)
+end ;subroutine DispMsgDataSection0ABS(nCalc,OffsetX,OffsetY)
+ 
+subroutine HeadPageSummarySection(nCalc)
+declare a1=f8 with noconstant(0.0),private
+set a1=(HeadPageSummarySectionABS(nCalc,_XOffset,_YOffset))
+return (a1)
+end ;subroutine HeadPageSummarySection(nCalc)
+ 
+subroutine HeadPageSummarySectionABS(nCalc,OffsetX,OffsetY)
+declare sectionHeight = f8 with noconstant(0.920000), private
+declare __FIELDNAME0 = vc with NoConstant(build2(trim(summary_by_prompt),char(0))),protect
+if (nCalc = RPT_RENDER)
+set RptSD->m_flags = 64
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_lineSpacing = RPT_SINGLE
+set RptSD->m_rotationAngle = 0
+set RptSD->m_y = OffsetY + 0.281
+set RptSD->m_x = OffsetX + 9.313
+set RptSD->m_width = 1.188
+set RptSD->m_height = 0.260
+set _oldFont = uar_rptSetFont(_hReport, _Times80)
+set _oldPen = uar_rptSetPen(_hReport,_pen14S0C0)
+; DRAW TEXT --- FieldName1
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2(RPT_PAGEOFPAGE,char(0)))
+set RptSD->m_flags = 0
+set RptSD->m_y = OffsetY + 0.281
+set RptSD->m_x = OffsetX + 0.000
+set RptSD->m_width = 2.750
+set RptSD->m_height = 0.260
+; DRAW TEXT --- FieldName9
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2(exec_date_str,char(0)))
+set RptSD->m_flags = 16
+set RptSD->m_y = OffsetY + 0.281
+set RptSD->m_x = OffsetX + 2.760
+set RptSD->m_width = 4.990
+set RptSD->m_height = 0.302
+set _DummyFont = uar_rptSetFont(_hReport, _Times10B0)
+; DRAW TEXT --- FieldName2
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2(prompt_dates,char(0)))
+set RptSD->m_flags = 68
+set RptSD->m_y = OffsetY + 0.740
+set RptSD->m_x = OffsetX + 3.000
+set RptSD->m_width = 0.750
+set RptSD->m_height = 0.198
+set _DummyFont = uar_rptSetFont(_hReport, _Times80)
+; DRAW LABEL --- FieldName3
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("COUNT",char(0)))
+set RptSD->m_flags = 4
+set RptSD->m_y = OffsetY + 0.740
+set RptSD->m_x = OffsetX + 3.875
+set RptSD->m_width = 2.625
+set RptSD->m_height = 0.198
+; DRAW LABEL --- FieldName4
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("DESCRIPTION",char(0)))
+; DRAW LINE --- FieldName5
+set _rptStat = uar_rptLine( _hReport,OffsetX+0.000,OffsetY+ 0.897,OffsetX+10.500, OffsetY+0.897)
+set RptSD->m_flags = 16
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 2.750
+set RptSD->m_width = 5.000
+set RptSD->m_height = 0.292
+set _DummyFont = uar_rptSetFont(_hReport, _Times12B0)
+; DRAW TEXT --- FieldName0
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME0)
+set RptSD->m_flags = 68
+set RptSD->m_y = OffsetY + 0.740
+set RptSD->m_x = OffsetX + 6.688
+set RptSD->m_width = 1.125
+set RptSD->m_height = 0.198
+set _DummyFont = uar_rptSetFont(_hReport, _Times80)
+; DRAW LABEL --- FieldName6
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("EXTENDED PRICE",char(0)))
+set _DummyFont = uar_rptSetFont(_hReport, _oldFont)
+set _DummyPen = uar_rptSetPen(_hReport,_oldPen)
+	set _YOffset = OffsetY + sectionHeight
+endif
+return(sectionHeight)
+end ;subroutine HeadPageSummarySectionABS(nCalc,OffsetX,OffsetY)
+ 
+subroutine HeadPageDetailSection(nCalc)
+declare a1=f8 with noconstant(0.0),private
+set a1=(HeadPageDetailSectionABS(nCalc,_XOffset,_YOffset))
+return (a1)
+end ;subroutine HeadPageDetailSection(nCalc)
+ 
+subroutine HeadPageDetailSectionABS(nCalc,OffsetX,OffsetY)
+declare sectionHeight = f8 with noconstant(1.220000), private
+if (nCalc = RPT_RENDER)
+set RptSD->m_flags = 64
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_lineSpacing = RPT_SINGLE
+set RptSD->m_rotationAngle = 0
+set RptSD->m_y = OffsetY + 0.271
+set RptSD->m_x = OffsetX + 9.313
+set RptSD->m_width = 1.188
+set RptSD->m_height = 0.260
+set _oldFont = uar_rptSetFont(_hReport, _Times80)
+set _oldPen = uar_rptSetPen(_hReport,_pen14S0C0)
+; DRAW TEXT --- FieldName1
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2(RPT_PAGEOFPAGE,char(0)))
+set RptSD->m_flags = 0
+set RptSD->m_y = OffsetY + 0.271
+set RptSD->m_x = OffsetX + 0.000
+set RptSD->m_width = 2.750
+set RptSD->m_height = 0.260
+; DRAW TEXT --- FieldName9
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2(exec_date_str,char(0)))
+set RptSD->m_flags = 16
+set RptSD->m_y = OffsetY + 0.271
+set RptSD->m_x = OffsetX + 2.750
+set RptSD->m_width = 5.000
+set RptSD->m_height = 0.292
+set _DummyFont = uar_rptSetFont(_hReport, _Times10B0)
+; DRAW TEXT --- FieldName0
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2(prompt_dates,char(0)))
+set RptSD->m_flags = 4
+set RptSD->m_y = OffsetY + 1.000
+set RptSD->m_x = OffsetX + 1.094
+set RptSD->m_width = 1.177
+set RptSD->m_height = 0.198
+set _DummyFont = uar_rptSetFont(_hReport, _Times80)
+; DRAW LABEL --- FieldName7
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("FIN",char(0)))
+set RptSD->m_y = OffsetY + 1.000
+set RptSD->m_x = OffsetX + 0.000
+set RptSD->m_width = 1.000
+set RptSD->m_height = 0.198
+; DRAW LABEL --- FieldName11
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("PATIENT NAME",char(0)))
+set RptSD->m_y = OffsetY + 1.000
+set RptSD->m_x = OffsetX + 2.375
+set RptSD->m_width = 0.875
+set RptSD->m_height = 0.198
+; DRAW LABEL --- FieldName12
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("SERVICE DT/TM",char(0)))
+set RptSD->m_y = OffsetY + 1.000
+set RptSD->m_x = OffsetX + 3.250
+set RptSD->m_width = 0.760
+set RptSD->m_height = 0.198
+; DRAW LABEL --- FieldName13
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("CDM",char(0)))
+set RptSD->m_y = OffsetY + 1.000
+set RptSD->m_x = OffsetX + 4.688
+set RptSD->m_width = 1.604
+set RptSD->m_height = 0.198
+; DRAW LABEL --- FieldName14
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("DESCRIPTION",char(0)))
+set RptSD->m_y = OffsetY + 0.875
+set RptSD->m_x = OffsetX + 6.375
+set RptSD->m_width = 0.500
+set RptSD->m_height = 0.323
+; DRAW LABEL --- FieldName16
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("CHARGE TYPE",char(0)))
+set RptSD->m_flags = 68
+set RptSD->m_y = OffsetY + 1.000
+set RptSD->m_x = OffsetX + 6.938
+set RptSD->m_width = 0.563
+set RptSD->m_height = 0.198
+; DRAW LABEL --- FieldName17
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("ITEM QTY",char(0)))
+set RptSD->m_y = OffsetY + 1.000
+set RptSD->m_x = OffsetX + 7.625
+set RptSD->m_width = 0.500
+set RptSD->m_height = 0.198
+; DRAW LABEL --- FieldName18
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("QCF",char(0)))
+set RptSD->m_y = OffsetY + 1.000
+set RptSD->m_x = OffsetX + 8.188
+set RptSD->m_width = 0.500
+set RptSD->m_height = 0.198
+; DRAW LABEL --- FieldName19
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("EXT QTY",char(0)))
+set RptSD->m_y = OffsetY + 1.000
+set RptSD->m_x = OffsetX + 8.750
+set RptSD->m_width = 0.813
+set RptSD->m_height = 0.198
+; DRAW LABEL --- FieldName20
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("ITEM PRICE",char(0)))
+set RptSD->m_y = OffsetY + 1.000
+set RptSD->m_x = OffsetX + 9.625
+set RptSD->m_width = 0.875
+set RptSD->m_height = 0.198
+; DRAW LABEL --- FieldName21
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("EXT PRICE",char(0)))
+; DRAW LINE --- FieldName22
+set _rptStat = uar_rptLine( _hReport,OffsetX+0.031,OffsetY+ 1.161,OffsetX+10.489, OffsetY+1.161)
+set RptSD->m_flags = 4
+set RptSD->m_y = OffsetY + 1.000
+set RptSD->m_x = OffsetX + 4.063
+set RptSD->m_width = 0.542
+set RptSD->m_height = 0.198
+; DRAW LABEL --- FieldName23
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("CPT",char(0)))
+set RptSD->m_flags = 16
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 2.760
+set RptSD->m_width = 4.990
+set RptSD->m_height = 0.260
+set _DummyFont = uar_rptSetFont(_hReport, _Times12B0)
+; DRAW TEXT --- FieldName10
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2(detail_page_title,char(0)))
+set _DummyFont = uar_rptSetFont(_hReport, _oldFont)
+set _DummyPen = uar_rptSetPen(_hReport,_oldPen)
+	set _YOffset = OffsetY + sectionHeight
+endif
+return(sectionHeight)
+end ;subroutine HeadPageDetailSectionABS(nCalc,OffsetX,OffsetY)
+ 
+subroutine DetailSummarySection(nCalc)
+declare a1=f8 with noconstant(0.0),private
+set a1=(DetailSummarySectionABS(nCalc,_XOffset,_YOffset))
+return (a1)
+end ;subroutine DetailSummarySection(nCalc)
+ 
+subroutine DetailSummarySectionABS(nCalc,OffsetX,OffsetY)
+declare sectionHeight = f8 with noconstant(0.200000), private
+declare __FIELDNAME0 = vc with NoConstant(build2(group_by_summary->gbs_detail[i].group_by_thing_cnt,char(0))),protect
+declare __FIELDNAME1 = vc with NoConstant(build2(group_by_summary->gbs_detail[i].group_by_thing_text,char(0))),protect
+declare __FIELDNAME2 = vc with NoConstant(build2(group_by_summary->gbs_detail [i].group_by_extended_price,char(0))),protect
+if (nCalc = RPT_RENDER)
+set RptSD->m_flags = 64
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_lineSpacing = RPT_SINGLE
+set RptSD->m_rotationAngle = 0
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 3.000
+set RptSD->m_width = 0.750
+set RptSD->m_height = 0.198
+set _oldFont = uar_rptSetFont(_hReport, _Times80)
+set _oldPen = uar_rptSetPen(_hReport,_pen14S0C0)
+; DRAW TEXT --- FieldName0
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME0)
+set RptSD->m_flags = 0
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 3.875
+set RptSD->m_width = 2.625
+set RptSD->m_height = 0.198
+; DRAW TEXT --- FieldName1
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME1)
+set RptSD->m_flags = 64
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 6.688
+set RptSD->m_width = 1.125
+set RptSD->m_height = 0.198
+; DRAW TEXT --- FieldName2
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME2)
+set _DummyFont = uar_rptSetFont(_hReport, _oldFont)
+set _DummyPen = uar_rptSetPen(_hReport,_oldPen)
+	set _YOffset = OffsetY + sectionHeight
+endif
+return(sectionHeight)
+end ;subroutine DetailSummarySectionABS(nCalc,OffsetX,OffsetY)
+ 
+subroutine DetailDetailSection(nCalc,maxHeight,bContinue)
+declare a1=f8 with noconstant(0.0),private
+set a1=(DetailDetailSectionABS(nCalc,_XOffset,_YOffset,maxHeight,bContinue))
+return (a1)
+end ;subroutine DetailDetailSection(nCalc,maxHeight,bContinue)
+ 
+subroutine DetailDetailSectionABS(nCalc,OffsetX,OffsetY,maxHeight,bContinue)
+declare sectionHeight = f8 with noconstant(0.200000), private
+declare growSum = i4 with noconstant(0), private
+declare drawHeight_FieldName7 = f8 with noconstant(0.0), private
+declare drawHeight_FieldName10 = f8 with noconstant(0.0), private
+declare __FIELDNAME5 = vc with NoConstant(build2(trim(charges->c_detail [i].fin),char(0))),protect
+declare __FIELDNAME7 = vc with NoConstant(build2(trim(charges->c_detail [i].patient_name),char(0))),protect
+declare __FIELDNAME8 = vc with NoConstant(build2(format(charges->c_detail [i].service_date_time, "@SHORTDATETIME"),char(0))),
+protect
+declare __FIELDNAME9 = vc with NoConstant(build2(trim(charges->c_detail [i].cdm),char(0))),protect
+declare __FIELDNAME10 = vc with NoConstant(build2(charges->c_detail [i].description,char(0))),protect
+declare __FIELDNAME12 = vc with NoConstant(build2(charges->c_detail [i].charge_type,char(0))),protect
+declare __FIELDNAME13 = vc with NoConstant(build2(charges->c_detail [i].item_quantity,char(0))),protect
+declare __FIELDNAME14 = vc with NoConstant(build2(charges->c_detail [i].qcf,char(0))),protect
+declare __FIELDNAME15 = vc with NoConstant(build2(charges->c_detail [i].extended_quantity,char(0))),protect
+declare __FIELDNAME16 = vc with NoConstant(build2(charges->c_detail [i].item_price,char(0))),protect
+declare __FIELDNAME17 = vc with NoConstant(build2(charges->c_detail [i].extended_price,char(0))),protect
+declare __FIELDNAME18 = vc with NoConstant(build2(trim(charges->c_detail [i].cpt),char(0))),protect
+if (bContinue=0)
+	set _RemFieldName7 = 1
+	set _RemFieldName10 = 1
+endif
+set RptSD->m_flags = 5
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_lineSpacing = RPT_SINGLE
+set RptSD->m_rotationAngle = 0
+if (bContinue)
+	set RptSD->m_y = OffsetY
+else
+	set RptSD->m_y = OffsetY + 0.000
+endif
+set RptSD->m_x = OffsetX + 0.000
+set RptSD->m_width = 1.000
+set RptSD->m_height = OffsetY+maxHeight-RptSD->m_y
+set _oldFont = uar_rptSetFont(_hReport, _Times80)
+set _oldPen = uar_rptSetPen(_hReport,_pen14S0C0)
+set _HoldRemFieldName7 = _RemFieldName7
+if (_RemFieldName7 > 0)
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, nullterm(substring(_RemFieldName7,size(__FIELDNAME7)-_RemFieldName7+1,
+__FIELDNAME7)))
+set drawHeight_FieldName7 = RptSD->m_height
+if (RptSD->m_height > OffsetY + sectionHeight - RptSD->m_y)
+	set sectionHeight = RptSD->m_y + _fDrawHeight - OffsetY
+endif
+if (RptSD->m_drawLength = 0)
+	set _RemFieldName7 = 0
+elseif (RptSD->m_drawLength < size(nullterm(substring(_RemFieldName7,size(__FIELDNAME7)-_RemFieldName7+1,__FIELDNAME7))))
+; subtract null
+	set _RemFieldName7 = _RemFieldName7+RptSD->m_drawLength
+else
+	set _RemFieldName7 = 0
+endif
+	; append remainder to growSum so we know whether or not to continue at the end
+	set growSum = growSum + _RemFieldName7
+endif
+set RptSD->m_flags = 5
+if (bContinue)
+	set RptSD->m_y = OffsetY
+else
+	set RptSD->m_y = OffsetY + 0.000
+endif
+set RptSD->m_x = OffsetX + 4.688
+set RptSD->m_width = 1.604
+set RptSD->m_height = OffsetY+maxHeight-RptSD->m_y
+set _HoldRemFieldName10 = _RemFieldName10
+if (_RemFieldName10 > 0)
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, nullterm(substring(_RemFieldName10,size(__FIELDNAME10)-_RemFieldName10+1,
+__FIELDNAME10)))
+set drawHeight_FieldName10 = RptSD->m_height
+if (RptSD->m_height > OffsetY + sectionHeight - RptSD->m_y)
+	set sectionHeight = RptSD->m_y + _fDrawHeight - OffsetY
+endif
+if (RptSD->m_drawLength = 0)
+	set _RemFieldName10 = 0
+elseif (RptSD->m_drawLength < size(nullterm(substring(_RemFieldName10,size(__FIELDNAME10)-_RemFieldName10+1,__FIELDNAME10))))
+; subtract null
+	set _RemFieldName10 = _RemFieldName10+RptSD->m_drawLength
+else
+	set _RemFieldName10 = 0
+endif
+	; append remainder to growSum so we know whether or not to continue at the end
+	set growSum = growSum + _RemFieldName10
+endif
+set RptSD->m_flags = 0
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 1.094
+set RptSD->m_width = 1.219
+set RptSD->m_height = 0.198
+if (nCalc = RPT_RENDER AND bContinue = 0)
+; DRAW TEXT --- FieldName5
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME5)
+endif
+set RptSD->m_flags = 4
+if (bContinue)
+	set RptSD->m_y = OffsetY
+else
+	set RptSD->m_y = OffsetY + 0.000
+endif
+set RptSD->m_x = OffsetX + 0.000
+set RptSD->m_width = 1.000
+set RptSD->m_height = drawHeight_FieldName7
+if (nCalc = RPT_RENDER AND _HoldRemFieldName7 > 0)
+; DRAW TEXT --- FieldName7
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, nullterm(substring(_HoldRemFieldName7,size(__FIELDNAME7)-_HoldRemFieldName7+
+1,__FIELDNAME7)))
+else
+	set _RemFieldName7 = _HoldRemFieldName7
+endif
+set RptSD->m_flags = 0
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 2.375
+set RptSD->m_width = 0.875
+set RptSD->m_height = 0.198
+if (nCalc = RPT_RENDER AND bContinue = 0)
+; DRAW TEXT --- FieldName8
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME8)
+endif
+set RptSD->m_flags = 0
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 3.250
+set RptSD->m_width = 0.760
+set RptSD->m_height = 0.198
+if (nCalc = RPT_RENDER AND bContinue = 0)
+; DRAW TEXT --- FieldName9
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME9)
+endif
+set RptSD->m_flags = 4
+if (bContinue)
+	set RptSD->m_y = OffsetY
+else
+	set RptSD->m_y = OffsetY + 0.000
+endif
+set RptSD->m_x = OffsetX + 4.688
+set RptSD->m_width = 1.604
+set RptSD->m_height = drawHeight_FieldName10
+if (nCalc = RPT_RENDER AND _HoldRemFieldName10 > 0)
+; DRAW TEXT --- FieldName10
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, nullterm(substring(_HoldRemFieldName10,size(__FIELDNAME10)-
+_HoldRemFieldName10+1,__FIELDNAME10)))
+else
+	set _RemFieldName10 = _HoldRemFieldName10
+endif
+set RptSD->m_flags = 0
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 6.375
+set RptSD->m_width = 0.500
+set RptSD->m_height = 0.198
+if (nCalc = RPT_RENDER AND bContinue = 0)
+; DRAW TEXT --- FieldName12
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME12)
+endif
+set RptSD->m_flags = 64
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 6.938
+set RptSD->m_width = 0.563
+set RptSD->m_height = 0.198
+if (nCalc = RPT_RENDER AND bContinue = 0)
+; DRAW TEXT --- FieldName13
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME13)
+endif
+set RptSD->m_flags = 64
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 7.625
+set RptSD->m_width = 0.500
+set RptSD->m_height = 0.198
+if (nCalc = RPT_RENDER AND bContinue = 0)
+; DRAW TEXT --- FieldName14
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME14)
+endif
+set RptSD->m_flags = 64
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 8.188
+set RptSD->m_width = 0.500
+set RptSD->m_height = 0.198
+if (nCalc = RPT_RENDER AND bContinue = 0)
+; DRAW TEXT --- FieldName15
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME15)
+endif
+set RptSD->m_flags = 64
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 8.750
+set RptSD->m_width = 0.813
+set RptSD->m_height = 0.198
+if (nCalc = RPT_RENDER AND bContinue = 0)
+; DRAW TEXT --- FieldName16
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME16)
+endif
+set RptSD->m_flags = 64
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 9.625
+set RptSD->m_width = 0.875
+set RptSD->m_height = 0.198
+if (nCalc = RPT_RENDER AND bContinue = 0)
+; DRAW TEXT --- FieldName17
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME17)
+endif
+set RptSD->m_flags = 0
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 4.063
+set RptSD->m_width = 0.542
+set RptSD->m_height = 0.198
+if (nCalc = RPT_RENDER AND bContinue = 0)
+; DRAW TEXT --- FieldName18
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME18)
+endif
+set _DummyFont = uar_rptSetFont(_hReport, _oldFont)
+set _DummyPen = uar_rptSetPen(_hReport,_oldPen)
+if (nCalc = RPT_RENDER)
+	set _YOffset = OffsetY + sectionHeight
+endif
+	if (growSum > 0)
+		set bContinue = 1 ; continue grow
+	else
+		set bContinue = 0 ; done growing
+	endif
+return(sectionHeight)
+end ;subroutine DetailDetailSectionABS(nCalc,OffsetX,OffsetY,maxHeight,bContinue)
+ 
+subroutine FootSummarySection(nCalc)
+declare a1=f8 with noconstant(0.0),private
+set a1=(FootSummarySectionABS(nCalc,_XOffset,_YOffset))
+return (a1)
+end ;subroutine FootSummarySection(nCalc)
+ 
+subroutine FootSummarySectionABS(nCalc,OffsetX,OffsetY)
+declare sectionHeight = f8 with noconstant(0.740000), private
+declare __FIELDNAME1 = vc with NoConstant(build2(group_by_summary->gbs_total_cnt,char(0))),protect
+declare __FIELDNAME2 = vc with NoConstant(build2(group_by_summary->gbs_total_extended_price,char(0))),protect
+if (nCalc = RPT_RENDER)
+set _oldPen = uar_rptSetPen(_hReport,_pen14S0C0)
+; DRAW LINE --- FieldName0
+set _rptStat = uar_rptLine( _hReport,OffsetX+3.000,OffsetY+ 0.130,OffsetX+3.760, OffsetY+0.130)
+set RptSD->m_flags = 64
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_lineSpacing = RPT_SINGLE
+set RptSD->m_rotationAngle = 0
+set RptSD->m_y = OffsetY + 0.260
+set RptSD->m_x = OffsetX + 2.750
+set RptSD->m_width = 1.000
+set RptSD->m_height = 0.260
+; DRAW TEXT --- FieldName1
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME1)
+set RptSD->m_y = OffsetY + 0.260
+set RptSD->m_x = OffsetX + 6.563
+set RptSD->m_width = 1.281
+set RptSD->m_height = 0.260
+; DRAW TEXT --- FieldName2
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME2)
+set RptSD->m_flags = 0
+set RptSD->m_y = OffsetY + 0.260
+set RptSD->m_x = OffsetX + 3.875
+set RptSD->m_width = 2.625
+set RptSD->m_height = 0.260
+; DRAW TEXT --- FieldName3
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2(foot_summary_text,char(0)))
+set _DummyPen = uar_rptSetPen(_hReport,_oldPen)
+	set _YOffset = OffsetY + sectionHeight
+endif
+return(sectionHeight)
+end ;subroutine FootSummarySectionABS(nCalc,OffsetX,OffsetY)
+ 
+subroutine FootDetailSection(nCalc)
+declare a1=f8 with noconstant(0.0),private
+set a1=(FootDetailSectionABS(nCalc,_XOffset,_YOffset))
+return (a1)
+end ;subroutine FootDetailSection(nCalc)
+ 
+subroutine FootDetailSectionABS(nCalc,OffsetX,OffsetY)
+declare sectionHeight = f8 with noconstant(2.320000), private
+declare __FIELDNAME0 = vc with NoConstant(build2(charges->c_cnt,char(0))),protect
+declare __FIELDNAME2 = vc with NoConstant(build2(charges->c_total_extended_price,char(0))),protect
+if (nCalc = RPT_RENDER)
+set RptSD->m_flags = 64
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_lineSpacing = RPT_SINGLE
+set RptSD->m_rotationAngle = 0
+set RptSD->m_y = OffsetY + 0.250
+set RptSD->m_x = OffsetX + 2.250
+set RptSD->m_width = 1.000
+set RptSD->m_height = 0.260
+set _oldPen = uar_rptSetPen(_hReport,_pen14S0C0)
+; DRAW TEXT --- FieldName0
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME0)
+set RptSD->m_flags = 0
+set RptSD->m_y = OffsetY + 0.250
+set RptSD->m_x = OffsetX + 3.375
+set RptSD->m_width = 3.250
+set RptSD->m_height = 0.260
+; DRAW TEXT --- FieldName1
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2(foot_detail_text,char(0)))
+set RptSD->m_flags = 64
+set RptSD->m_y = OffsetY + 0.250
+set RptSD->m_x = OffsetX + 6.750
+set RptSD->m_width = 1.385
+set RptSD->m_height = 0.260
+; DRAW TEXT --- FieldName2
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FIELDNAME2)
+set RptSD->m_flags = 20
+set RptSD->m_y = OffsetY + 0.500
+set RptSD->m_x = OffsetX + 3.510
+set RptSD->m_width = 3.490
+set RptSD->m_height = 0.260
+; DRAW LABEL --- FieldName4
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("based on the following prompts",char(0)))
+set RptSD->m_flags = 4
+set RptSD->m_y = OffsetY + 0.750
+set RptSD->m_x = OffsetX + 3.500
+set RptSD->m_width = 1.063
+set RptSD->m_height = 0.198
+; DRAW LABEL --- FieldName5
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Organization:",char(0)))
+set RptSD->m_y = OffsetY + 0.958
+set RptSD->m_x = OffsetX + 3.500
+set RptSD->m_width = 1.063
+set RptSD->m_height = 0.198
+; DRAW LABEL --- FieldName6
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Activity Type:",char(0)))
+set RptSD->m_y = OffsetY + 1.167
+set RptSD->m_x = OffsetX + 3.500
+set RptSD->m_width = 1.063
+set RptSD->m_height = 0.198
+; DRAW LABEL --- FieldName7
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Cost Center:",char(0)))
+set RptSD->m_y = OffsetY + 1.375
+set RptSD->m_x = OffsetX + 3.500
+set RptSD->m_width = 1.063
+set RptSD->m_height = 0.198
+; DRAW LABEL --- FieldName8
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Interface File:",char(0)))
+set RptSD->m_y = OffsetY + 1.583
+set RptSD->m_x = OffsetX + 3.500
+set RptSD->m_width = 1.063
+set RptSD->m_height = 0.198
+; DRAW LABEL --- FieldName9
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Tier Group:",char(0)))
+set RptSD->m_y = OffsetY + 1.792
+set RptSD->m_x = OffsetX + 3.500
+set RptSD->m_width = 1.063
+set RptSD->m_height = 0.198
+; DRAW LABEL --- FieldName10
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Encounter Type:",char(0)))
+set RptSD->m_flags = 0
+set RptSD->m_y = OffsetY + 1.792
+set RptSD->m_x = OffsetX + 4.688
+set RptSD->m_width = 2.313
+set RptSD->m_height = 0.198
+; DRAW TEXT --- FieldName11
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2(prompt_encntr_type,char(0)))
+set RptSD->m_y = OffsetY + 0.750
+set RptSD->m_x = OffsetX + 4.688
+set RptSD->m_width = 2.313
+set RptSD->m_height = 0.198
+; DRAW TEXT --- FieldName12
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2(prompt_organization,char(0)))
+set RptSD->m_y = OffsetY + 0.958
+set RptSD->m_x = OffsetX + 4.688
+set RptSD->m_width = 2.313
+set RptSD->m_height = 0.198
+; DRAW TEXT --- FieldName13
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2(prompt_activity_type,char(0)))
+set RptSD->m_y = OffsetY + 1.167
+set RptSD->m_x = OffsetX + 4.688
+set RptSD->m_width = 2.292
+set RptSD->m_height = 0.198
+; DRAW TEXT --- FieldName14
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2(prompt_cost_center,char(0)))
+set RptSD->m_y = OffsetY + 1.375
+set RptSD->m_x = OffsetX + 4.688
+set RptSD->m_width = 2.313
+set RptSD->m_height = 0.198
+; DRAW TEXT --- FieldName15
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2(prompt_interf_file,char(0)))
+set RptSD->m_y = OffsetY + 1.583
+set RptSD->m_x = OffsetX + 4.688
+set RptSD->m_width = 2.354
+set RptSD->m_height = 0.198
+; DRAW TEXT --- FieldName16
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2(prompt_tier_group,char(0)))
+set _DummyPen = uar_rptSetPen(_hReport,_oldPen)
+	set _YOffset = OffsetY + sectionHeight
+endif
+return(sectionHeight)
+end ;subroutine FootDetailSectionABS(nCalc,OffsetX,OffsetY)
+ 
+subroutine FootReportSection0(nCalc)
+declare a1=f8 with noconstant(0.0),private
+set a1=(FootReportSection0ABS(nCalc,_XOffset,_YOffset))
+return (a1)
+end ;subroutine FootReportSection0(nCalc)
+ 
+subroutine FootReportSection0ABS(nCalc,OffsetX,OffsetY)
+declare sectionHeight = f8 with noconstant(1.000000), private
+if (nCalc = RPT_RENDER)
+set RptSD->m_flags = 16
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_lineSpacing = RPT_SINGLE
+set RptSD->m_rotationAngle = 0
+set RptSD->m_y = OffsetY + 0.500
+set RptSD->m_x = OffsetX + 1.750
+set RptSD->m_width = 7.000
+set RptSD->m_height = 0.198
+set _oldFont = uar_rptSetFont(_hReport, _Times8B0)
+set _oldPen = uar_rptSetPen(_hReport,_pen14S0C0)
+; DRAW TEXT --- FieldName0
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("< < End of Report > >",char(0)))
+set _DummyFont = uar_rptSetFont(_hReport, _oldFont)
+set _DummyPen = uar_rptSetPen(_hReport,_oldPen)
+	set _YOffset = OffsetY + sectionHeight
+endif
+return(sectionHeight)
+end ;subroutine FootReportSection0ABS(nCalc,OffsetX,OffsetY)
+ 
+subroutine InitializeReport(dummy)
+set RptReport->m_recSize = 100
+set RptReport->m_reportName = "CCPS_CS_INTERFACED_CHARGES"
+set RptReport->m_pageWidth = 8.50
+set RptReport->m_pageHeight = 11.00
+set RptReport->m_orientation = Rpt_Landscape
+set RptReport->m_marginLeft = 0.25
+set RptReport->m_marginRight = 0.25
+set RptReport->m_marginTop = 0.25
+set RptReport->m_marginBottom = 0.25
+set RptReport->m_horzPrintOffset = _XShift
+set RptReport->m_vertPrintOffset = _YShift
+set _YOffset = RptReport->m_marginTop
+set _XOffset = RptReport->m_marginLeft
+set _hReport = uar_rptCreateReport(RptReport, _OutputType,Rpt_Inches)
+set _rptErr = uar_rptSetErrorLevel(_hReport,Rpt_Error)
+set _rptStat = uar_rptStartReport(_hReport)
+set _rptPage = uar_rptStartPage(_hReport)
+call _CreateFonts(0)
+call _CreatePens(0)
+end ;_InitializeReport
+ 
+subroutine _CreateFonts(dummy)
+set RptFont->m_recSize = 50
+set RptFont->m_fontName = RPT_TIMES
+set RptFont->m_pointSize = 10
+set RptFont->m_bold = RPT_OFF
+set RptFont->m_italic = RPT_OFF
+set RptFont->m_underline = RPT_OFF
+set RptFont->m_strikethrough = RPT_OFF
+set RptFont->m_rgbColor = RPT_BLACK
+set _Times100 = uar_rptCreateFont(_hReport, RptFont)
+set RptFont->m_pointSize = 12
+set RptFont->m_bold = RPT_ON
+set _Times12B0 = uar_rptCreateFont(_hReport, RptFont)
+set RptFont->m_pointSize = 8
+set RptFont->m_bold = RPT_OFF
+set _Times80 = uar_rptCreateFont(_hReport, RptFont)
+set RptFont->m_pointSize = 10
+set RptFont->m_bold = RPT_ON
+set _Times10B0 = uar_rptCreateFont(_hReport, RptFont)
+set RptFont->m_pointSize = 8
+set _Times8B0 = uar_rptCreateFont(_hReport, RptFont)
+end;**************Create Fonts*************
+ 
+subroutine _CreatePens(dummy)
+set RptPen->m_recSize = 16
+set RptPen->m_penWidth = 0.014
+set RptPen->m_penStyle = 0
+set RptPen->m_rgbColor =  RPT_BLACK
+set _pen14S0C0 = uar_rptCreatePen(_hReport,RptPen)
+end;**************Create Pen*************
+ 
+;**************Report Layout End*************
+ 
+ 
+

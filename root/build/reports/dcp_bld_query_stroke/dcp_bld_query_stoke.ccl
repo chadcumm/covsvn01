@@ -1,0 +1,25 @@
+select 
+  uar_get_code_display(dpqp.query_type_cd)
+ ,dpqp.*
+ ,dpqv.*
+from
+	 dcp_pl_query_parameter dpqp
+	,dcp_pl_query_value dpqv
+plan dpqp
+join dpqv
+	where dpqv.parameter_id = dpqp.parameter_id
+order by
+	dpqp.parameter_id
+	
+	
+select * from code_value cv where cv.code_value =      2580660237.00
+
+select * from order_catalog oc where oc.description = "*Stroke*"
+
+select * from orders o where o.catalog_cd = 2552998779.00 and o.order_status_cd =        2550.00
+
+select * from dcp_patient_list dpl order by dpl.updt_dt_tm desc ;     3080833.00
+
+
+select o.encntr_id,o.originating_encntr_id,
+* from orders o where o.order_id in(401586291,401592663)

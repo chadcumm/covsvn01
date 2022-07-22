@@ -1,0 +1,27 @@
+select
+	;into "nl:"
+	document = uar_Get_code_display(ce.event_cd)
+	,ce.event_cd
+	,count(*)
+from
+	clinical_event ce
+plan ce
+	where ce.result_status_cd = 24
+	and   ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00")
+group by
+	ce.event_cd
+with counter go
+
+
+/*
+ DOCUMENT                                 EVENT_CD       EXP
+     1ED Note Physician                            2820589.00         223.00
+     2Special Procedure                           30601759.00          27.00
+     3Discharge Summary                            2820588.00           1.00
+     4History and Physical                         3713594.00          91.00
+*/
+
+call echo(uar_get_code_by("DISPLAY",72,"ED Note Physician")) go
+call echo(uar_get_code_by("DISPLAY",72,"Special Procedure")) go
+call echo(uar_get_code_by("DISPLAY",72,"Discharge Summary")) go
+call echo(uar_get_code_by("DISPLAY",72,"History and Physical")) go

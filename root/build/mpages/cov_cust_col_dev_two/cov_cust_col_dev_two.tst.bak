@@ -1,0 +1,17 @@
+declare line_in = vc go
+set filepath = "ccluserdir:diag_request.json" go
+
+free set client_request go
+
+free define rtl3 go
+define rtl3 is filepath go
+
+select into "nl:"
+from rtl3t r
+detail
+	line_in = concat(line_in,r.line)
+with nocounter go
+call echo(line_in) go
+set stat = cnvtjsontorec(line_in) go
+call echorecord(client_request) go
+execute MP_WLFW_CUSTOM_COLUMN ^MINE^ go

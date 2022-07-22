@@ -1,0 +1,89 @@
+<prompt-def program = 'COV_INA_DIETITIAN_WORKSHEET' group = '0' auto-arrange = 'true' stream-ver = '0' export-dt-tm = '202103261754' version = '26' script-enabled = 'false' prompt-control-version = '3.000000' updt_dt_tm = '07/29/2020 12:23:59' resource-enabled = 'false'><control name = 'OUTDEV' control = '6' height = '20' width = '250' position = '0' result-type = '1' exclude = 'false'><display align = 'left'>&#038;Output to File/Printer/MINE</display>
+<description>Enter or select the printer or file name to send this report to.</description>
+<default>MINE</default>
+<component name = 'CWizOutputDevice'><property name = 'OUTPUT-DEVICES:00'><![CDATA[HIDE-BROWSER='false' DEVICES='' DISPLAY-ALL='true' DISALLOW-FREETEXT='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROGRAM'><![CDATA[PROMPT-CONTROL-VERSION='3.000000' AUTO-ARRANGE='true' OWNER='' DU-BASE-HORZ='8' VERSION='26' STREAM-VER='0' REPORT-NAME='' UPDT_DT_TM='2020-07-29 12:23:59' DU-BASE-VERT='16' SCRIPT-ENABLED='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ]]></property>
+<property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='20' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='' LABEL-POS-TOP='10' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='10' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='130' TRIM='false' ]]></property>
+</component>
+</control>
+<control name = 'facility_list' control = '3' height = '150' width = '300' position = '1' result-type = '3' exclude = 'false'><display align = 'left'>FacilityList</display>
+<description></description>
+<default></default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[MODIFIABLE='false' SORT='false' INC-ANY='false' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' LABEL-COLUMNS='true' QBE-SOURCE='' MULTI-SELECT='false' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='' QUERY-STRING='SELECT 
+     cv1.code_value
+    ,cv1.display
+    ,cv1.description
+FROM 
+    code_value cv1 
+WHERE 
+    cv1.code_value IN (2552503635   ;Fort Loudoun Medical Center
+                        ,21250403   ;Fort Sanders Regional Medical Center
+                        ,2553765707 ;FSR Transitional Care Unit
+                        ,2553765627 ;FSR Select Specialty
+                        ,2553765571 ;FSR PNRC
+                        ,2552503653 ;LeConte Medical Center
+                        ,2553765371 ;LCMC Nsg Home
+                        ,2552503613 ;Methodist Medical Center
+                        ,2552503639 ;Morristown-Hamblen Hospital Association
+                        ,2553765475 ;MHHS Behavioral Health
+                        ,2552503645 ;Parkwest Medical Center
+                        ,2553765531 ;PW Senior Behavioral Health
+                        ,2552503649 ;Roane Medical Center
+;                       ,2553765291 ;Claiborne Medi]]></property>
+<property name = 'SETTINGS:01'><![CDATA[cal Center
+;                       ,2552503657 ;Cumberland Medical Center, Inc
+                        ,2553765579 ;PBH Peninsula
+                        ) 
+    AND cv1.active_ind &#061; 1
+ORDER BY cv1.description' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1960.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;CODE_VALUE&#034; TITLE&#061;&#034;CODE_VALUE&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;65.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;DISPLAY&#034; TITLE&#061;&#034;DISPLAY&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;2&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;2&]]></property>
+<property name = 'SETTINGS:02'><![CDATA[#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;2000.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;DESCRIPTION&#034; TITLE&#061;&#034;DESCRIPTION&#034; &#125;'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='true' CTRL-VERT-OFFSET='' BOTTOM='150' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='300' LABEL-POS-TOP='37' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='150' RESIZABLE='false' RIGHT='300' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='37' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='67' TRIM='true' ]]></property>
+</component>
+</control>
+<control name = 'Nurse_Unit' control = '3' height = '350' width = '600' position = '2' result-type = '3' exclude = 'false'><display align = 'left'>Nurse Unit</display>
+<description></description>
+<default>0.0</default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[INC-ANY-DISPLAY='All (*)' MODIFIABLE='false' SORT='false' INC-ANY='true' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' INC-ANY-KEY='0.0' LABEL-COLUMNS='true' QBE-SOURCE='' MULTI-SELECT='true' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ]]></property>
+<property name = 'DEFAULT-VALUES:00'><![CDATA[MULTI-DEF-COUNT='1' MUL-DEF-0='0.0'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='0.0' QUERY-STRING='SELECT DISTINCT
+     nurse_unit &#061; UAR_GET_CODE_DISPLAY(l3.location_cd)
+    ,unit_desc &#061; UAR_GET_CODE_DESCRIPTION(l3.location_cd)
+    ,nurse_unit_cd &#061; l3.location_cd
+FROM
+     location l
+    ,location_group lg
+    ,location l2
+    ,location_group lg2
+    ,location l3
+    ,location_group lg3
+PLAN L WHERE l.location_cd &#061; $facility_list ;2553765571
+    AND l.location_type_cd &#061; 783 ;"facility"
+    AND l.active_ind &#061; 1
+JOIN lg WHERE lg.parent_loc_cd &#061; l.location_cd
+    AND lg.active_ind &#061; 1
+    AND lg.sequence &#061; 1
+JOIN l2 WHERE l2.location_cd &#061; lg.child_loc_cd
+    AND l2.location_type_cd &#061; 778 ;"building"
+    AND l2.active_ind &#061; 1
+JOIN lg2 WHERE lg2.parent_loc_cd &#061; l2.location_cd
+    AND lg2.active_ind &#061; 1
+    AND lg2.root_loc_cd &#061; 0
+JOIN l3 WHERE l3.location_cd &#061; lg2.child_loc_cd
+    AND l3.location_type_cd IN (772,794) ;"nurseunit", "ambulatory"
+    AND l]]></property>
+<property name = 'SETTINGS:01'><![CDATA[3.active_ind &#061; 1
+JOIN lg3 WHERE lg3.parent_loc_cd &#061; OUTERJOIN(l3.location_cd)
+    AND lg3.active_ind &#061; OUTERJOIN(1)
+    AND lg3.root_loc_cd &#061; OUTERJOIN(0.0)
+ORDER BY
+    nurse_unit
+' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;90.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;NURSE_UNIT&#034; TITLE&#061;&#034;NURSE_UNIT&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;81.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;UNIT_DESC&#034; TITLE&#061;&#034;UNIT_DESC&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;2&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;2&#034; ALI]]></property>
+<property name = 'SETTINGS:02'><![CDATA[AS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;2360.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;NURSE_UNIT_CD&#034; TITLE&#061;&#034;NURSE_UNIT_CD&#034; &#125;'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='true' CTRL-VERT-OFFSET='' BOTTOM='350' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='600' LABEL-POS-TOP='194' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='350' RESIZABLE='false' RIGHT='600' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='194' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='65' TRIM='true' ]]></property>
+</component>
+</control>
+</prompt-def>

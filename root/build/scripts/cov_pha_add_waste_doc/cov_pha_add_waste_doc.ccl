@@ -1,0 +1,77 @@
+
+
+;{"WASTE_CHARGE_CD":2553048181.000000},"DATES":
+
+select *
+from
+	dispense_hx dh 
+plan dh 
+	where dh.disp_event_type_cd = 2553048181
+	and   dh.dispense_dt_tm >= cnvtdatetime("18-FEB-2020 08:40:00")
+	and   dh.dispense_dt_tm <= cnvtdatetime("18-FEB-2020 09:40:00")
+with format(date,";;q"),uar_code(d)
+
+
+select *
+from
+	dispense_hx dh 
+plan dh 
+	where dh.dispense_hx_id = 42582360.00
+	;and   dh.dispense_dt_tm >= cnvtdatetime("18-FEB-2020 08:40:00")
+	;and   dh.dispense_dt_tm <= cnvtdatetime("18-FEB-2020 09:40:00")
+with format(date,";;q"),uar_code(d)
+         
+
+
+select dh.dispense_hx_id,dh.waste_dispense_hx_id,o.order_mnemonic,dh.disp_event_type_cd,dh.dispense_dt_tm,dh.updt_dt_tm
+from
+	dispense_hx dh
+	,orders o 
+plan dh 
+	where dh.order_id in(select order_id from orders where encntr_id =   118084717.00 or person_id =    15978260.00)
+join o
+	where o.order_id = dh.order_id	
+order by
+	dh.updt_dt_tm 
+with format(date,";;q"),uar_code(d)
+
+select * from encntr_alias ea where ea.alias = "2001800182"
+
+select * from encounter e where e.encntr_id=118084717
+
+
+select distinct
+	ea.alias
+	,dh.dispense_dt_tm
+	,dh.updt_dt_tm
+	,dh.order_id
+	,o.order_mnemonic
+	,ce.event_cd
+	,ce.event_end_dt_tm
+	,ce.updt_task
+	,dh.waste_dispense_hx_id
+from
+	dispense_hx dh
+	,orders o
+	,encounter e
+	,encntr_alias ea
+	,dummyt d1
+	,clinical_event ce
+plan dh 
+	where dh.disp_event_type_cd = value(uar_get_code_by("MEANING",4032,"WASTECHARGE"))
+	and   dh.updt_dt_tm >= cnvtdatetime("12-FEB-2020 00:00:00")
+join o
+	where o.order_id = dh.order_id
+join e
+	where e.encntr_id = o.encntr_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.encntr_alias_type_cd = 1077
+join d1
+join ce
+	where ce.encntr_id = e.encntr_id
+	and   ce.event_cd =  value(uar_get_code_by("DISPLAYKEY",72,"PHARMACYWASTAGTEXT"))
+	and   ce.valid_from_dt_tm >= dh.dispense_dt_tm
+order by
+	dh.updt_dt_tm
+with format(date,";;q"),uar_code(d),outerjoin=d1

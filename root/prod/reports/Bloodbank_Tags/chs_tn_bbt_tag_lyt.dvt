@@ -1,0 +1,479 @@
+<REPORTLAYOUT name="chs_tn_bbt_tag_lyt_20200617" group="0" orientation="0" outputtype="0" printhead="0" intermecprinthead="0" unittype="0" pageheight="11" pagewidth="8.5" leftmargin="0.5" rightmargin="0.5" topmargin="0.5" bottommargin="0.5" destination="0" severity="1" i18nenabledliterals="0" htmltable="0" locked="0" subreport="0" version="561" timestamp="43999.4164351852" xmlversion="6" programhasprompts="1" executingprogram="" tableview="0" tableborderwidth="0.014" tablebordercolor="0" tablecolumndefault="1" tablebackcolor="16777215" tablebackmode="0" panel="2" fileversion="2.1.0.0"><RPTDESCRIPTION><![CDATA[]]></RPTDESCRIPTION><RPTSPOOLWITHOPTIONS><![CDATA[deleted,DIO=value(_DIOTYPE)]]></RPTSPOOLWITHOPTIONS><RPTLAYOUT name="TopSection" height="3.698" order="0" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="TopSection" left="0.271" top="0.49" width="8.501" height="3.698" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/><RPTITEM index="0"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtProdCode" left="5.625" top="1.125" width="2.001" height="0.188" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[trim(TAGLIST_PRODUCT_DISP)]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="1"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="Product_code_Label" left="4.75" top="1.125" width="0.875" height="0.188" anchor="0" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Product Code:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="2"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtVolume" left="4.761" top="1.875" width="1.24" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[if (TAGLIST_DERIVATIVE_IND = 0)
+    "Product Volume:"
+else 
+    "Product Quantity:"
+endif]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="3"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtProdVolume" left="6.146" top="1.875" width="1.969" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[trim(qty_vol_disp_1)]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/><RPTDISPLAY><![CDATA[trim(tag_request->sub_tag_type,3) != 'BLANK']]></RPTDISPLAY></RPTITEM><RPTITEM index="4"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtFlexLabel" left="4.75" top="2.063" width="1.375" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[if (tag_request->tag_type = "COMPONENT")
+    if (TAGLIST_CMPNT_CNT > 0)
+       "Pooled Unit Count: "
+    endif
+else
+   "Crossmatch Interp: "
+endif]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="5"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtAntigens" left="4.855" top="3.105" width="3.115" height="0.605" anchor="1" angle="0" flags="12" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[concat("Product Antigens: ",trim(antig_only_disp))]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="6"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtProdTesting" left="4.855" top="2.626" width="3.053" height="0.5" anchor="1" angle="0" flags="12" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[concat("Special Product Testing: ",trim(attrib_only_disp))]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="7"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtAntibodies" left="0.605" top="3.105" width="3.667" height="0.605" anchor="1" angle="0" flags="12" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[concat("Patient Antibodies: ",trim(antibdy_disp))]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="8"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtTransReq" left="0.605" top="2.553" width="3.73" height="0.5" anchor="1" angle="0" flags="12" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[concat("Patient Transfusion Requirements: ",trim(transfusion_disp))]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="9"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="orderingPhys1" left="1.75" top="2.376" width="2.532" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[trim(TAGLIST_PRVDR_NAME_FULL_FORMATTED)]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="10"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="OrdPhysField0" left="0.5" top="2.376" width="1.178" height="0.198" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Ordering Physician:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="11"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtSexDisp" left="3.063" top="2.188" width="0.959" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[trim(TAGLIST_SEX_DISP)]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="12"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblSex" left="2.803" top="2.188" width="0.282" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Sex:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="13"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtFlexField2" left="4.75" top="2.438" width="3.105" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[if (tag_request->tag_type = "CROSSMATCH")
+   concat("Crossmatch Date/Time: ",format(TAGLIST_XM_RESULT_EVENT_DT_TM,"MM/DD/YYYY HH:mm;;D"))
+else
+   concat("Prepared Date/Time: ",format(pe_event_dt_tm,"MM/DD/YYYY HH:mm;;D")) ;;;need different element
+endif]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="14"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtFlexField1" left="4.75" top="2.251" width="3.105" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[if (tag_request->tag_type = "CROSSMATCH")
+   concat("Crossmatch Verified by: ",trim(TAGLIST_XM_RSLT_EVENT_PRSNL_USER))
+else
+   concat("Prepared by: ",trim(TAGLIST_TECH_NAME))
+endif]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="15"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="FieldName11" left="6" top="2.063" width="2.126" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[if (tag_request->tag_type = "COMPONENT")
+    if (TAGLIST_CMPNT_CNT > 0)
+       trim(cnvtstring(TAGLIST_CMPNT_CNT))
+    endif
+elseif (tag_request->tag_type = "CROSSMATCH")
+    trim(TAGLIST_XM_RESULT_VALUE_ALPHA)
+endif]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/><RPTDISPLAY><![CDATA[tag_request->tag_type != "EMERGENCY"
+]]></RPTDISPLAY></RPTITEM><RPTITEM index="16"><RPTBARCODE ver="1" name="FieldName13" left="1.813" top="1.803" width="1" height="0.188" anchor="1" backcolor="16777215" backmode="0" bartype="1" barwidth="1" rotation="0" ratio="300" scale="1" printinterp="0" checkdigit="0" startchar="" endchar="" startmode="0" rowheight="1.3" columns="1" rows="1" security="0" truncate="0"><![CDATA[concat("*",trim(TAGLIST_ALIAS_FIN),"*")]]></RPTBARCODE><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTITEM><RPTITEM index="17"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtFIN" left="0.823" top="1.803" width="1.24" height="0.188" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[trim(TAGLIST_ALIAS_FIN)]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="18"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblFIN" left="0.5" top="1.803" width="0.282" height="0.188" anchor="0" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[FIN:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="19"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtProdDesc" left="5.625" top="1.313" width="2.126" height="0.188" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[trim(TAGLIST_PRODUCT_DESC)]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="20"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtProdNbr" left="6" top="0.938" width="2.001" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[trim(TAGLIST_PRODUCT_NBR)]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="21"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName6" left="4.75" top="1.313" width="0.875" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Product Type:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="22"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName5" left="4.75" top="0.938" width="1.167" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Product Number:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="23"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtProdABO" left="5.928" top="1.5" width="2.073" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[concat(trim(TAGLIST_CUR_ABO_DISP)," ",
+       trim(TAGLIST_CUR_RH_DISP))]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="24"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName2" left="4.75" top="1.5" width="1.178" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Product ABO/Rh:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="25"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="ProductExpireDtTm" left="6.146" top="1.688" width="1.563" height="0.198" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[format(TAGLIST_PRODUCT_EXPIRE_DT_TM,"MM/DD/YYYY HH:MM;;D")]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="26"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="ProductExpirationField" left="4.75" top="1.688" width="1.375" height="0.198" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Product Expiration:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="27"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName0" left="5.115" top="0.75" width="2.386" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[----- BLOOD PRODUCT DATA -----]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="28"><RPTFONT ver="1" name="Helvetica" size="600" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName8" left="3.501" top="1.375" width="1.105" height="0.157" anchor="0" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[(For Blood Bank Only)]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="29"><RPTBARCODE ver="1" name="FieldName7" left="3.438" top="1.563" width="0.698" height="0.188" anchor="0" backcolor="16777215" backmode="0" bartype="1" barwidth="1" rotation="0" ratio="300" scale="1" printinterp="0" checkdigit="0" startchar="" endchar="" startmode="0" rowheight="1.305" columns="1" rows="1" security="0" truncate="0"><![CDATA[concat("*",trim(TAGLIST_ALIAS_MRN),"*")]]></RPTBARCODE><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTITEM><RPTITEM index="30"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtPatABO" left="1.646" top="1.417" width="2.626" height="0.178" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[concat(trim(person_abo_disp)," ",trim(person_rh_disp))]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="31"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblPatABO" left="0.5" top="1.417" width="1.125" height="0.178" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Patient ABO/Rh: ]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="32"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtPatLoc" left="1.105" top="1.063" width="3.261" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[TAGLIST_PAT_LOCATION]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="33"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblLocation" left="0.5" top="1.063" width="0.605" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Location: ]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="34"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblPatData" left="1" top="0.907" width="2.376" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[----- PATIENT DATA -----]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="35"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="BBIDNBR" left="1.98" top="2.001" width="1.084" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[trim (TAGLIST_BB_ID_NBR)]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="36"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblBBIDNBR" left="0.5" top="2.001" width="1.5" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Blood Bank Armband:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="37"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="PatientBirthDate" left="0.855" top="2.188" width="1.709" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[format(TAGLIST_BIRTH_DT_TM,"MM/DD/YYYY;;D")]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="38"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="PatientName" left="1.105" top="1.25" width="3.792" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[trim(name_full_formatted)]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="39"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="PatientMRN" left="0.938" top="1.584" width="1.625" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[TAGLIST_ALIAS_MRN]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="40"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="DOBField" left="0.5" top="2.188" width="0.386" height="0.178" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[DOB:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="41"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="PatNameField" left="0.5" top="1.25" width="0.625" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Patient:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="42"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="MRNField" left="0.5" top="1.584" width="0.438" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[MRN:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="43"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="TagTypeDiplay" left="4.75" top="0.251" width="2.844" height="0.323" anchor="1" angle="0" flags="64" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[if (tag_request->tag_type = "CROSSMATCH") 
+    "Transfusion Report - Cellular"
+else
+    "Transfusion Report - Non-cellular"
+endif]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="44"><RPTFONT ver="1" name="Helvetica" size="800" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="MedicalDirector" left="0.5" top="0.594" width="2.063" height="0.157" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[trim(OWNER_MEDICAL_DIRECTOR)]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="45"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="FacilityAddress" left="0.5" top="0.417" width="3.751" height="0.188" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[trim(sFacilityAddress)]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="46"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="FacilityDisplay" left="0.5" top="0.251" width="3.501" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[trim(tag_addl->tag_qual [d.seq].facility)]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM></RPTLAYOUT><RPTLAYOUT name="VitalsSection" height="6.063" order="1" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="VitalsSection" left="0.271" top="4.407" width="8.501" height="6.063" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/><RPTITEM index="0"><RPTFONT ver="1" name="Helvetica" size="800" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName29" left="6.605" top="0.75" width="1.105" height="0.146" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[ at the bedside]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="1"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblCertText2" left="0.511" top="0.896" width="5.615" height="0.146" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[and we have asked the patient to state his/her name and date of birth if possible.]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="2"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtProcedureLine2" left="0.5" top="0.573" width="7.5" height="0.146" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[sProcedureText2]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/><RPTDISPLAY><![CDATA[tag_request->tag_type != "EMERGENCY"]]></RPTDISPLAY></RPTITEM><RPTITEM index="3"><RPTLINE ver="1" name="FieldName26" left="3.042" top="3.761" width="0.605" height="0.126" anchor="1" direction="0"><![CDATA[]]></RPTLINE><RPTPEN width="0.014" color="0" style="0"/><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTITEM><RPTITEM index="4"><RPTFONT ver="1" name="Helvetica" size="800" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName25" left="2.678" top="3.688" width="2.823" height="0.178" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[If yes, immediately follow protocol]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="5"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName24" left="2.219" top="3.688" width="0.407" height="0.167" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[YES]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="6"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName23" left="1.75" top="3.688" width="0.271" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[NO]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="7"><RPTLINE ver="1" name="FieldName22" left="3.188" top="0.282" width="2.167" height="0.126" anchor="0" direction="0"><![CDATA[]]></RPTLINE><RPTPEN width="0.014" color="0" style="0"/><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTITEM><RPTITEM index="8"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtProcedureLine1" left="0.5" top="0.417" width="7.438" height="0.146" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[sProcedureText1]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="9"><RPTFONT ver="1" name="Helvetica" size="700" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtProtocol" left="4.573" top="5.375" width="3.105" height="0.563" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[sReactionText]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="10"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtDocumentationWarning" left="0.5" top="0.001" width="7.48" height="0.188" anchor="0" angle="0" flags="16" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[sDocWarning]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="11"><RPTRECT ver="1" name="FieldName21" left="2.042" top="3.688" width="0.146" height="0.146" anchor="1" backcolor="16777215" backmode="0"><![CDATA[]]></RPTRECT><RPTPEN width="0.018" color="0" style="0"/><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTITEM><RPTITEM index="12"><RPTRECT ver="1" name="FieldName20" left="1.563" top="3.688" width="0.146" height="0.146" anchor="1" backcolor="16777215" backmode="0"><![CDATA[]]></RPTRECT><RPTPEN width="0.018" color="0" style="0"/><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTITEM><RPTITEM index="13"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtXMatchInterp" left="2.251" top="5.698" width="2.188" height="0.198" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[if (tag_request->tag_type = "COMPONENT")
+    "Not Applicable"
+elseif (tag_request->tag_type = "CROSSMATCH")
+    trim(TAGLIST_XM_RESULT_VALUE_ALPHA)
+endif]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="14"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName18" left="0.875" top="5.698" width="1.375" height="0.198" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Crossmatch Interp:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="15"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtProdNbr" left="1.375" top="5.5" width="1.75" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[trim(TAGLIST_PRODUCT_NBR)]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="16"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName17" left="0.875" top="5.5" width="0.396" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Unit:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="17"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtPatABO" left="1.875" top="5.313" width="2.626" height="0.178" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[concat(trim(person_abo_disp)," ",trim(person_rh_disp))]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="18"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblPatABO" left="0.875" top="5.313" width="1.125" height="0.178" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Patient ABO/Rh: ]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="19"><RPTBARCODE ver="1" name="bcBridge2d" left="3.501" top="5.261" width="0.803" height="0.803" anchor="1" backcolor="16777215" backmode="0" bartype="15" barwidth="1" rotation="0" ratio="300" scale="0" printinterp="0" checkdigit="0" startchar="" endchar="" startmode="0" rowheight="1.295" columns="1" rows="1" security="0" truncate="0"><![CDATA[bridge_barcode]]></RPTBARCODE><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTITEM><RPTITEM index="20"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="PatientBirthDate" left="2.917" top="4.938" width="1.709" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[format(TAGLIST_BIRTH_DT_TM,"MM/DD/YYYY;;D")]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="21"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="DOBField" left="2.563" top="4.938" width="0.386" height="0.178" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[DOB:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="22"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="BBIDNBR" left="2.355" top="5.125" width="1.084" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[trim (TAGLIST_BB_ID_NBR)]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="23"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblBBIDNBR" left="0.875" top="5.125" width="1.5" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Blood Bank Armband:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="24"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="PatientMRN" left="1.313" top="4.938" width="1.625" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[TAGLIST_ALIAS_MRN]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="25"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="MRNField" left="0.875" top="4.938" width="0.438" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[MRN:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="26"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtBridgeName" left="1.375" top="4.75" width="3.261" height="0.188" anchor="1" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[trim(TAGLIST_NAME_FULL_FORMATTED)]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="27"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName14" left="0.875" top="4.75" width="0.5" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Name:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="28"><RPTFONT ver="1" name="Helvetica" size="700" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName9" left="4.438" top="5.375" width="0.084" height="0.157" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[3.]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="29"><RPTFONT ver="1" name="Helvetica" size="700" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName12" left="4.438" top="5.25" width="3.188" height="0.157" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[2.  Notify Transfusion Services and MD]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="30"><RPTFONT ver="1" name="Helvetica" size="700" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName11" left="4.438" top="5.125" width="3.365" height="0.157" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[1.  Discontinue transfusion and treat shock, if present - keep the IV open]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="31"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName10" left="4.438" top="4.938" width="3.115" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[If Transfusion reaction is suspected, follow these instructions:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="32"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblProtocol" left="4.438" top="4.75" width="3.501" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[TRANSFUSION REACTION PROTOCOL]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="33"><RPTFONT ver="1" name="Helvetica" size="800" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblReactionNoted" left="0.5" top="3.688" width="1.063" height="0.157" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Reaction Noted?]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="34"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblMedicalDevice2" left="2.563" top="3.521" width="4.709" height="0.157" anchor="0" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Blood Warmer _______________  Infusion Pump ________________]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="35"><RPTFONT ver="1" name="Helvetica" size="800" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="LblMedicalDevice" left="0.5" top="3.521" width="2.042" height="0.157" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Medical Device(s) Serial # (if used):]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="36"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblOtherFilter" left="3.428" top="3.355" width="1.803" height="0.157" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Other:_____________________________________]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="37"><RPTRECT ver="1" name="FieldName66" left="3.251" top="3.355" width="0.146" height="0.146" anchor="1" backcolor="16777215" backmode="0"><![CDATA[]]></RPTRECT><RPTPEN width="0.018" color="0" style="0"/><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTITEM><RPTITEM index="38"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblStdSet" left="1.563" top="3.365" width="1.438" height="0.157" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Std Blood Administration Set]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="39"><RPTRECT ver="1" name="FieldName64" left="1.396" top="3.355" width="0.146" height="0.146" anchor="1" backcolor="16777215" backmode="0"><![CDATA[]]></RPTRECT><RPTPEN width="0.018" color="0" style="0"/><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTITEM><RPTITEM index="40"><RPTFONT ver="1" name="Helvetica" size="800" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblFilters" left="0.5" top="3.355" width="0.865" height="0.157" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Filter(s) used:]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="41"><RPTTABLE ver="1" name="FieldName7" left="0.5" top="2.063" width="7.5" height="1.219" anchor="0" backcolor="16777215" backmode="0" rows="6" uselayoutquery="0"><RPTTABLEROW index="0" height="0.17094" cols="7" section="Detail" allowmaxheight="0" keep="1" name="TableRow" maxheight="0"><RPTTABLECOL index="0" width="0.105556"/><RPTITEM index="0"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName8" left="0.5" top="2.063" width="0.792" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="1" width="0.105556"/><RPTITEM index="1"><RPTFONT ver="1" name="Helvetica" size="1000" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName9" left="1.292" top="2.063" width="0.792" height="0.209" anchor="0" angle="0" flags="16" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA["PRE"]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="2" width="0.105556"/><RPTITEM index="2"><RPTFONT ver="1" name="Helvetica" size="1000" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName10" left="2.084" top="2.063" width="0.792" height="0.209" anchor="0" angle="0" flags="16" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA["15 min"]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="3" width="0.105556"/><RPTITEM index="3"><RPTFONT ver="1" name="Helvetica" size="1000" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName11" left="2.876" top="2.063" width="0.792" height="0.209" anchor="0" angle="0" flags="16" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA["30 min"]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="4" width="0.105556"/><RPTITEM index="4"><RPTFONT ver="1" name="Helvetica" size="1000" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName12" left="3.667" top="2.063" width="0.792" height="0.209" anchor="0" angle="0" flags="16" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA["60 min"]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="5" width="0.313887"/><RPTITEM index="5"><RPTFONT ver="1" name="Helvetica" size="1000" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName15" left="4.459" top="2.063" width="2.355" height="0.209" anchor="0" angle="0" flags="16" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA["Q1 hr for duration of transfusion"]]></RPTTEXT><RPTPEN width="0.014" color="16777215" style="0"/></RPTITEM><RPTTABLECOL index="6" width="0.158333"/><RPTITEM index="6"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="Within_60_min_Post" left="6.813" top="2.063" width="1.188" height="0.209" anchor="0" angle="0" flags="272" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA["Within 60 min Post"]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTTABLEROW><RPTTABLEROW index="1" height="0.17094" cols="9" section="Detail" allowmaxheight="0" keep="1" name="TableRow1" maxheight="0"><RPTTABLECOL index="0" width="0.105556"/><RPTITEM index="0"><RPTFONT ver="1" name="Helvetica" size="1000" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName17" left="0.5" top="2.271" width="0.792" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[" TIME"]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="1" width="0.105556"/><RPTITEM index="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName18" left="1.292" top="2.271" width="0.792" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="2" width="0.105556"/><RPTITEM index="2"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName19" left="2.084" top="2.271" width="0.792" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="3" width="0.105556"/><RPTITEM index="3"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName20" left="2.876" top="2.271" width="0.792" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="4" width="0.105556"/><RPTITEM index="4"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName21" left="3.667" top="2.271" width="0.792" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="5" width="0.105556"/><RPTITEM index="5"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName22" left="4.459" top="2.271" width="0.792" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="6" width="0.105556"/><RPTITEM index="6"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName23" left="5.251" top="2.271" width="0.792" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="7" width="0.102775"/><RPTITEM index="7"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName24" left="6.042" top="2.271" width="0.771" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="8" width="0.158333"/><RPTITEM index="8"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName25" left="6.813" top="2.271" width="1.188" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTTABLEROW><RPTTABLEROW index="2" height="0.17094" cols="9" section="Detail" allowmaxheight="0" keep="1" name="TableRow2" maxheight="0"><RPTTABLECOL index="0" width="0.105556"/><RPTITEM index="0"><RPTFONT ver="1" name="Helvetica" size="1000" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName26" left="0.5" top="2.48" width="0.792" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[" TEMP"]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="1" width="0.105556"/><RPTITEM index="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName27" left="1.292" top="2.48" width="0.792" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="2" width="0.105556"/><RPTITEM index="2"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName28" left="2.084" top="2.48" width="0.792" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="3" width="0.105556"/><RPTITEM index="3"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName29" left="2.876" top="2.48" width="0.792" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="4" width="0.105556"/><RPTITEM index="4"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName30" left="3.667" top="2.48" width="0.792" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="5" width="0.105556"/><RPTITEM index="5"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName31" left="4.459" top="2.48" width="0.792" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="6" width="0.105556"/><RPTITEM index="6"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName32" left="5.251" top="2.48" width="0.792" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="7" width="0.102775"/><RPTITEM index="7"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName33" left="6.042" top="2.48" width="0.771" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="8" width="0.158333"/><RPTITEM index="8"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName34" left="6.813" top="2.48" width="1.188" height="0.209" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTTABLEROW><RPTTABLEROW index="3" height="0.162393" cols="9" section="Detail" allowmaxheight="0" keep="1" name="TableRow3" maxheight="0"><RPTTABLECOL index="0" width="0.105556"/><RPTITEM index="0"><RPTFONT ver="1" name="Helvetica" size="1000" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName35" left="0.5" top="2.688" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[" PULSE"]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="1" width="0.105556"/><RPTITEM index="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName36" left="1.292" top="2.688" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="2" width="0.105556"/><RPTITEM index="2"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName37" left="2.084" top="2.688" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="3" width="0.105556"/><RPTITEM index="3"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName38" left="2.876" top="2.688" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="4" width="0.105556"/><RPTITEM index="4"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName39" left="3.667" top="2.688" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="5" width="0.105556"/><RPTITEM index="5"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName40" left="4.459" top="2.688" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="6" width="0.105556"/><RPTITEM index="6"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName41" left="5.251" top="2.688" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="7" width="0.102775"/><RPTITEM index="7"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName42" left="6.042" top="2.688" width="0.771" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="8" width="0.158333"/><RPTITEM index="8"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName43" left="6.813" top="2.688" width="1.188" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTTABLEROW><RPTTABLEROW index="4" height="0.162393" cols="9" section="Detail" allowmaxheight="0" keep="1" name="TableRow4" maxheight="0"><RPTTABLECOL index="0" width="0.105556"/><RPTITEM index="0"><RPTFONT ver="1" name="Helvetica" size="1000" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName44" left="0.5" top="2.886" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[" RESP"]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="1" width="0.105556"/><RPTITEM index="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName45" left="1.292" top="2.886" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="2" width="0.105556"/><RPTITEM index="2"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName46" left="2.084" top="2.886" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="3" width="0.105556"/><RPTITEM index="3"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName47" left="2.876" top="2.886" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="4" width="0.105556"/><RPTITEM index="4"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName48" left="3.667" top="2.886" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="5" width="0.105556"/><RPTITEM index="5"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName49" left="4.459" top="2.886" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="6" width="0.105556"/><RPTITEM index="6"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName50" left="5.251" top="2.886" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="7" width="0.102775"/><RPTITEM index="7"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName51" left="6.042" top="2.886" width="0.771" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="8" width="0.158333"/><RPTITEM index="8"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName52" left="6.813" top="2.886" width="1.188" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTTABLEROW><RPTTABLEROW index="5" height="0.162393" cols="9" section="Detail" allowmaxheight="0" keep="1" name="TableRow5" maxheight="0"><RPTTABLECOL index="0" width="0.105556"/><RPTITEM index="0"><RPTFONT ver="1" name="Helvetica" size="1000" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName53" left="0.5" top="3.084" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[" B.P."]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="1" width="0.105556"/><RPTITEM index="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName54" left="1.292" top="3.084" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="2" width="0.105556"/><RPTITEM index="2"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName55" left="2.084" top="3.084" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="3" width="0.105556"/><RPTITEM index="3"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName56" left="2.876" top="3.084" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="4" width="0.105556"/><RPTITEM index="4"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName57" left="3.667" top="3.084" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="5" width="0.105556"/><RPTITEM index="5"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName58" left="4.459" top="3.084" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="6" width="0.105556"/><RPTITEM index="6"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName59" left="5.251" top="3.084" width="0.792" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="7" width="0.102775"/><RPTITEM index="7"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName60" left="6.042" top="3.084" width="0.771" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTTABLECOL index="8" width="0.158333"/><RPTITEM index="8"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CellName61" left="6.813" top="3.084" width="1.188" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTTABLEROW></RPTTABLE><RPTPEN width="0.014" color="0" style="0"/><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTITEM><RPTITEM index="42"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName8" left="0.5" top="1.834" width="3.688" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Amount Transfused __________________________________ mL]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="43"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName6" left="0.5" top="1.594" width="7.282" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Transfusion completed/stopped by (if different than Starting Transfusionist) _____________________________________________________]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="44"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName5" left="4.365" top="1.834" width="3.573" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Date stopped _______________ Time stopped ________________]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="45"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName4" left="4.365" top="1.125" width="3.573" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Date started ________________ Time started _________________]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="46"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName3" left="0.5" top="1.334" width="3.803" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Witness _____________________________________________________]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="47"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName2" left="0.5" top="1.125" width="3.803" height="0.188" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Starting Transfusionist __________________________________________]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="48"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName1" left="0.5" top="0.75" width="6.23" height="0.146" anchor="1" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[We certify that we have checked the information on this form with the blood component bag labels, and the patient armband]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="49"><RPTFONT ver="1" name="Helvetica" size="900" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="FieldName0" left="0.5" top="0.198" width="7.5" height="0.188" anchor="0" angle="0" flags="20" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[************************************************TRANSFUSIONIST CERTIFICATION************************************************]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM></RPTLAYOUT><RPTPROMPTS><![CDATA[<prompt-def program = 'chs_tn_bbt_tag_lyt_20200617' group = '0' auto-arrange = 'true' stream-ver = '0' export-dt-tm = '202006170957' version = '1' script-enabled = 'false' prompt-control-version = '3.000000' updt_dt_tm = '12/18/2017 08:30:47' resource-enabled = 'false',><control name = 'OUTDEV' control = '6' height = '25' width = '250' position = '0' result-type = '1' exclude = 'false',><display align = 'left',>&#038;Output to File/Printer/MINE</display,>
+<description,>Enter or select the printer or file name to send this report to.</description,>
+<default,>MINE</default,>
+<component name = 'CWizOutputDevice',><property name = 'OUTPUT-DEVICES:00',><![CDATA[HIDE-BROWSER='false' DEVICES='' DISPLAY-ALL='true' DISALLOW-FREETEXT='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ]],></property,>
+</component,>
+<component name = 'GENERAL',><property name = 'PROGRAM',><![CDATA[PROMPT-CONTROL-VERSION='3.000000' AUTO-ARRANGE='true' OWNER='' DU-BASE-HORZ='8' VERSION='1' STREAM-VER='0' REPORT-NAME='' UPDT_DT_TM='2017-12-18 08:30:47' DU-BASE-VERT='16' SCRIPT-ENABLED='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ]],></property,>
+<property name = 'PROMPT',><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='25' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='' LABEL-POS-TOP='10' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='10' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='130' TRIM='false' ]],></property,>
+</component,>
+</control,>
+</prompt-def,>
+]]></RPTPROMPTS><RPTQUERY name="tag_query" layout="1"><RPTQUERYSTRING><![CDATA[SELECT
+	TAGLIST_PRODUCT_EVENT_ID = TAG_REQUEST->taglist[D.SEQ].product_event_id
+	, TAGLIST_EVENT_TYPE_CD = TAG_REQUEST->taglist[D.SEQ].event_type_cd
+	, TAGLIST_EVENT_TYPE_MEAN = TAG_REQUEST->taglist[D.SEQ].event_type_mean
+	, TAGLIST_PRODUCT_ID = TAG_REQUEST->taglist[D.SEQ].product_id
+	, TAGLIST_DERIVATIVE_IND = TAG_REQUEST->taglist[D.SEQ].derivative_ind
+	, TAGLIST_PERSON_ID = TAG_REQUEST->taglist[D.SEQ].person_id
+	, TAGLIST_ENCNTR_ID = TAG_REQUEST->taglist[D.SEQ].encntr_id
+	, TAGLIST_ORDER_ID = TAG_REQUEST->taglist[D.SEQ].order_id
+	, TAGLIST_TECH_ID = TAG_REQUEST->taglist[D.SEQ].tech_id
+	, TAGLIST_TECH_NAME = TAG_REQUEST->taglist[D.SEQ].tech_name
+	, TAGLIST_PE_EVENT_DT_TM = TAG_REQUEST->taglist[D.SEQ].pe_event_dt_tm
+	, TAGLIST_NAME_FULL_FORMATTED = TAG_REQUEST->taglist[D.SEQ].name_full_formatted
+	, TAGLIST_ALIAS_MRN = TAG_REQUEST->taglist[D.SEQ].alias_mrn
+	, TAGLIST_ALIAS_FIN = TAG_REQUEST->taglist[D.SEQ].alias_fin
+	, TAGLIST_ALIAS_SSN = TAG_REQUEST->taglist[D.SEQ].alias_ssn
+	, TAGLIST_BIRTH_DT_TM = TAG_REQUEST->taglist[D.SEQ].birth_dt_tm
+	, TAGLIST_AGE = SUBSTRING(1, 30, TAG_REQUEST->taglist[D.SEQ].age)
+	, TAGLIST_SEX_CD = TAG_REQUEST->taglist[D.SEQ].sex_cd
+	, TAGLIST_SEX_DISP = TAG_REQUEST->taglist[D.SEQ].sex_disp
+	, TAGLIST_PAT_LOCATION = TAG_REQUEST->taglist[D.SEQ].patient_location
+	, TAGLIST_PRVDR_NAME_FULL_FORMATTED = TAG_REQUEST->taglist[D.SEQ].prvdr_name_full_formatted
+	, TAGLIST_PRODUCT_CD = TAG_REQUEST->taglist[D.SEQ].product_cd
+	, TAGLIST_PRODUCT_DISP = TAG_REQUEST->taglist[D.SEQ].product_disp
+	, TAGLIST_PRODUCT_DESC = TAG_REQUEST->taglist[D.SEQ].product_desc
+	, TAGLIST_PRODUCT_NBR = TAG_REQUEST->taglist[D.SEQ].product_nbr
+	, TAGLIST_PRODUCT_SUB_NBR = TAG_REQUEST->taglist[D.SEQ].product_sub_nbr
+	, TAGLIST_ALTERNATE_NBR = TAG_REQUEST->taglist[D.SEQ].alternate_nbr
+	, TAGLIST_CUR_ABO_CD = TAG_REQUEST->taglist[D.SEQ].cur_abo_cd
+	, TAGLIST_CUR_ABO_DISP = TAG_REQUEST->taglist[D.SEQ].cur_abo_disp
+	, TAGLIST_CUR_RH_CD = TAG_REQUEST->taglist[D.SEQ].cur_rh_cd
+	, TAGLIST_CUR_RH_DISP = TAG_REQUEST->taglist[D.SEQ].cur_rh_disp
+	, TAGLIST_SUPPLIER_PREFIX = TAG_REQUEST->taglist[D.SEQ].supplier_prefix
+	, TAGLIST_SEGMENT_NBR = TAG_REQUEST->taglist[D.SEQ].segment_nbr
+	, TAGLIST_CUR_VOLUME = TAG_REQUEST->taglist[D.SEQ].cur_volume
+	, TAGLIST_CUR_UNIT_MEAS_CD = TAG_REQUEST->taglist[D.SEQ].cur_unit_meas_cd
+	, TAGLIST_CUR_UNIT_MEAS_DISP = TAG_REQUEST->taglist[D.SEQ].cur_unit_meas_disp
+	, TAGLIST_QUANTITY = TAG_REQUEST->taglist[D.SEQ].quantity
+	, TAGLIST_ITEM_VOLUME = TAG_REQUEST->taglist[D.SEQ].item_volume
+	, TAGLIST_ITEM_UNIT_PER_VIAL = TAG_REQUEST->taglist[D.SEQ].item_unit_per_vial
+	, TAGLIST_ITEM_UNIT_MEAS_CD = TAG_REQUEST->taglist[D.SEQ].item_unit_meas_cd
+	, TAGLIST_ITEM_UNIT_MEAS_DISP = TAG_REQUEST->taglist[D.SEQ].item_unit_meas_disp
+	, TAGLIST_BB_ID_NBR = TAG_REQUEST->taglist[D.SEQ].bb_id_nbr
+	, TAGLIST_PRODUCT_EXPIRE_DT_TM = TAG_REQUEST->taglist[D.SEQ].product_expire_dt_tm
+	, TAGLIST_ACCESSION = TAG_REQUEST->taglist[D.SEQ].accession
+	, TAGLIST_XM_RESULT_VALUE_ALPHA = TAG_REQUEST->taglist[D.SEQ].xm_result_value_alpha
+	, TAGLIST_XM_RSLT_EVENT_PRSNL_USER = TAG_REQUEST->taglist[D.SEQ].xm_result_event_prsnl_username
+	, TAGLIST_XM_RESULT_EVENT_DT_TM = TAG_REQUEST->taglist[D.SEQ].xm_result_event_dt_tm
+	, TAGLIST_XM_EXPIRE_DT_TM = TAG_REQUEST->taglist[D.SEQ].xm_expire_dt_tm
+	, TAGLIST_REASON_CD = TAG_REQUEST->taglist[D.SEQ].reason_cd
+	, TAGLIST_REASON_DISP = TAG_REQUEST->taglist[D.SEQ].reason_disp
+	, TAGLIST_PERSON_ABO_CD = TAG_REQUEST->taglist[D.SEQ].person_abo_cd
+	, TAGLIST_PERSON_ABO_DISP = TAG_REQUEST->taglist[D.SEQ].person_abo_disp
+	, TAGLIST_PERSON_RH_CD = TAG_REQUEST->taglist[D.SEQ].person_rh_cd
+	, TAGLIST_PERSON_RH_DISP = TAG_REQUEST->taglist[D.SEQ].person_rh_disp
+	, TAGLIST_ANTIBODY_CNT = TAG_REQUEST->taglist[D.SEQ].antibody_cnt
+	, TAGLIST_ANTIGEN_CNT = TAG_REQUEST->taglist[D.SEQ].antigen_cnt
+	, TAGLIST_CMPNT_CNT = TAG_REQUEST->taglist[D.SEQ].cmpnt_cnt
+	, TAGLIST_UNKNOWN_PATIENT_IND = TAG_REQUEST->taglist[D.SEQ].unknown_patient_ind
+	, TAGLIST_UNKNOWN_PATIENT_TEXT = TAG_REQUEST->taglist[D.SEQ].unknown_patient_text
+	, TAGLIST_DISPENSE_TECH_ID = TAG_REQUEST->taglist[D.SEQ].dispense_tech_id
+	, TAGLIST_DISPENSE_TECH_USERNAME = TAG_REQUEST->taglist[D.SEQ].dispense_tech_username
+	, TAGLIST_DISPENSE_DT_TM = TAG_REQUEST->taglist[D.SEQ].dispense_dt_tm
+	, TAGLIST_DISPENSE_COURIER_ID = TAG_REQUEST->taglist[D.SEQ].dispense_courier_id
+	, TAGLIST_DISPENSE_COURIER = TAG_REQUEST->taglist[D.SEQ].dispense_courier
+	, TAGLIST_DISPENSE_PRVDR_ID = TAG_REQUEST->taglist[D.SEQ].dispense_prvdr_id
+	, TAGLIST_DISPENSE_PRVDR_NAME = TAG_REQUEST->taglist[D.SEQ].dispense_prvdr_name
+	, TAGLIST_POOLED_PRODUCT_IND = TAG_REQUEST->taglist[D.SEQ].pooled_product_ind
+	, TAGLIST_ADMIT_PRVDR_ID = TAG_REQUEST->taglist[D.SEQ].admit_prvdr_id
+	, TAGLIST_ADMIT_PRVDR_NAME = TAG_REQUEST->taglist[D.SEQ].admit_prvdr_name
+	, TAGLIST_ANCHOR_DT_TM = TAG_REQUEST->taglist[D.SEQ].anchor_dt_tm
+	, TAGLIST_PERSON_ABORH_BARCODE = SUBSTRING(1, 30, TAG_REQUEST->taglist[D.SEQ].person_aborh_barcode)
+	, TAGLIST_PRODUCT_BARCODE_NBR = TAG_REQUEST->taglist[D.SEQ].product_barcode_nbr
+	, TAGLIST_CUR_SUPPLIER_ID = TAG_REQUEST->taglist[D.SEQ].cur_supplier_id
+	, TAG_REQUEST_TAGLIST_POOLED_PRODUCT_IND = TAG_REQUEST->taglist[D.SEQ].pooled_product_ind
+	, TAGLIST_ALPHA_TRANSLATION_IND = TAG_REQUEST->taglist[D.SEQ].alpha_translation_ind
+	, TAGLIST_ALIAS_MRN_FORMATTED = TAG_REQUEST->taglist[D.SEQ].alias_mrn_formatted
+	, TAGLIST_ALIAS_FIN_FORMATTED = TAG_REQUEST->taglist[D.SEQ].alias_fin_formatted
+	, TAGLIST_ALIAS_SSN_FORMATTED = TAG_REQUEST->taglist[D.SEQ].alias_ssn_formatted
+	, TAGLIST_FLAG_CHARS = TAG_REQUEST->taglist[D.SEQ].flag_chars
+	, OWNER_MEDICAL_DIRECTOR = trim(ce.field_value)
+	, OWNER_AREA_CD = PE.CUR_OWNER_AREA_CD
+	, OWNER_AREA_DISP = UAR_GET_CODE_DISPLAY(PE.CUR_OWNER_AREA_CD)
+	, PE_CUR_INV_LOCN_CD = PE.CUR_INV_LOCN_CD
+	, PE_ORIG_INV_LOCN_CD = PE.ORIG_INV_LOCN_CD
+	, TAG_REQUEST_TAGLIST_CMPNT_CNT = TAG_REQUEST->taglist[D.SEQ].cmpnt_cnt
+	, PE_CUR_INV_LOCN_DISP = UAR_GET_CODE_DISPLAY(PE.CUR_INV_LOCN_CD)
+	, PE_ORIG_INV_LOCN_DISP = UAR_GET_CODE_DISPLAY(PE.ORIG_INV_LOCN_CD)
+	, PE_CUR_INV_AREA_CD = PE.CUR_INV_AREA_CD
+	, PE_CUR_INV_AREA_DISP = UAR_GET_CODE_DISPLAY(PE.CUR_INV_AREA_CD)
+	, A_STATE = UAR_GET_CODE_DISPLAY(A.STATE_CD)
+	, A_STATE_CD = A.STATE_CD
+	, A_CITY = A.CITY
+	, A_ZIP = A.ZIPCODE
+	, A_STREET1 = A.STREET_ADDR
+	, A_STREET2 = A.STREET_ADDR2
+	, A_STREET3 = A.STREET_ADDR3
+
+FROM
+	(DUMMYT   D  WITH SEQ = VALUE(SIZE(TAG_REQUEST->taglist, 5)))
+	, PRODUCT   PE
+	, CODE_VALUE_EXTENSION   CE
+	, ADDRESS   A
+
+PLAN D
+
+ JOIN PE WHERE PE.PRODUCT_ID = TAG_REQUEST->TAGLIST[D.SEQ].PRODUCT_ID
+ JOIN A WHERE OUTERJOIN(PE.CUR_OWNER_AREA_CD) = A.PARENT_ENTITY_ID            AND
+              OUTERJOIN("LOCATION") = A.PARENT_ENTITY_NAME
+ JOIN CE WHERE CE.CODE_VALUE = OUTERJOIN(PE.CUR_OWNER_AREA_CD)                            AND
+               CE.FIELD_NAME = OUTERJOIN("BBT Medical Director")
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, NULLREPORT]]></RPTQUERYSTRING><RPTSELECTIF condition="1"><![CDATA[]]></RPTSELECTIF><RPTSELECTIF condition="0"><![CDATA[]]></RPTSELECTIF><RPTSELECTIF condition="0"><![CDATA[]]></RPTSELECTIF></RPTQUERY><RPTRECORD executionFlowOrder="3"><![CDATA[record tag_request (
+  1 debug_ind = i2   
+  1 tag_type = c20   
+  1 sub_tag_type = c20   
+  1 taglist [*]  
+    2 product_event_id = f8   
+    2 event_type_cd = f8   
+    2 event_type_mean = c12   
+    2 product_id = f8   
+    2 derivative_ind = i2   
+    2 person_id = f8   
+    2 encntr_id = f8   
+    2 order_id = f8   
+    2 tech_id = f8   
+    2 tech_name = c15   
+    2 pe_event_dt_tm = dq8   
+    2 name_full_formatted = c50   
+    2 alias_mrn = c20   
+    2 alias_fin = c20   
+    2 alias_ssn = c20   
+    2 birth_dt_tm = dq8   
+    2 age = vc   
+    2 sex_cd = f8   
+    2 sex_disp = c6   
+    2 patient_location = c30   
+    2 prvdr_name_full_formatted = c50   
+    2 product_cd = f8   
+    2 product_disp = c40   
+    2 product_desc = c60   
+    2 product_nbr = c20   
+    2 product_sub_nbr = c5   
+    2 alternate_nbr = c20   
+    2 cur_abo_cd = f8   
+    2 cur_abo_disp = c20   
+    2 cur_rh_cd = f8   
+    2 cur_rh_disp = c20   
+    2 supplier_prefix = c5   
+    2 segment_nbr = c20   
+    2 cur_volume = i4   
+    2 cur_unit_meas_cd = f8   
+    2 cur_unit_meas_disp = c15   
+    2 quantity = i4   
+    2 item_volume = i4   
+    2 item_unit_per_vial = i4   
+    2 item_unit_meas_cd = f8   
+    2 item_unit_meas_disp = c15   
+    2 bb_id_nbr = c20   
+    2 product_expire_dt_tm = dq8   
+    2 accession = c20   
+    2 xm_result_value_alpha = c15   
+    2 xm_result_event_prsnl_username = c15   
+    2 xm_result_event_dt_tm = dq8   
+    2 xm_expire_dt_tm = dq8   
+    2 reason_cd = f8   
+    2 reason_disp = c15   
+    2 person_abo_cd = f8   
+    2 person_abo_disp = c20   
+    2 person_rh_cd = f8   
+    2 person_rh_disp = c20   
+    2 antibody_cnt = i4   
+    2 antibodylist [*]  
+      3 antibody_cd = f8   
+      3 antibody_disp = c15   
+      3 trans_req_ind = i2   
+    2 antigen_cnt = i4   
+    2 antigenlist [*]  
+      3 antigen_cd = f8   
+      3 antigen_disp = c15   
+    2 cmpnt_cnt = i4   
+    2 cmpntlist [*]  
+      3 product_id = f8   
+      3 product_cd = f8   
+      3 product_disp = c40   
+      3 product_nbr = c20   
+      3 product_sub_nbr = c5   
+      3 cur_abo_cd = f8   
+      3 cur_abo_disp = c20   
+      3 cur_rh_cd = f8   
+      3 supplier_prefix = c5   
+      3 cur_rh_disp = c20   
+    2 unknown_patient_ind = i2   
+    2 unknown_patient_text = c50   
+    2 dispense_tech_id = f8   
+    2 dispense_tech_username = c15   
+    2 dispense_dt_tm = dq8   
+    2 dispense_courier_id = f8   
+    2 dispense_courier = c50   
+    2 dispense_prvdr_id = f8   
+    2 dispense_prvdr_name = c50   
+    2 pooled_product_ind = i2   
+    2 admit_prvdr_id = f8   
+    2 admit_prvdr_name = c50   
+    2 anchor_dt_tm = dq8   
+    2 person_aborh_barcode = vc   
+    2 product_barcode_nbr = c20   
+    2 cur_supplier_id = f8   
+    2 pooled_product_ind = i2   
+    2 alpha_translation_ind = i2   
+    2 alias_mrn_formatted = c25   
+    2 alias_fin_formatted = c25   
+    2 alias_ssn_formatted = c25   
+    2 flag_chars = c2   
+) 
+]]></RPTRECORD><RPTRECORD executionFlowOrder="4"><![CDATA[record antibody (
+  1 antibodylist [10]  
+    2 antibody_cd = f8   
+    2 antibody_disp = vc   
+    2 trans_req_ind = i2   
+) 
+]]></RPTRECORD><RPTRECORD executionFlowOrder="5"><![CDATA[record antigen (
+  1 antigenlist [10]  
+    2 antigen_cd = f8   
+    2 antigen_disp = vc   
+    2 antigen_cdf = c12   
+) 
+]]></RPTRECORD><RPTRECORD executionFlowOrder="6"><![CDATA[record component (
+  1 cmpntlist [10]  
+    2 product_id = f8   
+    2 product_cd = f8   
+    2 product_disp = c40   
+    2 product_nbr = c20   
+    2 product_sub_nbr = c5   
+    2 alternate_nbr = c20   
+    2 cur_abo_cd = f8   
+    2 cur_abo_disp = c20   
+    2 cur_rh_cd = f8   
+    2 cur_rh_disp = c20   
+    2 supplier_prefix = c5   
+) 
+]]></RPTRECORD><RPTRECORD executionFlowOrder="7"><![CDATA[record encntr_info (
+  1 encntr_list [*]  
+    2 encntr_id = f8   
+    2 ordering_phys = vc   
+    2 ordering_phys_id = f8   
+    2 attending_phys = vc   
+    2 attending_phys_id = f8   
+    2 admit_dt_tm = dq8   
+) 
+]]></RPTRECORD><RPTRECORD executionFlowOrder="8"><![CDATA[record tag_addl (
+  1 tot_tag_cnt = i4   
+  1 tag_qual [*]  
+    2 special_testing_disp = vc   
+    2 isbt_barcode = vc   
+    2 transfusion_requirements = vc   
+    2 facility = vc   
+    2 fac_cd = f8   
+    2 street1 = vc   
+    2 street2 = vc   
+    2 street3 = vc   
+    2 city = vc   
+    2 state = vc   
+    2 zip = vc   
+    2 tot_tag_mrn = vc   
+    2 result_comment = vc   
+    2 cur_owner_area_cd = f8   
+    2 medical_director = vc   
+    2 product_class_cd = f8   
+  1 tot_tag_mrn = vc   
+) 
+]]></RPTRECORD><RPTVAR name="antibody_disp" type="vc" init="&quot; &quot;" access="1" constant="0" expression="0" executionFlowOrder="0"><RPTVARDECLARE><![CDATA[declare antibody_disp = vc with NoConstant('" "'),Protect]]></RPTVARDECLARE></RPTVAR><RPTVAR name="antigen_disp" type="vc" init="&quot; &quot;" access="1" constant="0" expression="0" executionFlowOrder="1"><RPTVARDECLARE><![CDATA[declare antigen_disp = vc with NoConstant('" "'),Protect]]></RPTVARDECLARE></RPTVAR><RPTVAR name="transfusion_disp" type="vc" init="&quot; &quot;" access="1" constant="0" expression="0" executionFlowOrder="2"><RPTVARDECLARE><![CDATA[declare transfusion_disp = vc with NoConstant('" "'),Protect]]></RPTVARDECLARE></RPTVAR><RPTPREPROCESS><![CDATA[%i ccluserdir:chs_tn_bbt_struct.inc
+
+declare sEmergencyText = vc
+set sEmergencyText =  
+concat("The physician has requested the EMERGENCY RELEASE of blood product(s) prior to completion of testing.  ",
+       "The physician must sign an emergency release (either electronically or physically - per facility procedure)",
+       " as an affirmation that the transfusion is deemed essential at this time.")
+       
+declare sDocWarning = vc
+set sDocWarning = 
+"All documentation MUST be done in the EMR.  Use the form below ONLY during emergent mass transfusions and downtime."
+
+declare sCertText = vc
+set sCertText = concat(
+"We certify that we have checked the information on this form with the blood component bag labels, and the patient armband at ",
+"the bedside and we have asked the patient to state his/her name and date of birth if possible.")
+
+declare sReactiontext = vc
+set sReactionText = concat(
+"Document reaction symptoms: Circle - Urticaria/Pruritus/Flushing, ",
+"Dyspnea/Wheezing, Hematuria, Hypertension, Hypotension, Chills/Shaking, Cough/Shortness of Breath, ",
+"Increased Temp > 1",char(186),"C, New onset pain ____________________, Anxiety, Bleeding/Oozing, Nausea, ",
+"Diaphoresis, Cyanosis, Anaphylaxis, Oliguria")
+
+declare sProcedureText1 = vc
+set sProcedureText1 = 
+"Procedure and indication explained to the patient and consent form signed.  Circle - YES / NO _______________________ RN/MD/DO"
+
+declare sProcedureText2 = vc
+set sProcedureText2 = 
+"If transfusion cannot be started IMMEDIATELY, this blood must be returned to the Blood Bank within 20 minutes of issue."
+
+
+/***/
+/* pooled unit count logic - not sure how to plug this into the main query*
+declare iPooledUnitCount = i4 with noconstant(0)
+select into "NL:"
+   iCnt = count(p2.product_id)
+from product p, product p2
+plan p where p.product_id = 12345 ;pull from tag_list, somehow
+and p.pooled_product_ind = 1
+join p2 where p.product_id = p2.pooled_product_id
+group by p2.pooled_product_id
+with nocounter
+*/
+
+
+set idx = 0
+ declare eCnt = i4 with noconstant(0)
+ declare xm_result_event_dt_tm = dq8 with noconstant(0),persist
+
+declare encfacilitycd		= f8 with protect, noconstant(0.0)
+declare sFacilityAddress	= vc with protect, noconstant(" ")
+declare sMedicalDirector	= vc with protect, noconstant(" ")
+declare 212_business        = f8 with protect, constant(uar_get_code_by_cki("CKI.CODEVALUE!8009"))
+declare 333_attend_phys = f8 with public, constant(uar_get_code_by_cki ("CKI.CODEVALUE!4024"))
+declare 333_order_phys  = f8 with public, constant(uar_get_code_by_cki ("CKI.CODEVALUE!9515"))
+select into "nl:"
+ from encntr_prsnl_reltn epr,
+      prsnl p
+ 
+ plan epr where expand(idx, 1, size(tag_request->taglist,5),
+                        epr.encntr_id,
+                        tag_request->taglist[idx].encntr_id)
+                and epr.active_ind = 1
+		        and epr.beg_effective_dt_Tm <= cnvtdatetime(curdate,curtime3)
+		        and epr.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+		        and epr.encntr_prsnl_r_cd in (333_attend_phys, 333_order_phys)
+ 
+ join p where p.person_id = epr.prsnl_person_id
+          and p.active_ind = 1
+          and p.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+          and p.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+ 
+ order by epr.encntr_id,epr.encntr_prsnl_r_cd
+ 
+ head report
+    encntrIdx = 0
+ 
+ head epr.encntr_id
+    encntrIdx = encntrIdx + 1
+    stat = alterlist(encntr_info->encntr_list, encntrIdx)
+    encntr_info->encntr_list[encntrIdx].encntr_id = epr.encntr_id
+ 
+ head epr.encntr_prsnl_r_cd
+    if (epr.encntr_prsnl_r_cd = 333_attend_phys)
+        encntr_info->encntr_list[encntrIdx].attending_phys    = p.name_full_formatted
+        encntr_info->encntr_list[encntrIdx].attending_phys_id = epr.prsnl_person_id
+    elseif (epr.encntr_prsnl_r_cd = 333_order_phys)
+        encntr_info->encntr_list[encntrIdx].ordering_phys     = p.name_full_formatted
+        encntr_info->encntr_list[encntrIdx].ordering_phys_id  = epr.prsnl_person_id
+    endif
+ 
+ foot epr.encntr_prsnl_r_cd
+    eCnt = encntrIdx
+    null
+ 
+ foot report
+    null
+ 
+ with nocounter, expand = 1
+ 
+ /*
+ select into "nl:"
+ from
+ 	encounter e
+ 	,address a
+ plan e where expand(idx, 1, size(encntr_info->encntr_list,5),
+                        e.encntr_id,
+                        encntr_info->encntr_list[idx].encntr_id)
+ join a where
+ 			a.parent_entity_id = e.loc_facility_cd
+ 		and a.parent_entity_name = "LOCATION"
+ 		and a.address_type_cd = 212_business
+    	and a.active_ind = 1
+    	and a.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+    	and a.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
+ order by a.address_type_seq
+ head report
+    encntrIdx = 0
+    eIdx = 0
+ head e.encntr_id
+    encntrIdx = locateval(eIdx,1,eCnt,e.encntr_id,encntr_info->encntr_list[eIdx].encntr_id)
+    encntr_info->encntr_list[encntrIdx].admit_dt_tm = e.reg_dt_tm
+    encfacilitycd = e.loc_facility_cd
+    sFacilityAddress = build2(trim(a.street_addr,5))
+    if (textlen(trim(a.street_addr2,5)) > 0)
+    	sFacilityAddress = build2(sFacilityAddress ,trim(a.street_addr2,5))
+    endif
+    if (textlen(trim(a.street_addr3,5)) > 0)
+    	sFacilityAddress = build2(sFacilityAddress ,trim(a.street_addr3,5))
+    endif
+    if (textlen(trim(a.city,5)) > 0)
+    	sFacilityAddress = build2(sFacilityAddress,"  " ,trim(a.city,5))
+    else
+    	sFacilityAddress = build2(sFacilityAddress ,"  " ,trim(uar_get_Code_display(a.city_cd),5),",")
+    endif
+    if (textlen(trim(a.state,5)) > 0)
+    	sFacilityAddress = build2(sFacilityAddress ,", ",trim(a.state,5))
+    else
+    	sFacilityAddress = build2(sFacilityAddress,", " ,trim(uar_get_Code_display(a.state_cd),5))
+    endif
+    sFacilityAddress = build2(sFacilityAddress ," ",trim(a.zipcode,5))
+ foot report
+    null
+ 
+ with nocounter, expand = 1
+ */]]></RPTPREPROCESS><RPTHEADERS><RPTHEADER name="Detail" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"><RPTSEGMENT name="Code Segment"><![CDATA[%i ccluserdir:chs_bbt_tag_load_from_request.inc
+
+    sFacilityAddress = trim(A_STREET1)
+    
+    if (textlen(trim(A_STREET2)) > 0)
+    	sFacilityAddress = build2(sFacilityAddress ,trim(A_STREET2,5))
+    endif
+    if (textlen(trim(A_STREET3,5)) > 0)
+    	sFacilityAddress = build2(sFacilityAddress ,trim(A_STREET3,5))
+    endif
+    sFacilityAddress = build2(sFacilityAddress,"  " ,trim(A_CITY,5))
+    if (textlen(trim(A_STATE,5)) > 0)
+    	sFacilityAddress = build2(sFacilityAddress ,", ",trim(A_STATE,5))
+    else
+    	sFacilityAddress = build2(sFacilityAddress,", " ,trim(uar_get_Code_display(A_STATE_CD),5))
+    endif
+    sFacilityAddress = build2(sFacilityAddress ," ",trim(A_ZIP,5))]]></RPTSEGMENT><RPTSECTION name="TopSection"/><RPTSECTION name="VitalsSection"/></RPTHEADER><RPTHEADER name=""><RPTINITIALIZE name="InitializeReport"/><RPTQUERY name="tag_query"/><RPTFINALIZE name="FinalizeReport"/></RPTHEADER></RPTHEADERS></REPORTLAYOUT>

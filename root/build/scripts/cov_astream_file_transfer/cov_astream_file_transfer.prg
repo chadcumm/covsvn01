@@ -1,0 +1,143 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+	Author:				Chad Cummings
+	Date Written:		03/30/2020
+	Solution:			
+	Source file name:	cov_astream_file_transfer.prg
+	Object name:		cov_astream_file_transfer
+	Request #:
+
+	Program purpose:
+
+	Executing from:		CCL
+
+ 	Special Notes:		Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod 	Mod Date	  Developer				      Comment
+--- 	----------	--------------------	----------------------------------
+000 	03/30/2020  Chad Cummings			Initial Release
+******************************************************************************/
+
+drop program cov_astream_file_transfer:dba go
+create program cov_astream_file_transfer:dba
+
+prompt 
+	"Source Directory" = ""
+	, "Source Filename" = ""
+	, "Destination Path" = ""
+	, "Transfer Mode" = "MV" 
+
+with DIRECTORY, FILENAME, DESTINATION, TRANSFER
+
+
+free set f_rec 
+record f_rec 
+(
+	1 filename		= vc
+	1 full_path		= vc
+	1 file_path		= vc
+	1 dest_path		= vc
+	1 transfer_mode = i2
+	1 astream_base	= vc
+	1 astream_path	= vc
+	1 astream_mv	= vc
+	1 astream_cp	= vc
+	1 logical		= vc
+	1 logical_temp	= vc
+	1 findfile_ind	= i2
+	1 dclstat		= i2
+	1 exit_message	= vc
+	1 user_prompt
+	 2 direcotry	= vc
+	 2 filename		= vc
+	 2 destination	= vc
+	 2 transfer		= vc
+) 
+
+set f_rec->user_prompt.direcotry = $DIRECTORY
+set f_rec->user_prompt.filename = $FILENAME
+set f_rec->user_prompt.destination = $DESTINATION
+set f_rec->user_prompt.transfer = $TRANSFER
+
+set f_rec->exit_message = "user prompts collected"
+
+if (substring(size(f_rec->user_prompt.direcotry),size(f_rec->user_prompt.direcotry),f_rec->user_prompt.direcotry) = ":")
+	set f_rec->logical_temp = cnvtupper(substring(1,(size(f_rec->user_prompt.direcotry)-1),f_rec->user_prompt.direcotry))
+else
+	set f_rec->logical_temp = cnvtupper(f_rec->user_prompt.direcotry)
+endif
+
+set f_rec->exit_message = concat("logical temp set:",f_rec->logical_temp)
+
+set f_rec->logical = logical(f_rec->logical_temp)
+
+set f_rec->filename = f_rec->user_prompt.filename
+
+if (f_rec->filename = "")
+	set f_rec->exit_message = "missing filename"
+	go to exit_script
+endif
+
+if (f_rec->logical > " ")
+	set f_rec->file_path = f_rec->logical
+elseif (f_rec->user_prompt.direcotry > " ")
+	;assume user prompt is directory
+	set f_rec->file_path = f_rec->user_prompt.direcotry
+	;remove trailing colon
+else
+	;assume cer_temp
+	set f_rec->file_path 	= build("/cerner/d_",cnvtlower(trim(curdomain)),"/temp") 
+endif
+
+set f_rec->exit_message = concat("file path set:",f_rec->file_path)
+
+set f_rec->full_path	= concat(f_rec->file_path,"/",f_rec->filename) 
+
+set f_rec->findfile_ind = findfile(f_rec->full_path,0,0) 
+
+if (f_rec->findfile_ind = 0)
+	go to exit_script
+	set f_rec->exit_message = concat("file could not be found as ",trim(f_rec->full_path))
+endif
+
+if (f_rec->user_prompt.destination > " ")
+	set f_rec->dest_path = f_rec->user_prompt.destination
+else
+	set f_rec->dest_path = "CernerCCL"
+endif
+
+if (f_rec->user_prompt.transfer > " ")
+	case (f_rec->user_prompt.transfer)
+		of "MV": set f_rec->transfer_mode = 0
+		of "CP": set f_rec->transfer_mode = 1
+	else
+		set f_rec->transfer_mode = 0
+	endcase
+else
+	set f_rec->transfer_mode = 0
+endif
+
+set f_rec->astream_base = build("/nfs/middle_fs/to_client_site/",trim(cnvtlower(curdomain))) 
+set f_rec->astream_path = build(f_rec->astream_base,"/",f_rec->dest_path,"/") 
+set f_rec->astream_mv = build2("mv ",f_rec->full_path," ",f_rec->astream_path,f_rec->filename) 
+set f_rec->astream_cp = build2("cp ",f_rec->full_path," ",f_rec->astream_path,f_rec->filename)
+
+if (f_rec->transfer_mode = 0)
+	call dcl(f_rec->astream_mv, size(trim(f_rec->astream_mv)), f_rec->dclstat)  
+elseif (f_rec->transfer_mode = 1)
+	call dcl(f_rec->astream_cp, size(trim(f_rec->astream_mv)), f_rec->dclstat)  
+endif
+
+
+#exit_script
+call echorecord(f_rec)
+
+end
+go

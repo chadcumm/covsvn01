@@ -1,0 +1,12 @@
+F~F1803702839~0013454612~2018-02-13~1029~3666~MONICA~KESSI~53261~SHAMIR~HAJI~I~DIAG
+F0000851748~MARK~E~GOAN~1953-01-16~M~ CIGNA LOCAL PLUS 182223~521163~IPF
+Procedure Ordered: 13454612~40058~FCT CTA HEAD+RECONST~70496~99964602
+                   13454613~40141~FCT CTA NECK+RECONST~70498~99964603
+Admitting DX: SEPSIS
+Working DX: SEPSIS
+ 
+
+INDICATION: poss CVA
+TECHNIQUE:  Axial Non-Contrast and Contrast CT of the neck and Brain
+was performed.  Additionally, CTA of the head and neck as well CT
+dynamic perfusion imaging was performed.  Sagittal, Coronal, and 3-D

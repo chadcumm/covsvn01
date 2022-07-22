@@ -1,0 +1,185 @@
+SELECT cv.display,cv.code_value
+   FROM (code_value cv )
+   WHERE (cv.code_set = 30183 )
+   AND (cv.cdf_meaning = "IPOC" ) go
+   
+select 
+	ea.alias
+	,p.name_full_formatted
+	,p.person_id
+	,e.encntr_id
+from
+	encounter e
+	,encntr_alias ea
+	,person p
+plan ea
+	where ea.alias = "1833300003"
+join e
+	where e.encntr_id = ea.encntr_id
+join p
+	where p.person_id = e.person_id
+go
+
+
+SELECT
+   temp_disp = 
+   	IF((p.type_mean = "CAREPLAN" )) trim(p.description ) ELSE concat(trim(p.pw_group_desc) ,", " ,trim(p.description)) ENDIF
+   ,temp_stat = uar_get_code_display (p.pw_status_cd )
+   ,p.pathway_id 
+   ,p.start_dt_tm
+   ,apc.activated_dt_tm 
+   ,format(apc.activated_dt_tm, "MM/DD/YYYY ;;D" ) 
+   ,p.description 
+   ,p.pw_group_desc 
+   ,pr.name_full_formatted 
+   ,p.last_action_seq 
+   ,multi_phase = IF ((p.type_mean = "CAREPLAN" ) ) 0  ELSE 1 ENDIF
+   FROM 
+    (pathway p ),
+    (act_pw_comp apc ),
+    (outcome_activity oa ),
+    (prsnl pr )
+   PLAN (p
+    		WHERE (p.encntr_id =   113913883.00) ; request->visit[1 ].encntr_id )
+    		AND ((p.started_ind + 0 ) = 1 )
+    		AND ((p.ended_ind + 0 ) != 1 )
+   			AND ((p.pw_status_cd + 0 ) = value(uar_get_code_by ("MEANING" ,16769 ,"INITIATED" ) ) )
+    		AND (trim (p.type_mean ) IN ("CAREPLAN" , "PHASE" ) )
+   			 AND p.pathway_type_cd in(SELECT cv.code_value
+									   FROM (code_value cv )
+									   WHERE (cv.code_set = 30183 )
+									   AND (cv.cdf_meaning = "IPOC" )
+									   )) ; 
+    JOIN (apc
+    WHERE (apc.pathway_id = p.pathway_id )
+    AND (apc.included_ind = 1 )
+    AND (apc.activated_ind = 1 )
+    AND (apc.parent_entity_name = "OUTCOME_ACTIVITY" ) )
+    JOIN (oa
+    WHERE (oa.outcome_activity_id = apc.parent_entity_id )
+    AND (oa.outcome_type_cd IN (
+   	value(uar_get_code_by ("MEANING" ,30320 ,"GOAL" ) ) ,
+    value(uar_get_code_by ("MEANING" ,30320 ,"GOALCP" ) ) ,
+    value(uar_get_code_by ("MEANING" ,30320 ,"GOALDP" ) ) ,
+    value(uar_get_code_by ("MEANING" ,30320 ,"INTERVENTION" ) ) ,
+    value(uar_get_code_by ("MEANING" ,30320 ,"INTERVENTNDP" ) ) ,
+    value(uar_get_code_by ("MEANING" ,30320 ,"INDICATOR" ) ) ,
+    value(uar_get_code_by ("MEANING" ,30320 ,"INDICATORCP" ) ) ) )
+    AND (oa.outcome_status_cd = value(uar_get_code_by ("MEANING" ,30182 ,"ACTIVATED" ) ) ) )
+    JOIN (pr
+    WHERE (pr.person_id = apc.activated_prsnl_id ) )
+   
+   ORDER BY p.pw_cat_group_id ,
+    p.start_dt_tm DESC ,
+    p.last_action_seq DESC ,
+    p.pathway_id ,
+    apc.activated_dt_tm DESC ,
+    oa.outcome_activity_id
+    go
+
+SELECT INTO "nl:"
+   FROM (pathway pt ),
+    (act_pw_comp apc ),
+    (outcome_activity oa ),
+    (outcome_action oat ),
+    (prsnl p1 ),
+    (pw_variance_reltn pvr ),
+    (long_text lt ),
+    (clinical_event ce ),
+    (prsnl p ),
+    (prsnl p2 )
+   PLAN (pt
+    pt.pathway_id in(
+    
+					    SELECT distinct
+							p.pathway_id 
+					   FROM 
+					    (pathway p ),
+					    (act_pw_comp apc ),
+					    (outcome_activity oa ),
+					    (prsnl pr )
+					   PLAN (p
+					    		WHERE (p.encntr_id =   113913883.00) ; request->visit[1 ].encntr_id )
+					    		AND ((p.started_ind + 0 ) = 1 )
+					    		AND ((p.ended_ind + 0 ) != 1 )
+					   			AND ((p.pw_status_cd + 0 ) = value(uar_get_code_by ("MEANING" ,16769 ,"INITIATED" ) ) )
+					    		AND (trim (p.type_mean ) IN ("CAREPLAN" , "PHASE" ) )
+					   			 AND p.pathway_type_cd in(SELECT cv.code_value
+														   FROM (code_value cv )
+														   WHERE (cv.code_set = 30183 )
+														   AND (cv.cdf_meaning = "IPOC" )
+														   )) ; 
+					    JOIN (apc
+					    WHERE (apc.pathway_id = p.pathway_id )
+					    AND (apc.included_ind = 1 )
+					    AND (apc.activated_ind = 1 )
+					    AND (apc.parent_entity_name = "OUTCOME_ACTIVITY" ) )
+					    JOIN (oa
+					    WHERE (oa.outcome_activity_id = apc.parent_entity_id )
+					    AND (oa.outcome_type_cd IN (
+					   	value(uar_get_code_by ("MEANING" ,30320 ,"GOAL" ) ) ,
+					    value(uar_get_code_by ("MEANING" ,30320 ,"GOALCP" ) ) ,
+					    value(uar_get_code_by ("MEANING" ,30320 ,"GOALDP" ) ) ,
+					    value(uar_get_code_by ("MEANING" ,30320 ,"INTERVENTION" ) ) ,
+					    value(uar_get_code_by ("MEANING" ,30320 ,"INTERVENTNDP" ) ) ,
+					    value(uar_get_code_by ("MEANING" ,30320 ,"INDICATOR" ) ) ,
+					    value(uar_get_code_by ("MEANING" ,30320 ,"INDICATORCP" ) ) ) )
+					    AND (oa.outcome_status_cd = value(uar_get_code_by ("MEANING" ,30182 ,"ACTIVATED" ) ) ) )
+					    JOIN (pr
+					    WHERE (pr.person_id = apc.activated_prsnl_id ) )
+					   
+					   ORDER BY 
+					    p.pathway_id  
+					 )
+    )
+    JOIN (apc
+    WHERE (apc.pathway_id = pt.pathway_id )
+    AND (apc.included_ind = 1 )
+    AND (apc.activated_ind = 1 )
+    AND (apc.parent_entity_name = "OUTCOME_ACTIVITY" )
+    AND (apc.comp_status_cd = value(uar_get_code_by ("MEANING" ,16789 ,"ACTIVATED" ) ) ) )
+    JOIN (oa
+    WHERE (oa.outcome_activity_id = apc.parent_entity_id )
+    AND (oa.outcome_type_cd IN (
+    					   	value(uar_get_code_by ("MEANING" ,30320 ,"GOAL" ) ) ,
+					    value(uar_get_code_by ("MEANING" ,30320 ,"GOALCP" ) ) ,
+					    value(uar_get_code_by ("MEANING" ,30320 ,"GOALDP" ) ) ,
+					    value(uar_get_code_by ("MEANING" ,30320 ,"INTERVENTION" ) ) ,
+					    value(uar_get_code_by ("MEANING" ,30320 ,"INTERVENTNDP" ) ) ,
+					    value(uar_get_code_by ("MEANING" ,30320 ,"INDICATOR" ) ) ,
+					    value(uar_get_code_by ("MEANING" ,30320 ,"INDICATORCP" ) )
+    
+    ) )
+    AND (oa.outcome_status_cd = value(uar_get_code_by ("MEANING" ,30182 ,"ACTIVATED" ) ) ) )
+    JOIN (oat
+    WHERE (oat.outcome_activity_id = oa.outcome_activity_id )
+    AND (oat.outcome_status_cd = value(uar_get_code_by ("MEANING" ,30182 ,"ACTIVATED" ) ) ) )
+    JOIN (p2
+    WHERE (p2.person_id = apc.activated_prsnl_id ) )
+    JOIN (p1
+    WHERE (p1.person_id = oa.updt_id ) )
+    JOIN (ce
+    WHERE (ce.event_cd = outerjoin (oa.event_cd ) )
+    AND (ce.encntr_id = outerjoin (oa.encntr_id ) )
+    AND (ce.person_id = outerjoin (oa.person_id ) )
+    AND (ce.valid_until_dt_tm > outerjoin (cnvtdatetime (curdate ,curtime ) ) ) )
+    JOIN (p
+    WHERE (p.person_id = outerjoin (ce.performed_prsnl_id ) ) )
+    JOIN (pvr
+    WHERE (pvr.parent_entity_id = outerjoin (apc.act_pw_comp_id ) )
+    AND (pvr.parent_entity_name = outerjoin ("ACT_PW_COMP" ) )
+    AND (pvr.active_ind = outerjoin (1 ) ) )
+    JOIN (lt
+    WHERE (lt.parent_entity_id = outerjoin (pvr.parent_entity_id ) )
+    AND (lt.parent_entity_name = outerjoin ("ACT_PW_COMP" ) )
+    AND (lt.long_text_id = outerjoin (pvr.note_text_id ) ) )
+   ORDER BY pt.pw_cat_group_id ,
+    pt.start_dt_tm DESC ,
+    pt.pathway_id ,
+    apc.comp_label DESC ,
+    oa.outcome_activity_id ,
+    ce.performed_dt_tm DESC ,
+    pvr.chart_dt_tm DESC ,
+    oa.start_dt_tm DESC ,
+    lt.active_status_dt_tm DESC ,
+    apc.sequence

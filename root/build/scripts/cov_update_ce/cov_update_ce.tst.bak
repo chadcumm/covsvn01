@@ -1,0 +1,64 @@
+free set t_rec go
+record t_rec
+(
+	1 person_id = f8
+	1 encntr_id = f8
+	1 event_cd = f8
+	1 ppr_cd = f8
+	1 prsnl_id = f8
+	1 identifier = vc
+) go
+ 
+set t_Rec->prsnl_id = reqinfo->updt_id go
+set t_rec->event_cd =     3713594.00 go ;History and Physical
+set t_rec->prsnl_id =     4122622.00 go
+ 
+select into "nl:"
+	 ea.alias
+	,p.name_full_formatted
+	,e.person_id
+	,e.encntr_id
+from
+	encntr_alias ea
+	,encounter e
+	,person p
+	,encntr_prsnl_reltn epr
+plan ea
+	where ea.alias = "1922000001"
+join e
+	where e.encntr_id = ea.encntr_id
+join p
+	where p.person_id = e.person_id
+join epr
+	where epr.encntr_id = outerjoin(e.encntr_id)
+	and   epr.prsnl_person_id = outerjoin(t_rec->prsnl_id)
+detail
+	t_rec->encntr_id = e.encntr_id
+	t_rec->person_id = e.person_id
+	t_rec->ppr_cd = epr.encntr_prsnl_r_cd
+go
+ 
+call echorecord(t_rec) go
+
+free set mmf_update_ce go
+record mmf_update_ce
+(
+ 1 event_id = f8
+ 1 debug = i2
+) go
+
+free record mmf_update_reply go
+RECORD mmf_update_reply (
+    1 parenteventid = f8
+    1 status_data
+      2 status = c1
+      2 subeventstatus [1 ]
+        3 operationname = c25
+        3 operationstatus = c1
+        3 targetobjectname = c25
+        3 targetobjectvalue = vc
+  ) go
+
+call echorecord(mmf_update_ce) go
+execute cov_update_ce with replace("REQUEST",mmf_update_ce) , replace("REPLY",mmf_update_reply) go
+

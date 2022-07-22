@@ -1,0 +1,132 @@
+STAR data elements sent to Resource Anesthesia:
+
+Facility
+Patient Ind         
+Patient Type
+Admit Date
+DC Date
+Accident Date
+Patient First Name
+Patient Last Name
+Patient Middle Name
+Patient Birth Date
+Date
+Patient Sex
+Patient Addr 1
+Patient Addr 2
+Patient City
+Patient St
+Patient Zip Code
+Patent Phone Number
+Workplace Phone
+Patient SSN
+Employer Name
+'Employer Addr 1
+Employer Addr 2
+Employer City
+Employer St
+Employer Zip Code
+Employer Phone
+MRN
+Patient Account Number
+Patient Marital Status
+Employment Status
+Race Code
+Guarantor First Name
+Guarantor Last Name
+Guarantor Middle Name            
+Guarantor Birthdate
+Guarantor Sex
+Guarantor 
+Guarantor 
+Guarantor 
+Guarantor St
+Guarantor Zip
+Guarantor Phone
+Guarantor Work Phone
+Guarantor SSN
+Guarantor Work Name
+Guarantor Work Address 1
+Guarantor Work Address 2
+Guarantor Work City
+Guarantor Work St
+Guarantor Work Zip
+Guarantor Work Phone
+Guarantor Relationship
+Relative First Name
+Relative Last Name
+Relative Middle Name
+Relative Birthdate
+Relative Sex
+Relative Addr 1
+Relative Addr 2
+Relative City
+Relative St
+Relative Zip
+Relative Phone
+Relative Employer Phone
+Relative SSN
+Employer Name
+Employer Address 1
+Employer Address 2
+Employer City
+Employer St
+Employer Zip
+Employer Phone
+Relationship
+MD Name
+Insurance Code 1
+Insurance Name 1
+Insurance Policy # 1
+Insurance Group # 1
+Insurance Addr1 1
+Insurance Addr2 1
+Insurance City 1
+Insurance St 1
+Insurance Zip 1
+Insurance Phone 1
+Insurance Appr # 1
+Insurance FName 1
+Insurance LName 1
+Insurance MName 1
+Insurance Birthdate 1
+Insurance Sex 1
+Insurance SSN 1
+Insurance SameAs 1
+Insurance Code 3
+Insurance Name 3
+Insurance Policy # 3
+Insurance Group # 3
+Insurance Addr1 3
+Insurance Addr2 3
+Insurance City 3
+Insurance St 3
+Insurance Zip 3
+Insurance Phone 3
+Insurance Appr # 3
+Insurance FName 3
+Insurance LName 3
+Insurance MName 3
+Insurance Birthdate 3
+Insurance Sex 3
+Insurance SSN 3
+Insurance SameAs 3
+Insurance Code 5
+Insurance Name 5
+Insurance Policy # 5
+Insurance Group # 5
+Insurance Addr1 5
+Insurance Addr2 5
+Insurance City 5
+Insurance St 5
+Insurance Zip 5
+Insurance Phone 5
+Insurance Appr # 5
+Insurance FName 5
+Insurance LName 5
+Insurance MName 5
+Insurance Birthdate 5
+Insurance Sex 5
+Insurance SSN 5
+Insurance SameAs 5
+pat_cell_ph_nbr

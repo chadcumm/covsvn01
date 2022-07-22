@@ -1,0 +1,7 @@
+
+execute ajrr_build_report
+	 "MINE"
+	,"01-FEB-2019"
+	,"28-FEB-2019"
+	,VALUE(3144503.00) ;Parkwest Medical Center
+go

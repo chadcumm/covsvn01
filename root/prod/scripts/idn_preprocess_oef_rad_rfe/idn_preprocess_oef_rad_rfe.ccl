@@ -1,0 +1,53 @@
+select
+	 o.order_id
+	,o.order_mnemonic
+	,od.oe_field_meaning
+	,od.oe_field_id
+	,od.oe_field_value
+	,od.oe_field_display_value
+	,od.oe_field_dt_tm_value ";;q"
+	,o.originating_encntr_id
+from
+	orders o
+	,order_detail od
+plan o
+	where o.order_id in(1281495769)
+join od
+	where od.order_id = o.order_id
+order by
+	 o.order_id
+	,od.detail_sequence
+	
+select * from code_value cs where cs.code_set = 71
+
+select p.name_full_formatted,uar_Get_code_Display(e.encntr_type_cd)
+	from 
+		encounter e
+		,person p
+	plan e
+		where e.encntr_id = 113914903
+	join p
+		where p.person_id = e.person_id
+		
+		
+select 
+	ea.alias
+	,e.encntr_id
+	,uar_Get_code_display(e.encntr_status_cd)
+	,uar_get_code_display(e.encntr_type_cd)
+	,p.name_full_formatted
+	,p.person_id
+from
+	encounter e
+	,encntr_alias ea
+	,person p
+plan e
+	where e.encntr_type_cd =  2555137357.00
+	and e.active_ind = 1
+join ea
+	where ea.encntr_id = e.encntr_id
+	and ea.encntr_alias_type_cd = 1077
+	and ea.active_ind = 1
+	and ea.end_effective_dt_tm >=cnvtdatetime(curdate,curtime3)
+join p
+	where p.person_id = e.person_id	

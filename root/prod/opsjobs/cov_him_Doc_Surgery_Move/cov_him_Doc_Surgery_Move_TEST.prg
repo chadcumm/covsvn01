@@ -1,0 +1,946 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Todd A. Blanchard
+	Date Written:		10/22/2021
+	Solution:			Revenue Cycle - HIM
+	Source file name:	cov_him_Doc_Surgery_Move.prg
+	Object name:		cov_him_Doc_Surgery_Move
+	Request #:			11280
+ 
+	Program purpose:	Identifies encounters with surgical cases. 
+	
+						Documents will be copied from Office/Clinic Notes section 
+						of related encounters that have office visits authored 
+						by the same surgeon. New History and Physical documents 
+						will be created as authenticated for the encounters with
+						surgical cases.
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:		Called by ops jobs.
+ 						Derived from CCL cov_sn_sched_driver.
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+ 	Mod Date	Developer				Comment
+ 	----------	--------------------	--------------------------------------
+001	04/14/2022	Todd A. Blanchard		Added additional criteria to ensure 
+										proper matching on patient documents.
+ 
+******************************************************************************/
+ 
+drop program cov_him_Doc_Surgery_Move_TEST:dba go
+create program cov_him_Doc_Surgery_Move_TEST:dba
+ 
+prompt 
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "Facility" = 0
+	, "Surgical Area" = 0
+	, "Start Date" = "SYSDATE"
+	, "End Date" = "SYSDATE"
+	, "Create Documents" = 0                 ;* Create missing documents 
+
+with OUTDEV, facility, surg_area, start_datetime, end_datetime, create_docs
+ 
+ 
+/**************************************************************
+; DVDev DECLARED SUBROUTINES
+**************************************************************/
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+ 
+declare start_datetime				= dq8 with noconstant(cnvtdatetime(curdate, 000000))
+declare end_datetime				= dq8 with noconstant(cnvtdatetime(curdate, 235959))
+declare in_error_var				= f8 with constant(uar_get_code_by("MEANING", 8, "IN ERROR"))
+declare inerrnomut_var				= f8 with constant(uar_get_code_by("MEANING", 8, "INERRNOMUT"))
+declare inerrnoview_var				= f8 with constant(uar_get_code_by("MEANING", 8, "INERRNOVIEW"))
+declare inerror_var					= f8 with constant(uar_get_code_by("MEANING", 8, "INERROR"))
+declare anticipated_var				= f8 with constant(uar_get_code_by("MEANING", 8, "ANTICIPATED"))
+declare auth_var					= f8 with constant(uar_get_code_by("MEANING", 8, "AUTH"))
+declare sign_action_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 21, "SIGN"))
+declare perform_action_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 21, "PERFORM"))
+declare verify_action_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 21, "VERIFY"))
+declare modify_action_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 21, "MODIFY"))
+declare root_var					= f8 with constant(uar_get_code_by("MEANING", 24, "ROOT"))
+declare child_var					= f8 with constant(uar_get_code_by("MEANING", 24, "CHILD"))
+declare otg_var						= f8 with constant(uar_get_code_by("DISPLAYKEY", 25, "OTG"))
+declare mdoc_var					= f8 with constant(uar_get_code_by("DISPLAYKEY", 53, "MDOC"))
+declare doc_var						= f8 with constant(uar_get_code_by("DISPLAYKEY", 53, "DOC"))
+declare canceladmit_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "CANCELADMIT"))
+declare canceluponreview_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "CANCELUPONREVIEW"))
+declare outpatientinabed_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "OUTPATIENTINABED"))
+declare histphys_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 72, "HISTORYANDPHYSICAL"))
+declare histphysupd_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 72, "HISTORYANDPHYSICALUPDATE"))
+declare officeclinicnotes_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 93, "OFFICECLINICNOTES"))
+declare fin_var						= f8 with constant(uar_get_code_by("DISPLAYKEY", 319, "FINNBR"))
+declare ord_primary_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 6011, "PRIMARY"))
+declare sch_canceled_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 14233, "CANCELED"))
+declare sch_deleted_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 14233, "DELETED"))
+declare sch_pending_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 14233, "PENDING"))
+declare sch_unschedulable_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 14233, "UNSCHEDULABLE"))
+declare dd_ref_template_var			= f8 with constant(25047976.00)
+declare title_text_var				= vc with constant("History and Physical")
+declare num							= i4 with noconstant(0)
+declare num2						= i4 with noconstant(0)
+
+
+; include library to manage dynamic documents
+%i cust_script:cov_DynamicDocument.inc
+
+
+; define dates
+if (validate(request->batch_selection) = 1)
+	set start_datetime = cnvtlookahead("1,D", start_datetime)
+	set end_datetime = cnvtlookahead("15,D", end_datetime)
+else
+	set start_datetime = cnvtdatetime($start_datetime)
+	set end_datetime = cnvtdatetime($end_datetime)	
+endif
+ 
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+
+free record offclineventdata
+record offclineventdata (
+	1 cnt							= i4
+	1 qual [*]
+		2 event_cd					= f8
+)
+ 
+free record surg_sched
+record surg_sched (
+	1 org_name						= vc
+	1 start_dt_tm					= dq8
+	1 end_dt_tm						= dq8
+ 
+	1 area_cnt						= i2
+	1 area_qual[*]
+		2 sched_surg_area_cd		= f8
+ 
+	1 cnt							= i4
+	1 qual[*]
+		2 encntr_id					= f8
+		2 encntr_type_cd			= f8
+		2 person_id					= f8
+		2 reg_dt_tm					= dq8
+		2 sch_event_id				= f8
+		2 surg_case_id				= f8
+		2 sched_start_dt_tm			= dq8
+ 
+ 		; surgical procedures
+		2 proc_cnt							= i4
+		2 proc[*]
+			3 sched_primary_ind				= i2
+			3 sched_primary_surgeon_id		= f8
+			3 surg_proc_cd					= f8
+ 
+ 		; history and physical
+		2 hp_cnt						= i4
+ 
+ 		; office/clinic notes for related encounters
+		2 ce_cnt					= i4
+		2 ce[*]
+			3 event_id				= f8
+			3 encntr_id				= f8
+			3 person_id				= f8 ;001
+			3 event_cd				= f8
+			3 result_dt_tm			= dq8
+			3 valid_from_dt_tm		= dq8
+			3 is_scanned			= i2
+			3 updt_id				= f8
+			3 updt_dt_tm			= dq8
+			
+			3 performed_dt_tm					= dq8
+			3 performed_prsnl_id				= f8
+			3 performed_valid_from_dt_tm		= dq8
+			3 performed_updt_id 				= f8
+			3 performed_updt_dt_tm 				= dq8
+			
+			3 signed_dt_tm						= dq8
+			3 signed_prsnl_id					= f8
+			3 signed_valid_from_dt_tm			= dq8
+			3 signed_updt_id 					= f8
+			3 signed_updt_dt_tm 				= dq8
+			
+			3 verified_dt_tm					= dq8
+			3 verified_prsnl_id					= f8
+			3 verified_valid_from_dt_tm			= dq8
+			3 verified_updt_id 					= f8
+			3 verified_updt_dt_tm 				= dq8
+)
+
+ 
+set surg_sched->start_dt_tm	= cnvtdatetime(start_datetime)
+set surg_sched->end_dt_tm	= cnvtdatetime(end_datetime)
+ 
+ 
+/**************************************************************/
+; select organization data
+if (validate(request->batch_selection) = 1)
+	set surg_sched->org_name = "ALL"	
+else
+	select into "nl:"
+	from
+		ORGANIZATION org
+	 
+	where
+		org.organization_id	= $facility
+	 
+	 
+	; populate record structure
+	detail
+		surg_sched->org_name = trim(org.org_name, 3)
+	 
+	with nocounter
+endif
+ 
+ 
+/**************************************************************/
+; select surgical area code value data
+select 
+	if (validate(request->batch_selection) = 1)
+		; select all surgical areas
+		where
+			cv.code_set = 221
+			and cv.cdf_meaning = "SURGAREA"
+			and cv.display_key != "COVMASTERPROCEDURES"
+			and cv.active_ind = 1
+			
+	else
+		; select surgical areas from prompt
+		where
+			cv.code_set = 221
+			and cv.cdf_meaning = "SURGAREA"
+			and cv.code_value = $surg_area
+			and cv.active_ind = 1
+	
+	endif
+
+	into "nl:"
+from
+	CODE_VALUE cv
+ 
+order by
+	cv.code_value
+ 
+ 
+; populate record structure
+head report
+	cnt = 0
+ 
+head cv.code_value
+	cnt = cnt + 1
+ 
+	call alterlist(surg_sched->area_qual, cnt)
+ 
+	surg_sched->area_cnt							= cnt
+	surg_sched->area_qual[cnt].sched_surg_area_cd	= cv.code_value
+ 
+with nocounter
+
+
+/**************************************************************/ 
+; select office/clinic notes event set data	 
+select into "nl:"	
+from 
+	CODE_VALUE cv
+	
+	, (inner join CODE_VALUE_EXTENSION cve on cve.code_set = cv.code_set
+		and cve.code_value = cv.code_value
+		and cve.field_name = "event_set_cd")
+		
+	, (inner join V500_EVENT_SET_CODE vesc on vesc.event_set_cd = cve.field_value)
+ 
+	, (inner join V500_EVENT_SET_EXPLODE vese on vese.event_set_cd = vesc.event_set_cd)
+ 
+	, (inner join V500_EVENT_CODE vec on vec.event_cd = vese.event_cd)
+	
+where 
+	cv.code_set = 100532 ; Custom event sets
+	and cv.cdf_meaning = "OCNOTES"
+	and cv.active_ind = 1
+	
+; populate record structure
+head report
+	cnt = 0
+ 
+detail
+	cnt = cnt + 1
+	
+	call alterlist(offclineventdata->qual, cnt)
+ 
+	offclineventdata->cnt						= cnt
+	offclineventdata->qual[cnt].event_cd		= vec.event_cd
+
+with nocounter, time = 300
+
+;call echorecord(offclineventdata)
+
+;go to exitscript
+
+ 
+/**************************************************************/
+; select surgical case data
+select into "nl:"
+from
+	SURGICAL_CASE sc
+ 
+	, (inner join ENCOUNTER e on e.encntr_id = sc.encntr_id
+		and e.encntr_type_cd not in (
+			canceladmit_var,
+			canceluponreview_var,
+			outpatientinabed_var
+		)
+		and e.active_ind = 1)
+ 
+	, (inner join PERSON p on p.person_id = sc.person_id
+		and p.active_ind = 1)
+ 
+	, (inner join SCH_EVENT se on se.sch_event_id = sc.sch_event_id
+		and se.sch_state_cd not in (
+			sch_canceled_var,
+			sch_deleted_var,
+			sch_pending_var,
+			sch_unschedulable_var
+			)
+		and se.version_dt_tm > cnvtdatetime(curdate, curtime)
+		and se.active_ind = 1)
+ 
+	, (inner join SCH_EVENT_PATIENT sep on sep.sch_event_id = se.sch_event_id
+		and sep.version_dt_tm > cnvtdatetime(curdate, curtime)
+		and sep.active_ind = 1)
+ 
+	, (inner join SCH_EVENT_ATTACH sea on sea.sch_event_id = sc.sch_event_id
+		and sea.state_meaning = "ACTIVE"		
+		and sea.version_dt_tm > cnvtdatetime(curdate, curtime)
+		and sea.active_ind = 1)
+ 
+	, (inner join SURG_CASE_PROCEDURE scp on scp.order_id = sea.order_id
+		and scp.active_ind = 1)
+ 
+	, (inner join ORDER_CATALOG_SYNONYM ocs on ocs.catalog_cd = scp.sched_surg_proc_cd
+		and ocs.mnemonic_type_cd = ord_primary_var)
+ 
+where
+	expand(num, 1, surg_sched->area_cnt, sc.sched_surg_area_cd, surg_sched->area_qual[num].sched_surg_area_cd)
+	and sc.sched_start_dt_tm between cnvtdatetime(start_datetime) and cnvtdatetime(end_datetime)
+	and sc.cancel_dt_tm is null
+	and sc.active_ind = 1
+ 
+order by
+	scp.surg_case_id
+	, scp.sched_primary_ind desc
+	, scp.surg_case_proc_id
+ 
+ 
+; populate record structure
+head report
+	cnt = 0
+ 
+head scp.surg_case_id
+	pcnt = 0
+ 
+	cnt = cnt + 1
+ 
+	call alterlist(surg_sched->qual, cnt)
+ 
+	surg_sched->cnt									= cnt
+	surg_sched->qual[cnt].encntr_id					= e.encntr_id
+	surg_sched->qual[cnt].encntr_type_cd			= e.encntr_type_cd
+	surg_sched->qual[cnt].person_id					= e.person_id
+	surg_sched->qual[cnt].reg_dt_tm					= e.reg_dt_tm
+	surg_sched->qual[cnt].sch_event_id				= se.sch_event_id
+	surg_sched->qual[cnt].surg_case_id				= sc.surg_case_id
+	surg_sched->qual[cnt].sched_start_dt_tm			= sc.sched_start_dt_tm
+ 
+head scp.surg_case_proc_id
+	pcnt = pcnt + 1
+ 
+	call alterlist(surg_sched->qual[cnt].proc, pcnt)
+ 
+	surg_sched->qual[cnt].proc_cnt								= pcnt
+	surg_sched->qual[cnt].proc[pcnt].sched_primary_ind			= scp.sched_primary_ind
+	surg_sched->qual[cnt].proc[pcnt].sched_primary_surgeon_id	= scp.sched_primary_surgeon_id
+	surg_sched->qual[cnt].proc[pcnt].surg_proc_cd				= scp.surg_proc_cd
+ 
+with nocounter, expand = 1, time = 300
+ 
+;call echorecord(surg_sched)
+;
+;go to exitscript
+ 
+ 
+/**************************************************************/ 
+; select history and physical data
+select into "nl:"
+	surg_case_id = surg_sched->qual[d1.seq].surg_case_id
+from
+	CLINICAL_EVENT ce
+ 
+	, (left join CE_EVENT_PRSNL cep on cep.event_id = ce.event_id
+		and cep.action_type_cd = perform_action_var
+		and cep.valid_until_dt_tm > cnvtdatetime(curdate, curtime))
+		
+	, (inner join CLINICAL_EVENT ce2 on ce2.encntr_id = ce.encntr_id
+		and ce2.parent_event_id = ce.event_id
+		and ce2.event_cd in (histphys_var, histphysupd_var)
+		and ce2.event_class_cd = doc_var
+		and ce2.event_reltn_cd = child_var
+		and ce2.result_status_cd = auth_var
+		and ce2.result_status_cd not in (
+			in_error_var,
+			inerrnomut_var,
+			inerrnoview_var,
+			inerror_var
+		)
+		and ce2.valid_until_dt_tm > cnvtdatetime(curdate, curtime))
+	
+	, (left join CE_BLOB_RESULT cbr on cbr.event_id = ce2.event_id
+		and cbr.storage_cd = otg_var
+		and cbr.valid_until_dt_tm > cnvtdatetime(curdate, curtime))
+	
+	, (inner join ENCOUNTER e on e.encntr_id = ce.encntr_id
+		and e.active_ind = 1)
+		
+	, (inner join PERSON p on p.person_id = e.person_id
+;		and p.name_last_key not in ("ZZZ*")
+		and p.active_ind = 1)
+		
+	, (dummyt d1 with seq = value(surg_sched->cnt))
+	
+plan d1
+join ce
+join cep
+join ce2
+join cbr
+join e
+join p
+
+where
+	ce.encntr_id = surg_sched->qual[d1.seq].encntr_id
+	and ce.person_id = surg_sched->qual[d1.seq].person_id
+	and ce.event_cd in (histphys_var, histphysupd_var)
+	and ce.event_class_cd = mdoc_var
+	and ce.event_reltn_cd = root_var
+	and ce.result_status_cd = auth_var
+	and ce.result_status_cd not in (
+		in_error_var,
+		inerrnomut_var,
+		inerrnoview_var,
+		inerror_var
+	)
+	and ce.valid_until_dt_tm > cnvtdatetime(curdate, curtime)
+	
+order by
+	ce.encntr_id
+	, surg_case_id
+	, ce.performed_dt_tm desc
+	, ce.event_end_dt_tm desc
+	 	 
+; populate record structure	
+head ce.encntr_id
+	null
+	
+head surg_case_id
+	hcnt = 0
+	
+;detail	
+	hcnt = hcnt + 1
+		
+;foot ce.encntr_id
+	surg_sched->qual[d1.seq].hp_cnt = hcnt
+	
+with nocounter, expand = 1, time = 300
+ 
+;call echorecord(surg_sched)
+;
+;go to exitscript
+ 
+ 
+/**************************************************************/ 
+; select office/clinic notes data
+select into "nl:"
+from
+	CLINICAL_EVENT ce
+ 
+	, (inner join CE_EVENT_PRSNL cepp on cepp.event_id = ce.event_id
+		and cepp.action_type_cd = perform_action_var
+		and cepp.valid_until_dt_tm > cnvtdatetime(curdate, curtime))
+ 
+	, (left join CE_EVENT_PRSNL ceps on ceps.event_id = ce.event_id
+		and ceps.action_type_cd = sign_action_var
+		and ceps.valid_until_dt_tm > cnvtdatetime(curdate, curtime))
+ 
+	, (left join CE_EVENT_PRSNL cepv on cepv.event_id = ce.event_id
+		and cepv.action_type_cd = verify_action_var
+		and cepv.valid_until_dt_tm > cnvtdatetime(curdate, curtime))
+		
+	, (inner join CLINICAL_EVENT ce2 on ce2.encntr_id = ce.encntr_id
+		and ce2.person_id = surg_sched->qual[d1.seq].person_id
+		and ce2.parent_event_id = ce.event_id
+		and expand(num, 1, offclineventdata->cnt, ce2.event_cd, offclineventdata->qual[num].event_cd)
+		and ce2.event_class_cd = doc_var
+		and ce2.event_reltn_cd = child_var
+		and ce2.event_end_dt_tm between 
+			cnvtlookbehind("30,D", cnvtdatetime(surg_sched->qual[d1.seq].sched_start_dt_tm)) and
+			cnvtdatetime(surg_sched->qual[d1.seq].sched_start_dt_tm)
+		and ce2.result_status_cd = auth_var
+		and ce2.valid_until_dt_tm > cnvtdatetime(curdate, curtime))
+	
+	, (left join CE_BLOB_RESULT cbr on cbr.event_id = ce2.event_id
+		and cbr.storage_cd = otg_var
+		and cbr.valid_until_dt_tm > cnvtdatetime(curdate, curtime))
+	
+	, (inner join ENCOUNTER e on e.encntr_id = ce.encntr_id
+		and e.active_ind = 1)
+		
+	, (inner join PERSON p on p.person_id = e.person_id
+		and p.active_ind = 1)
+		
+	, (dummyt d1 with seq = value(surg_sched->cnt))
+		
+	, (dummyt d2 with seq = 1)
+	
+plan d1
+where
+	maxrec(d2, surg_sched->qual[d1.seq].proc_cnt)
+
+join d2
+join ce
+join cepp
+join ceps
+join cepv
+join ce2
+join cbr
+join e
+join p
+
+where
+	ce.encntr_id != surg_sched->qual[d1.seq].encntr_id
+	and ce.person_id = surg_sched->qual[d1.seq].person_id
+	and ce.performed_prsnl_id = surg_sched->qual[d1.seq].proc[d2.seq].sched_primary_surgeon_id
+	and expand(num, 1, offclineventdata->cnt, ce.event_cd, offclineventdata->qual[num].event_cd)
+	and ce.event_class_cd = mdoc_var
+	and ce.event_reltn_cd = root_var
+	and ce.event_end_dt_tm between 
+		cnvtlookbehind("30,D", cnvtdatetime(surg_sched->qual[d1.seq].sched_start_dt_tm)) and
+		cnvtdatetime(surg_sched->qual[d1.seq].sched_start_dt_tm)
+	and ce.result_status_cd = auth_var
+	and ce.valid_until_dt_tm > cnvtdatetime(curdate, curtime)
+	
+order by
+	ce.encntr_id
+	, ce.event_end_dt_tm desc
+	 	 
+; populate record structure
+head ce.encntr_id
+	ccnt = 0
+		
+;detail
+	; select the most recent document per encounter
+	ccnt = ccnt + 1
+	
+	call alterlist(surg_sched->qual[d1.seq].ce, ccnt)
+	
+	surg_sched->qual[d1.seq].ce_cnt										= ccnt
+	surg_sched->qual[d1.seq].ce[ccnt].event_id							= ce.event_id
+	surg_sched->qual[d1.seq].ce[ccnt].encntr_id							= ce.encntr_id
+	surg_sched->qual[d1.seq].ce[ccnt].person_id							= ce.person_id ;001
+	surg_sched->qual[d1.seq].ce[ccnt].event_cd							= ce.event_cd
+	surg_sched->qual[d1.seq].ce[ccnt].result_dt_tm						= ce.event_end_dt_tm
+	surg_sched->qual[d1.seq].ce[ccnt].is_scanned						= evaluate(cbr.storage_cd, 0.0, 0, 1)
+	surg_sched->qual[d1.seq].ce[ccnt].valid_from_dt_tm					= ce.valid_from_dt_tm
+	surg_sched->qual[d1.seq].ce[ccnt].updt_id							= ce.updt_id
+	surg_sched->qual[d1.seq].ce[ccnt].updt_dt_tm						= ce.updt_dt_tm
+	
+	surg_sched->qual[d1.seq].ce[ccnt].performed_dt_tm					= cepp.action_dt_tm
+	surg_sched->qual[d1.seq].ce[ccnt].performed_prsnl_id				= cepp.action_prsnl_id
+	surg_sched->qual[d1.seq].ce[ccnt].performed_valid_from_dt_tm		= cepp.valid_from_dt_tm
+	surg_sched->qual[d1.seq].ce[ccnt].performed_updt_id					= cepp.updt_id
+	surg_sched->qual[d1.seq].ce[ccnt].performed_updt_dt_tm				= cepp.updt_dt_tm
+	
+	surg_sched->qual[d1.seq].ce[ccnt].signed_dt_tm						= ceps.action_dt_tm
+	surg_sched->qual[d1.seq].ce[ccnt].signed_prsnl_id					= ceps.action_prsnl_id
+	surg_sched->qual[d1.seq].ce[ccnt].signed_valid_from_dt_tm			= ceps.valid_from_dt_tm
+	surg_sched->qual[d1.seq].ce[ccnt].signed_updt_id					= ceps.updt_id
+	surg_sched->qual[d1.seq].ce[ccnt].signed_updt_dt_tm					= ceps.updt_dt_tm
+	
+	surg_sched->qual[d1.seq].ce[ccnt].verified_dt_tm					= cepv.action_dt_tm
+	surg_sched->qual[d1.seq].ce[ccnt].verified_prsnl_id					= cepv.action_prsnl_id
+	surg_sched->qual[d1.seq].ce[ccnt].verified_valid_from_dt_tm			= cepv.valid_from_dt_tm
+	surg_sched->qual[d1.seq].ce[ccnt].verified_updt_id					= cepv.updt_id
+	surg_sched->qual[d1.seq].ce[ccnt].verified_updt_dt_tm				= cepv.updt_dt_tm
+	
+with nocounter, expand = 1, time = 300
+ 
+call echorecord(surg_sched)
+
+;go to exitscript
+ 
+ 
+/**************************************************************/ 
+; create history and physical documents
+if ($create_docs)
+	select into "nl:"	
+	from
+		(dummyt d1 with seq = value(surg_sched->cnt))
+		, (dummyt d2 with seq = 1)
+		, ENCNTR_ALIAS ea
+		, PERSON p
+		, PRSNL per
+		, (dummyt d3 with seq = 1)
+		, ENCNTR_ALIAS ea2
+		, PRSNL per2
+	     
+	plan d1
+	where
+		maxrec(d2, surg_sched->qual[d1.seq].proc_cnt)
+		and maxrec(d3, surg_sched->qual[d1.seq].ce_cnt)
+		and surg_sched->qual[d1.seq].hp_cnt = 0
+		and surg_sched->qual[d1.seq].ce_cnt > 0
+	
+	join d2
+	where
+		surg_sched->qual[d1.seq].proc[d2.seq].sched_primary_ind = 1
+	
+	join ea
+	where
+		ea.encntr_id = surg_sched->qual[d1.seq].encntr_id
+		and ea.encntr_alias_type_cd = fin_var
+		and ea.active_ind = 1
+	
+	join p
+	where
+		p.person_id = surg_sched->qual[d1.seq].person_id
+		and p.active_ind = 1
+		
+	join per
+	where
+		per.person_id = surg_sched->qual[d1.seq].proc[d2.seq].sched_primary_surgeon_id
+		and per.active_ind = 1
+		
+	join d3
+	where
+		surg_sched->qual[d1.seq].ce[d3.seq].person_id = surg_sched->qual[d1.seq].person_id ;001
+	
+	join ea2
+	where
+		ea2.encntr_id = surg_sched->qual[d1.seq].ce[d3.seq].encntr_id
+		and ea2.encntr_alias_type_cd = fin_var
+		and ea2.active_ind = 1
+		
+	join per2
+	where
+		per2.person_id = surg_sched->qual[d1.seq].ce[d3.seq].performed_prsnl_id
+		and per2.active_ind = 1
+	
+	order by
+		p.name_full_formatted
+		, surg_sched->qual[d1.seq].person_id
+		, surg_sched->qual[d1.seq].sched_start_dt_tm
+	;	, surg_sched->qual[d1.seq].ce[d3.seq].event_id
+		, surg_sched->qual[d1.seq].ce[d3.seq].result_dt_tm desc
+		
+	
+	head report
+		cnt = 0
+		
+	detail
+		; office/clinic note
+		existing_doc->person_id			= surg_sched->qual[d1.seq].person_id
+		existing_doc->encntr_id			= surg_sched->qual[d1.seq].ce[d3.seq].encntr_id
+		existing_doc->event_id			= surg_sched->qual[d1.seq].ce[d3.seq].event_id
+		
+		; history and physical
+		new_doc->person_id				= surg_sched->qual[d1.seq].person_id
+		new_doc->encntr_id				= surg_sched->qual[d1.seq].encntr_id
+		new_doc->event_cd				= histphys_var
+		new_doc->dd_ref_template_id		= dd_ref_template_var
+		new_doc->title_text				= title_text_var
+		
+		; manage documents
+		call open_existing_document_969503(null)	
+		call open_new_document_969500(null)	
+		call save_html_to_new_document_969502(null)
+;		
+		if (969502_reply->mdoc_event_id > 0.0)
+			cnt = cnt + 1
+		 
+			call alterlist(969502_reply_list->docs, cnt)
+			
+			969502_reply_list->cnt										= cnt
+			969502_reply_list->docs[cnt].mdoc_event_id					= 969502_reply->mdoc_event_id
+			969502_reply_list->docs[cnt].result_dt_tm					= surg_sched->qual[d1.seq].ce[d3.seq].result_dt_tm
+			969502_reply_list->docs[cnt].valid_from_dt_tm				= surg_sched->qual[d1.seq].ce[d3.seq].valid_from_dt_tm
+			969502_reply_list->docs[cnt].updt_id						= surg_sched->qual[d1.seq].ce[d3.seq].updt_id
+			969502_reply_list->docs[cnt].updt_dt_tm						= surg_sched->qual[d1.seq].ce[d3.seq].updt_dt_tm
+			
+			969502_reply_list->docs[cnt].performed_dt_tm				= surg_sched->qual[d1.seq].ce[d3.seq].performed_dt_tm
+			969502_reply_list->docs[cnt].performed_prsnl_id				= surg_sched->qual[d1.seq].ce[d3.seq].performed_prsnl_id
+			969502_reply_list->docs[cnt].performed_valid_from_dt_tm		= surg_sched->qual[d1.seq].ce[d3.seq].performed_valid_from_dt_tm
+			969502_reply_list->docs[cnt].performed_updt_id				= surg_sched->qual[d1.seq].ce[d3.seq].performed_updt_id
+			969502_reply_list->docs[cnt].performed_updt_dt_tm			= surg_sched->qual[d1.seq].ce[d3.seq].performed_updt_dt_tm
+			
+			969502_reply_list->docs[cnt].signed_dt_tm					= surg_sched->qual[d1.seq].ce[d3.seq].signed_dt_tm
+			969502_reply_list->docs[cnt].signed_prsnl_id				= surg_sched->qual[d1.seq].ce[d3.seq].signed_prsnl_id
+			969502_reply_list->docs[cnt].signed_valid_from_dt_tm		= surg_sched->qual[d1.seq].ce[d3.seq].signed_valid_from_dt_tm
+			969502_reply_list->docs[cnt].signed_updt_id					= surg_sched->qual[d1.seq].ce[d3.seq].signed_updt_id
+			969502_reply_list->docs[cnt].signed_updt_dt_tm				= surg_sched->qual[d1.seq].ce[d3.seq].signed_updt_dt_tm
+			
+			969502_reply_list->docs[cnt].verified_dt_tm					= surg_sched->qual[d1.seq].ce[d3.seq].verified_dt_tm
+			969502_reply_list->docs[cnt].verified_prsnl_id				= surg_sched->qual[d1.seq].ce[d3.seq].verified_prsnl_id
+			969502_reply_list->docs[cnt].verified_valid_from_dt_tm		= surg_sched->qual[d1.seq].ce[d3.seq].verified_valid_from_dt_tm
+			969502_reply_list->docs[cnt].verified_updt_id				= surg_sched->qual[d1.seq].ce[d3.seq].verified_updt_id
+			969502_reply_list->docs[cnt].verified_updt_dt_tm			= surg_sched->qual[d1.seq].ce[d3.seq].verified_updt_dt_tm
+		endif
+		
+	with nocounter, time = 300
+endif
+
+call echorecord(969502_reply_list)
+
+ 
+/**************************************************************/
+; update physician data for new documents
+if ($create_docs)
+	for (i = 1 to 969502_reply_list->cnt)
+		; history and physical
+		update into CLINICAL_EVENT ce
+		set
+			ce.event_end_dt_tm		= cnvtdatetime(969502_reply_list->docs[i].result_dt_tm),
+			ce.valid_from_dt_tm		= cnvtdatetime(969502_reply_list->docs[i].valid_from_dt_tm),
+			
+			ce.performed_dt_tm		= cnvtdatetime(969502_reply_list->docs[i].performed_dt_tm),
+			ce.performed_prsnl_id	= 969502_reply_list->docs[i].performed_prsnl_id,
+			
+			ce.clinsig_updt_dt_tm	= cnvtdatetime(969502_reply_list->docs[i].signed_dt_tm),
+			
+			ce.verified_dt_tm		= cnvtdatetime(969502_reply_list->docs[i].verified_dt_tm),
+			ce.verified_prsnl_id	= 969502_reply_list->docs[i].verified_prsnl_id,
+			
+			ce.updt_id				= reqinfo->updt_id, ;969502_reply_list->docs[i].updt_id
+			ce.updt_dt_tm			= cnvtdatetime(curdate, curtime), ;cnvtdatetime(969502_reply_list->docs[i].updt_dt_tm)
+			ce.updt_cnt				= (ce.updt_cnt + 1),
+			ce.updt_task			= ce.updt_task
+		where
+			ce.event_id = 969502_reply_list->docs[i].mdoc_event_id
+			or ce.parent_event_id = 969502_reply_list->docs[i].mdoc_event_id
+			
+			
+		; history and physical - performed by
+		update into CE_EVENT_PRSNL cep
+		set
+			cep.action_dt_tm			= cnvtdatetime(969502_reply_list->docs[i].performed_dt_tm),
+			cep.action_prsnl_id			= 969502_reply_list->docs[i].performed_prsnl_id,
+			cep.valid_from_dt_tm		= cnvtdatetime(969502_reply_list->docs[i].performed_valid_from_dt_tm),
+			cep.updt_id					= reqinfo->updt_id, ;969502_reply_list->docs[i].performed_updt_id
+			cep.updt_dt_tm				= cnvtdatetime(curdate, curtime), ;cnvtdatetime(969502_reply_list->docs[i].performed_updt_dt_tm)
+			cep.updt_cnt				= (cep.updt_cnt + 1),
+			cep.updt_task				= cep.updt_task
+		where
+			cep.event_id in (
+				select ce.event_id
+				from
+					CLINICAL_EVENT ce
+				where
+					ce.event_id = 969502_reply_list->docs[i].mdoc_event_id
+					or ce.parent_event_id = 969502_reply_list->docs[i].mdoc_event_id
+			)
+			and cep.action_type_cd = perform_action_var
+			
+			
+		; history and physical - signed by
+		update into CE_EVENT_PRSNL ces
+		set
+			ces.action_dt_tm			= cnvtdatetime(969502_reply_list->docs[i].signed_dt_tm),
+			ces.action_prsnl_id			= 969502_reply_list->docs[i].signed_prsnl_id,
+			ces.valid_from_dt_tm		= cnvtdatetime(969502_reply_list->docs[i].signed_valid_from_dt_tm),
+			ces.updt_id					= reqinfo->updt_id, ;969502_reply_list->docs[i].signed_updt_id
+			ces.updt_dt_tm				= cnvtdatetime(curdate, curtime), ;cnvtdatetime(969502_reply_list->docs[i].signed_updt_dt_tm)
+			ces.updt_cnt				= (ces.updt_cnt + 1),
+			ces.updt_task				= ces.updt_task
+		where
+			ces.event_id in (
+				select ce.event_id
+				from
+					CLINICAL_EVENT ce
+				where
+					ce.event_id = 969502_reply_list->docs[i].mdoc_event_id
+					or ce.parent_event_id = 969502_reply_list->docs[i].mdoc_event_id
+			)
+			and ces.action_type_cd = sign_action_var
+			
+			
+		; history and physical - verified by
+		update into CE_EVENT_PRSNL cev
+		set
+			cev.action_dt_tm			= cnvtdatetime(969502_reply_list->docs[i].verified_dt_tm),
+			cev.action_prsnl_id			= 969502_reply_list->docs[i].verified_prsnl_id,
+			cev.valid_from_dt_tm		= cnvtdatetime(969502_reply_list->docs[i].verified_valid_from_dt_tm),
+			cev.updt_id					= reqinfo->updt_id, ;969502_reply_list->docs[i].verified_updt_id
+			cev.updt_dt_tm				= cnvtdatetime(curdate, curtime), ;cnvtdatetime(969502_reply_list->docs[i].verified_updt_dt_tm)
+			cev.updt_cnt				= (cev.updt_cnt + 1),
+			cev.updt_task				= cev.updt_task
+		where
+			cev.event_id in (
+				select ce.event_id
+				from
+					CLINICAL_EVENT ce
+				where
+					ce.event_id = 969502_reply_list->docs[i].mdoc_event_id
+					or ce.parent_event_id = 969502_reply_list->docs[i].mdoc_event_id
+			)
+			and cev.action_type_cd = verify_action_var
+			
+			
+		commit
+	endfor
+endif
+ 
+ 
+/**************************************************************/ 
+; select data
+if ((not $create_docs) and (validate(request->batch_selection) != 1))
+	select into value($OUTDEV)
+		patient_name			= p.name_full_formatted
+		, patient_id			= p.person_id
+		, fin					= ea.alias
+	;	, encntr_id				= surg_sched->qual[d1.seq].encntr_id
+		, encntr_type			= uar_get_code_display(surg_sched->qual[d1.seq].encntr_type_cd)
+	;	, reg_dt_tm				= surg_sched->qual[d1.seq].reg_dt_tm "mm/dd/yyyy hh:mm;;q"
+								  
+		; surgical case							  	
+		, surgeon				= per.name_full_formatted
+		, surg_sched_dt_tm		= surg_sched->qual[d1.seq].sched_start_dt_tm "mm/dd/yyyy hh:mm;;q"
+	;	, surg_proc				= uar_get_code_display(surg_sched->qual[d1.seq].proc[d2.seq].surg_proc_cd)
+			
+		; office/clinic note
+		, patient_name_ocnote	= p2.name_full_formatted
+		, patient_id_ocnote		= p2.person_id
+		, fin_ocnote			= ea2.alias
+		, event					= uar_get_code_display(surg_sched->qual[d1.seq].ce[d3.seq].event_cd)
+		, result_dt_tm			= surg_sched->qual[d1.seq].ce[d3.seq].result_dt_tm "mm/dd/yyyy hh:mm;;q"
+		, is_scanned			= evaluate(surg_sched->qual[d1.seq].ce[d3.seq].is_scanned, 1, "Y", "")
+		, valid_from_dt_tm		= surg_sched->qual[d1.seq].ce[d3.seq].valid_from_dt_tm "mm/dd/yyyy hh:mm;;q"
+		, performed_dt_tm		= surg_sched->qual[d1.seq].ce[d3.seq].performed_dt_tm "mm/dd/yyyy hh:mm;;q"
+		, performed_by			= per2.name_full_formatted
+		, updt_id				= surg_sched->qual[d1.seq].ce[d3.seq].updt_id
+		, updt_dt_tm			= surg_sched->qual[d1.seq].ce[d3.seq].updt_dt_tm "mm/dd/yyyy hh:mm;;q"
+			
+		; new history and physical
+		, hp_event				= uar_get_code_display(ce.event_cd)
+		, hp_result_dt_tm		= ce.event_end_dt_tm "mm/dd/yyyy hh:mm;;q"
+		, hp_performed_by		= per3.name_full_formatted
+		
+	from
+		(dummyt d1 with seq = value(surg_sched->cnt))
+		, (dummyt d2 with seq = 1)
+		, ENCNTR_ALIAS ea
+		, PERSON p
+		, PRSNL per
+		, (dummyt d3 with seq = 1)
+		, ENCNTR_ALIAS ea2
+		, PERSON p2
+		, PRSNL per2
+		, (dummyt d4)
+		, CLINICAL_EVENT ce
+		, PRSNL per3
+	     
+	plan d1
+	where
+		maxrec(d2, surg_sched->qual[d1.seq].proc_cnt)
+		and maxrec(d3, surg_sched->qual[d1.seq].ce_cnt)
+		and surg_sched->qual[d1.seq].hp_cnt = 0
+		and surg_sched->qual[d1.seq].ce_cnt > 0
+	
+	join d2
+	where
+		surg_sched->qual[d1.seq].proc[d2.seq].sched_primary_ind = 1
+	
+	join ea
+	where
+		ea.encntr_id = surg_sched->qual[d1.seq].encntr_id
+		and ea.encntr_alias_type_cd = fin_var
+		and ea.active_ind = 1
+	
+	join p
+	where
+		p.person_id = surg_sched->qual[d1.seq].person_id
+		and p.active_ind = 1
+		
+	join per
+	where
+		per.person_id = surg_sched->qual[d1.seq].proc[d2.seq].sched_primary_surgeon_id
+		and per.active_ind = 1
+		
+	join d3
+	where
+		surg_sched->qual[d1.seq].ce[d3.seq].person_id = surg_sched->qual[d1.seq].person_id ;001
+	
+	join ea2
+	where
+		ea2.encntr_id = surg_sched->qual[d1.seq].ce[d3.seq].encntr_id
+		and ea2.encntr_alias_type_cd = fin_var
+		and ea2.active_ind = 1
+	
+	join p2
+	where
+		p2.person_id = surg_sched->qual[d1.seq].ce[d3.seq].person_id
+		and p2.active_ind = 1
+		
+	join per2
+	where
+		per2.person_id = surg_sched->qual[d1.seq].ce[d3.seq].performed_prsnl_id
+		and per2.active_ind = 1
+	
+	join d4
+		
+	join ce
+	where
+		ce.encntr_id = surg_sched->qual[d1.seq].encntr_id
+		and ce.person_id = surg_sched->qual[d1.seq].person_id
+		and ce.event_cd in (histphys_var, histphysupd_var)
+		and ce.event_class_cd = mdoc_var
+		and ce.event_reltn_cd = root_var
+		and ce.result_status_cd = auth_var
+		and ce.valid_until_dt_tm > cnvtdatetime(curdate, curtime)
+		
+	join per3
+	where
+		per3.person_id = ce.performed_prsnl_id
+		and per3.active_ind = 1
+		
+	order by
+		patient_name
+		, surg_sched->qual[d1.seq].person_id
+		, surg_sched->qual[d1.seq].sched_start_dt_tm
+	;	, surg_sched->qual[d1.seq].ce[d3.seq].event_id
+		, surg_sched->qual[d1.seq].ce[d3.seq].result_dt_tm desc
+	
+	with nocounter, separator = " ", outerjoin = d4, format, time = 180
+endif
+
+ 
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+	
+if (validate(request->batch_selection) = 1)
+	set reply->status_data.status = "S"
+endif
+
+
+#exitscript
+
+end go
+ 
+

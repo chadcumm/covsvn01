@@ -1,0 +1,103 @@
+<REPORTLAYOUT name="cov_phq_bcma_prsnl_detail" group="0" orientation="0" outputtype="0" printhead="0" intermecprinthead="0" unittype="0" pageheight="11" pagewidth="8.5" leftmargin="0.5" rightmargin="0.5" topmargin="0.25" bottommargin="0.25" destination="0" severity="1" i18nenabledliterals="0" htmltable="0" locked="0" subreport="0" version="136" timestamp="44159.636099537" xmlversion="6" programhasprompts="1" executingprogram="" tableview="0" tableborderwidth="0.014" tablebordercolor="0" tablecolumndefault="1" tablebackcolor="16777215" tablebackmode="0" fileversion="2.1.0.0"><RPTDESCRIPTION><![CDATA[]]></RPTDESCRIPTION><RPTSPOOLWITHOPTIONS><![CDATA[deleted,DIO=value(_DIOTYPE)]]></RPTSPOOLWITHOPTIONS><RPTLAYOUT name="HeadPageSection" height="0.698" order="0" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Helvetica" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="HeadPageSection" left="0.271" top="0.448" width="8.501" height="0.698" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/><RPTITEM index="0"><RPTLINE ver="1" name="FieldName3" left="0.5" top="0.688" width="7.5" height="0.001" anchor="0" direction="0"><![CDATA[]]></RPTLINE><RPTPEN width="0.014" color="0" style="0"/><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTITEM></RPTLAYOUT><RPTLAYOUT name="LayoutSection0" height="0.198" order="1" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="LayoutSection0" left="0.271" top="1.323" width="8.501" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/></RPTLAYOUT><RPTLAYOUT name="LayoutSection1" height="0.198" order="2" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="LayoutSection1" left="0.271" top="1.698" width="8.501" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/></RPTLAYOUT><RPTLAYOUT name="FootPageSection" height="0.5" order="3" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="FootPageSection" left="0.271" top="2.073" width="8.501" height="0.5" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/><RPTITEM index="0"><RPTLINE ver="1" name="FieldName3" left="0.5" top="0.063" width="7.5" height="0.001" anchor="0" direction="0"><![CDATA[]]></RPTLINE><RPTPEN width="0.014" color="0" style="0"/><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTITEM></RPTLAYOUT><RPTQUERY name="Query1" layout="1"><RPTQUERYSTRING><![CDATA[SELECT
+IF ($RPT_GRID_PMPT = 1)
+                INTO $OUTDEV
+                WITH SKIPREPORT=1, NOCOUNTER, SEPARATOR=" ", FORMAT
+ELSE
+                WITH SKIPREPORT=0, SEPARATOR=" ", FORMAT
+ENDIF
+	QUAL_SCHED_OP_LOC = UAR_GET_CODE_DISPLAY( T_REC->qual[D1.SEQ].sched_op_loc_cd)
+	, QUAL_SCHED_DT = format(T_REC->qual[D1.SEQ].sched_start_dt_tm,cclfmt->shortdate4yr)
+	, QUAL_SCHED_TM = format(T_REC->qual[D1.SEQ].sched_start_dt_tm,cclfmt->timenoseconds)
+	, QUAL_SCHED_START_DT_TM = format(T_REC->qual[D1.SEQ].sched_start_dt_tm,";;q")
+	, QUAL_SURG_CASE_NBR_FORMATTED = T_REC->qual[D1.SEQ].surg_case_nbr_formatted
+	, QUAL_SCHED_SURG_AREA = UAR_GET_CODE_DISPLAY( T_REC->qual[D1.SEQ].sched_surg_area_cd)
+	, QUAL_PATIENT_NAME = T_REC->qual[D1.SEQ].patient_name
+	, QUAL_SEX_CD = UAR_GET_CODE_DISPLAY(T_REC->qual[D1.SEQ].sex_cd)
+	, QUAL_AGE = T_REC->qual[D1.SEQ].age
+	, QUAL_LOC_FACILITY_CD = UAR_GET_CODE_DISPLAY(T_REC->qual[D1.SEQ].loc_facility_cd)
+	, QUAL_LOC_NURSE_UNIT_CD = replace(replace(UAR_GET_CODE_DISPLAY(T_REC->qual[D1.SEQ].loc_nurse_unit_cd), char(13), ""), char(
+
+10), "")
+	, QUAL_LOC_ROOM_CD = substring(1,30,UAR_GET_CODE_DISPLAY(T_REC->qual[D1.SEQ].loc_room_cd))
+	, QUAL_ENCNTR_TYPE_CD = UAR_GET_CODE_DISPLAY(T_REC->qual[D1.SEQ].encntr_type_cd)
+	, QUAL_FIN = SUBSTRING(1, 30, T_REC->qual[D1.SEQ].fin)
+	, QUAL_MRN = SUBSTRING(1, 30, T_REC->qual[D1.SEQ].mrn)
+	, QUAL_PRIMARY_SURGEON = SUBSTRING(1, 50, T_REC->qual[D1.SEQ].primary_surgeon)
+	, QUAL_SECONDARY_SURGEON = SUBSTRING(1, 50, T_REC->qual[D1.SEQ].secondary_surgeon)
+	, QUAL_PROCEDURE = trim(SUBSTRING(1, 255, T_REC->qual[D1.SEQ].procedure))
+	, QUAL_PROCEDURE_MODIFIER = trim(SUBSTRING(1, 100, T_REC->qual[D1.SEQ].modifier))
+	, QUAL_PROC_TEXT = trim(SUBSTRING(1, 100, T_REC->qual[D1.SEQ].proc_text))
+	, QUAL_SCHED_ANESTH_TYPE_CD = UAR_GET_CODE_DISPLAY(T_REC->qual[D1.SEQ].sched_anesth_type_cd)
+	, QUAL_SURGERY_COMMENT = trim(SUBSTRING(1, 100, T_REC->qual[D1.SEQ].surgery_comment))
+
+FROM
+	(DUMMYT   D1  WITH SEQ = SIZE(T_REC->qual, 5))
+
+PLAN D1
+
+ORDER BY
+	QUAL_SCHED_SURG_AREA
+	, QUAL_SCHED_DT
+	, QUAL_SCHED_OP_LOC
+	, QUAL_SCHED_START_DT_TM
+	, QUAL_SURG_CASE_NBR_FORMATTED
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT]]></RPTQUERYSTRING><RPTSELECTIF condition="1"><![CDATA[]]></RPTSELECTIF><RPTSELECTIF condition="0"><![CDATA[]]></RPTSELECTIF><RPTSELECTIF condition="0"><![CDATA[]]></RPTSELECTIF></RPTQUERY><RPTDRIVER name="cov_sn_sched_driver" params="$1, $2, $3, $4, $5, $6" executionFlowOrder="1"/><RPTRECORD executionFlowOrder="0"><![CDATA[record t_rec (
+  1 organization_id = f8   
+  1 org_name = vc   
+  1 facility_prompt = f8   
+  1 start_dt_tm_prompt = dq8   
+  1 end_dt_tm_prompt = dq8   
+  1 area_cnt = i2   
+  1 printed_by = vc   
+  1 area_qual [*]  
+    2 sched_surg_area_cd = f8   
+  1 cnt = i4   
+  1 qual [*]  
+    2 encntr_id = f8   
+    2 person_id = f8   
+    2 sch_event_id = f8   
+    2 surg_case_id = f8   
+    2 sched_seq_num = i2   
+    2 sched_start_dt_tm = f8   
+    2 create_dt_tm = f8   
+    2 sched_ud1_cd = f8   
+    2 sched_dur = i4   
+    2 sched_surg_area_cd = f8   
+    2 sched_op_loc_cd = f8   
+    2 sched_pat_type_cd = f8   
+    2 sched_type_cd = f8   
+    2 surg_case_nbr_formatted = vc   
+    2 patient_name = vc   
+    2 sex_cd = f8   
+    2 age = c12   
+    2 dob = dq8   
+    2 loc_nurse_unit_cd = f8   
+    2 loc_facility_cd = f8   
+    2 loc_room_cd = f8   
+    2 loc_bed_cd = f8   
+    2 encntr_type_cd = f8   
+    2 ip_room = vc   
+    2 fin = vc   
+    2 mrn = vc   
+    2 primary_surgeon = vc   
+    2 secondary_surgeon = vc   
+    2 sched_primary_surgeon_id = f8   
+    2 surgeon1_detail = vc   
+    2 surgeon2_detail = vc   
+    2 sched_surg_proc_cd = f8   
+    2 procedure = vc   
+    2 proc_text = vc   
+    2 sched_anesth_type_cd = f8   
+    2 surgery_comment = vc   
+    2 phone = vc   
+    2 phone_type_cd = f8   
+    2 alt_phone = vc   
+    2 alt_phone_type_cd = f8   
+    2 medical_service = vc   
+    2 modifier = vc   
+) 
+]]></RPTRECORD><RPTHEADERS><RPTHEADER name="Head Page" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"><RPTSECTION name="HeadPageSection"/></RPTHEADER><RPTHEADER name="Head QUAL_SCHED_DT" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"/><RPTHEADER name="Head QUAL_SCHED_OP_LOC" version="1" keeptogether="1" keepgroup="0" repeat="1" forcefootpage="0"/><RPTHEADER name="Detail" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"><RPTSECTION name="LayoutSection0"/><RPTSECTION name="LayoutSection1"/></RPTHEADER><RPTHEADER name="Foot Page" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"><RPTSECTION name="FootPageSection"/></RPTHEADER><RPTHEADER name=""><RPTINITIALIZE name="InitializeReport"/><RPTQUERY name="Query1"/><RPTSEGMENT name="Skip Report"><![CDATA[if ( $RPT_GRID_PMPT = 1 )
+   set _rptStat = uar_rptDestroyReport(_hReport)
+   set _hReport=0
+endif]]></RPTSEGMENT><RPTFINALIZE name="FinalizeReport"/></RPTHEADER></RPTHEADERS></REPORTLAYOUT>

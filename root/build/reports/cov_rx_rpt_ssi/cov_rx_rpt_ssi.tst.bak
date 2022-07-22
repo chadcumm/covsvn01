@@ -1,0 +1,3 @@
+execute COV_RX_RPT_SSI 
+"Mine", "", "*", "06232020 1132", "07012020 1132", VALUE("ALL")
+go

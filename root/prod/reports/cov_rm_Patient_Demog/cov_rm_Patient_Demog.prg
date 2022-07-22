@@ -1,0 +1,156 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Todd A. Blanchard
+	Date Written:		03/03/2022
+	Solution:			Revenue Cycle - Scheduling Management
+	Source file name:	cov_rm_Patient_Demog.prg
+	Object name:		cov_rm_Patient_Demog
+	Request #:			12309
+ 
+	Program purpose:	Lists patients and their demographic details.
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:		Used by external apps.
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+ 	Mod Date	Developer				Comment
+ 	----------	--------------------	--------------------------------------
+ 	
+******************************************************************************/
+ 
+drop program cov_rm_Patient_Demog:DBA go
+create program cov_rm_Patient_Demog:DBA
+ 
+prompt 
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "FIN" = "" 
+
+with OUTDEV, FIN
+ 
+ 
+/**************************************************************
+; DVDev DECLARED SUBROUTINES
+**************************************************************/
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+ 
+declare start_datetime		= dq8 with noconstant(cnvtdatetime(curdate, 000000))
+
+declare cmrn_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 4, "COMMUNITYMEDICALRECORDNUMBER"))
+declare fin_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 319, "FINNBR"))
+declare patientpin_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 356, "PATIENTPIN"))
+declare covenant_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 73, "COVENANT"))
+declare email_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 212, "EMAIL"))
+
+declare num					= i4 with noconstant(0)
+declare crlf				= vc with constant(build(char(13), char(10)))
+ 
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+ 
+/**************************************************************/
+; select encounter and person data
+select distinct into value($OUTDEV)
+	patient_last_name				= trim(p.name_last, 3)
+	, patient_first_name			= trim(p.name_first, 3)
+	, patient_middle_name			= trim(p.name_middle, 3)
+	, patient_full_name				= trim(p.name_full_formatted, 3)
+	
+	, age							= replace(replace(replace(replace(
+										cnvtage(cnvtdatetimeutc(datetimezone(p.birth_dt_tm, p.birth_tz), 1)), 
+										"Years", ""),  
+										"Months", ""), 
+										"Days", ""), 
+										"Hours", "")
+	
+	, completed_by_reltn			= "SELF"
+	, completed_by_last_name		= trim(p.name_last, 3)
+	, completed_by_first_name		= trim(p.name_first, 3)
+	, completed_by_middle_name		= trim(p.name_middle, 3)
+	
+;	, pin							= trim(substring(1, 10, lt.long_text), 3)
+	, pin							= format(cnvtdatetimeutc(datetimezone(p.birth_dt_tm, p.birth_tz), 1), "mmddyyyy;;d")
+	
+	, cmrn							= trim(pac.alias, 3)
+	, fac							= trim(cvo.alias, 3)
+	
+	, email							= trim(a.street_addr, 3)
+	
+from 
+ 	; encounter
+	ENCOUNTER e
+ 
+	, (inner join ENCNTR_ALIAS eaf on eaf.encntr_id = e.encntr_id
+		and eaf.encntr_alias_type_cd = fin_var
+		and eaf.alias = $FIN
+		and eaf.active_ind = 1)
+	
+	; pin
+	, (left join ENCNTR_INFO ei on ei.encntr_id = e.encntr_id
+		and ei.info_sub_type_cd = patientpin_var
+		and ei.active_ind = 1)
+
+;	, (left join LONG_TEXT lt on (lt.long_text_id = ei.long_text_id) 
+;		or (
+;			lt.parent_entity_id = ei.encntr_info_id 
+;			and lt.parent_entity_name = "ENCNTR_INFO"
+;		))
+ 
+	, (inner join CODE_VALUE_OUTBOUND cvo on cvo.code_value = e.loc_facility_cd
+		and cvo.code_set = 220
+		and cvo.alias_type_meaning = "FACILITY"
+		and cvo.contributor_source_cd = covenant_var)
+ 
+ 	; patient
+	, (inner join PERSON p on p.person_id = e.person_id
+		and p.active_ind = 1)
+	
+	, (inner join PERSON_ALIAS pac on pac.person_id = p.person_id
+		and pac.person_alias_type_cd = cmrn_var
+		and pac.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
+		and pac.active_ind = 1)
+		
+	; patient email
+	, (left join ADDRESS a on a.parent_entity_id = p.person_id
+		and a.parent_entity_name = "PERSON"
+		and a.address_type_cd = email_var
+		and a.active_ind = 1)
+		
+;	, (dummyt d)
+	
+;plan e
+;join eaf
+;join ei
+;;join lt
+;join cvo
+;join p
+;join pac
+;join d
+		
+order by
+	patient_full_name
+	, cmrn
+
+with nocounter, noheading, separator = "|", format, time = 60
+ 
+ 
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+ 
+#exitscript
+ 
+end
+go
+ 

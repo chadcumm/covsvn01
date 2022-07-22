@@ -1,0 +1,385 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+	Author:				   Chad Cummings
+	Date Written:		   03/01/2019
+	Solution:			   
+	Source file name:	   cov_eks_dlg_audit.prg
+	Object name:		   cov_eks_dlg_audit
+	Request #:
+
+	Program purpose:
+
+	Executing from:		CCL
+
+ 	Special Notes:		Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod 	Mod Date	  Developer				      Comment
+--- 	----------	--------------------	----------------------------------
+000 	12/12/2019  Chad Cummings			Initial Release
+******************************************************************************/
+drop program cov_eks_dlg_audit_rec:dba go
+create program cov_eks_dlg_audit_rec:dba
+prompt
+	"Output to File/Printer/MINE (MINE):" = "MINE"                            ;* Enter or select the printer or file name to send
+	, "Begin Date, mmddyy (today):" = "CURDATE"                               ;* Enter the begin date for this report
+	, "BeginTime, hhmm (0000):" = "0000"                                      ;* Enter the begin time for this report
+	, "End Date, mmddyy (today):" = "CURDATE"                                 ;* Enter the end date for this report
+	, "End Time, hhmm (2359):" = "2359"                                       ;* Enter the end time for this report
+	, "Module Name, pattern match OK (*):" = "*"                              ;* Enter a module name to query by
+	, "Output Type - (B)ackend CSV, (F)rontend CSV, or (R)eport (R):" = "R"   ;* Select an output type for this report
+	, "Show (S)ummary or (D)etails (D):" = "D"                                ;* Select if the report should display a summary or
+	, "Sort by (A)lert Recipient or (M)odule (M):" = "M"                      ;* Select the sort type for the report
+ 
+with OUTPUTTYPE, BEGINDATE, BEGINTIME, ENDDATE, ENDTIME, MODULENAME, OUTTYPE,
+	DETAILS, SORT
+ 
+;003 begin
+declare strMsg1 = vc
+declare strMsg2 = vc
+declare strMsg3 = vc
+declare strMsg4 = vc
+declare strMsg5 = vc
+declare strMsg6 = vc
+declare strMsg7 = vc
+declare strMsg8 = vc
+declare strMsg9 = vc
+declare strMsg10 = vc
+declare strMsg11 = vc
+declare strMsg12 = vc
+declare strMsg13 = vc
+declare strMsg14 = vc
+declare strMsg5_1 = vc
+declare strMsg5_2 = vc
+declare strMsg6_1 = vc
+declare strMsg6_2 = vc
+declare strMsg6_3 = vc
+declare strMsg7_1 = vc
+declare strMsg8_1 = vc
+declare strMsg9_1 = vc
+ 
+declare strMsgRange = vc
+declare strMsgReportDtTm = vc
+declare strMsgModuleName = vc
+declare strMsgTrigger = vc
+declare strMsgAlertDtTm = vc
+declare strMsgPatient = vc
+declare strMsgAlertRec = vc
+declare strMsgLocation = vc
+declare strMsgOverRide = vc
+declare strMsgFreeTextOver = vc
+declare strMsgSeverity = vc
+declare strMsgIntDrug = vc
+declare strMsgIntAllergy = vc
+declare strMsgAlertRecUpper = vc
+declare strMsgRecLocation = vc
+declare strMsgModuleNameLow = vc
+declare strMsgAllModules = vc
+declare strMsgAllRecs = vc
+declare strTriggerAction = vc
+declare strMsgNone = vc
+declare strMsgMessage = vc
+declare strMsgCancel = vc
+declare strMsgProceed = vc
+declare strMsgModify = vc
+declare strMsgAynch = vc
+declare strMsgDC = vc	
+ 
+%i cclsource:i18n_uar.inc
+set i18nHandle = 0
+set lRetVal = uar_i18nlocalizationinit(i18nHandle, curprog, "",curcclrev)
+ 
+set strMsg1 = uar_i18nBuildMessage(i18nHandle, "KeyBuild1",
+	"***  Expert Summary Audit for Module(s) %1 Sorted By Module Name ***", "s", $6)
+set strMsg2 = uar_i18nBuildMessage(i18nHandle, "KeyBuild2",
+	"***  Expert Detail Audit for Module(s) %1 Sorted By Module Name ***","s", $6)
+set strMsg3 = uar_i18nBuildMessage(i18nHandle, "KeyBuild3",
+	"***  Expert Summary Audit for Module(s) %1 Sorted By Alert Recipient ***","s", $6)
+set strMsg4 = uar_i18nBuildMessage(i18nHandle, "KeyBuild4",
+	"***  Expert Detail Audit for Module(s) %1 Sorted By Alert Recipient ***","s", $6)
+ 
+set strMsg5_1 = uar_i18nGetMessage(i18nHandle, "KeyBuild5_1", "Trigger (")
+set strMsg5_2 = uar_i18nGetMessage(i18nHandle, "KeyBuild5_2", ")")
+set strMsg6_1 = uar_i18nGetMessage(i18nHandle, "KeyBuild6_1", "Total:  ")
+set strMsg6_2 = uar_i18nGetMessage(i18nHandle, "KeyBuild6_2", " Alert(s)     ")
+set strMsg6_3 = uar_i18nGetMessage(i18nHandle, "KeyBuild6_3", " Override(s)")
+set strMsg7_1 = uar_i18nGetMessage(i18nHandle, "KeyBuild7_1", "Module (")
+set strMsg8_1 = uar_i18nGetMessage(i18nHandle, "KeyBuild8_1", "Module Name (")
+set strMsg9_1 = uar_i18nGetMessage(i18nHandle, "KeyBuild9_1", "Recipient (")
+ 
+set strMsgRange = uar_i18nGetMessage(i18nHandle,        "KeyGet01", "Audit Date/Time Range:")
+set strMsgReportDtTm = uar_i18nGetMessage(i18nHandle,   "KeyGet02", "Report Date/Time:")
+set strMsgModuleName = uar_i18nGetMessage(i18nHandle,   "KeyGet03", "MODULE NAME")
+set strMsgTrigger = uar_i18nGetMessage(i18nHandle,      "KeyGet04", "Trigger")
+set strMsgAlertDtTm = uar_i18nGetMessage(i18nHandle,    "KeyGet05", "Alert Date/Time")
+set strMsgPatient = uar_i18nGetMessage(i18nHandle,      "KeyGet06", "Patient")
+set strMsgAlertRec = uar_i18nGetMessage(i18nHandle,     "KeyGet07", "Alert Recipient")
+set strMsgLocation = uar_i18nGetMessage(i18nHandle,     "KeyGet08", "Location")
+set strMsgOverRide = uar_i18nGetMessage(i18nHandle,     "KeyGet09", "Override Reason")
+set strMsgFreeTextOver = uar_i18nGetMessage(i18nHandle, "KeyGet10", "*Freetext Override Reason")
+set strMsgSeverity = uar_i18nGetMessage(i18nHandle,     "KeyGet11", "Severity")
+set strMsgIntDrug = uar_i18nGetMessage(i18nHandle,      "KeyGet12", "Interacting Drug")
+set strMsgIntAllergy = uar_i18nGetMessage(i18nHandle,   "KeyGet13", "Interacting Allergy")
+set strMsgAlertRecUpper = uar_i18nGetMessage(i18nHandle,"KeyGet14", "ALERT RECIPIENT")
+set strMsgRecLocation = uar_i18nGetMessage(i18nHandle,  "KeyGet15", "Recipient Position")
+set strMsgModuleNameLow = uar_i18nGetMessage(i18nHandle,"KeyGet16", "Module Name")
+set strMsgAllModules = uar_i18nGetMessage(i18nHandle,   "KeyGet17", "All Modules:")
+set strMsgAllRecs = uar_i18nGetMessage(i18nHandle,      "KeyGet18", "All Recipients:")
+set strMsgTriggerAction = uar_i18nGetMessage(i18nHandle,"KeyGet19", "Trigger Action")
+set strMsgNone = uar_i18nGetMessage(i18nHandle,         "KeyGet20", "None")
+set strMsgMessage = uar_i18nGetMessage(i18nHandle,      "KeyGet21", "Message")
+set strMsgCancel = uar_i18nGetMessage(i18nHandle,       "KeyGet22", "Cancel")
+set strMsgProceed = uar_i18nGetMessage(i18nHandle,      "KeyGet23", "Proceed")
+set strMsgModify = uar_i18nGetMessage(i18nHandle,       "KeyGet24", "Modify")
+set strMsgAynch = uar_i18nGetMessage(i18nHandle,        "KeyGet25", "Asynch")
+set strMsgDC = uar_i18nGetMessage(i18nHandle,           "KeyGet26", " (D/C)")
+;002 end
+ 
+declare outFile = vc
+declare startDt = vc
+declare endDt   = vc
+declare startTm = c4
+declare endTm   = c4
+declare moduleName = vc
+;declare outputType = c1
+declare parseString = vc
+declare validString = vc
+declare nxtChr = c1
+declare asterisk = c1
+declare asterPos = i4
+declare underPos = i4
+declare msg = vc
+declare showDetails = c1
+declare sortType = c1
+;declare dlgName = vc
+;declare recipient = vc
+ 
+set asterisk = char(ichar("*"))
+ 
+declare tmpCatDisp = vc ;005
+
+;set outFile = $1
+set moduleName = trim(cnvtupper($6))
+set sortType = trim(cnvtupper($9))
+ 
+; Validate startDt
+set startDt = $2
+if (trim(cnvtupper(startDt)) = "CURDATE")
+	set startDt = format(curdate,"mmddyy;;d")
+elseif (size(startDt) != 6 or not isnumeric(startDt))
+	call echo("Start date must be in mmddyy format")
+	go to EndProgram
+elseif (cnvtint(substring(1,2,startDt)) > 12 or
+	cnvtint(substring(1,2,startDt)) <= 0)
+	call echo("Start month must be 01 through 12")
+	go to EndProgram
+elseif (cnvtint(substring(3,2,startDt)) > 31 or
+	cnvtint(substring(3,2,startDt)) <= 0)
+	call echo("Start day must be 01 through 31")
+	go to EndProgram
+endif
+;call echo(concat("startDt = ",startDt))
+ 
+; Validate StartTm
+set startTm = $3
+if (size(startTm) != 4 or not isnumeric(startTm))
+	call echo("Start time must be in hhmm format")
+	go to EndProgram
+elseif (cnvtint(substring(1,2,startTm)) > 23)
+	call echo("Start hour must be < 24")
+	go to EndProgram
+elseif (cnvtint(substring(3,2,startTm)) > 59)
+	call echo("Start minute must be < 60")
+	go to EndProgram
+endif
+;call echo(concat("startTm = ",startTm))
+ 
+; Validate endDt
+set endDt = $4
+if (trim(cnvtupper(endDt)) = "CURDATE")
+	set endDt = format(curdate,"mmddyy;;d")
+elseif (size(endDt) != 6 or not isnumeric(endDt))
+	call echo("End date must be in mmddyy format")
+	go to EndProgram
+elseif (cnvtint(substring(1,2,endDt)) > 12 or
+	cnvtint(substring(1,2,endDt)) <= 0)
+	call echo("End month must be 01 through 12")
+	go to EndProgram
+elseif (cnvtint(substring(3,2,endDt)) > 31 or
+	cnvtint(substring(3,2,endDt)) <= 0)
+	call echo("End day must be 01 through 31")
+	go to EndProgram
+endif
+;call echo(concat("endDt = ",endDt))
+ 
+; Validate endTm
+set endTm = $5
+if (size(endTm) != 4 or not isnumeric(endTm))
+	call echo("End time must be in hhmm format")
+	go to EndProgram
+elseif (cnvtint(substring(1,2,endTm)) > 23)
+	call echo("End hour must be < 24")
+	go to EndProgram
+elseif (cnvtint(substring(3,2,endTm)) > 59)
+	call echo("End minute must be < 60")
+	go to EndProgram
+endif
+;call echo(concat("endTm = ",endTm))
+ 
+; Validate outType
+;set outputType = substring(1,1,trim(cnvtupper($7)))
+if ($outType not in ("R","B","F"))
+	call echo("Output Type must be either 'R' or 'B' or 'F'")
+	go to EndProgram
+endif
+ 
+; Validate showDetails
+ 
+set showDetails = trim(cnvtupper($8))
+if (showDetails not in ("D","S"))
+	call echo("Show Details must be either 'D' or 'S'")
+	go to EndProgram
+endif
+ 
+set startDtTm = cnvtdatetime(cnvtdate2(startDt,"MMDDYY"),cnvtint(startTm))
+set endDtTm = cnvtdatetime(cnvtdate2(endDt,"MMDDYY"), cnvtint(endTm))
+call echo(concat("startDtTm = ", format(startDtTm,";;q"), "  endDtTm = ", format(endDtTm,";;q")))
+set asterPos = findstring(asterisk,moduleName)
+set underPos = findstring("_", moduleName)
+ 
+if (asterPos > 1)  ; Asterisk found but not in first position
+	set moduleName = concat(asterisk,moduleName)
+elseif (not asterPos)  ; No Asterisk found
+	if (underPos)	; If underline found build the dlg_name
+		set moduleName = concat(substring(1,underPos,moduleName),"EKM!",moduleName)
+	else	; If no asterisk and no underline, see if it might be a multum dlg_name
+		if(findstring("DRUG", moduleName))
+			set moduleName = concat("MUL_MED!",moduleName)
+		else  ;No asterisk and no underline, we don't know the prefix so use an asterisk
+			set moduleName = concat(asterisk,moduleName)
+		endif
+	endif
+endif
+ 
+call echo(concat("dlg_name = ", moduleName))
+ 
+%i cclsource:eks_eksdlgevent.inc
+ 
+set eksdlg_input->module_name = moduleName
+set eksdlg_input->start_dt_tm = startDtTm
+set eksdlg_input->end_dt_tm = endDtTm
+ 
+execute eks_get_dlg_event
+call echo(concat("Number found = ", build(eksdlgevent->qual_cnt)))
+
+call echorecord(eksdlgevent) 
+
+record t_rec
+(
+	1 cnt = i4
+	1 qual[*]
+	 2 person_id = f8
+	 2 encntr_id = f8
+	 2 name_full_formatted = vc
+	 2 prsnl_id = f8
+	 2 prsnl_name = vc
+	 2 module = vc
+	 2 action_flag = i2
+	 2 action = vc
+	 2 dlg_event_id = f8
+	 2 prsnl_pos = vc
+	 2 facility = vc
+	 2 facility_cd = f8
+	 2 unit_cd = f8
+	 2 unit = vc
+	 2 fin = vc
+	 2 dlg_dt_tm = dq8
+)
+
+select into "nl:"
+from
+	(dummyt d1 with seq=eksdlgevent->qual_cnt)
+plan d1
+head report
+	t_rec->cnt = 0
+detail
+	t_rec->cnt = (t_rec->cnt + 1)
+	stat = alterlist(t_rec->qual,t_rec->cnt)
+	t_rec->qual[t_rec->cnt].person_id		= eksdlgevent->qual[d1.seq].person_id
+	t_rec->qual[t_rec->cnt].encntr_id		= eksdlgevent->qual[d1.seq].encntr_id
+	t_rec->qual[t_rec->cnt].module			= eksdlgevent->qual[d1.seq].module_name
+	t_rec->qual[t_rec->cnt].prsnl_id		= eksdlgevent->qual[d1.seq].dlg_prsnl_id
+	t_rec->qual[t_rec->cnt].action_flag		= eksdlgevent->qual[d1.seq].action_flag
+	t_rec->qual[t_rec->cnt].dlg_event_id	= eksdlgevent->qual[d1.seq].dlg_event_id
+	t_rec->qual[t_rec->cnt].dlg_dt_tm		= eksdlgevent->qual[d1.seq].updt_dt_tm
+foot report
+	null
+with nocounter
+
+select into "nl:"
+from
+	(dummyt d1 with seq=t_rec->cnt)
+plan d1
+detail
+	case (t_rec->qual[d1.seq].action_flag)
+		of 1:	t_rec->qual[d1.seq].action = "alert message display only"
+		of 2:	t_rec->qual[d1.seq].action = "cancel the triggering action"
+		of 3:	t_rec->qual[d1.seq].action = "continue the triggering action"
+		of 4:	t_rec->qual[d1.seq].action = "modify the triggering action"
+		of 5:	t_rec->qual[d1.seq].action = "message from eks_log_action_a template"
+		else
+				t_rec->qual[d1.seq].action = "unknown"
+	endcase
+with nocounter
+
+
+select into "nl:"
+from
+	(dummyt d1 with seq=t_rec->cnt)
+	,encntr_alias ea
+	,encounter e
+	,person p
+plan d1
+join e
+	where e.encntr_id = t_rec->qual[d1.seq].encntr_id
+join p
+	where p.person_id = e.person_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.active_ind = 1
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+	and   cnvtdatetime(curdate,curtime3) between ea.beg_effective_dt_tm and ea.end_effective_dt_tm
+detail
+	t_rec->qual[d1.seq].name_full_formatted = p.name_full_formatted
+	t_rec->qual[d1.seq].facility_cd = e.loc_facility_cd
+	t_rec->qual[d1.seq].unit_cd = e.loc_nurse_unit_cd
+	t_rec->qual[d1.seq].fin = ea.alias
+	t_rec->qual[d1.seq].facility = uar_get_code_display(e.loc_facility_cd)
+	t_rec->qual[d1.seq].unit = uar_get_code_display(e.loc_nurse_unit_cd)
+with nocounter
+
+select into "nl:"
+from
+	(dummyt d1 with seq=t_rec->cnt)
+	,encntr_loc_hist elh
+plan d1
+join elh
+	where elh.encntr_id = t_rec->qual[d1.seq].encntr_id
+	and   elh.beg_effective_dt_tm <= cnvtdatetime(t_rec->qual[d1.seq].dlg_dt_tm)
+	and   elh.end_effective_dt_tm >= cnvtdatetime(t_rec->qual[d1.seq].dlg_dt_tm)
+	and   elh.active_ind = 1
+detail
+	call echo(elh.loc_nurse_unit_cd)
+	t_rec->qual[d1.seq].facility = uar_get_code_display(elh.loc_facility_cd)
+	t_rec->qual[d1.seq].unit = uar_get_code_display(elh.loc_nurse_unit_cd)
+with nocounter
+
+call echorecord(t_rec)
+#EndProgram
+end go

@@ -1,0 +1,56 @@
+<prompt-def program = 'COV_PHA_FORMULARY_EXTRACT2' group = '0' auto-arrange = 'true' stream-ver = '0' export-dt-tm = '201910231015' version = '12' script-enabled = 'false' prompt-control-version = '1.000000' updt_dt_tm = '07/10/2019 14:43:04'><control name = 'OUTDEV' control = '6' height = '25' width = '250' position = '0' result-type = '1' exclude = 'false'><display align = 'left'>Output to File/Printer/MINE</display>
+<description>Enter or select the printer or file name to send this report to.</description>
+<default>MINE</default>
+<component name = 'CWizOutputDevice'><property name = 'OUTPUT-DEVICES:00'><![CDATA[HIDE-BROWSER='false' DEVICES='' DISPLAY-ALL='true' DISALLOW-FREETEXT='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROGRAM'><![CDATA[AUTO-ARRANGE='true' OWNER='' PDL-VERSION=' 111' DU-BASE-HORZ='8' VERSION='12' STREAM-VER='0' REPORT-NAME='' UPDT_DT_TM='07/10/2019 14:43:04' DU-BASE-VERT='16' SCRIPT-ENABLED='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ]]></property>
+<property name = 'PROMPT'><![CDATA[BOTTOM='25' LABEL-POS-LEFT='10' LEFT='160' LABEL-POS-TOP='10' EXCLUDE-RUNTIME='false' RIGHT='250' LABEL-POS-HEIGHT='13' TOP='10' LABEL-LEFT='true' LABEL-POS-WIDTH='130' ]]></property>
+</component>
+</control>
+<control name = 'Facility' control = '2' height = '25' width = '250' position = '1' result-type = '3' exclude = 'false'><display align = 'left'>Facility</display>
+<description></description>
+<default>   24614639.00</default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[MODIFIABLE='false' INC-ANY='false' DUAL-LIST='false' DB-EXE='SCRIPT' LABEL-COLUMNS='false' QBE-SOURCE='DiscernQueryBuilder' MULTI-SELECT='false' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='   24614639.00' QUERY-STRING='SELECT
+    L.LOCATION_CD
+    , Facility &#061; uar_get_code_description(l.location_cd)
+
+FROM
+    LOCATION   L
+    , PRSNL_ORG_RELTN   P
+
+plan l where l.location_type_cd &#061; (select c.code_value  ;783.00
+                                 from code_value c
+                                 where c.code_set &#061; 222
+                                 and c.active_ind &#061; 1
+                                 and c.end_effective_dt_tm > sysdate
+                                 and c.display_key &#061; "FACILITYS")
+                and l.active_ind &#061; 1
+                and l.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
+                and l.patcare_node_ind &#061; 1
+join p where l.organization_id &#061; p.organization_id
+                and p.person_id &#061; reqinfo->updt_id
+                and p.end_effective_dt_tm >&#061; cnvtdatetime(curdate,curtime3)
+                and p.active_ind &#061; 1
+
+ORDER BY
+    Fac]]></property>
+<property name = 'SETTINGS:01'><![CDATA[ility
+
+WITH NOCOUNTER, SEPARATOR&#061;" ", FORMAT
+' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;2040.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;LOCATION_CD&#034; TITLE&#061;&#034;LOCATION_CD&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1460.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;FACILITY&#034; TITLE&#061;&#034;FACILITY&#034; &#125;'                                                                                                                                                                                                                                                                          ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[BOTTOM='25' LABEL-POS-LEFT='10' LEFT='160' LABEL-POS-TOP='42' EXCLUDE-RUNTIME='false' RIGHT='250' LABEL-POS-HEIGHT='13' TOP='42' LABEL-LEFT='true' LABEL-POS-WIDTH='32' ]]></property>
+</component>
+</control>
+<control name = 'ALLNDC' control = '2' height = '25' width = '250' position = '2' result-type = '1' exclude = 'false'><display align = 'left'>Primary NDC Extract Only</display>
+<description></description>
+<default></default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[MODIFIABLE='false' INC-ANY='false' DUAL-LIST='false' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='false' STR-DEFAULT='' SOURCE-TYPE='STRING' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ]]></property>
+<property name = 'STRING-TABLE:00'><![CDATA[{Yes}{No}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ]]></property>
+<property name = 'TABLE-HEADER:00'><![CDATA[{TABLE='' ORDINAL='0' VISIBLE='true' COLUMN='0' ALIAS='' FORMAT='' WIDTH='0.000000' TYPE='' VALUE='true' BINDING='A' TITLE='A' }{TABLE='' ORDINAL='1' VISIBLE='true' COLUMN='1' ALIAS='' FORMAT='' WIDTH='0.000000' TYPE='' VALUE='false' BINDING='B' TITLE='B' }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[BOTTOM='25' LABEL-POS-LEFT='10' LEFT='160' LABEL-POS-TOP='74' EXCLUDE-RUNTIME='false' RIGHT='250' LABEL-POS-HEIGHT='13' TOP='74' LABEL-LEFT='true' LABEL-POS-WIDTH='120' ]]></property>
+</component>
+</control>
+</prompt-def>

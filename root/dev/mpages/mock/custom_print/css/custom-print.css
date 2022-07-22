@@ -1,0 +1,200 @@
+#cust_print_container_ph {
+    font-family: arial;
+    font-size: 12px;
+}
+#cust_print_container_ph td {
+    vertical-align: top;
+}
+#cust_print_container_ph .patient-information {
+    width: 20%
+}
+#cust_print_container_ph .location {
+    width: 11%
+}
+#cust_print_container_ph .patient-summary {
+    width: 65%
+}
+#cust_print_container_ph .comments,
+#cust_print_container_ph .actions {
+    width: 32%
+}
+#cust_print_container_ph table {
+    border-collapse: collapse;
+}
+#cust_print_container_ph .table-container {
+    padding-top: 1em;
+    padding-bottom: 1em;
+}
+#cust_print_container_ph .table-container:nth-child(2n+1) {
+    page-break-after: always;
+}
+#cust_print_container_ph table,
+#cust_print_container_ph th,
+#cust_print_container_ph td {
+    border: 1px solid #b2b9c0;
+}
+#cust_print_container_ph td {
+    padding: 0px;
+}
+#cust_print_container_ph .sample-data {
+    font-weight: bold;
+    padding-bottom: 1em;
+}
+#cust_print_container_ph .cell-header {
+    padding-left: 2px;
+}
+#cust_print_container_ph .cell-content {
+    padding-left: 2px;
+    padding-bottom: 2em;
+}
+#cust_print_container_ph .cell-header {
+    border-bottom: 1px solid #b2b9c0;
+    font-weight: bold;
+}
+#cust_print_container_ph .notes-content {
+    min-height: 2em;
+}
+#cust_print_container_ph .print-header {
+    display: -ms-flexbox;
+    display: flex;
+}
+#cust_print_container_ph .print-header div{
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-positive: 1;
+    -ms-flex-negative: 1;
+    flex: 1 1;
+}
+#cust_print_container_ph .print-title {
+    -ms-flex-pack: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 24px;
+}
+#cust_print_container_ph .printed-date {
+    -ms-flex-pack: flex-end;
+    justify-content: flex-end;
+}
+#cust_print_container_ph .patient-information .cell-content {
+    padding-top: 0.5em;
+}
+ 
+.hidden{
+  display: none;
+}
+.page-overlay{
+  /*display: block;*/
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,.5);
+  z-index: 1000;
+  opacity: 0.4;
+}
+.selector-modal {
+    background-color: #fff;
+    border: 1px #b5b9bd;
+    border-radius: 5px;
+    box-shadow: 3px 3px 5px rgba(0,0,0,.25);
+    left: 50%;
+    position: absolute;
+    top: 30%;
+    margin-left: -255px;
+    height: 105px;
+    width: 300px;
+    word-wrap: break-word;
+    z-index: 1052;
+    /*display: block;*/
+}
+.modal-msg{
+  margin-bottom: 15px;
+  border-bottom: 1px solid #000;
+  margin-left: -5px;
+  margin-right: 3px;
+  font-weight: bold;
+}
+.modal-content{
+  padding-left: 10px;
+  padding-top: 5px;
+  font-family: Tahoma;
+}
+.modal-content select{
+  margin-left: 25%
+}
+.modal-btns{
+  float: right;
+  margin-right: 10px;
+  margin-top: 15px;
+  margin-bottom: 5px;
+}
+.main-content{
+  margin-top: 15px;
+  font-family: Tahoma
+}
+#openModal{
+  float: right;
+}
+
+.hidden{
+  display: none;
+}
+.page-overlay{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,.5);
+  z-index: 1000;
+  opacity: 0.4;
+}
+.selector-modal {
+    background-color: #fff;
+    border: 1px #b5b9bd;
+    border-radius: 5px;
+    box-shadow: 3px 3px 5px rgba(0,0,0,.25);
+    left: 50%;
+    position: absolute;
+    top: 30%;
+    margin-left: -255px;
+    height: 105px;
+    width: 350px;
+    word-wrap: break-word;
+    z-index: 1052;
+}
+.modal-msg{
+  margin-bottom: 15px;
+  border-bottom: 1px solid #000;
+  margin-left: -5px;
+  margin-right: 3px;
+  font-weight: bold;
+}
+.modal-content{
+  padding-left: 10px;
+  padding-top: 5px;
+  font-family: Tahoma;
+}
+.modal-content select{
+  margin-left: 25%
+}
+.modal-btns{
+  /* IE10 Support - uncomment float and remove display and justify-content properties */
+  /* float: right; */
+  display: flex;
+  justify-content: flex-end;
+  margin-right: 10px;
+  margin-top: 15px;
+  margin-bottom: 5px;
+}
+.modal-btns button{
+    margin-left: 3px;
+}
+.main-content{
+  margin-top: 15px;
+  font-family: Tahoma
+}
+#openModal{
+  float: right;
+}

@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="ASCII"?>
+<EM:ExpertModule xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:EM="http:///com.cerner.expert/expertmodule/1.0.0" moduleName="COV_GS_TEST_MODULE">
+  <information>
+    <runtimeInformation versionString="001.022" externalFileName="COV_GS_TEST_MODULE" lastUpdated="2021-06-11T17:10:02.000-0400" validtionType="PRODUCTION" title="COV_GS_TEST_MODULE" reconcileFlag="1" reconcileDate="2021-06-11T17:10:02.000-0400">
+      <duration start="2020-07-17T00:00:00.000-0400" end="2100-12-31T23:59:59.000-0500"/>
+      <updateUser userName="PARAMASIVAM, GEETHA"/>
+    </runtimeInformation>
+    <documentation author="GEETHA PARAMASIVAM" institution="COVENANT HEALTH" specialist="LORI, MYERS" purpose="As per Quality all sepsis patients should have a Sepsis QM order in place." explanation="Issue : Some of the sepsis alert rules missing sepsis QM order that should be placed while creating sepsis alert. This rule will look into a patient's chart and place a QM orders if there is no existing order regardless of which existing rule fire sepsis alert.&#xD;&#xA;&#xD;&#xA;Implementation : When the rule fire Severe Sepsis IP Alert, Severe Sepsis ED Alert, ED Triage Sepsis Alert, Septic Shock Alert or Sepsis Advisor orders it should also fire Sepsis Quality Measures order."/>
+  </information>
+  <expertTemplates>
+    <events>
+      <event name=""/>
+      <event name="ADDPROBLEM"/>
+      <event name="ADDTOSCRATCHPAD"/>
+      <event name="ALLERGY_EVENT"/>
+      <event name="AP_ORDER_EVENT"/>
+      <event name="BB_RESULT_EVENT"/>
+      <event name="CBTFLEXORDERS"/>
+      <event name="CHART_SERVER_EVENT"/>
+      <event name="CLINICALTRIALSCREEN"/>
+      <event name="CLINICAL_EVENT"/>
+      <event name="CLOSECHART"/>
+      <event name="COLLECTION_EVENT"/>
+      <event name="DCP_CN_TASK_UPD"/>
+      <event name="DCP_MODTASK_EVENT"/>
+      <event name="DCP_PW_COND"/>
+      <event name="DCP_PW_OUTCOME_EVENT"/>
+      <event name="DIAGNOSIS_EVENT"/>
+      <event name="EKS_FORMAT"/>
+      <event name="EKS_SYNC_TEST01"/>
+      <event name="EKS_TEST_02"/>
+      <event name="EKS_TEST_EVENT"/>
+      <event name="EKS_TEST_EVENT01"/>
+      <event name="ENSURE_EVENT"/>
+      <event name="EXPERT_EVENT"/>
+      <event name="HEALTHE_EVENT"/>
+      <event name="HEALTH_MAINT_QUAL_EVENT"/>
+      <event name="HIM_ADD_REQUEST"/>
+      <event name="HIM_ADMIT_EVENT"/>
+      <event name="HIM_PATIENT_INFO_REQUEST"/>
+      <event name="HIM_TEST_EVENT"/>
+      <event name="HL7_EVENT"/>
+      <event name="MB_EXPEDITE"/>
+      <event name="MB_RESULT_EVENT"/>
+      <event name="MB_SCRIPTED_WORKUPS"/>
+      <event name="MB_SUSCEPTIBILITY"/>
+      <event name="MDI_RESULT_EVENT"/>
+      <event name="MEDCHARTACTIVATE"/>
+      <event name="MPI_ADT"/>
+      <event name="OPENCHART"/>
+      <event name="ORDER_EVENT"/>
+      <event name="ORDER_PRO_TEST1"/>
+      <event name="PATIENT_EVENT"/>
+      <event name="PCA_EXPERT_EVENT"/>
+      <event name="Person_Transaction"/>
+      <event name="PFT_Add_Account"/>
+      <event name="PFT_ADJ_WO"/>
+      <event name="PFT_CHARGE_EVENT"/>
+      <event name="pft_check_amount"/>
+      <event name="PFT_VEHICLE"/>
+      <event name="PNTFLEXREFRANGE"/>
+      <event name="POWERPLANFLEX"/>
+      <event name="PROBLEM_EVENT"/>
+      <event name="PROFIT_1450_CLAIM_EVENT"/>
+      <event name="PROFIT_1500_CLAIM_EVENT"/>
+      <event name="PROVIDER_CHG_EVENT"/>
+      <event name="PROVIDE_EVENT"/>
+      <event name="PWRCHRT_ADD_ORDER"/>
+      <event name="RESULT_EVENT"/>
+      <event name="RESULT_EVENT_CSM"/>
+      <event name="RESULT_EVENT_TEST"/>
+      <event name="SCH_ACTION_EVENT"/>
+      <event name="SIGNORDER"/>
+      <event name="SN New Pref Card Created"/>
+      <event name="SN_CASE_CHECK_IN_EVENT"/>
+      <event name="SN_CASE_EVENT"/>
+      <event name="SN_CASE_SCHEDULE_EVENT"/>
+      <event name="SN_DOCUMENT_OPEN"/>
+      <event name="SN_DOCUMENT_STATE"/>
+      <event name="SN_FINALIZE_DOC_EVENT"/>
+      <event name="SN_PROCEDURE_SCHEDULE"/>
+      <event name="SN_SAVE_PROCEDURE"/>
+      <event name="SN_TEST_EVENT"/>
+      <event name="SOCIAL_HISTORY_ADD"/>
+      <event name="SYNCHEVENT"/>
+      <event name="TOCFLEX"/>
+      <event name="TOUCHOPENCHART"/>
+    </events>
+    <evokeTemplates>
+      <templateDefinitions xsi:type="EM:ExpertTemplate" name="EKS_CURRENT_INFO_E" definition="The current DATA_TYPE QUALIFIER DATA_VALUE" description="Evaluates current information" eventDependency="//@expertTemplates/@events/@event.1 //@expertTemplates/@events/@event.2 //@expertTemplates/@events/@event.3 //@expertTemplates/@events/@event.4 //@expertTemplates/@events/@event.8 //@expertTemplates/@events/@event.9 //@expertTemplates/@events/@event.10 //@expertTemplates/@events/@event.11 //@expertTemplates/@events/@event.13 //@expertTemplates/@events/@event.16 //@expertTemplates/@events/@event.23 //@expertTemplates/@events/@event.24 //@expertTemplates/@events/@event.32 //@expertTemplates/@events/@event.35 //@expertTemplates/@events/@event.36 //@expertTemplates/@events/@event.38 //@expertTemplates/@events/@event.39 //@expertTemplates/@events/@event.41 //@expertTemplates/@events/@event.42 //@expertTemplates/@events/@event.49 //@expertTemplates/@events/@event.50 //@expertTemplates/@events/@event.51 //@expertTemplates/@events/@event.55 //@expertTemplates/@events/@event.57 //@expertTemplates/@events/@event.58 //@expertTemplates/@events/@event.60 //@expertTemplates/@events/@event.61 //@expertTemplates/@events/@event.72 //@expertTemplates/@events/@event.73 //@expertTemplates/@events/@event.74 //@expertTemplates/@events/@event.75" reconcilable="true">
+        <keywords>UTILITY</keywords>
+        <arguments xsi:type="EM:ReferentialArgument" name="DATA_TYPE" dataType="CHARACTER" controlType="REFERENTIAL" validationType="READ_ONLY" required="true" reconcileScript="N/A" keyFieldIndex="2">
+          <statements dependency="DATA_TYPE" statement="eks_t_current_info_refhelp &quot;DATA_TYPE_E&quot; GO"/>
+        </arguments>
+        <arguments xsi:type="EM:ReferentialArgument" name="QUALIFIER" dataType="CHARACTER" controlType="REFERENTIAL" validationType="READ_ONLY" required="true" reconcileScript="N/A" keyFieldIndex="2">
+          <statements dependency="QUALIFIER" statement="eks_t_current_info_refhelp &quot;QUALIFIER&quot; GO"/>
+        </arguments>
+        <arguments xsi:type="EM:ReferentialArgument" name="DATA_VALUE" dataType="CHARACTER" controlType="LISTBOX" validationType="READ_ONLY" required="true" dependency="DATA_TYPE" reconcileScript="eks_p_current_info" keyFieldIndex="2">
+          <statements dependency="DATA_VALUE" statement="eks_t_current_info_refhelp concat(&quot;DATA_VALUE_1^&quot;, par1) go"/>
+          <statements dependency="DATA_VALUE" statement="eks_t_current_info_refhelp concat(&quot;DATA_VALUE_2^&quot;, par1) go"/>
+        </arguments>
+      </templateDefinitions>
+      <templateDefinitions xsi:type="EM:ExpertTemplate" name="EKS_DEBUGEKM_E" definition="Turn debug messaging DEBUG_STATUS" description="Turn debug messaging on or off" eventDependency="//@expertTemplates/@events/@event.1 //@expertTemplates/@events/@event.2 //@expertTemplates/@events/@event.3 //@expertTemplates/@events/@event.4 //@expertTemplates/@events/@event.5 //@expertTemplates/@events/@event.8 //@expertTemplates/@events/@event.9 //@expertTemplates/@events/@event.10 //@expertTemplates/@events/@event.11 //@expertTemplates/@events/@event.13 //@expertTemplates/@events/@event.16 //@expertTemplates/@events/@event.23 //@expertTemplates/@events/@event.26 //@expertTemplates/@events/@event.27 //@expertTemplates/@events/@event.28 //@expertTemplates/@events/@event.31 //@expertTemplates/@events/@event.32 //@expertTemplates/@events/@event.33 //@expertTemplates/@events/@event.34 //@expertTemplates/@events/@event.36 //@expertTemplates/@events/@event.38 //@expertTemplates/@events/@event.39 //@expertTemplates/@events/@event.41 //@expertTemplates/@events/@event.42 //@expertTemplates/@events/@event.45 //@expertTemplates/@events/@event.44 //@expertTemplates/@events/@event.48 //@expertTemplates/@events/@event.49 //@expertTemplates/@events/@event.50 //@expertTemplates/@events/@event.51 //@expertTemplates/@events/@event.55 //@expertTemplates/@events/@event.57 //@expertTemplates/@events/@event.58 //@expertTemplates/@events/@event.61 //@expertTemplates/@events/@event.62 //@expertTemplates/@events/@event.63 //@expertTemplates/@events/@event.64 //@expertTemplates/@events/@event.65 //@expertTemplates/@events/@event.66 //@expertTemplates/@events/@event.67 //@expertTemplates/@events/@event.68 //@expertTemplates/@events/@event.69 //@expertTemplates/@events/@event.70 //@expertTemplates/@events/@event.72 //@expertTemplates/@events/@event.73 //@expertTemplates/@events/@event.74 //@expertTemplates/@events/@event.75 //@expertTemplates/@events/@event.47" reconcilable="true" alwaysTrue="true">
+        <keywords>UTILITY</keywords>
+        <arguments xsi:type="EM:ReferentialArgument" name="DEBUG_STATUS" dataType="CHARACTER" controlType="REFERENTIAL" validationType="READ_ONLY" required="true" reconcileScript="N/A" keyFieldIndex="2">
+          <statements dependency="DEBUG_STATUS" statement="select debug_status = if (d.seq =  1) &quot;On for subsequent Evoke Templates&quot;&#xD;&#xA; elseif (d.seq = 2) &quot;Off for subsequent Evoke Templates&quot;&#xD;&#xA; elseif (d.seq = 3) &quot;On for all Logic Templates&quot;&#xD;&#xA; elseif (d.seq = 4) &quot;On for all Action Templates&quot;&#xD;&#xA; elseif (d.seq = 5) &quot;On for all Logic and Action Templates&quot;&#xD;&#xA; elseif (d.seq = 6) &quot;To FullAudit for this module only&quot;&#xD;&#xA; elseif (d.seq = 7) &quot;Additional EKSDATA logging&quot;&#xD;&#xA;ENDIF,&#xD;&#xA;_hidden = if (d.seq = 1) 1&#xD;&#xA; elseif (d.seq=2) 0&#xD;&#xA; elseif (d.seq=3) 2&#xD;&#xA; elseif (d.seq=4) 3&#xD;&#xA; elseif (d.seq=5) 4&#xD;&#xA; elseif (d.seq=6) 5&#xD;&#xA; elseif (d.seq=7) 6&#xD;&#xA;endif&#xD;&#xA;&#xD;&#xA;FROM (DUMMYT D WITH SEQ = VALUE(7))"/>
+        </arguments>
+      </templateDefinitions>
+    </evokeTemplates>
+    <logicTemplates>
+      <templateDefinitions xsi:type="EM:ExpertTemplate" name="EKS_LOGIC_TRUE" definition="LOGIC is true" description="Always true" eventDependency="//@expertTemplates/@events/@event.1 //@expertTemplates/@events/@event.2 //@expertTemplates/@events/@event.3 //@expertTemplates/@events/@event.8 //@expertTemplates/@events/@event.9 //@expertTemplates/@events/@event.10 //@expertTemplates/@events/@event.11 //@expertTemplates/@events/@event.13 //@expertTemplates/@events/@event.16 //@expertTemplates/@events/@event.23 //@expertTemplates/@events/@event.24 //@expertTemplates/@events/@event.36 //@expertTemplates/@events/@event.38 //@expertTemplates/@events/@event.39 //@expertTemplates/@events/@event.41 //@expertTemplates/@events/@event.42 //@expertTemplates/@events/@event.49 //@expertTemplates/@events/@event.50 //@expertTemplates/@events/@event.51 //@expertTemplates/@events/@event.55 //@expertTemplates/@events/@event.57 //@expertTemplates/@events/@event.58 //@expertTemplates/@events/@event.60 //@expertTemplates/@events/@event.61 //@expertTemplates/@events/@event.72 //@expertTemplates/@events/@event.73 //@expertTemplates/@events/@event.74 //@expertTemplates/@events/@event.75" reconcilable="true" alwaysTrue="true">
+        <keywords>UTILITY</keywords>
+        <arguments name="LOGIC" dataType="CHARACTER" reconcileScript="N/A">
+          <defaultValue xsi:type="EM:StringValue" value="@quot;LOGIC@quot;"/>
+        </arguments>
+      </templateDefinitions>
+      <templateDefinitions xsi:type="EM:ExpertTemplate" name="EKS_ORDER_INCOMING_L" definition="the triggering request contains an order ORD_METHOD OPT_ORDERS whose ordering physician OPT_QUALIFIER in OPT_ORDDOC and OPT_ORDER_DETAIL OPT_DETAIL_QUALIFIER OPT_LIST" description="Incoming orderable, attributes" eventDependency="//@expertTemplates/@events/@event.1 //@expertTemplates/@events/@event.2 //@expertTemplates/@events/@event.10 //@expertTemplates/@events/@event.36 //@expertTemplates/@events/@event.38 //@expertTemplates/@events/@event.55 //@expertTemplates/@events/@event.61 //@expertTemplates/@events/@event.73 //@expertTemplates/@events/@event.75" optimizable="true" reconcilable="true">
+        <keywords>ORDER</keywords>
+        <arguments xsi:type="EM:ReferentialArgument" name="ORD_METHOD" dataType="CHARACTER" controlType="REFERENTIAL" validationType="READ_ONLY" required="true" reconcileScript="N/A">
+          <statements dependency="ORD_METHOD" statement="execute eks_t_db_ref_help &quot;HELPNEWORDMETHOD^&quot; go"/>
+        </arguments>
+        <arguments xsi:type="EM:ReferentialArgument" name="OPT_ORDERS" dataType="CHARACTER" controlType="LISTBOX" validationType="READ_ONLY" dependency="ORD_METHOD" optimizable="true" reconcileScript="eks_p_ord_method_orders" keyFieldIndex="2">
+          <statements dependency="OPT_ORDERS" statement="execute eks_t_db_ref_help ConCat(&quot;HELPCATALOGTYPE^&quot;, PAR1) go&#xD;&#xA;"/>
+          <statements dependency="OPT_ORDERS" statement="execute eks_t_db_ref_help ConCat(&quot;HELPORDALPHA^&quot;, PAR1) go&#xD;&#xA;"/>
+          <statements dependency="OPT_ORDERS" statement="execute eks_t_db_ref_help ConCat(&quot;HELPORDERS^&quot;, PAR1) go"/>
+        </arguments>
+        <arguments xsi:type="EM:FixedListArgument" name="OPT_QUALIFIER" dataType="CHARACTER" validationType="READ_ONLY" reconcileScript="N/A">
+          <stringTable>
+            <column value="is"/>
+            <column value="is"/>
+          </stringTable>
+          <stringTable>
+            <column value="is not"/>
+            <column value="is not"/>
+          </stringTable>
+        </arguments>
+        <arguments xsi:type="EM:ReferentialArgument" name="OPT_ORDDOC" dataType="CHARACTER" controlType="LISTBOX" validationType="READ_ONLY" reconcileScript="eks_p_orddoc" keyFieldIndex="2">
+          <statements dependency="OPT_ORDDOC" statement="EKS_ABC_REFHELP &quot; &quot; go"/>
+          <statements dependency="OPT_ORDDOC" statement="select &#xD;&#xA; if (par1 =&quot;OTHER&quot;)&#xD;&#xA; from prsnl pl where pl.name_full_formatted != &quot; &quot; and &#xD;&#xA;      pl.name_full_formatted not between &quot;0*&quot; and &quot;Z*&quot; and&#xD;&#xA;      pl.active_ind = 1 and  pl.physician_ind = 1&#xD;&#xA; elseif (par1=&quot;ALL&quot;)&#xD;&#xA;  from prsnl pl where pl.name_full_formatted != &quot; &quot;  and &#xD;&#xA;      pl.active_ind=1 and  pl.physician_ind = 1&#xD;&#xA; else&#xD;&#xA;  from prsnl pl where pl.physician_ind = 1 and pl.active_ind=1&#xD;&#xA;      and cnvtupper(pl.name_full_formatted)=patstring(concat(substring(1,1,par1),&quot;*&quot;))&#xD;&#xA; endif&#xD;&#xA;  pl.name_full_formatted,&#xD;&#xA;  _hidden=pl.person_id&#xD;&#xA; order name_full_formatted"/>
+        </arguments>
+        <arguments xsi:type="EM:ReferentialArgument" name="OPT_ORDER_DETAIL" dataType="CHARACTER" controlType="REFERENTIAL" validationType="READ_ONLY" reconcileScript="N/A">
+          <defaultValue xsi:type="EM:StringValue" value="FUTURE USE"/>
+          <statements dependency="OPT_ORDER_DETAIL" statement=""/>
+        </arguments>
+        <arguments xsi:type="EM:FixedListArgument" name="OPT_DETAIL_QUALIFIER" dataType="CHARACTER" reconcileScript="N/A">
+          <defaultValue xsi:type="EM:StringValue" value="FUTURE USE"/>
+        </arguments>
+        <arguments xsi:type="EM:ReferentialArgument" name="OPT_LIST" dataType="CHARACTER" controlType="LISTBOX" validationType="READ_ONLY" dependency="OPT_ORDER_DETAIL" reconcileScript="N/A" keyFieldIndex="2">
+          <statements dependency="OPT_LIST" statement="execute eks_t_db_ref_help ConCat(&quot;HELPCATALOGTYPE^&quot;, PAR1) go"/>
+        </arguments>
+      </templateDefinitions>
+      <templateDefinitions xsi:type="EM:ExpertTemplate" name="EKS_ORDER_INCOMING_DETAIL_L" definition="orders exist ORD_METHOD OPT_ORDERS where order detail ORDER_DETAIL QUALIFIER LIST1 and OPT_LIST2" description="Incoming orderable, attributes" eventDependency="//@expertTemplates/@events/@event.2 //@expertTemplates/@events/@event.36 //@expertTemplates/@events/@event.61 //@expertTemplates/@events/@event.73" optimizable="true" reconcilable="true">
+        <keywords>ORDER</keywords>
+        <arguments xsi:type="EM:ReferentialArgument" name="ORD_METHOD" dataType="CHARACTER" controlType="REFERENTIAL" validationType="READ_ONLY" required="true" reconcileScript="N/A">
+          <statements dependency="ORD_METHOD" statement="execute eks_t_db_ref_help &quot;HELPNEWORDMETHOD^&quot; go"/>
+        </arguments>
+        <arguments xsi:type="EM:ReferentialArgument" name="OPT_ORDERS" dataType="CHARACTER" controlType="LISTBOX" validationType="READ_ONLY" dependency="ORD_METHOD" optimizable="true" reconcileScript="eks_p_ord_method_orders" keyFieldIndex="2">
+          <statements dependency="OPT_ORDERS" statement="execute EKS_T_DB_REF_HELP ConCat(&quot;HELPCATALOGTYPE^&quot;, PAR1) go&#xD;&#xA;"/>
+          <statements dependency="OPT_ORDERS" statement="execute EKS_T_DB_REF_HELP ConCat(&quot;HELPORDALPHA^&quot;, PAR1) go"/>
+          <statements dependency="OPT_ORDERS" statement="execute EKS_T_DB_REF_HELP ConCat(&quot;HELPORDERS^&quot;, PAR1) go"/>
+        </arguments>
+        <arguments xsi:type="EM:ReferentialArgument" name="ORDER_DETAIL" dataType="CHARACTER" controlType="REFERENTIAL" validationType="READ_ONLY" required="true" reconcileScript="eks_p_order_detail" keyFieldIndex="2">
+          <statements dependency="ORDER_DETAIL" statement="execute EKS_T_DB_REF_HELP &quot;HELPDETAILSSELDB_PROVIDE^USEREQUEST&quot; go"/>
+          <statements dependency="ORDER_DETAIL" statement="execute EKS_T_DB_REF_HELP ConCat(&quot;HELPDETAILS_PROVIDE^1^&quot;, PAR1) go"/>
+        </arguments>
+        <arguments xsi:type="EM:ReferentialArgument" name="QUALIFIER" dataType="CHARACTER" controlType="REFERENTIAL" validationType="READ_ONLY" required="true" dependency="ORDER_DETAIL" reconcileScript="eks_p_qualifier &quot;1&quot;" keyFieldIndex="2">
+          <statements dependency="QUALIFIER" statement="execute EKS_T_DB_REF_HELP ConCat(&quot;HELPQUALIFIERS_PROVIDE^&quot;, PAR1)  go"/>
+        </arguments>
+        <arguments xsi:type="EM:ReferentialArgument" name="LIST1" dataType="CHARACTER" controlType="LISTBOX" validationType="READ_ONLY" dependency="ORDER_DETAIL" optimizable="true" reconcileScript="eks_p_list" keyFieldIndex="2">
+          <statements dependency="LIST1" statement="execute EKS_T_DB_REF_HELP ConCat(&quot;HELPORDDETLIST1^&quot;, PAR1) go"/>
+          <statements dependency="LIST1" statement="execute EKS_T_DB_REF_HELP ConCat(&quot;HELPORDDETLIST3^&quot;, PAR1) go"/>
+        </arguments>
+        <arguments xsi:type="EM:ReferentialArgument" name="OPT_LIST2" dataType="CHARACTER" controlType="LISTBOX" validationType="READ_ONLY" dependency="ORDER_DETAIL" optimizable="true" reconcileScript="eks_p_list" keyFieldIndex="2">
+          <statements dependency="OPT_LIST2" statement="execute EKS_T_DB_REF_HELP ConCat(&quot;HELPORDDETLIST1^&quot;, PAR1) go"/>
+          <statements dependency="OPT_LIST2" statement="execute EKS_T_DB_REF_HELP ConCat(&quot;HELPORDDETLIST3^&quot;, PAR1) go"/>
+        </arguments>
+      </templateDefinitions>
+      <templateDefinitions xsi:type="EM:ExpertTemplate" name="EKS_CALC_SAVE_L" definition="EXPRESSION" description="Create a value to be used by subsequent templates" eventDependency="//@expertTemplates/@events/@event.1 //@expertTemplates/@events/@event.2 //@expertTemplates/@events/@event.3 //@expertTemplates/@events/@event.5 //@expertTemplates/@events/@event.8 //@expertTemplates/@events/@event.9 //@expertTemplates/@events/@event.10 //@expertTemplates/@events/@event.11 //@expertTemplates/@events/@event.13 //@expertTemplates/@events/@event.16 //@expertTemplates/@events/@event.23 //@expertTemplates/@events/@event.36 //@expertTemplates/@events/@event.38 //@expertTemplates/@events/@event.39 //@expertTemplates/@events/@event.41 //@expertTemplates/@events/@event.42 //@expertTemplates/@events/@event.49 //@expertTemplates/@events/@event.50 //@expertTemplates/@events/@event.51 //@expertTemplates/@events/@event.55 //@expertTemplates/@events/@event.57 //@expertTemplates/@events/@event.58 //@expertTemplates/@events/@event.61 //@expertTemplates/@events/@event.72 //@expertTemplates/@events/@event.73 //@expertTemplates/@events/@event.74 //@expertTemplates/@events/@event.75" reconcilable="true">
+        <keywords>UTILITY, LOG_RETVAL</keywords>
+        <arguments name="EXPRESSION" dataType="CHARACTER" controlType="TEXT_MULTI_LINE" required="true" reconcileScript="N/A"/>
+      </templateDefinitions>
+    </logicTemplates>
+    <actionTemplates>
+      <templateDefinitions xsi:type="EM:ExpertTemplate" name="EKS_LOG_ACTION_A" definition="Log action with name ACTION_NAME" description="Log action with name ACTION_NAME" eventDependency="//@expertTemplates/@events/@event.2 //@expertTemplates/@events/@event.3 //@expertTemplates/@events/@event.9 //@expertTemplates/@events/@event.10 //@expertTemplates/@events/@event.11 //@expertTemplates/@events/@event.13 //@expertTemplates/@events/@event.16 //@expertTemplates/@events/@event.23 //@expertTemplates/@events/@event.36 //@expertTemplates/@events/@event.38 //@expertTemplates/@events/@event.39 //@expertTemplates/@events/@event.41 //@expertTemplates/@events/@event.42 //@expertTemplates/@events/@event.51 //@expertTemplates/@events/@event.55 //@expertTemplates/@events/@event.57 //@expertTemplates/@events/@event.61 //@expertTemplates/@events/@event.72 //@expertTemplates/@events/@event.73 //@expertTemplates/@events/@event.75" reconcilable="true" alwaysTrue="true">
+        <keywords>UTILITY</keywords>
+        <arguments xsi:type="EM:ReferentialArgument" name="ACTION_NAME" dataType="CHARACTER" controlType="LISTBOX" validationType="READ_ONLY" required="true" reconcileScript="eks_p_moduleName" keyFieldIndex="2">
+          <statements dependency="ACTION_NAME" statement="execute eks_t_dlg_refhelp &quot;step0^&quot; go"/>
+          <statements dependency="ACTION_NAME" statement="execute eks_t_dlg_refhelp concat(&quot;step1^&quot;, PAR1) go"/>
+        </arguments>
+      </templateDefinitions>
+    </actionTemplates>
+  </expertTemplates>
+  <ruleDefinition>
+    <evokeSection>
+      <evokes evokeEvent="//@expertTemplates/@events/@event.2">
+        <logicExpression xsi:type="EM:InfixExpression">
+          <leftExpression xsi:type="EM:Antecedent" id="E1" template="EKS_CURRENT_INFO_E">
+            <facts argument="DATA_TYPE">
+              <value xsi:type="EM:ListValue">
+                <values xsi:type="EM:ListValue">
+                  <values xsi:type="EM:CustomValue" hideDisplay="true">
+                    <customValue xsi:type="EM:StringValue" value="4"/>
+                  </values>
+                  <values xsi:type="EM:StringValue" value="user"/>
+                </values>
+              </value>
+            </facts>
+            <facts argument="QUALIFIER">
+              <value xsi:type="EM:ListValue">
+                <values xsi:type="EM:ListValue">
+                  <values xsi:type="EM:CustomValue" hideDisplay="true">
+                    <customValue xsi:type="EM:StringValue" value="="/>
+                  </values>
+                  <values xsi:type="EM:StringValue" value="is listed in"/>
+                </values>
+              </value>
+            </facts>
+            <facts argument="DATA_VALUE">
+              <value xsi:type="EM:ListValue">
+                <values xsi:type="EM:ListValue">
+                  <values xsi:type="EM:CustomValue" hideDisplay="true">
+                    <customValue xsi:type="EM:StringValue" value="12428721.00"/>
+                  </values>
+                  <values xsi:type="EM:StringValue" value="PARAMASIVAM, GEETHA"/>
+                  <values xsi:type="EM:ListValue">
+                    <values xsi:type="EM:CustomValue" hideDisplay="true">
+                      <customValue xsi:type="EM:StringValue" value="P|4"/>
+                    </values>
+                  </values>
+                </values>
+              </value>
+            </facts>
+          </leftExpression>
+          <rightExpression xsi:type="EM:Antecedent" id="E2" template="EKS_DEBUGEKM_E">
+            <facts argument="DEBUG_STATUS">
+              <value xsi:type="EM:ListValue">
+                <values xsi:type="EM:ListValue">
+                  <values xsi:type="EM:CustomValue" hideDisplay="true">
+                    <customValue xsi:type="EM:StringValue" value="5"/>
+                  </values>
+                  <values xsi:type="EM:StringValue" value="To FullAudit for this module only"/>
+                </values>
+              </value>
+            </facts>
+          </rightExpression>
+        </logicExpression>
+      </evokes>
+    </evokeSection>
+    <logicSection>
+      <logicExpression xsi:type="EM:InfixExpression">
+        <leftExpression xsi:type="EM:Antecedent" id="L1" template="EKS_LOGIC_TRUE">
+          <facts argument="LOGIC">
+            <value xsi:type="EM:StringValue" value="@quot;LOGIC@quot;"/>
+          </facts>
+        </leftExpression>
+        <rightExpression xsi:type="EM:InfixExpression">
+          <leftExpression xsi:type="EM:Antecedent" id="L2" template="EKS_ORDER_INCOMING_L">
+            <facts argument="ORD_METHOD">
+              <value xsi:type="EM:StringValue" value="for any orderable"/>
+            </facts>
+            <facts argument="OPT_ORDERS">
+              <value xsi:type="EM:StringValue"/>
+            </facts>
+            <facts argument="OPT_QUALIFIER">
+              <value xsi:type="EM:StringValue"/>
+            </facts>
+            <facts argument="OPT_ORDDOC">
+              <value xsi:type="EM:StringValue"/>
+            </facts>
+            <facts argument="OPT_ORDER_DETAIL">
+              <value xsi:type="EM:StringValue" value="FUTURE USE"/>
+            </facts>
+            <facts argument="OPT_DETAIL_QUALIFIER">
+              <value xsi:type="EM:StringValue" value="FUTURE USE"/>
+            </facts>
+            <facts argument="OPT_LIST">
+              <value xsi:type="EM:StringValue"/>
+            </facts>
+          </leftExpression>
+          <rightExpression xsi:type="EM:InfixExpression">
+            <leftExpression xsi:type="EM:Antecedent" id="L3" template="EKS_ORDER_INCOMING_DETAIL_L">
+              <facts argument="ORD_METHOD">
+                <value xsi:type="EM:StringValue" value="for any orderable"/>
+              </facts>
+              <facts argument="OPT_ORDERS">
+                <value xsi:type="EM:StringValue"/>
+              </facts>
+              <facts argument="ORDER_DETAIL">
+                <value xsi:type="EM:ListValue">
+                  <values xsi:type="EM:ListValue">
+                    <values xsi:type="EM:CustomValue" hideDisplay="true">
+                      <customValue xsi:type="EM:StringValue" value="X|12696.0|1|8|0|DAW|B"/>
+                    </values>
+                    <values xsi:type="EM:StringValue" value="DAW,"/>
+                  </values>
+                </value>
+              </facts>
+              <facts argument="QUALIFIER">
+                <value xsi:type="EM:ListValue">
+                  <values xsi:type="EM:ListValue">
+                    <values xsi:type="EM:CustomValue" hideDisplay="true">
+                      <customValue xsi:type="EM:StringValue" value="not def"/>
+                    </values>
+                    <values xsi:type="EM:StringValue" value="is not defined (does not exist)"/>
+                  </values>
+                </value>
+              </facts>
+              <facts argument="LIST1">
+                <value xsi:type="EM:StringValue"/>
+              </facts>
+              <facts argument="OPT_LIST2">
+                <value xsi:type="EM:StringValue"/>
+              </facts>
+            </leftExpression>
+            <rightExpression xsi:type="EM:InfixExpression">
+              <leftExpression xsi:type="EM:Antecedent" id="L4" template="EKS_ORDER_INCOMING_DETAIL_L">
+                <facts argument="ORD_METHOD">
+                  <value xsi:type="EM:StringValue" value="for any orderable"/>
+                </facts>
+                <facts argument="OPT_ORDERS">
+                  <value xsi:type="EM:StringValue"/>
+                </facts>
+                <facts argument="ORDER_DETAIL">
+                  <value xsi:type="EM:ListValue">
+                    <values xsi:type="EM:ListValue">
+                      <values xsi:type="EM:CustomValue" hideDisplay="true">
+                        <customValue xsi:type="EM:StringValue" value="I|ActivityTypeCd|1|2|CDF106"/>
+                      </values>
+                      <values xsi:type="EM:StringValue" value="Activity Type"/>
+                    </values>
+                  </value>
+                </facts>
+                <facts argument="QUALIFIER">
+                  <value xsi:type="EM:ListValue">
+                    <values xsi:type="EM:ListValue">
+                      <values xsi:type="EM:CustomValue" hideDisplay="true">
+                        <customValue xsi:type="EM:StringValue" value="in"/>
+                      </values>
+                      <values xsi:type="EM:StringValue" value="is listed in"/>
+                    </values>
+                  </value>
+                </facts>
+                <facts argument="LIST1">
+                  <value xsi:type="EM:ListValue">
+                    <values xsi:type="EM:ListValue">
+                      <values xsi:type="EM:CustomValue" hideDisplay="true">
+                        <customValue xsi:type="EM:StringValue" value="CKI.CODEVALUE!1302986"/>
+                      </values>
+                      <values xsi:type="EM:StringValue" value="Admit/Transfer/Discharge"/>
+                      <values xsi:type="EM:ListValue">
+                        <values xsi:type="EM:CustomValue" hideDisplay="true">
+                          <customValue xsi:type="EM:StringValue" value="I|ActivityTypeCd|1|2|CDF106"/>
+                        </values>
+                      </values>
+                    </values>
+                  </value>
+                </facts>
+                <facts argument="OPT_LIST2">
+                  <value xsi:type="EM:StringValue"/>
+                </facts>
+              </leftExpression>
+              <rightExpression xsi:type="EM:Antecedent" id="L5" template="EKS_CALC_SAVE_L">
+                <facts argument="EXPRESSION">
+                  <value xsi:type="EM:StringValue" value="call echojson(request, &quot;eks_request_data.json&quot;) go"/>
+                </facts>
+              </rightExpression>
+            </rightExpression>
+          </rightExpression>
+        </rightExpression>
+      </logicExpression>
+    </logicSection>
+    <actionSection>
+      <action xsi:type="EM:ActionExpression">
+        <logicExpression xsi:type="EM:Antecedent" id="A1" template="EKS_LOG_ACTION_A">
+          <facts argument="ACTION_NAME">
+            <value xsi:type="EM:ListValue">
+              <values xsi:type="EM:ListValue">
+                <values xsi:type="EM:CustomValue" hideDisplay="true">
+                  <customValue xsi:type="EM:StringValue" value=" "/>
+                </values>
+                <values xsi:type="EM:StringValue" value="Scratchpad _ Log File"/>
+                <values xsi:type="EM:ListValue">
+                  <values xsi:type="EM:CustomValue" hideDisplay="true">
+                    <customValue xsi:type="EM:StringValue" value="0"/>
+                  </values>
+                </values>
+              </values>
+            </value>
+          </facts>
+        </logicExpression>
+      </action>
+    </actionSection>
+  </ruleDefinition>
+</EM:ExpertModule>

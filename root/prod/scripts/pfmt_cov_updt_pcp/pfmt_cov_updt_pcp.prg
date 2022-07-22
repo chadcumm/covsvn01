@@ -1,0 +1,338 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+  Author:             Chad Cummings
+  Date Written:       02/01/2020
+  Solution:           
+  Source file name:   pfmt_cov_updt_pcp.prg
+  Object name:        pfmt_cov_updt_pcp
+  Request #:
+
+  Program purpose:
+
+  Executing from:     CCL
+
+  Special Notes:      Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod   Mod Date    Developer              Comment
+---   ----------  --------------------  --------------------------------------
+000   02/01/2020  Chad Cummings			Initial Release (https://wiki.cerner.com/x/4Si_hQ)
+******************************************************************************/
+
+drop program pfmt_cov_updt_pcp:dba go
+create program pfmt_cov_updt_pcp:dba
+
+%i ccluserdir:cov_script_logging.inc  
+
+set log_level_debug = 4 ;This will log everyhing to msgview as ScriptError, set to 4 to stop logging unless server in debug
+set log_override_ind = 0 ;this at 1 will override the log level and always log the output as ScriptOverride
+
+set filename = concat("cer_temp:pcp_",trim(cnvtstring(reqinfo->updt_req)),"_"
+			,trim(format(sysdate,"yyyy_mm_dd_hh_mm_ss;;q")),".dat")
+
+
+call log_message("-> debug execution...", log_level_debug)
+
+if ( ( validate ( last_mod ,  "NOMOD" ) = "NOMOD" ) )
+ declare  last_mod  =  c100  with  noconstant ( " " ), private
+endif
+
+set  last_mod  =  "000"
+
+record EKSOPSRequest (
+   1 expert_trigger	= vc
+   1 qual[*]
+	2 person_id	= f8
+	2 sex_cd	= f8
+	2 birth_dt_tm	= dq8
+	2 encntr_id	= f8
+	2 accession_id	= f8
+	2 order_id	= f8
+	2 data[*]
+	     3 vc_var		= vc
+	     3 double_var	= f8
+	     3 long_var		= i4
+	     3 short_var	= i2
+)
+
+/*
+;Request from 600312 - pts_add_prsnl_reltn
+record REQUEST (
+  1 prsnl_person_id = f8   
+  1 person_prsnl_reltn_cd = f8   
+  1 person_id = f8   
+  1 encntr_prsnl_reltn_cd = f8   
+  1 encntr_id = f8   
+  1 beg_effective_dt_tm = dq8   
+  1 end_effective_dt_tm = dq8   
+) 
+
+;Request from 600313 - pts_chg_prsnl_reltn
+record REQUEST (
+  1 prsnl_person_id = f8   
+  1 person_qual [*]   
+    2 person_prsnl_reltn_id = f8   
+  1 encntr_qual [*]   
+    2 encntr_prsnl_reltn_id = f8   
+) 
+
+;600319 - pts_add_mult_prsnl_reltn
+record request
+( 1 plist[*]
+    2 prsnl_person_id = F8
+    2 person_prsnl_reltn_cd     = f8
+    2 person_id                 = f8
+    2 beg_effective_dt_tm	      = dq8
+    2 end_effective_dt_tm       = dq8
+  1 elist[*]
+    2 prsnl_person_id = F8
+    2 encntr_prsnl_reltn_cd     = f8
+    2 encntr_id                 = f8
+    2 beg_effective_dt_tm	      = dq8
+    2 end_effective_dt_tm       = dq8
+)
+*/
+
+;114001 - PM_POST_TRANSACTION
+
+free record encounters
+record encounters
+(
+	1 331_pcpdoc_cd   = f8
+	1 list[*]
+	  2 encounter_id  = f8
+	  2 patient_id    = f8
+	  2 status_cd     = f8
+	  2 type_cd       = f8
+	  2 updt_dt_tm    = f8
+	  2 send_ind	  = i2
+	  2 prsnl_iid	  = f8
+	  2 prsnl_name	  = vc
+)
+
+set encounters->331_pcpdoc_cd = uar_get_code_by("MEANING",331,"PCP")
+
+declare reportText = vc with noconstant(" ")
+
+if(size(encounters->list,5) = 0)
+	call log_message("-> validating 600312 request...", log_level_debug)
+	
+	if(validate(requestin->request->person_prsnl_reltn_cd))
+		call log_message("-> 600312 inside validate(requestin->request->person_id)", log_level_debug)
+	    if (requestin->request->encntr_id > 0.0)
+		    set stat = alterlist(encounters->list,1)
+		    set reportText = concat("PersonID: ", cnvtstring(requestin->request->person_id))
+	      	set reportText = concat(reportText, " type_cd: ", cnvtstring(requestin->request->person_prsnl_reltn_cd ))
+	      	call log_message(reportText, log_level_debug)
+	      	if (requestin->request->person_prsnl_reltn_cd = encounters->331_pcpdoc_cd)
+	      		set encounters->list[1].encounter_id = requestin->request->encntr_id
+	      		set encounters->list[1].send_ind = 1
+	      		call log_message("-> INCLUDING encounter", log_level_debug)
+	      	endif
+	    else
+	    	select into "nl:"
+	    	from
+	    		encounter e
+	    	plan e
+	    		where e.person_id = requestin->request->person_id
+	    		and   e.encntr_status_cd not in(	
+	    											 value(uar_get_code_by("MEANING",261,"CANCELLED"))
+	    											,value(uar_get_code_by("MEANING",261,"DISCHARGED"))
+	    											,value(uar_get_code_by("MEANING",261,"HOLD"))
+	    										)
+	    		and   e.active_ind = 1
+	    		and   e.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	    		and   e.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+	    	order by
+	    		 e.person_id
+	    		,e.beg_effective_dt_tm desc
+	    	head report
+	    		cnt = 0
+	    	head e.person_id
+	    		stat = alterlist(encounters->list,cnt)
+	    		encounters->list[cnt].encounter_id = requestin->request->encntr_id
+	      		encounters->list[cnt].send_ind = 1
+	    	with nocounter
+	    endif
+	endif
+endif
+
+if(size(encounters->list,5) = 0)
+	call log_message("-> validating 600319 request...", log_level_debug)
+	if(validate(requestin->request->plist[1].person_id))
+		call log_message("-> inside 600319 validate(requestin->request->plist[1].person_id)", log_level_debug)
+  		if(size(requestin->request->plist,5) > 0)
+    		call log_message("-> inside requestin->request->plist,5) > 0", log_level_debug)
+    		set stat = alterlist(encounters->list, size(requestin->request->plist,5))
+    		for(count = 1 to size(requestin->request->plist,5))
+      			set reportText = concat("PersonID: ", cnvtstring(requestin->request->plist[count].person_id))
+      			set reportText = concat(reportText, " type_cd: ", cnvtstring(requestin->request->plist[count].person_prsnl_reltn_cd))
+      			call log_message(reportText, log_level_debug)
+      			if (requestin->request->plist[count].person_prsnl_reltn_cd = encounters->331_pcpdoc_cd)
+      				select into "nl:"
+			    	from
+			    		encounter e
+			    	plan e
+			    		where e.person_id = requestin->request->plist[count].person_id
+			    		and   e.encntr_status_cd not in(	
+			    											 value(uar_get_code_by("MEANING",261,"CANCELLED"))
+			    											,value(uar_get_code_by("MEANING",261,"DISCHARGED"))
+			    											,value(uar_get_code_by("MEANING",261,"HOLD"))
+			    										)
+			    		and   e.active_ind = 1
+			    		and   e.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+			    		and   e.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+			    	order by
+			    		 e.person_id
+			    		,e.beg_effective_dt_tm desc
+			    	head report
+			    		cnt = 0
+			    	head e.person_id
+			    		stat = alterlist(encounters->list,cnt)
+			    		encounters->list[cnt].encounter_id = requestin->request->encntr_id
+			      		encounters->list[cnt].send_ind = 1
+			    	with nocounter
+      				call log_message("-> INCLUDING encounter", log_level_debug)
+      			endif
+    		endfor
+  		endif
+  	endif
+endif
+
+if(size(encounters->list,5) = 0)
+	call log_message("-> validating 114609 - PM.UpdatePersonData...", log_level_debug)
+	if(validate(requestin->request->person->pcp->person_prsnl_reltn_id))
+		call log_message("-> 114609 inside validate(requestin->request->person->pcp->person_prsnl_reltn_id )",
+		 log_level_debug)
+		 
+		 if (requestin->request->person->pcp->person_prsnl_r_cd = encounters->331_pcpdoc_cd)
+		 	if (requestin->reply->encntr_id = 0.0)
+			 	select into "nl:"
+				    	from
+				    		encounter e
+				    	plan e
+				    		where e.person_id = requestin->request->plist[count].person_id
+				    		and   e.encntr_status_cd not in(	
+				    											 value(uar_get_code_by("MEANING",261,"CANCELLED"))
+				    											,value(uar_get_code_by("MEANING",261,"DISCHARGED"))
+				    											,value(uar_get_code_by("MEANING",261,"HOLD"))
+				    										)
+				    		and   e.active_ind = 1
+				    		and   e.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+				    		and   e.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+				    	order by
+				    		 e.person_id
+				    		,e.beg_effective_dt_tm desc
+				    	head report
+				    		cnt = 0
+				    	head e.person_id
+				    		stat = alterlist(encounters->list,cnt)
+				    		encounters->list[cnt].encounter_id = requestin->request->encntr_id
+				      		encounters->list[cnt].send_ind = 1
+				    	with nocounter
+	      				call log_message("-> INCLUDING encounter", log_level_debug)
+	      	else
+	      		set stat = alterlist(encounters->list,1)
+	      		set encounters->list[1].encounter_id = requestin->reply->encntr_id
+      			set encounters->list[1].send_ind = 1
+	      	endif
+		 endif
+	endif
+endif
+
+if(size(encounters->list,5) = 0)
+	call log_message("-> validating 114001 request...", log_level_debug)
+	if(validate(requestin->request->n_encntr_id))
+		call log_message("-> 114001 inside validate(requestin->request->transaction_id )", log_level_debug)
+	    set stat = alterlist(encounters->list,1)
+	    set reportText = concat("EncounterID: ", cnvtstring(requestin->request->n_encntr_id))
+      	call log_message(reportText, log_level_debug)
+      	if (
+      			(
+      				(requestin->request->O_ATTEND_DOC_ID = 0.0) and (requestin->request->N_ATTEND_DOC_ID > 0.0)
+      			) or
+      			(requestin->request->O_ATTEND_DOC_ID != requestin->request->N_ATTEND_DOC_ID)
+      		)
+      		set encounters->list[1].encounter_id = requestin->request->n_encntr_id
+      		set encounters->list[1].send_ind = 1
+      		call log_message("-> INCLUDING encounter", log_level_debug)
+      	endif
+	endif
+endif
+
+call log_message("-> validating encounters->list...", log_level_debug)
+if(size(encounters->list,5) = 0)
+	call log_message("-> encounters->list empty exit_script", log_level_debug)
+  go to exit_script
+endif
+
+
+;%i ccluserdir:cov_eks_run3091001.inc
+
+for(count = 1 to size(encounters->list,5))
+	if (encounters->list[count].send_ind = 1)
+		call log_message(build2("-> calling ",cnvtstring(count)," of ",
+			cnvtstring(size(encounters->list,5))),log_level_debug)
+
+		set stat = initrec(EKSOPSRequest)
+		call log_message("starting query...", log_level_debug)
+		select into "NL:"
+			e.encntr_id,
+			e.person_id,
+			e.reg_dt_tm,
+			p.birth_dt_tm,
+			p.sex_cd
+		from
+			person p,
+			encounter e
+		plan e
+			where e.encntr_id = encounters->list[count].encounter_id
+		join p where p.person_id= e.person_id
+		head report
+			cnt = 0
+			EKSOPSRequest->expert_trigger = "COV_EE_UPDT_PCP"
+		detail
+			cnt = cnt +1
+			stat = alterlist(EKSOPSRequest->qual, cnt)
+			EKSOPSRequest->qual[cnt].person_id = p.person_id
+			EKSOPSRequest->qual[cnt].sex_cd  = p.sex_cd
+			EKSOPSRequest->qual[cnt].birth_dt_tm  = p.birth_dt_tm
+			EKSOPSRequest->qual[cnt].encntr_id  = e.encntr_id
+
+		with nocounter
+		call log_message("finisehd query...", log_level_debug)
+		set dparam = 0
+		call log_message("calling server...", log_level_debug)
+		;call srvRequest(dparam)
+		set dparam = tdbexecute(3055000,4801,3091001,"REC",EKSOPSRequest,"REC",ReplyOut) 
+		call log_message("after server...", log_level_debug)
+		call log_message(cnvtrectojson(ReplyOut), log_level_debug)
+	endif
+endfor
+call log_message("-> finished processing...", log_level_debug)
+
+if (log_override_ind = 1)
+	if (validate(reqinfo) = 1)
+		call echojson(reqinfo,filename,1)
+	endif
+	
+	if (validate(requestin) = 1)
+			call echojson(requestin,filename)
+	endif
+	
+	if (validate(encounters) = 1)
+		call echojson(encounters,filename,1)
+	endif
+endif
+
+#exit_script
+
+call log_message("-> exiting...", log_level_debug)
+
+end go

@@ -1,0 +1,2799 @@
+M~M1821000911~2018-07-29~1730~54126~RON~PEARSON~12417~MARK~HARRELL~O~DIAG
+M0000303427~PAMELA~J~GREENE~1959-03-16~F~ BC HC EXCH S~201064
+Procedure Ordered: 13773567~20081~MXR CHEST PA & LATERAL~71046~99999501
+Admitting DX: CHEST PAIN,HTN,DYSPNEA
+Working DX: 
+ 
+
+EXAM: Two views of the chest
+INDICATION: Chest pain
+COMPARISON: None available
+ 
+FINDINGS:
+The lungs are symmetrically inflated and without focal consolidation.
+No large pleural effusion or visible pneumothorax. The
+cardiomediastinal silhouette is within normal limits. No acute osseous
+abnormality.
+ 
+IMPRESSION:
+No acute cardiopulmonary abnormality.
+ 
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 1753
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000526~2018-07-29~0943~12375~YITONG~FU~12417~MARK~HARRELL~I~DIAG
+M0000304181~LARRY~D~GREENE~1957-08-09~M~MEDICARE~101003
+Procedure Ordered: 13773306~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99984901
+Admitting DX: DKA SEPSIS PNA
+Working DX: 
+ 
+
+INDICATION(S):  Short of breath.
+ 
+Techniques: Single view of the chest.
+ 
+Comparison:  July 27, 2018
+ 
+Findings:  Unchanged bilateral mixed interstitial and airspace
+opacities.  No large pleural effusion or evidence of pneumothorax.  The
+cardiomediastinal silhouette is stable.  No acute bony abnormality.
+ 
+Impression:
+ 
+No significant interval changes, likely chronic fibrosis with mild
+superimposed pneumonia as seen on previous CT.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1109
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000826~2018-07-29~1559~54126~RON~PEARSON~52157~RICHARD~PLUMMER~E~DIAG
+M0000310842~ROBERT~S~WELLS~1946-10-06~M~UHC MC 31362~101009
+Procedure Ordered: 13773508~60005~MMRA HEAD WO CONTRAST~70544~99999701
+Admitting DX: VERTIGO
+Working DX: 
+ 
+
+EXAM: 3D time-of-flight MR angiography of the head without contrast
+INDICATION: Dizziness
+COMPARISON: None available
+ 
+FINDINGS:
+The distal internal carotid arteries are widely patent and bifurcate
+into normal anterior and middle cerebral arteries. The anterior and
+posterior communicating arteries are within normal limits. The
+vertebrobasilar circulation is normal. Left vertebral artery is
+dominant. No intracranial aneurysm is identified. No diffusion
+restriction identified. No increased susceptibility to suggest
+hemorrhage.
+ 
+IMPRESSION:
+No evidence of vascular occlusion or aneurysm.
+ 
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 1833
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000581~2018-07-29~1003~12375~YITONG~FU~12417~MARK~HARRELL~E~DIAG
+M0000311029~JAMES~E~WILLFORD~1989-05-01~M~UHC COMMUNITY PLAN~301060
+Procedure Ordered: 13773322~20248~MXR FOOT (R) MIN 3 VIEWS~73630RT~99999801
+Admitting DX: FOOT INJURY
+Working DX: 
+ 
+
+INDICATION(S):  Fall, pain
+ 
+Techniques: THREE VIEWS of right ankle.  THREE VIEWS of right foot.
+ 
+Comparison:  None.
+ 
+Findings:
+ 
+Right ankle:  No acute fracture or subluxation.  The ankle mortise is
+maintained.
+ 
+Right foot:  No acute fracture or subluxation.  The Lisfranc's plane is
+intact.
+ 
+No significant soft tissue abnormality.
+ 
+Impression:
+ 
+No acute finding.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1035
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000581~2018-07-29~1003~12375~YITONG~FU~12417~MARK~HARRELL~E~DIAG
+M0000311029~JAMES~E~WILLFORD~1989-05-01~M~UHC COMMUNITY PLAN~301060
+Procedure Ordered: 13773323~20238~MXR ANKLE (R) 3 VIEWS~73610RT~99999901
+Admitting DX: FOOT INJURY
+Working DX: 
+ 
+
+INDICATION(S):  Fall, pain
+ 
+Techniques: THREE VIEWS of right ankle.  THREE VIEWS of right foot.
+ 
+Comparison:  None.
+ 
+Findings:
+ 
+Right ankle:  No acute fracture or subluxation.  The ankle mortise is
+maintained.
+ 
+Right foot:  No acute fracture or subluxation.  The Lisfranc's plane is
+intact.
+ 
+No significant soft tissue abnormality.
+ 
+Impression:
+ 
+No acute finding.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1034
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000980~2018-07-29~1902~54126~RON~PEARSON~52157~RICHARD~PLUMMER~E~DIAG
+M0000314871~TONY~K~WOLFE~1966-03-14~M~UHC COMMUNITY SNP~101002
+Procedure Ordered: 13773601~40036~MCT BRAIN OR HEAD WO CONTRAST~70450~99999601
+Admitting DX: HEAT RELATED ILLNESS
+Working DX: 
+ 
+
+EXAM: CT of the head without contrast .  Coronal and sagittal reformats
+obtained.
+INDICATION: Fall
+COMPARISON: CT head 08/14/2016
+ 
+FINDINGS:
+ 
+No evidence of acute hemorrhage, infarction, or mass effect. No
+extra-axial fluid collections or midline shift. Gray-white
+differentiation is maintained. Age-commensurate volume loss and ex
+vacuo induration, with nonspecific periventricular and subcortical
+white matter hypodensities within both cerebral hemispheres which
+likely reflect sequela of chronic microvascular ischemic change in a
+patient of this age. Prominence of extra-axial cm space over both
+cerebral convexities is unchanged.  The basilar cisterns are patent.
+ 
+No acute oral abnormality. Paranasal sinuses and mastoid air cells are
+clear. No osseous lesions or fractures. Old right craniotomy defect.
+ 
+IMPRESSION:
+ 
+No acute intracranial abnormality.
+ 
+Global cerebral volume loss and presumed chronic microvascular ischemic
+changes.
+ 
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 1949
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000551~2018-07-29~0958~12375~YITONG~FU~7130~JEFFERY~REYNOLDS~E~DIAG
+M0000330338~LEMUEL~F~SOUTHERLAND~1953-12-30~M~ BLUE SELECT~201035
+Procedure Ordered: 13773317~20097~MXR RIBS (R) MIN 3 V+PA CHEST~71101RT~99999901
+Admitting DX: PAIN IN RT SIDE
+Working DX: 
+ 
+
+INDICATION(S):  Pain
+ 
+Techniques: Multiple dedicated right rib views.
+ 
+Comparison:  None.
+ 
+Findings:  No acute fracture or subluxation.  Specifically, no
+displaced right rib fracture.  The cardiomediastinal silhouette is
+within normal limits.  No focal consolidation, large pleural effusion
+or evidence of pneumothorax.
+ 
+Impression:
+ 
+No acute finding.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1038
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820901059~2018-07-28~2350~53932~MARGARET~GOODMAN~52157~RICHARD~PLUMMER~E~DIAG
+M0000334181~CHRISTOPHER~R~JUSTICE~1965-04-27~M~MEDICARE~101003
+Procedure Ordered: 13773164~40036~MCT BRAIN OR HEAD WO CONTRAST~70450~99999901
+Admitting DX: SEIZURE
+Working DX: 
+ 
+
+CT scan of the head without intravenous contrast (Coronal and Sagittal
+reformats). In accordance with CT protocols and the ALARA principle,
+radiation dose reduction techniques were utilized for this exam.
+ 
+Indication: Seizure
+ 
+Comparison: April 26, 2017
+ 
+Findings:
+There is no evidence of intracranial hemorrhage, mass effect or midline
+shift. Again noted is remote infarct of the left  frontal temporal
+parietal  lobes associated with ex vacuo dilatation of the left lateral
+ventricle.  The  sulci and basal cisterns are unremarkable. The
+calvarium is unremarkable.  The mastoid air cells and visualized
+paranasal sinuses are unremarkable.
+ 
+Impression:
+No evidence of intracranial hemorrhage, mass effect or midline shift
+Left chronic frontal temporal parietal infarct
+If there is further clinical concern, consider MRI for further
+evaluation.
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 0114
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000546~2018-07-29~0957~12375~YITONG~FU~12417~MARK~HARRELL~I~DIAG
+M0000335238~PATRICIA~A~BOLING~1949-07-26~F~UHC COMMUNITY SNP~101002
+Procedure Ordered: 13773316~40989~MCT ABD/PELVIS WO CONTRAST~74176~99999601
+Admitting DX: RECTAL BLEEDING WITH PAIN
+Working DX: 
+ 
+
+INDICATION(S):  Pain
+ 
+Techniques: CT abdomen and pelvis without IV contrast
+ 
+Comparison:  CT November 14, 2013.
+ 
+Findings: Visualized lung bases are grossly normal.
+ 
+There is hepatic steatosis.  The gallbladder is surgically absent.
+Small left adrenal adenoma again noted.  The right adrenal gland,
+kidneys and pancreas are grossly normal.  Granulomatous disease in the
+spleen.  The stomach appears normal.  Small bowel is unremarkable.
+Fairly pronounced sigmoid diverticulosis without definite evidence of
+diverticulitis.  No CT evidence of appendicitis.  No ascites or
+pneumoperitoneum.  No enlarged mesenteric or retroperitoneal lymph
+node.  Atherosclerotic change of the abdominal aorta without aneurysm.
+ 
+The urinary bladder is decompressed.  No free fluid in the pelvis.  No
+pelvic lymphadenopathy.  No acute or aggressive osseous lesion.
+ 
+Impression:
+ 
+Fairly pronounced sigmoid diverticulosis without definite evidence of
+diverticulitis.  No acute finding in the abdomen or pelvis otherwise.
+ 
+Hepatic steatosis.
+ 
+Left adrenal adenoma.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1056
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000818~2018-07-29~1514~54038~RICHARD~GRAY~52157~RICHARD~PLUMMER~E~DIAG
+M0000335615~JUSTIN~M~MOWL~1992-07-15~M~ SELF PAY UNINSURED MH~711012
+Procedure Ordered: 13773489~20081~MXR CHEST PA & LATERAL~71046~99999501
+Admitting DX: CP,SOB
+Working DX: 
+ 
+
+Exam:Chest, two views
+ 
+Date:07/29/2018 at 1322 hours
+ 
+Clinical history:Dyspnea, pain
+ 
+COMPARISON:03/24/2018
+ 
+FINDING(S)/IMPRESSION:
+Heart size normal.  Vascularity normal. Left hilar prominence slightly
+less pronounced. Lungs clear.  No acute cardiopulmonary findings.
+ 
+ 
+ 
+ 
+     Transcriptionist- RICHARD IAN GRAY M.D., Radiologist
+     Read By- RICHARD IAN GRAY M.D., Radiologist
+     Reviewed and E-Signed By- RICHARD IAN GRAY M.D., Radiologist
+     Released Date Time- 07/29/18 1546
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000428~2018-07-29~0401~53932~MARGARET~GOODMAN~1895~JOHN~ABERCROMBIE~E~DIAG
+M0000336640~DELORES~G~WELLS~1942-04-18~F~BC TN MED ADV~101012
+Procedure Ordered: 13773218~20123~MXR PELVIS 1 OR 2 VIEWS~72170~99999601
+Admitting DX: BACK PAIN
+Working DX: 
+ 
+
+Radiograph of the pelvis (one-view)
+ 
+Indication: Pain
+ 
+Comparison: None
+ 
+Findings:
+There is no fracture or dislocation.
+There is instrumentation of the lower lumbar spine.
+Lateral sacroiliac joints are within normal limits.
+There is rotation of the left femur limiting evaluation of the femoral
+neck.
+There are phleboliths noted in the right pelvis.
+There is no soft tissue abnormality.
+ 
+Impression:
+No fractures or dislocation.
+Limited evaluation of the left hip secondary to rotation
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 0453
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000428~2018-07-29~0401~53932~MARGARET~GOODMAN~1895~JOHN~ABERCROMBIE~E~DIAG
+M0000336640~DELORES~G~WELLS~1942-04-18~F~BC TN MED ADV~101012
+Procedure Ordered: 13773219~20117~MXR SP LUMBAR 2 OR 3 VIEWS~72100~99999501
+Admitting DX: BACK PAIN
+Working DX: 
+ 
+
+Radiographs of the lumbar spine ( 3 views)
+ 
+Indication: Pain
+ 
+Comparison: March 5, 2016
+ 
+Findings:
+There is fixation of L3/L4 and L4/L5 with interbody fusion.  No
+hardware complications.
+There are mild degenerative changes of the lumbar spine.
+There is grade 1 retrolisthesis of L1 on L2, new since previous
+examination, associated with disc space narrowing.
+No fractures.
+ 
+Impression:
+Postoperative changes of the lower lumbar spine.
+Degenerative changes of the lumbar spine as described above.
+ 
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 0502
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000428~2018-07-29~0608~12375~YITONG~FU~1895~JOHN~ABERCROMBIE~E~DIAG
+M0000336640~DELORES~G~WELLS~1942-04-18~F~BC TN MED ADV~101012
+Procedure Ordered: 13773238~60024~MMR SP LUMBAR WO CONTRAST~72148~99999301
+Admitting DX: BACK PAIN
+Working DX: 
+ 
+
+INDICATION(S):  Low back pain, left leg pain, history of back surgery
+2015 and 2016
+ 
+Techniques: MRI of the lumbar spine without contrast.
+ 
+Comparison: Radiograph same day
+ 
+Findings: There are five non-rib-bearing lumbar-type vertebral bodies.
+Modic type 1 endplate degenerative changes at the level L1/L2. The
+vertebral body heights are maintained.  No evidence of acute fracture.
+Posterior fusion of L3/L4 and L4/L5 and laminectomies are again noted.
+Grade 1 retrolisthesis of L1 on L2.  The conus terminates at the level
+of L1 with normal morphology.
+ 
+At the level of T12/L1, the central canal is patent without neural
+foraminal stenosis.
+ 
+At the level of L1/L2, 15 x 9 mm left paracentral disc extrusion
+extending inferiorly on image six, series 7 is noted.  There is
+moderate central canal narrowing measure up to 6 mm.  There is severe
+left neural foraminal stenosis.  There is moderate to severe right
+neural foraminal stenosis.
+ 
+At the level of L2/L3, circumferential disc bulge together with facets
+arthrosis and uncovertebral hypertrophy, there is mild central canal
+narrowing.  There is moderate bilateral neural foraminal stenosis.
+ 
+At the level of L3/L4, changes of posterior fusion and laminectomy.
+The central canal is patent.  There is moderate to severe right and
+moderate left neural foraminal stenosis.
+ 
+At the level L4/L5, posterior fusion and laminectomies.  The central
+canal is widely patent.  There is mild to moderate bilateral neural
+foraminal stenosis.
+ 
+At the level of L5/S1, the central canal is patent.  There is mild to
+moderate bilateral neural foraminal stenosis.
+ 
+Impression:
+ 
+15 x 9 mm left paracentral disc extrusion at the level of L1/L2 and
+associated moderate central canal narrowing and severe left and
+moderate right neural foraminal stenosis.
+ 
+Posterior fusion of L3/L4 and L4/L5 and additional multilevel
+degenerative disease.
+ 
+ 
+ 
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 0836
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000968~2018-07-29~1840~54126~RON~PEARSON~52157~RICHARD~PLUMMER~E~DIAG
+M0000337901~TAMMY~S~HAMRICK~1971-12-18~F~ HUMANA ADV~101011
+Procedure Ordered: 13773591~40074~MCT SP LUMBAR WO CONTRAST~72131~99999901
+Admitting DX: FELL
+Working DX: 
+ 
+
+EXAM: CT of the lumbar spine without contrast .  Coronal and sagittal
+reformats obtained through
+INDICATION: Fall
+COMPARISON: Radiographs of the lumbar spine 03/17/2016
+ 
+FINDINGS:
+There are 5 nonrib-bearing lumbar-type vertebral bodies. Postoperative
+changes of thoracolumbosacral fusion without evidence of hardware
+complication or peri-hardware lucency.  No evidence of acute fracture
+or subluxation however exam is limited by streak artifact. Fusion of
+the posterior elements without definite evidence of acute fracture.
+Scoliotic curvature of the spine with multilevel degenerative changes
+including an arterial the space narrowing and osteophytosis.  Vertebral
+body heights are maintained.
+ 
+IMPRESSION:
+Exam is limited by streak artifact however no definite evidence of
+acute fracture or subluxation.  No evidence of hardware complication.
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 1940
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000861~2018-07-29~1619~54126~RON~PEARSON~12417~MARK~HARRELL~E~DIAG
+M0000340306~NORBERT~~PRZYBYLSKI~1922-08-09~M~MEDICARE~101003
+Procedure Ordered: 13773516~20450~MXR HIP 2-3 V INC PELVIS RT~73502RT~99999101
+Admitting DX: FALL
+Working DX: 
+ 
+
+EXAM: AP pelvis, AP and frogleg views of the right hip
+INDICATION: Fall
+COMPARISON: Radiographs of the right hip 04/27/2018
+ 
+FINDINGS:
+ 
+No acute fracture or dislocation. Acetabular morphology is normal.
+Sphericity of the femoral head is maintained. No radiopaque foreign
+body or soft tissue abnormality. Significant stone burden is noted
+within the rectum.
+ 
+IMPRESSION:
+No evidence of acute fracture. If of high clinical concern recommend CT
+for further evaluation.
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 1702
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820802642~2018-07-27~2040~53932~MARGARET~GOODMAN~7688~BARIMA~POKU~I~DIAG
+M0000348629~BETTY~L~YATES~1934-02-01~F~MEDICARE~101003
+Procedure Ordered: 13772465~50056~MUS ABDOMEN COMPLETE~76700~99978701
+Admitting DX: CHF,ELEVATED TROPONIN
+Working DX: 
+ 
+
+Abdominal ultrasound
+ 
+Indication: Abdominal distension
+ 
+Comparison: .Renal Ultrasound June 20, 2018
+ 
+Findings:
+The liver is heterogeneous in appearance. There is no gallbladder
+calculus. There is gallbladder wall thickening measuring 5 mm,
+nonspecific in the setting of ascites. The common bile duct is normal
+in caliber at 5 mm. Sonographic Murphy sign is negative on realtime
+evaluation. The pancreas is u not well visualized secondary to
+overlying bowel gas. The right kidney measures 9 x 3.4 x 3.6 cm. The
+left kidney measures 8.3 x 4.0 x 5.1.  Bilateral renal cortices are
+echogenic, interval change from previous examination. There is no
+hydronephrosis. The spleen measures 8 x 6.4 x 7.4 cm.  There is
+moderate volume ascites.
+ 
+Impression:
+No cholelithiasis.  Gallbladder wall thickening, likely on the basis of
+ascites.
+Moderate volume ascites.
+Heterogeneous liver parenchyma, suggestive of chronic liver disease.
+Consider CT for further evaluation as clinically indicated.
+Echogenic bilateral renal cortices, a finding that can be seen in the
+setting of medical renal disease, clinical correlation is suggested.
+ 
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 0243
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820802642~2018-07-28~0908~53932~MARGARET~GOODMAN~52527~KARIE~HALL~I~DIAG
+M0000348629~BETTY~L~YATES~1934-02-01~F~MEDICARE~101003
+Procedure Ordered: 13772677~50134~MUS VA LOWER EXT VEIN BIL COMPR/M~93970~99976501
+Admitting DX: CHF,ELEVATED TROPONIN
+Working DX: 
+ 
+
+Bilateral lower extremity venous Doppler ultrasound examination
+ 
+Indication: Swelling
+ 
+Comparison: None
+ 
+Technique: Grey scale, color flow and spectral Doppler evaluation of
+the bilateral lower extremities deep veins were performed.
+ 
+Findings:
+ 
+Right:
+The common femoral vein, proximal and mid femoral vein demonstrate
+nonocclusive thrombus with partial compression.
+The deep left femoral vein, popliteal, and posterior tibial veins
+demonstrate no thrombus.
+ 
+Left:
+There is partial compressibility of the proximal to distal femoral
+vein, consistent with a nonocclusive deep venous thrombosis. The common
+femoral vein is patent. The popliteal and calf veins were not imaged,
+not accessible at the time of imaging (sonographer unable to rotate leg
+or bend knee)
+ 
+There is bilateral lower extremity edema present.
+ 
+Impression:
+Right Nonocclusive deep venous thrombosis from the right common femoral
+vein to the mid femoral vein.
+ 
+Left nonocclusive deep venous thrombosis extending from the proximal
+femoral vein through the distal femoral vein. Limited evaluation of the
+left lower extremity as described above.
+ 
+Findings communicated to Catie, shaw, RN by Dr. Goodman on 07/29/2018
+at 04:15 a.m. Eastern time
+ 
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 0423
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000716~2018-07-29~1351~12375~YITONG~FU~52157~RICHARD~PLUMMER~I~DIAG
+M0000354896~EUGENIA~~BUCHANAN~1962-05-16~F~UHC MC 31362~101009
+Procedure Ordered: 13773442~50126~MUS VA LOWER EXT VEIN LT COMPR/MN~93971LT~99999001
+Admitting DX: FAILED OPT RX FOR CELLULITIS
+Working DX: 
+ 
+
+INDICATION:  Left leg pain
+ 
+Techniques:  Real time ultrasound of left lower extremity using
+gray-scale and Doppler studies.
+ 
+Comparison:  Not available
+ 
+Findings: The left common femoral vein, superficial femoral vein, deep
+femoral vein, and popliteal veins as well as posterior tibial vein are
+patent without evidence of thrombus.
+ 
+ Prominent left inguinal lymph nodes measure up to 1.8 x 0.6 cm with
+fatty hilum, likely benign.  No significant subcutaneous edema.
+ 
+Impression:
+ 
+No evidence of deep venous thrombosis.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1500
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000716~2018-07-29~1351~12375~YITONG~FU~52157~RICHARD~PLUMMER~I~DIAG
+M0000354896~EUGENIA~~BUCHANAN~1962-05-16~F~UHC MC 31362~101009
+Procedure Ordered: 13773443~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99999101
+Admitting DX: FAILED OPT RX FOR CELLULITIS
+Working DX: 
+ 
+
+INDICATION(S):  Intermittent fever
+ 
+Techniques:  Single view of the chest.
+ 
+Comparison:  None.
+ 
+Findings: The heart size is normal.  There is perihilar interstitial
+thickening bilaterally.  No focal consolidation.  No large pleural
+effusion or evidence of pneumothorax.  No acute bony abnormality.
+ 
+Impression:
+ 
+Mild perihilar interstitial thickening may represent central vascular
+congestion versus mild inflammatory/infectious process.  No focal
+consolidation
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1418
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820900533~2018-07-28~1021~53932~MARGARET~GOODMAN~50897~DANIELLE~DAVIS~O~DIAG
+M0000357496~KRISTI~N~CONWAY~1979-08-03~F~AMERIGROUP TN~301064
+Procedure Ordered: 13772721~20218~MXR KNEE (L) 3 VIEWS~73562LT~99999901
+Admitting DX: 73562
+Working DX: 
+ 
+
+Radiographs of left knee joint ( 3 views)
+ 
+Indication: Knee pain
+ 
+Comparison: None
+ 
+Findings:
+The tibiofemoral and patellofemoral knee joints are normal in
+configuration and alignment.
+The visualized bones demonstrate normal density.
+There are mild degenerative changes of the knee joint.
+There is no fracture or dislocation.
+The periarticular soft tissues are normal.
+ 
+Impression:
+No fracture or dislocation.
+Mild degenerative changes of the knee joint.
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 0207
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000529~2018-07-29~0945~12375~YITONG~FU~7130~JEFFERY~REYNOLDS~E~DIAG
+M0000358880~ANGELA~D~WAITES~1974-04-29~F~BLUE SELECT~201035
+Procedure Ordered: 13773308~20081~MXR CHEST PA & LATERAL~71046~99999901
+Admitting DX: COUGH,CONGESTION
+Working DX: 
+ 
+
+INDICATION(S):  Cough
+ 
+Techniques: Two views of the chest.
+ 
+Comparison:  July 22, 2011
+ 
+Findings: The cardiomediastinal silhouette is within normal limits. No
+focal consolidation, large pleural effusion or evidence of
+pneumothorax. No acute bony abnormality.
+ 
+Impression:
+ 
+No acute finding.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1022
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000829~2018-07-29~1532~54126~RON~PEARSON~12417~MARK~HARRELL~O~DIAG
+M0000360140~JAMES~E~KNIGHT~1978-03-02~M~AMERIGROUP TN~301064
+Procedure Ordered: 13773499~20081~MXR CHEST PA & LATERAL~71046~99999601
+Admitting DX: A/E ASTHMA WITH ACUTE RESP FAILURE,AKI
+Working DX: 
+ 
+
+EXAM: Two views of the chest
+INDICATION: Shortness of breath
+COMPARISON: Radiographs of the chest 03/09/2018
+ 
+FINDINGS:
+The lungs are symmetrically inflated and without focal consolidation.
+No large pleural effusion or visible pneumothorax. The
+cardiomediastinal silhouette is within normal limits. No acute osseous
+abnormality.
+ 
+IMPRESSION:
+No acute cardiopulmonary abnormality.
+ 
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 1623
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820500675~2018-07-29~1145~12375~YITONG~FU~12702~STEVEN~SHEEDLO~I~DIAG
+M0000363064~FLOYD~J~BARNETTE~1943-09-07~M~ UHC MC 31362~101009
+Procedure Ordered: 13773373~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99963701
+Admitting DX: CHF EXAC
+Working DX: 
+ 
+
+INDICATION(S):  Short of breath.
+ 
+Techniques:  Single view of the chest
+ 
+Comparison:  July 24, 2018.
+ 
+Findings:  There is increase in the interstitial densities.  No large
+pleural effusion or evidence of pneumothorax.  The enlarged cardiac
+silhouette is stable.  No acute bony abnormality.
+ 
+Impression:
+ 
+Worsening of pulmonary edema.  Clinical correlation for pneumonia.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1317
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821001078~2018-07-29~2106~54126~RON~PEARSON~52157~RICHARD~PLUMMER~E~DIAG
+M0000365062~NINA~R~HANNAH~1968-09-22~F~MEDICARE~101003
+Procedure Ordered: 13773671~20153~MXR HUMERUS (R) MIN 2 VIEWS~73060RT~99999901
+Admitting DX: FALL
+Working DX: 
+ 
+
+EXAM: AP and lateral views of the right humerus
+INDICATION: Fall
+COMPARISON: None available
+ 
+FINDINGS:
+Comminuted impacted humeral head fracture extending into the surgical
+neck. Minimal anterior displacement of the distal fracture fragment. No
+evidence of dislocation. No radiopaque foreign body or soft tissue
+abnormality.
+ 
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 2150
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000777~2018-07-29~1426~12375~YITONG~FU~12417~MARK~HARRELL~E~DIAG
+M0000377871~RHONDA~G~MCGEORGE~1959-04-13~F~MEDICARE~101003
+Procedure Ordered: 13773459~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99999401
+Admitting DX: SOB,CP,COUGHING
+Working DX: 
+ 
+
+INDICATION(S):  Short of breath
+ 
+Techniques:  Single view of the chest
+ 
+Comparison: July 1, 2018
+ 
+Findings: Right chest port catheter is stable.  No focal consolidation,
+large pleural effusion or evidence of pneumothorax.  Mild left basilar
+atelectasis.  Right mid lung calcified granuloma.  No acute osseous
+abnormality.
+ 
+Impression:
+ 
+No acute finding.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1454
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000797~2018-07-29~1455~54038~RICHARD~GRAY~7130~JEFFERY~REYNOLDS~E~DIAG
+M0000378995~AMY~N~LIVINGSTON~1978-07-17~F~BLUE SELECT~201035
+Procedure Ordered: 13773474~40066~MCT SP CERVICAL WO CONTRAST~72125~99999901
+Admitting DX: BACK/NECK PAIN,HEADACHE
+Working DX: 
+ 
+
+Exam:CT cervical spine
+ 
+Date:07/29/2018 at 1504 hours
+ 
+Clinical history:Neck pain post MVC
+ 
+Technique: Contiguous axial imaging performed through the cervical
+spine.  Multiplanar reformats generated.
+ 
+COMPARISON:None
+ 
+FINDING(S):There is normal cervical alignment.  There is loss of normal
+cervical lordosis.  Degenerative disc height loss with early bony
+spurring present , most advanced at C5-C7 where there is secondary
+canal and foraminal narrowing.  No findings indicate acute fracture.
+No significant prevertebral edema.
+ 
+IMPRESSION(S):
+1.Cervical spondylosis without acute finding.
+ 
+ 
+ 
+ 
+     Transcriptionist- RICHARD IAN GRAY M.D., Radiologist
+     Read By- RICHARD IAN GRAY M.D., Radiologist
+     Reviewed and E-Signed By- RICHARD IAN GRAY M.D., Radiologist
+     Released Date Time- 07/29/18 1530
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820901128~2018-07-28~2338~53932~MARGARET~GOODMAN~1895~JOHN~ABERCROMBIE~O~DIAG
+M0000379804~RHONDA~R~DUFF~1968-08-31~F~BLUECARE~301002
+Procedure Ordered: 13773159~40036~MCT BRAIN OR HEAD WO CONTRAST~70450~99989901
+Admitting DX: SEVERE ANEMIA,AMS
+Working DX: 
+ 
+
+CT scan of the head without intravenous contrast (Coronal and Sagittal
+reformats). In accordance with CT protocols and the ALARA principle,
+radiation dose reduction techniques were utilized for this exam.
+ 
+Indication: Altered mental status
+ 
+Comparison: October 7 2015
+ 
+Findings:
+There is no evidence of intracranial hemorrhage, mass effect or midline
+shift. The ventricles, sulci and basal cisterns are unremarkable. The
+calvarium is unremarkable. There is fluid prominence in the suprasellar
+region, suggestive of an empty sella. The mastoid air cells and
+visualized paranasal sinuses are unremarkable.
+ 
+Impression:
+No evidence of intracranial hemorrhage, mass effect or midline shift
+Other findings as described above
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 0057
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820901128~2018-07-28~2338~53932~MARGARET~GOODMAN~1895~JOHN~ABERCROMBIE~O~DIAG
+M0000379804~RHONDA~R~DUFF~1968-08-31~F~BLUECARE~301002
+Procedure Ordered: 13773160~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99990301
+Admitting DX: SEVERE ANEMIA,AMS
+Working DX: 
+ 
+
+Chest radiograph ( AP view )
+ 
+Indication: Dyspnea
+ 
+Comparison:July 28, 2018
+ 
+Findings:
+Low lung volumes are noted.
+There is mild prominence of the interstitium, that may represent
+interstitial pulmonary edema
+There is no evidence of pleural effusion or pneumothorax.
+The cardiomediastinal silhouette is normal.
+No acute osseous changes.
+ 
+Impression:
+Mild prominence of the interstitium, that may represent interstitial
+edema in the appropriate clinical setting.
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 0029
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000792~2018-07-29~1449~12375~YITONG~FU~12417~MARK~HARRELL~E~DIAG
+M0000381696~GWENDOLYN~Y~SHANNON~1947-09-23~F~HUMANA ADV~101011
+Procedure Ordered: 13773468~20167~MXR FOREARM LEFT~73090LT~99999901
+Admitting DX: ARM INJURY
+Working DX: 
+ 
+
+INDICATION(S):  Fall.
+ 
+Techniques:  Two views of left forearm.
+ 
+Comparison:  None.
+ 
+Findings: There is no acute fracture or subluxation. Proximal and
+distal joint spaces are maintained.  There is soft tissue irregularity
+in the dorsal aspect of the forearm.  No suspicious radiopaque foreign
+body.
+ 
+Impression:
+ 
+Soft tissue irregularity in the dorsal aspect of the forearm may
+represent soft tissue contusion/hematoma.  No acute osseous abnormality.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1505
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000872~2018-07-29~1625~54126~RON~PEARSON~52157~RICHARD~PLUMMER~I~DIAG
+M0000383487~LISA~D~JAIMES~1964-03-16~F~UHC COMMUNITY SNP~101002
+Procedure Ordered: 13773520~20081~MXR CHEST PA & LATERAL~71046~99999501
+Admitting DX: COPD EXAC
+Working DX: 
+ 
+
+EXAM: Two views of the chest
+INDICATION: Dyspnea
+COMPARISON: Radiographs of the chest 06/25/2018
+ 
+FINDINGS:
+The lungs are hyperinflated with bibasilar atelectasis and/or
+consolidation.  Trace pleural effusions.  Diffuse interstitial
+prominence, chronic.  No evidence pneumothorax.  The cardiomediastinal
+silhouette is borderline enlarged.
+ 
+IMPRESSION:
+Trace pleural effusions with bibasilar atelectasis and/or
+consolidation.
+ 
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 1750
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000872~2018-07-29~2136~53932~MARGARET~GOODMAN~52157~RICHARD~PLUMMER~I~DIAG
+M0000383487~LISA~D~JAIMES~1964-03-16~F~UHC COMMUNITY SNP~101002
+Procedure Ordered: 13773682~20401~MXR PORT CHEST POST PROC PLCMT~~99997701
+Admitting DX: COPD EXAC
+Working DX: 
+ 
+
+Chest radiograph ( AP view )
+ 
+Indication: Intubation
+ 
+Comparison:July 29, 2018
+ 
+Findings:
+There is interval placement of an endotracheal tube with the tip
+approximately 2 cm from the carina.
+Limited evaluation of the right side of the chest, not included in the
+examination.
+The cardiomediastinal silhouette is stable.
+There is no pneumothorax in the visualized portion of the examination.
+There is prominence of the interstitium, as seen previously, suggestive
+of pulmonary edema.
+There is blunting of  the left costophrenic angle that may represent a
+small pleural effusion versus pleural thickening.
+ 
+Impression:
+Endotracheal tube is approximately 2 cm from the carina.
+Interstitial pulmonary edema and small left pleural effusion
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 2232
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000796~2018-07-29~1510~54038~RICHARD~GRAY~12417~MARK~HARRELL~E~DIAG
+M0000384269~DANIELLE~L~RICHARDSON~1995-07-31~F~BLUE PREFERRED~201034
+Procedure Ordered: 13773482~40989~MCT ABD/PELVIS WO CONTRAST~74176~99999501
+Admitting DX: POSS UTI
+Working DX: 
+ 
+
+Exam:CT abdomen and pelvis without contrast
+ 
+Date:07/29/2018 at 1533 hours
+ 
+Clinical history:Right flank pain
+ 
+Technique: Contiguous axial imaging performed through the abdomen and
+pelvis without the administration of intravenous contrast
+ 
+COMPARISON:None
+ 
+FINDING(S):
+ 
+Limited visualization of the lung bases is clear.
+ 
+There is mild right hydronephrosis and right renal enlargement.  The
+proximal right ureter is slightly prominent but no obstructing stone is
+identified.
+ 
+The liver, gallbladder, adrenals, left kidney, spleen and pancreas are
+negative for acute findings.  There is no free intra-abdominal fluid or
+air.  The GI tract is unremarkable.
+ 
+The bladder is mildly distended.  The visible pelvic structures show no
+focal inflammatory findings.
+ 
+Bony structures show no dominant or aggressive lesion.
+ 
+IMPRESSION(S):
+1.Mild right renal hydronephrosis.  This may indicate a recently passed
+stone, a partial obstruction too small to image on this exam, ureteral
+reflux, or early pyelonephritis. If the symptoms fail to resolve or
+worsen, contrasted imaging/further investigation may be informative.
+ 
+ 
+ 
+ 
+     Transcriptionist- RICHARD IAN GRAY M.D., Radiologist
+     Read By- RICHARD IAN GRAY M.D., Radiologist
+     Reviewed and E-Signed By- RICHARD IAN GRAY M.D., Radiologist
+     Released Date Time- 07/29/18 1555
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000375~2018-07-29~0049~53932~MARGARET~GOODMAN~1895~JOHN~ABERCROMBIE~I~DIAG
+M0000388444~BILLY~~JUSTIS~1936-09-29~M~ BC TN MED ADV~101012
+Procedure Ordered: 13773183~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99999301
+Admitting DX: LLL PNA
+Working DX: 
+ 
+
+Chest radiograph ( AP view )
+ 
+Indication: Dyspnea
+ 
+Comparison:08/13/2013
+ 
+Findings:
+There is subtle asymmetric left lung base opacity, that may represent
+developing pneumonia.
+There is no evidence of pleural effusion or pneumothorax.
+The cardiomediastinal silhouette is normal.
+There are mild atheromatous calcifications of the aortic arch.
+There are  degenerative changes of the thoracic spine.
+There are mild degenerative changes of bilateral glenohumeral joints
+and acromioclavicular joints.
+ 
+Impression:
+Subtle asymmetric left lung base opacity, that may represent developing
+pneumonia.  Follow-up is suggested.
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 0120
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000781~2018-07-29~1434~12375~YITONG~FU~52157~RICHARD~PLUMMER~I~DIAG
+M0000396800~BILLY~R~MILLS~1934-07-24~M~HUMANA ADV~101011
+Procedure Ordered: 13773462~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99999401
+Admitting DX: DYSPNEA,RUL MASS,AFIB W/RVR
+Working DX: 
+ 
+
+INDICATION(S):  Pain.
+ 
+Techniques:  Single view of the chest
+ 
+Comparison:  October 29, 2014
+ 
+Findings: The prominent cardiac silhouette is stable. Mild right
+basilar subsegmental atelectasis.  No focal consolidation, large
+pleural effusion or evidence of pneumothorax. No acute osseous
+abnormality.
+ 
+Impression:
+ 
+No acute finding.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1502
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000781~2018-07-29~1643~54126~RON~PEARSON~52157~RICHARD~PLUMMER~I~DIAG
+M0000396800~BILLY~R~MILLS~1934-07-24~M~HUMANA ADV~101011
+Procedure Ordered: 13773538~40171~MCT THORAX W CONTRAST FOR PE~71260~99998901
+Admitting DX: DYSPNEA,RUL MASS,AFIB W/RVR
+Working DX: 
+ 
+
+EXAM: CTA of the chest with coronal and sagittal MIP reformats
+following administration of 55 cc Omnipaque-300 IV contrast. CT PE
+protocol.
+INDICATION: Pain
+COMPARISON: CT thorax 01/05/2013
+ 
+FINDINGS:
+No evidence of acute pulmonary embolus. No right heart strain.
+Centrilobular emphysematous changes.  The aortic root is of normal
+caliber. Main pulmonary trunk is dilated measuring 3.8 3 cm.  Heart is
+borderline enlarged. No pericardial effusion.
+ 
+The central airways are patent. Biapical ground-glass opacities.  Right
+upper lobe nodule measures 8 mm compared to 6 mm in 2013.  No pleural
+effusion or pneumothorax. No threshold enlarged axillary, hilar, or
+mediastinal lymphadenopathy.
+ 
+No suspicious osseous abnormality.
+ 
+Limited evaluation of the upper abdomen reveals no acute abnormality.
+Partially visualized left renal cyst.
+ 
+IMPRESSION:
+ 
+No evidence of acute pulmonary embolus.
+ 
+Bilateral ground-glass opacity suggestive of infectious-inflammatory
+etiology.  Recommend follow-up to document resolution.
+ 
+Right upper lobe my nodule has slightly increased in size from 2013.
+Recommend follow up in 3-6 months to document stability.
+ 
+Main pulmonary trunk dilation suggestive of pulmonary arterial
+hypertension.
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 1743
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820601918~2018-07-29~0910~12375~YITONG~FU~10227~ERNESTO~MEJIA~I~DIAG
+M0000399899~PAULENA~M~TRIPUCKA~1970-06-14~F~CIGNA LOCAL PLUS 182223~521163
+Procedure Ordered: 13772815~20081~MXR CHEST PA & LATERAL~71046~99986001
+Admitting DX: ASTHMA EXACERBATION
+Working DX: 
+ 
+
+INDICATION(S):  Pneumonia
+ 
+Techniques: Two views of the chest
+ 
+Comparison:  July 28, 2018
+ 
+Findings: Unchanged mild bibasilar interstitial densities.  No pleural
+effusion.  No evidence of pneumothorax.  The cardiomediastinal
+silhouette is stable with prior mediastinotomy.  No acute bony
+abnormality.
+ 
+Impression:
+ 
+Unchanged mild bibasilar densities, likely residual pneumonia.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1009
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821001128~2018-07-29~2241~54126~RON~PEARSON~52157~RICHARD~PLUMMER~E~DIAG
+M0000401274~LISA~R~ROBERTS~1978-04-02~F~BLUECARE~301002
+Procedure Ordered: 13773715~20143~MXR SHOULDER (R) MIN 2 VIEWS~73030RT~99996201
+Admitting DX: SICK
+Working DX: 
+ 
+
+EXAM: AP, Grashey, and transscapular Y views of the right shoulder
+INDICATION: Shoulder pain
+COMPARISON: Radiographs of the right shoulder 02/14/2018
+ 
+FINDINGS:
+No acute fracture or dislocation. The glenohumeral and
+acromioclavicular joints are unremarkable. The coracoclavicular
+distance is normal.
+ 
+No radiopaque foreign body or soft tissue abnormality.
+ 
+IMPRESSION:
+No acute findings.
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 2320
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821001020~2018-07-29~1945~54126~RON~PEARSON~STANDING,ORDER ED~ORDER~STANDING~E~DIAG
+M0000411836~JESSICA~L~BOSEMAN~1961-12-03~F~MEDICARE~101003
+Procedure Ordered: 13773625~20237~MXR ANKLE (L) 3 VIEWS~73610LT~99999901
+Admitting DX: ANKLE INJURY
+Working DX: 
+ 
+
+EXAM: AP, oblique, and lateral views of the left ankle
+INDICATION: Injury, severe pain
+COMPARISON: None available
+ 
+FINDINGS:
+Spiral fracture of the distal fibular metadiaphysis with mild
+displacement and angulation of the distal fracture fragment. Transverse
+fracture through the medial malleolus with inferior displacement of the
+distal fracture fragment. Question of fracture through the posterior
+malleolus. The tibia and fibula do not overlapping all views.  Edema
+surrounding the ankle. No ankle dislocation.
+ 
+IMPRESSION:
+Fractures of the distal fibula, medial malleolus, and question
+posterior malleolus as discussed. Findings suggestive of syndesmotic
+injury.
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 2009
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821001020~2018-07-29~2051~54126~RON~PEARSON~1895~JOHN~ABERCROMBIE~E~DIAG
+M0000411836~JESSICA~L~BOSEMAN~1961-12-03~F~MEDICARE~101003
+Procedure Ordered: 13773662~20237~MXR ANKLE (L) 3 VIEWS~73610LT~99999801
+Admitting DX: ANKLE INJURY
+Working DX: 
+ 
+
+EXAM: AP, oblique, and lateral views of the left ankle
+INDICATION: Post reduction, splinting
+COMPARISON: Radiographs of the left ankle same-day
+ 
+FINDINGS:
+Casting material projects upon the ankle limiting evaluation.
+Redemonstration of multiple fractures with mild decrease in
+displacement of the medial malleolar fracture. Otherwise, no
+significant change in appearance of multiple fractures.
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 2146
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000478~2018-07-29~0713~12375~YITONG~FU~12417~MARK~HARRELL~E~DIAG
+M0000412870~JERRY~G~COFFEY~1985-06-20~M~ SELF PAY UNINSURED MH~711012
+Procedure Ordered: 13773248~20189~MXR HAND (L) MIN 3 VIEWS~73130LT~99999701
+Admitting DX: HAND ABSCESS
+Working DX: 
+ 
+
+INDICATION(S):  Infection
+ 
+Techniques:  THREE VIEWS of left hand
+ 
+Comparison:  None.
+ 
+Findings: There is soft tissue irregularity at the lateral base of the
+second finger at the level of the metacarpal phalangeal joint.  There
+appears soft tissue swelling.  No suspicious radiopaque foreign body.
+No associated bony erosion or periosteal reaction.  No acute fracture
+or subluxation.
+ 
+Impression:
+ 
+Soft tissue irregularity about the lateral base of the second finger,
+likely related to known infection.  No bony involvement.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 0756
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821001040~2018-07-29~2037~54126~RON~PEARSON~52157~RICHARD~PLUMMER~I~DIAG
+M0000417814~TIMOTHY~A~SMITH~1958-02-17~M~ HUMANA ADV~101011
+Procedure Ordered: 13773644~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99999101
+Admitting DX: OSTEOMYELITIS
+Working DX: 
+ 
+
+Exam: Portable AP view of the chest
+Indication: Fever
+Comparison: Radiographs of the chest half 11/01/2017
+ 
+FINDINGS:
+Lungs are symmetrically inflated without focal consolidation, large
+pleural effusion, or evidence of pneumothorax.  The cardiomediastinal
+silhouette is within normal limits.  No acute osseous abnormality.
+ 
+IMPRESSION:
+No acute cardiopulmonary abnormality.
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 2105
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821001040~2018-07-29~2221~53932~MARGARET~GOODMAN~52157~RICHARD~PLUMMER~I~DIAG
+M0000417814~TIMOTHY~A~SMITH~1958-02-17~M~ HUMANA ADV~101011
+Procedure Ordered: 13773703~20247~MXR FOOT (L) MIN 3 VIEWS~73630LT~99999001
+Admitting DX: OSTEOMYELITIS
+Working DX: 
+ 
+
+Radiographs of left foot ( 3 views)
+ 
+Indication: Pain and infection
+ 
+Comparison: November 27, 2017
+ 
+Findings:
+There has been interval amputation of the first ray at the
+metatarsophalangeal joint.
+There is soft tissue swelling about the amputation site.
+There are subtle lucencies at the head of the first metatarsal.
+There are degenerative changes of the midfoot.
+Unchanged calcaneal spurs.
+ 
+Impression:
+Subtle lucencies of the head of the first metatarsal associated with
+soft tissue swelling at the amputation site, that may represent early
+osteomyelitis with cellulitic changes.  Consider MRI for further
+evaluation as clinically indicated.
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 2324
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820503084~2018-07-29~1121~12375~YITONG~FU~9046~JOHN~HORNER~I~DIAG
+M0000417939~MELONIE~~SCOGGINS~1977-11-09~F~ SELF PAY UNINSURED MH~711012
+Procedure Ordered: 13773292~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99978201
+Admitting DX: SEVERE SEPSIS,COMMUNITY REQUIRED PNA,UTI,SYNCOPE
+Working DX: 
+ 
+
+INDICATION(S):  Short of breath.
+ 
+Techniques:  Single view of the chest
+ 
+Comparison:  July 29, 2018
+ 
+Findings: Right PICC is stable.  Unchanged right infrahilar density.
+The left lung remains clear.  No large pleural effusion or evidence of
+pneumothorax.  Unchanged mild elevation of right hemidiaphragm.
+ 
+Impression:
+ 
+No interval changes with persistent right infrahilar densities.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1316
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821001141~2018-07-29~2232~54126~RON~PEARSON~1895~JOHN~ABERCROMBIE~I~DIAG
+M0000418511~REBECCA~S~HEDRICK~1932-04-16~F~ MEDICARE~101003
+Procedure Ordered: 13773709~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99987201
+Admitting DX: RT HIP FX
+Working DX: 
+ 
+
+Exam: Portable AP view of the chest
+Indication: Trauma with pain
+Comparison: Radiograph of the chest 07/23/2018
+ 
+FINDINGS:
+Lungs are hyperinflated with flattening of the diaphragms.  Diffuse
+interstitial prominence with patchy opacities noted bilaterally is
+similar to prior.  No large pleural effusion or evidence of
+pneumothorax.  The cardiomediastinal silhouette is unchanged. No
+definite evidence of displaced rib fracture.
+ 
+IMPRESSION:
+No significant interval change in appearance of the chest.
+ 
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 2318
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821001141~2018-07-29~2232~54126~RON~PEARSON~1895~JOHN~ABERCROMBIE~I~DIAG
+M0000418511~REBECCA~S~HEDRICK~1932-04-16~F~ MEDICARE~101003
+Procedure Ordered: 13773710~40036~MCT BRAIN OR HEAD WO CONTRAST~70450~99987001
+Admitting DX: RT HIP FX
+Working DX: 
+ 
+
+EXAM: CT of the head without contrast .  Coronal and sagittal reformats
+obtained.
+INDICATION: Trauma with pain
+COMPARISON: None available
+ 
+FINDINGS:
+ 
+No evidence of acute hemorrhage, infarction, or mass effect. No
+extra-axial fluid collections or midline shift. Gray-white
+differentiation is maintained. Age-commensurate volume loss and ex
+vacuo ventricular dilation, with nonspecific periventricular and
+subcortical white matter hypodensities within both cerebral hemispheres
+which likely reflect sequela of chronic microvascular ischemic change
+in a patient of this age. The basilar cisterns are patent.
+ 
+No acute pleural abnormality.  Paranasal sinuses and mastoid air cells
+are clear. No osseous lesions or fractures. Small left frontal soft
+tissue hematoma.
+ 
+IMPRESSION:
+ 
+No acute intracranial abnormality.
+ 
+Small left frontal hematoma without evidence of underlying fracture.
+ 
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 2339
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000756~2018-07-29~1404~12375~YITONG~FU~12417~MARK~HARRELL~I~DIAG
+M0000420134~STANLEY~E~PRICE~1927-05-01~M~MEDICARE~101003
+Procedure Ordered: 13773448~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99995501
+Admitting DX: AMS,HYPOGLYCEMIA,HYPERAMMONEMIA,AKI,PHARYNGITIS
+Working DX: 
+ 
+
+INDICATION(S):  Mental status change.
+ 
+Techniques:  Single view of the chest
+ 
+Comparison:  July 18, 2018
+ 
+Findings: Low lung volume. There is mild increase in the right basilar
+streaky density.  There is improved left mid lung interstitial density.
+No large pleural effusion or evidence of pneumothorax.  The
+cardiomediastinal silhouette is stable.  No acute osseous abnormality.
+ 
+Impression:
+ 
+Mild worsening of right basilar streaky density, likely atelectasis.
+Clinical correlation for developing pneumonia.
+ 
+Improved left basilar aeration.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1448
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000756~2018-07-29~1844~54126~RON~PEARSON~52340~THERESA~ADKINS~I~DIAG
+M0000420134~STANLEY~E~PRICE~1927-05-01~M~MEDICARE~101003
+Procedure Ordered: 13773595~40059~MCT THORAX WO CONTRAST~71250~99992801
+Admitting DX: AMS,HYPOGLYCEMIA,HYPERAMMONEMIA,AKI,PHARYNGITIS
+Working DX: 
+ 
+
+EXAM: CT of the chest without contrast .  Coronal and sagittal
+reformats obtained.
+INDICATION: Abnormal chest x-ray
+COMPARISON: Radiograph of the chest 07/29/2018
+ 
+FINDINGS:
+The central airways are patent. Small left and trace right pleural
+effusions with adjacent atelectasis and/or consolidation.  No
+pneumothorax.  No enlarged mediastinal, hilar, or axillary lymph nodes.
+ 
+Normal heart size. No pericardial effusion. Coronary and aortic
+atherosclerosis.. The aortic root and main pulmonary trunk are of
+normal caliber. Hiatal hernia.
+ 
+Evaluation of the upper abdomen reveals large volume ascites gastric
+and paraesophageal varices. Question nodular morphology of the liver.
+Splenomegaly.
+ 
+No acute osseous abnormality.  Multilevel degenerative changes noted
+throughout the spine.
+ 
+IMPRESSION:
+Small left and trace right pleural effusions with adjacent atelectasis
+and/or consolidation.
+ 
+Limited evaluation of the upper abdomen reveals large volume ascites
+with splenomegaly and gastroesophageal varices.  Question nodular
+morphology of the liver.
+ 
+ 
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 2004
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820901152~2018-07-29~0057~53932~MARGARET~GOODMAN~1895~JOHN~ABERCROMBIE~E~DIAG
+M0000421121~NATHALIE~A~MURPHY~1993-04-06~F~ BLUE SELECT~201035
+Procedure Ordered: 13773185~50074~MUS TRANSVAGINAL~76830~99999501
+Admitting DX: ABD PAIN
+Working DX: 
+ 
+
+Pelvic ultrasound (transvaginal)
+ 
+Indication:Left pelvic pain
+ 
+Comparison:None
+ 
+Findings:
+The uterus is normal in size measuring 7 x 5.1 x 3.3 cm. The
+endometrium measures 1.2 cm.
+The right ovary measures 2.4 x 2.1 x 1.2 cm and is unremarkable.
+The left ovary measures 3.1 x 3.2 x 3.3 cm. A left ovarian cyst
+measures 2.5 x 1.8 x 2.1 cm.
+Both ovaries demonstrate normal Doppler flow signal.
+There is a fluid with low-level echoes in the right and left adnexa,
+that may represent hemorrhage.
+ 
+Impression:
+No evidence of ovarian torsion.
+Fluid in the right and left adnexa, may represent hemorrhage, likely
+from a ruptured cyst.  Correlation with beta Hcg is suggested.
+ 
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 0326
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000694~2018-07-29~1359~12375~YITONG~FU~52157~RICHARD~PLUMMER~I~DIAG
+M0000427658~RONALD~D~RAINES~1937-04-02~M~MEDICARE~101003
+Procedure Ordered: 13773445~40990~MCT ABD/PELVIS W CONTRAST~74177~99999001
+Admitting DX: ACUTE PARALYSIS
+Working DX: 
+ 
+
+INDICATION(S):  Pain.
+ 
+Techniques:  CT abdomen pelvis with contrast using 70 cc Omnipaque-300
+IV contrast.
+ 
+Comparison:  PET CT April 1, 2011.
+ 
+Findings:  Visualized lung bases demonstrate multiple calcified pleural
+plaques and dependent atelectasis.  The heart size is enlarged.  There
+are calcifications of the coronary arteries.
+ 
+No focal hepatic lesion.  The gallbladder is not dilated.  Tiny
+bilateral renal hypodense lesions are too small to be characterized.
+No hydronephrosis.  The adrenal glands, spleen and pancreas are within
+normal limits.  The stomach appears normal.  Small bowel is
+unremarkable.  Sigmoid diverticulosis without evidence diverticulitis.
+The appendix is not visualized, however no CT evidence of acute
+appendicitis.  No ascites or pneumoperitoneum.  No enlarged mesenteric
+or retroperitoneal lymph nodes.  IVC filter remains in place.
+Atherosclerotic changes of abdominal aorta without aneurysm.
+ 
+The urinary bladder is decompressed by Foley Catheter.  No
+lymphadenopathy in the abdomen or pelvis.
+ 
+No acute or aggressive osseous lesion.
+ 
+Impression:
+ 
+No acute intra-abdominal or pelvic finding.
+ 
+Sigmoid diverticulosis without evidence of diverticulitis.
+ 
+Calcified pleural plaques..
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1441
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000694~2018-07-29~1445~54126~RON~PEARSON~52157~RICHARD~PLUMMER~I~DIAG
+M0000427658~RONALD~D~RAINES~1937-04-02~M~MEDICARE~101003
+Procedure Ordered: 13773464~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99998701
+Admitting DX: ACUTE PARALYSIS
+Working DX: 
+ 
+
+Exam: Portable AP view of the chest
+Indication: Dyspnea
+Comparison: Radiographs of the chest 06/28/2018
+ 
+FINDINGS:
+Patient is rotated to the left.  Low lung volumes accentuate the
+pulmonary vasculature and cardiac silhouette.  Bibasilar atelectasis
+and/or consolidation.  Blunting of the right costophrenic angle.  No
+evidence of pneumothorax.  The cardiomediastinal silhouette is
+unchanged.
+ 
+IMPRESSION:
+Low lung volumes with bibasilar atelectasis and/or consolidation with
+question of trace right pleural effusion.
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 1648
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000435~2018-07-29~0412~53932~MARGARET~GOODMAN~1895~JOHN~ABERCROMBIE~E~DIAG
+M0000442212~ADAM~S~DEERING~1998-12-02~M~AMERIGROUP TN~301064
+Procedure Ordered: 13773221~20179~MXR WRIST (R) MIN 3 VIEWS~73110RT~99999901
+Admitting DX: WRIST PAIN
+Working DX: 
+ 
+
+Radiographs of the right wrist ( 4 views)
+ 
+Indication: Trauma with pain
+ 
+Comparison: August 20, 2017
+ 
+Findings/Impression
+ 
+There is a nonunion fracture of the waist of the scaphoid bone with
+associated sclerosis.
+No acute fractures. Soft tissues are unremarkable.
+ 
+ 
+ 
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 0444
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000882~2018-07-29~1648~54126~RON~PEARSON~12417~MARK~HARRELL~I~DIAG
+M0000460960~ERNEST~E~SMITH~1935-07-05~M~UHC COMMUNITY SNP~101002
+Procedure Ordered: 13773546~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99999501
+Admitting DX: ACUTE COPD,AC HYPOXIC RESP FAILURE,EDEMA
+Working DX: 
+ 
+
+Exam: Portable semiupright AP view of the chest
+Indication: Shortness of breath
+Comparison: Radiographs of the chest 07/16/2018
+ 
+FINDINGS:
+Lungs are symmetrically inflated with diffuse interstitial prominence.
+Small right pleural effusion with adjacent atelectasis and/or
+consolidation.  Left basilar atelectasis and/or consolidation.  No
+pneumothorax.  Cardiomediastinal silhouette is within normal limits.
+ 
+IMPRESSION:
+Bibasilar atelectasis and/or consolidation with small right pleural
+effusion.
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 1719
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000882~2018-07-29~2039~54126~RON~PEARSON~52340~THERESA~ADKINS~I~DIAG
+M0000460960~ERNEST~E~SMITH~1935-07-05~M~UHC COMMUNITY SNP~101002
+Procedure Ordered: 13773646~40059~MCT THORAX WO CONTRAST~71250~99996901
+Admitting DX: ACUTE COPD,AC HYPOXIC RESP FAILURE,EDEMA
+Working DX: 
+ 
+
+EXAM: CT of the chest without contrast .  Coronal and sagittal
+reformats obtained.
+INDICATION: Hypoxia, shortness of breath
+COMPARISON: Radiograph of the chest same-day
+ 
+FINDINGS:
+The central airways are patent. No pneumothorax.  Trace left and small
+right pleural effusions with adjacent atelectasis.  Prominent
+mediastinal lymph nodes are likely reactive.  No threshold enlarged
+axillary lymph nodes.
+ 
+Normal heart size. No pericardial effusion. Coronary and aortic
+atherosclerosis. The aortic root and main pulmonary trunk are of normal
+caliber.
+ 
+No acute abnormality in the visualized abdomen.
+ 
+No suspicious osseous abnormality. Multilevel degenerative changes
+noted throughout the spine.
+ 
+IMPRESSION:
+Small right and trace left pleural effusions with adjacent atelectasis.
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 2136
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000873~2018-07-29~1625~54126~RON~PEARSON~7130~JEFFERY~REYNOLDS~E~DIAG
+M0000465501~JACKSON~L~GOAN~2003-11-13~M~ UNITED HLTH 740800~621023
+Procedure Ordered: 13773521~20160~MXR ELBOW (L) MIN 3 VIEWS~73080LT~99999901
+Admitting DX: ELBOW  PAIN
+Working DX: 
+ 
+
+EXAM: AP, lateral, and oblique views of the left elbow
+INDICATION: Fall, pain
+COMPARISON: None available
+ 
+FINDINGS:
+ 
+No acute fracture or dislocation. Radiocapitellar alignment is
+maintained in all views. The anterior humeral line intersects the
+middle third of the capitellum. Physes remain open without significant
+widening or dislocation. No radiopaque foreign body. Displaced fat pad
+suggestive of effusion.
+ 
+IMPRESSION:
+Elbow joint effusion without radiographic evidence of acute fracture or
+dislocation. If of high clinical concern for acute fracture CT can be
+employed for further evaluation.
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 1706
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000416~2018-07-29~0237~53932~MARGARET~GOODMAN~1895~JOHN~ABERCROMBIE~I~DIAG
+M0000467629~JULIE~H~MOREFIELD~1938-02-12~F~HUMANA ADV~101011
+Procedure Ordered: 13773206~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99999201
+Admitting DX: KIDNEY STONE,UTI
+Working DX: 
+ 
+
+Chest radiograph ( AP view )
+ 
+Indication: Fever
+ 
+Comparison:June 30, 2015
+ 
+Findings:
+There is subtle opacity of the left lung base.
+There is no evidence of pleural effusion or pneumothorax.
+Again noted are surgical clips of the right lung base.
+The cardiomediastinal silhouette is normal.
+No acute osseous findings.
+ 
+Impression:
+Subtle opacity of the left lung base, that may represent atelectasis
+and/or developing consolidation.
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 0337
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000416~2018-07-29~0309~53932~MARGARET~GOODMAN~1895~JOHN~ABERCROMBIE~I~DIAG
+M0000467629~JULIE~H~MOREFIELD~1938-02-12~F~HUMANA ADV~101011
+Procedure Ordered: 13773210~40989~MCT ABD/PELVIS WO CONTRAST~74176~99999001
+Admitting DX: KIDNEY STONE,UTI
+Working DX: 
+ 
+
+CT abdomen and pelvis without contrast (coronal and sagittal
+reformat).In accordance with CT protocols and the ALARA principle,
+radiation dose reduction techniques were utilized for this exam.
+ 
+Comparison: September 20, 2016
+ 
+Indication: Right flank pain
+ 
+Findings:
+ 
+The study is mildly degraded by motion artifact.
+ 
+A 2.7 cm left lung base rule out is again noted.  There is evidence of
+pericardial calcifications similar to previous examination. A small
+hiatal hernia is present.
+ 
+There is liver nodularity present, suggestive of chronic liver
+disease/liver cirrhosis. The gallbladder, pancreas, adrenals, and
+spleen are within normal limits.
+ 
+There is a 6 mm obstructing calculus of the right proximal ureter
+resulting in mild to moderate hydroureteronephrosis associated with
+perinephric/periureteral fat stranding.  There is nonobstructing left
+nephrolithiasis.
+ 
+The appendix is normal.  There is colonic diverticulosis without
+diverticulitis.  There is no free air or fluid within the abdomen or
+pelvis.
+ 
+There are atheromatous calcifications of the abdominal aorta with a
+thoracoabdominal aneurysm measuring 3.7 cm (series 2 image 19).
+ 
+The urinary bladder is partially distended.  There is a calcification
+noted within the uterus, that may represent a dystrophic calcification
+versus a small calcified leiomyoma.  No adnexal masses.
+ 
+There is generalized osteopenia present.  There is are Schmorl's nodes
+at L1.
+ 
+Impression:
+6 mm obstructing right proximal ureteral calculus resulting in mild to
+moderate right hydroureteronephrosis associated with
+perinephric/periureteral fat stranding.
+Nonobstructing left nephrolithiasis.
+Colonic diverticulosis without diverticulitis.
+3.7 cm thoracoabdominal aneurysm
+Liver cirrhosis
+Other findings as described above
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 0356
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821001067~2018-07-29~2042~53932~MARGARET~GOODMAN~1895~JOHN~ABERCROMBIE~E~DIAG
+M0000479114~MELANIE~J~LALLIER~1982-01-23~F~ UHC COMMUNITY PLAN~301060
+Procedure Ordered: 13773654~40066~MCT SP CERVICAL WO CONTRAST~72125~99999901
+Admitting DX: HEAD INJURY
+Working DX: 
+ 
+
+CT scan of the cervical spine without contrast (axial sections with
+sagittal and coronal reformats).In accordance with CT protocols and the
+ALARA principle, radiation dose reduction techniques were utilized for
+this exam.
+ 
+Indication: Trauma
+ 
+Comparison:None
+ 
+Findings:
+There is no fracture or subluxation. There is mild reversal of normal
+cervical lordosis.. The prevertebral soft tissues are unremarkable.
+ 
+Impression:
+No evidence of fracture or subluxation.
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 2154
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821001067~2018-07-29~2042~53932~MARGARET~GOODMAN~1895~JOHN~ABERCROMBIE~E~DIAG
+M0000479114~MELANIE~J~LALLIER~1982-01-23~F~ UHC COMMUNITY PLAN~301060
+Procedure Ordered: 13773655~40036~MCT BRAIN OR HEAD WO CONTRAST~70450~99999801
+Admitting DX: HEAD INJURY
+Working DX: 
+ 
+
+CT scan of the head without intravenous contrast (Coronal and Sagittal
+reformats). In accordance with CT protocols and the ALARA principle,
+radiation dose reduction techniques were utilized for this exam.
+ 
+Indication: Trauma with pain, hit the back of head while tubing
+ 
+Comparison: None
+ 
+Findings:
+There is no evidence of intracranial hemorrhage, mass effect or midline
+shift. The ventricles, sulci and basal cisterns are unremarkable. The
+calvarium is unremarkable.  The mastoid air cells and visualized
+paranasal sinuses are unremarkable. There is a left high parietal scalp
+hematoma present.
+ 
+Impression:
+No evidence of intracranial hemorrhage, mass effect or midline shift
+Left high parietal scalp hematoma
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 2147
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000979~2018-07-29~1911~53932~MARGARET~GOODMAN~52157~RICHARD~PLUMMER~E~DIAG
+M0000480166~WENDY~~GODSEY~1977-01-31~F~BLUECARE~301002
+Procedure Ordered: 13773611~40990~MCT ABD/PELVIS W CONTRAST~74177~99999401
+Admitting DX: ABDOMINAL PAIN
+Working DX: 
+ 
+
+CT abdomen and pelvis with contrast (coronal and sagittal reformat).In
+accordance with CT protocols and the ALARA principle, radiation dose
+reduction techniques were utilized for this exam.
+ 
+Comparison: June 24, 2018
+ 
+Indication: Right upper quadrant pain there are
+ 
+Findings:
+The lung bases are clear.
+ 
+The liver, gallbladder, pancreas, adrenals, and spleen are within
+normal limits.  There are punctate nonobstructing left nephrolithiasis
+present.  There is no hydroureteronephrosis.
+ 
+The appendix is normal.  There is no bowel obstruction.  There is no
+free air or fluid within the abdomen or pelvis.
+ 
+There is no significant lymphadenopathy within the abdomen or pelvis.
+The abdominal vasculature is unremarkable.
+ 
+The uterus is unremarkable.  The urinary bladder is partially
+decompressed. Again noted is a 2.8 cm left ovarian cyst, unchanged
+Several phleboliths are noted in the pelvis.
+ 
+There are mild degenerative changes of the spine.
+ 
+Impression:
+Nonobstructing left nephrolithiasis.
+Other findings as described above
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 2136
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000656~2018-07-29~1201~12375~YITONG~FU~12417~MARK~HARRELL~E~DIAG
+M0000492930~WILLIAM~E~STRICKLAND~1990-09-02~M~ SELF PAY UNINSURED MH~711012
+Procedure Ordered: 13773392~20081~MXR CHEST PA & LATERAL~71046~99999301
+Admitting DX: CP,SOB,BACK PAIN
+Working DX: 
+ 
+
+PA and lateral chest radiograph
+ 
+INDICATION:  Chest pain
+ 
+COMPARISON:  July 10, 2018
+ 
+FINDINGS:  Lungs are clear. No evidence of pneumothorax. No pleural
+effusion. The cardiomediastinal silhouette is within normal limits.
+There is no acute osseous abnormality.
+ 
+Impression:
+ 
+No acute findings.
+ 
+ 
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1231
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000618~2018-07-29~1124~12375~YITONG~FU~7130~JEFFERY~REYNOLDS~E~DIAG
+M0000497370~BRUCE~L~HOFFMANN~1947-02-23~M~BLUE PREFERRED~201034
+Procedure Ordered: 13773372~20081~MXR CHEST PA & LATERAL~71046~99999901
+Admitting DX: COUGH,CONGESTION
+Working DX: 
+ 
+
+INDICATION(S):  Cough
+ 
+Techniques: Two views of the chest
+ 
+Comparison: April 29, 2017
+ 
+Findings: Left chest cardiac device is stable.  The heart size is
+normal.  No focal consolidation.  No pleural effusion or evidence of
+pneumothorax.  There are emphysematous changes.  Degenerative changes
+in the thoracic spine.
+ 
+Impression:
+ 
+No acute finding.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1208
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821001150~2018-07-29~2252~54126~RON~PEARSON~1895~JOHN~ABERCROMBIE~I~DIAG
+M0000498268~DAVID~M~COCKRUM~1964-01-27~M~ BLUECARE~301002
+Procedure Ordered: 13773719~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99999101
+Admitting DX: CELLULITIS,UTI
+Working DX: 
+ 
+
+Exam: Portable AP view of the chest
+Indication: Fever
+Comparison: Radiographs of the chest and abdomen 09/15/2017
+ 
+FINDINGS:
+Elevation of the right hemidiaphragm.  No large pleural effusion or
+evidence pneumothorax.  Minimal right basilar atelectasis.
+Cardiomediastinal silhouette is within normal limits. No acute osseous
+abnormality.
+ 
+IMPRESSION:
+No acute cardiopulmonary abnormality.
+ 
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 2334
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821001150~2018-07-29~2252~53932~MARGARET~GOODMAN~1895~JOHN~ABERCROMBIE~I~DIAG
+M0000498268~DAVID~M~COCKRUM~1964-01-27~M~ BLUECARE~301002
+Procedure Ordered: 13773720~20459~MXR FEMUR 2 V LT~73552LT~99999001
+Admitting DX: CELLULITIS,UTI
+Working DX: 
+ 
+
+Radiographs of the left Elbow joint ( 2 views; 6 images)
+ 
+Indication: Fever, redness, gas?  Along the proximal portion of the
+left hip, patient unable to extend neck, patient is the region, best
+possible radiographs
+ 
+Comparison: None
+ 
+Findings:
+Very limited examination secondary to position.
+There is generalized osteopenia present.
+Limited for evaluation of fractures or dislocation or soft tissues.
+ 
+Impression:
+Very limited evaluation secondary to positioning.
+Limited for evaluation of fractures dislocations and soft tissues.
+Consider CT for further evaluation as clinically indicated.
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/30/18 0000
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820900989~2018-07-28~2316~12375~YITONG~FU~7688~BARIMA~POKU~I~DIAG
+M0000510568~JOHN~S~NECESSARY~1977-01-30~M~ UHC COMMUNITY SNP~101002
+Procedure Ordered: 13773147~50059~MUS LIVER - SINGLE ORGAN~76705~99997301
+Admitting DX: AMS
+Working DX: 
+ 
+
+INDICATION(S):  Elevated liver enzyme
+ 
+Techniques: Liver ultrasound.
+ 
+Comparison:  None.
+ 
+Findings:  The liver demonstrates normal echogenicity without focal
+lesion.  The portal veins are patent.  The common bile duct measures 1
+cm.  The gallbladder is not dilated.  No gallbladder wall thickening.
+No definite shadowing gallstones.  Small amount of sludge material.  No
+pericholecystic fluid collection. The sonographic Murphy sign is not
+reported.
+ 
+Impression:
+ 
+Dilated common bile duct.  Recommend correlation with MRCP.
+ 
+Gallbladder sludge.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1216
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820900989~2018-07-29~1943~53932~MARGARET~GOODMAN~9046~JOHN~HORNER~I~DIAG
+M0000510568~JOHN~S~NECESSARY~1977-01-30~M~ UHC COMMUNITY SNP~101002
+Procedure Ordered: 13773623~20401~MXR PORT CHEST POST PROC PLCMT~~99992901
+Admitting DX: AMS
+Working DX: 
+ 
+
+Chest radiograph ( AP view )
+ 
+Indication: Post NG placement
+ 
+Comparison:July 29, 2018
+ 
+Findings:
+Endotracheal tube is appropriately located.
+There is a nasogastric tube present with tip overlying the stomach.
+There are airspace opacities of the right upper lobe, increased since
+previous examination.  There is also interval increase in opacity of
+the left lung base.
+There is blunting of the left costophrenic angle, that may represent a
+small pleural effusion
+The cardiomediastinal silhouette is stable.
+No acute osseous changes.
+ 
+Impression:
+Nasogastric tube tip overlies the stomach.
+The endotracheal tube is appropriately located.
+Right upper lobe and left lower lobe airspace opacities, may represent
+pneumonia.
+Other findings as described above
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 2037
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000518~2018-07-29~1037~12375~YITONG~FU~7130~JEFFERY~REYNOLDS~I~DIAG
+M0000528338~ANNA~S~HAMILTON~1940-06-02~F~ MEDICARE~101003
+Procedure Ordered: 13773341~40062~MCT THORAX W CONTRAST~71260~99999601
+Admitting DX: POST OBSTRUCTIVE PNEUMONIA,RIGHT LUNG MASS,PYELONEPHRITIS W/RENAL LES
+Working DX: 
+ 
+
+INDICATION(S):  Abnormal Chest X-ray:
+ 
+Techniques:  CT chest with contrast using 70 ml Omnipaque-300 IV
+contrast
+ 
+Comparison:  Not available.
+ 
+Findings:  Large right perihilar mass measures approximately 7.8 x 4.5
+cm. There is mass effect on right upper and lower lobe bronchi with
+mild narrowing.  There is some mass effect on the right lower lobe
+pulmonary artery.  It extends inferiorly to tethering the left lung
+base pleura.  Two separate right lower lobe lung masses in the anterior
+aspect of right lower lobe measuring 3.0 x 2.0 cm on image by 150,
+series 4, and in the left lung base measureing 3.8 x 2.3 cm on image
+187.
+ 
+There gives tiny left pleural effusion.  There are emphysematous
+changes.  No definite enlarged mediastinal, left hilar or axillary
+lymph nodes.  Atherosclerotic change of thoracic aorta without
+aneurysm.  No filling defect to suggest pulmonary embolus.  No
+pericardial effusion.
+ 
+The left kidney demonstrates heterogeneous enhancement with mild
+perinephric stranding.  A 2 cm left renal hypodense lesion with
+indeterminate internal density.
+ 
+Impression:
+ 
+7.8 cm right perihilar mass concerning for malignancy.  Additional two
+separate right lower lobe lung masses may represent metastatic disease
+versus primary.
+ 
+Heterogeneous enhancement of the left kidney with edematous appearance
+and perinephric stranding may represent pyelonephritis.  Follow-up is
+recommend to exclude other causes including lymphoma.
+ 
+2 cm left renal hypodense lesion with indeterminate density.  Recommend
+correlation with ultrasound.
+ 
+Tiny left pleural effusion, likely related to left renal pathology.
+ 
+Emphysema.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1153
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000884~2018-07-29~1640~54126~RON~PEARSON~7130~JEFFERY~REYNOLDS~E~DIAG
+M0000801010~KAYLEE~B~GARRETT~2011-05-09~F~UHC COMMUNITY PLAN~301060
+Procedure Ordered: 13773536~20248~MXR FOOT (R) MIN 3 VIEWS~73630RT~99999801
+Admitting DX: FOOT INJURY
+Working DX: 
+ 
+
+EXAM: AP, lateral, and oblique views of the right foot
+INDICATION: Twisted foot
+COMPARISON: None available
+ 
+FINDINGS:
+ 
+No acute fracture or dislocation. Lisfranc plane is maintained. No
+osseous lesions or periosteal reaction. Physes remain open without
+significant widening or dislocation. No radiopaque foreign body. Trace
+ankle effusion.
+ 
+IMPRESSION:
+Trace ankle effusion without evidence of acute fracture or dislocation.
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 1800
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000884~2018-07-29~1640~54126~RON~PEARSON~7130~JEFFERY~REYNOLDS~E~DIAG
+M0000801010~KAYLEE~B~GARRETT~2011-05-09~F~UHC COMMUNITY PLAN~301060
+Procedure Ordered: 13773537~20230~MXR TIBIA FIBULA RIGHT~73590RT~99999901
+Admitting DX: FOOT INJURY
+Working DX: 
+ 
+
+EXAM: AP and lateral views of the right tibia/fibula
+INDICATION: Pain after twisting leg
+COMPARISON: Radiographs of the right knee 01/12/2018
+ 
+FINDINGS:
+ 
+No acute fracture or dislocation. The ankle mortise is congruent. No
+osseous lesions. Physes remain open without significant widening or
+dislocation. No radiopaque foreign body. Trace ankle effusion.
+ 
+IMPRESSION:
+Trace ankle effusion without evidence of acute fracture or dislocation.
+If symptoms persist recommend repeat imaging and 7-10 days.
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 1713
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820802286~2018-07-29~0957~12375~YITONG~FU~10227~ERNESTO~MEJIA~I~DIAG
+M0000826070~ALAN~W~CUNNINGHAM~1953-02-07~M~ HUMANA ADV~101011
+Procedure Ordered: 13772823~20081~MXR CHEST PA & LATERAL~71046~99994001
+Admitting DX: FEVER, LACTIC ACIDOSIS
+Working DX: 
+ 
+
+INDICATION(S):  Pneumonia.
+ 
+Techniques:  Two views of the chest
+ 
+Comparison:  July 28, 2018
+ 
+Findings: Unchanged right infrahilar opacity.  The left lung remains
+clear.  No pleural effusion or evidence of pneumothorax.  The heart
+size is normal.  No acute osseous abnormality.
+ 
+Impression:
+ 
+Unchanged right infrahilar density, likely pneumonia.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1116
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820602736~2018-07-29~0502~12375~YITONG~FU~10227~ERNESTO~MEJIA~I~DIAG
+M0000827655~MARLANDE~~LAZARD~1970-03-25~F~MEDICARE~101003
+Procedure Ordered: 13772798~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99987701
+Admitting DX: UTI, SEPSIS, L EFFUSION, RESP FAILURE
+Working DX: 
+ 
+
+INDICATION(S):  Congestive heart failure
+ 
+Techniques: Single view of the chest.
+ 
+Comparison:  July 27, 2018
+ 
+Findings: Right chest port catheter is stable.  Unchanged small right
+pleural effusion.  Left basilar streaky density and probable small
+pleural effusion, similar to prior study.  No visible pneumothorax.
+The left cardiac silhouette is partially obscured.  No acute bony
+abnormality.
+ 
+Impression:
+ 
+No interval changes with bilateral pleural effusions and left basilar
+streaky densities, atelectasis versus consolidation.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1314
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820602736~2018-07-29~1855~54126~RON~PEARSON~9046~JOHN~HORNER~I~DIAG
+M0000827655~MARLANDE~~LAZARD~1970-03-25~F~MEDICARE~101003
+Procedure Ordered: 13773590~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99985801
+Admitting DX: UTI, SEPSIS, L EFFUSION, RESP FAILURE
+Working DX: 
+ 
+
+Exam: Portable upright AP view of the chest
+Indication: Shortness of breath
+Comparison: Radiograph of the chest same-day at 11:29
+ 
+FINDINGS:
+Right-sided CVL and left pleural catheter are unchanged in position. No
+significant change in bilateral pleural effusions with adjacent
+atelectasis.  No evidence of pneumothorax.  The cardiomediastinal
+silhouette is unchanged.
+ 
+IMPRESSION:
+No significant interval change.
+ 
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 1953
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000719~2018-07-29~1414~12375~YITONG~FU~12417~MARK~HARRELL~I~DIAG
+M0000833330~CARL~~HORTON~1955-09-05~M~BC HC EXCH S~201064
+Procedure Ordered: 13773455~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99999101
+Admitting DX: HEPATIC ENCEPHOLATHY 
+Working DX: 
+ 
+
+INDICATION(S):  Mental status change.
+ 
+Techniques:  Single view of the chest
+ 
+Comparison:  July 21, 2018
+ 
+Findings: Left PICC is stable.  Lung volume is very low.  Mild
+bibasilar atelectasis.  No focal consolidation, large pleural effusion
+or evidence of pneumothorax.  The cardiac silhouette is stable.
+ 
+Impression:
+ 
+No significant interval changes with low lung volume and bibasilar
+atelectasis.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1450
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820200534~2018-07-29~1404~12375~YITONG~FU~10227~ERNESTO~MEJIA~I~DIAG
+M0000834208~CHARLES~~SURBER~1939-06-18~M~ MEDICARE~101003
+Procedure Ordered: 13773432~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99967801
+Admitting DX: ACUTE CHF EXACERBATION
+Working DX: 
+ 
+
+INDICATION(S):  Short of breath.  Intubation
+ 
+Techniques: Single view of the chest.
+ 
+Comparison: July 29, 2018
+ 
+Findings: ET tube with tip approximately 6 cm above the carina.
+Enteric tube terminates in the proximal stomach.  Patient is rotated to
+the right side.  Likely unchanged mild right basilar density.  Mild
+left basilar atelectasis. Central vascular prominence. The
+cardiomediastinal silhouette is stable.
+ 
+Impression:
+ 
+ET tube with tip approximately 6 cm above the carina.
+ 
+Enteric tube in good position.
+ 
+Likely unchanged right basilar density, atelectasis/consolidation with
+possible small pleural effusion.
+ 
+Mild central vascular congestion/edema.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1446
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821001014~2018-07-29~2005~53932~MARGARET~GOODMAN~1895~JOHN~ABERCROMBIE~E~DIAG
+M0000849519~CARL~D~DAVIS~1941-05-08~M~UHC MC 31362~101009
+Procedure Ordered: 13773631~40036~MCT BRAIN OR HEAD WO CONTRAST~70450~99999301
+Admitting DX: MULT COMPLAINTS
+Working DX: 
+ 
+
+CT scan of the head without intravenous contrast (Coronal and sagittal
+reformats).In accordance with CT protocols and the ALARA principle,
+radiation dose reduction techniques were utilized for this exam.
+ 
+Indication: Head discomfort
+ 
+Comparison: March 12, 2018
+ 
+Findings:
+There is no evidence of intracranial hemorrhage, mass effect or midline
+shift. There is a chronic lacunae infarct of the right basal ganglia.
+There are periventricular white matter hypodensities, suggestive of
+chronic small vessel ischemia.  The CSF spaces are prominent,
+consistent with volume loss. The calvarium is unremarkable.  The
+mastoid air cells and visualized paranasal sinuses are unremarkable.
+There are atheromatous calcifications of the intracranial arteries.
+There is a 9 mm right nasal soft tissue nodule.
+ 
+Impression:
+No evidence of intracranial hemorrhage, mass effect or midline shift.
+Periventricular chronic small vessel ischemia, chronic lacunae infarct
+and volume loss.
+9 mm right nasal soft tissue nodule.  Clinical correlation is suggested.
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 2112
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821001014~2018-07-29~2005~54126~RON~PEARSON~1895~JOHN~ABERCROMBIE~E~DIAG
+M0000849519~CARL~D~DAVIS~1941-05-08~M~UHC MC 31362~101009
+Procedure Ordered: 13773632~20076~MXR CHEST SINGLE VIEW AP OR PA~71045~99999501
+Admitting DX: MULT COMPLAINTS
+Working DX: 
+ 
+
+Exam: Portable semiupright AP view of the chest
+Indication: Dyspnea
+Comparison: Radiograph of the chest 07/23/2018
+ 
+FINDINGS:
+The lungs are smashed inflated without focal consolidation, large
+pleural effusion, or evidence of pneumothorax.  The cardiomediastinal
+silhouette is within normal limits.  No acute osseous abnormality.
+Median sternotomy wires are noted.
+ 
+IMPRESSION:
+No acute cardiopulmonary abnormality.
+ 
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 2313
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000657~2018-07-29~1157~12375~YITONG~FU~7130~JEFFERY~REYNOLDS~E~DIAG
+M0000851060~STEPHANIE~~FEAGINS~1978-08-19~F~AMERIGROUP TN~301064
+Procedure Ordered: 13773389~40074~MCT SP LUMBAR WO CONTRAST~72131~99999901
+Admitting DX: BACK PAIN, LEG SWOLLEN
+Working DX: 
+ 
+
+INDICATION(S):  Low back pain
+ 
+Techniques:  CT lumbar spine without IV contrast.  Coronal sagittal
+reformed images were also obtained.
+ 
+Findings: There are five non-rib-bearing lumbar-type vertebral bodies.
+The vertebral body heights are maintained.  The alignment is normal.
+No acute fracture or subluxation.  The intervertebral disc space is
+maintained.  Minimal facet arthrosis at the level of L5/S1.  The
+central canal appears patent without neural foraminal stenosis at any
+level.
+ 
+Impression:
+ 
+No acute finding.  Minimal degenerative changes.
+ 
+ 
+     Transcriptionist- YITONG FU, Radiologist
+     Read By- YITONG FU, Radiologist
+     Reviewed and E-Signed By- YITONG FU, Radiologist
+     Released Date Time- 07/29/18 1306
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820802661~2018-07-27~2042~53932~MARGARET~GOODMAN~52340~THERESA~ADKINS~I~DIAG
+M0000870364~STEPHEN~A~OCUTO~1968-05-22~M~ MEDICARE~101003
+Procedure Ordered: 13772469~50134~MUS VA LOWER EXT VEIN BIL COMPR/M~93970~99996401
+Admitting DX: LLE CELLULITIS WITH SEPSIS, HYPOTENSION, FEVER, PAIN,TACHYCARDIA
+Working DX: 
+ 
+
+Bilateral lower extremity venous Doppler ultrasound examination
+ 
+Indication: Cellulitis, peripheral vascular disease
+ 
+Comparison: None
+ 
+Technique: Grey scale, color flow and spectral Doppler evaluation of
+the bilateral lower extremities deep veins were performed.
+ 
+Findings:
+ 
+The common femoral, femoral and popliteal veins are patent and
+compressible. Normal augmentation and respiratory variation are noted.
+There is no occlusive or nonocclusive thrombus is noted. The left
+peroneal vein is not visualized.  There is bilateral calf edema most
+prominent in the left lower extremity.
+ 
+There are prominent bilateral groin lymph nodes
+ 
+Impression:
+No sonographic features of deep venous thrombosis in the bilateral
+lower extremities.
+Other findings as described above
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 0007
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820901136~2018-07-28~2349~53932~MARGARET~GOODMAN~1895~JOHN~ABERCROMBIE~E~DIAG
+M0000870382~NOELLE~~MOFFIT~1973-12-02~F~ HLTHSCOPE 99006~541089
+Procedure Ordered: 13773163~20255~MXR ABDOMEN SINGLE VIEW~74018~99999401
+Admitting DX: KIDNEY STONE
+Working DX: 
+ 
+
+ADDENDUM:
+In retrospect, bilateral renal calculi are present.
+ 
+<====== END ADDENDUM 07/29/2018 03:55 am ======>
+ 
+Radiographs of the abdomen ( one-view ).
+ 
+Indication: Left flank pain, hematuria, possible kidney stones on the
+left
+ 
+Comparison: None
+ 
+Findings:
+There is no evidence of free air under the diaphragm.
+The bowel gas pattern is nonobstructive.
+There is moderate amount of stool in the right colon.
+No definite large calculi noted. Small calculi cannot be obscured by
+bowel gas and stool.
+The osseous structures are unremarkable.
+ 
+Impression:
+No definite large renal calculi noted.  Consider CT for further
+evaluation if there is further clinical concern.
+ 
+ 
+     Addendum Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Addendum Read By- MARGARET M GOODMAN, Radiologist
+     Addendum Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Addendum Released Date Time- 07/29/18 0357
+ ------------------------------------------------------------------------------
+ 
+Radiographs of the abdomen ( one-view ).
+ 
+Indication: Left flank pain, hematuria, possible kidney stones on the
+left
+ 
+Comparison: None
+ 
+Findings:
+There is no evidence of free air under the diaphragm.
+The bowel gas pattern is nonobstructive.
+There is moderate amount of stool in the right colon.
+No definite large calculi noted. Small calculi cannot be obscured by
+bowel gas and stool.
+The osseous structures are unremarkable.
+ 
+Impression:
+No definite large renal calculi noted.  Consider CT for further
+evaluation if there is further clinical concern.
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 0044
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1820901136~2018-07-29~0124~53932~MARGARET~GOODMAN~1895~JOHN~ABERCROMBIE~E~DIAG
+M0000870382~NOELLE~~MOFFIT~1973-12-02~F~ HLTHSCOPE 99006~541089
+Procedure Ordered: 13773193~40989~MCT ABD/PELVIS WO CONTRAST~74176~99999301
+Admitting DX: KIDNEY STONE
+Working DX: 
+ 
+
+CT abdomen and pelvis without contrast (coronal and sagittal reformat).
+In accordance with CT protocols and the ALARA principle, radiation dose
+reduction techniques were utilized for this exam.
+ 
+Comparison: Reference is made to abdominal radiographs July 29, 2018
+ 
+Indication: Left flank pain
+ 
+Findings:
+The lung bases are clear.
+ 
+There is diffuse fatty infiltration within the liver.  The gallbladder,
+pancreas, adrenals, and spleen are within normal limits.
+ 
+There is a 4 mm obstructing calculus in the left distal ureter
+resulting in severe left hydroureteronephrosis.  There is cortical
+thinning of the left kidney.  There are multiple nonobstructing left
+nephrolithiasis.  There is right nonobstructing nephrolithiasis
+present.  There is no right hydroureteronephrosis.
+ 
+The cecum is low lying in the pelvis.  The appendix is not definitively
+visualized.  There is moderate amount of stool noted within the colon.
+There is no free air or fluid within the abdomen or pelvis. There is a
+small fat containing umbilical hernia present.
+ 
+There is no significant lymphadenopathy within the abdomen or pelvis.
+The abdominal aorta is of normal caliber.
+ 
+A retroflexed uterus is noted.  There is a hypodensity in the region of
+the cervix, likely a Nabothian cyst.  The urinary bladder is
+unremarkable.  No acute osseous findings.
+ 
+Impression:
+4 mm obstructing calculus in the left distal ureter resulting in severe
+left hydroureteronephrosis resulting in thinning of the left renal
+cortex.
+Bilateral nonobstructing nephrolithiasis.
+Other findings as described above
+ 
+ 
+     Transcriptionist- MARGARET M GOODMAN, Radiologist
+     Read By- MARGARET M GOODMAN, Radiologist
+     Reviewed and E-Signed By- MARGARET M GOODMAN, Radiologist
+     Released Date Time- 07/29/18 0237
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000955~2018-07-29~1829~54126~RON~PEARSON~7130~JEFFERY~REYNOLDS~E~DIAG
+M0000870395~EMMA~~DORELUS~1956-12-30~F~ SELF PAY UNINSURED MH~711012
+Procedure Ordered: 13773587~20196~MXR FINGER(S) RIGHT~73140RT~99999901
+Admitting DX: FINGER INJURY
+Working DX: 
+ 
+
+EXAM: PA, lateral, and oblique views of the right second finger
+INDICATION: Laceration to distal second and third digits
+COMPARISON: None available
+ 
+FINDINGS:
+Laceration to the lateral aspect of the second digit with an oblique
+nondisplaced fracture through the base of the distal phalanx. No
+intra-articular extension. No other acute fractures or dislocation.
+ 
+ 
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 1914
+ ------------------------------------------------------------------------------
+END OF REPORT
+M~M1821000965~2018-07-29~1842~54126~RON~PEARSON~52157~RICHARD~PLUMMER~E~DIAG
+M0000870396~BROOKE~~VANCE~1999-08-03~F~ WELLCARE OF KY~301083
+Procedure Ordered: 13773592~40036~MCT BRAIN OR HEAD WO CONTRAST~70450~99999301
+Admitting DX: CHEST PAIN
+Working DX: 
+ 
+
+EXAM: CT of the head without contrast .  Coronal and sagittal reformats
+obtained.
+INDICATION: Facial numbness
+COMPARISON: None available
+ 
+FINDINGS:
+ 
+No evidence of acute hemorrhage, infarction, or mass effect. No
+extra-axial fluid collections or midline shift. Gray-white
+differentiation is maintained. The lateral ventricles are nondilated.
+The basilar cisterns are patent.
+ 
+The orbits are unremarkable. Paranasal sinuses and mastoid air cells
+are clear. No osseous lesions or fractures.
+ 
+IMPRESSION:
+ 
+No acute intracranial abnormality. If of high clinical concern for
+acute ischemia MRI can be employed for further evaluation.
+ 
+ 
+ 
+     Transcriptionist- RON HUNTER PEARSON M.D., Radiologist
+     Read By- RON HUNTER PEARSON M.D., Radiologist
+     Reviewed and E-Signed By- RON HUNTER PEARSON M.D., Radiologist
+     Released Date Time- 07/29/18 2015
+ ------------------------------------------------------------------------------
+END OF REPORT

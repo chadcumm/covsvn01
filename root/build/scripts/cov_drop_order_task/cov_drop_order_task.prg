@@ -1,0 +1,159 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+	Author:				Chad Cummings
+	Date Written:		   	03/01/2019
+	Solution:				Perioperative
+	Source file name:	 	cov_drop_order_task.prg
+	Object name:		   	cov_drop_order_task
+	Request #:
+
+	Program purpose:
+
+	Executing from:		CCL
+
+ 	Special Notes:		Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod 	Mod Date	  Developer				      Comment
+--- 	----------	--------------------	--------------------------------------
+001 	03/01/2019  Chad Cummings
+******************************************************************************/
+
+drop program cov_drop_order_task:dba go
+create program cov_drop_order_task:dba
+
+prompt
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+
+with OUTDEV
+
+
+call echo(build("loading script:",curprog))
+set nologvar = 0	;do not create log = 1		, create log = 0
+set noaudvar = 0	;do not create audit = 1	, create audit = 0
+%i ccluserdir:cov_custom_ccl_common.inc
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom Section  ************************************"))
+
+if (not(validate(reply,0)))
+record  reply
+(
+	1 text = vc
+	1 status_data
+	 2 status = c1
+	 2 subeventstatus[1]
+	  3 operationname = c15
+	  3 operationstatus = c1
+	  3 targetobjectname = c15
+	  3 targetobjectvalue = c100
+)
+endif
+
+call set_codevalues(null)
+call check_ops(null)
+
+free set t_rec
+record t_rec
+(
+	1 cv
+	 2 cs6026
+	  3 medication_cd 	= f8
+	1 cnt				= i4
+	1 qual[*]
+	 2 encntr_id 		= f8
+	 2 task_id			= f8
+	 2 order_id			= f8
+)
+
+call addEmailLog("chad.cummings@covhlth.com")
+
+set t_rec->cv.cs6026.medication_cd = uar_get_code_by("MEANING",6026,"MED")
+
+call writeLog(build2("* END   Custom Section  ************************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom   ************************************"))
+call writeLog(build2("* END   Custom   ************************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("* START Custom   ************************************"))
+select into "nl:"
+from
+	task_activity ta
+plan ta
+	where ta.task_status_cd = code_values->cv.cs_79.overdue_cd
+	and   ta.task_type_cd != t_rec->cv.cs6026.medication_cd
+order by
+	 ta.encntr_id
+	,ta.task_type_cd
+	,ta.task_create_dt_tm
+head report
+	t_rec->cnt = 0
+detail
+	t_rec->cnt = (t_rec->cnt + 1)
+	stat = alterlist(t_rec->qual,t_rec->cnt)
+	t_rec->qual[t_rec->cnt].encntr_id 	= ta.encntr_id
+	t_rec->qual[t_rec->cnt].task_id		= ta.task_id
+	t_rec->qual[t_rec->cnt].order_id	= ta.order_id
+with nocounter
+call writeLog(build2("* END   Custom   ************************************"))
+
+select into $outdev
+	 facility = uar_get_code_display(e.loc_facility_cd)
+	,p.name_full_formatted
+	,fin=cnvtalias(ea.alias,ea.alias_pool_cd)
+	,o.order_mnemonic
+	,o.orig_order_dt_tm ";;q"
+	,task_activity=uar_get_code_display(ta.task_activity_cd)
+	,task_type=uar_get_code_display(ta.task_type_cd)
+	,ot.task_description
+	,ta.task_create_dt_tm ";;q"
+from
+	(dummyt d1 with seq = t_rec->cnt)
+	,encounter e
+	,person p
+	,encntr_alias ea
+	,task_activity ta
+	,order_task ot
+	,orders o
+plan d1
+join e
+	where e.encntr_id = t_rec->qual[d1.seq].encntr_id
+join p
+	where p.person_id = e.person_id
+join ta
+	where ta.task_id = t_rec->qual[d1.seq].task_id
+join ot
+	where ot.reference_task_id = ta.reference_task_id
+join o
+	where o.order_id = t_rec->qual[d1.seq].order_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.active_ind = 1
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+	and   ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+order by
+	 facility
+	,p.name_full_formatted
+	,o.order_mnemonic
+	,ta.task_create_dt_tm
+with format, seperator=" ", nocounter
+
+#exit_script
+call exitScript(null)
+call echorecord(t_rec)
+call echorecord(code_values)
+call echorecord(program_log)
+
+
+end
+go

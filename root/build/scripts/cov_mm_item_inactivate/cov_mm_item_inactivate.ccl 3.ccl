@@ -1,0 +1,25 @@
+SELECT
+	distinct
+	 oii.value_key
+	,i.value
+
+FROM
+	object_identifier_index   oii,identifier i, object_identifier oi,item_definition id
+
+where oii.value_key >" "; "10094"
+and oii.identifier_type_cd =            3101.00
+and oii.object_type_cd =        3119.00
+and oii.object_id = oi.object_id
+and i.identifier_id = oi.identifier_id
+and i.identifier_type_cd =        3097.00
+and id.item_id = oi.object_id
+and id.active_ind = 1
+with maxrec = 30 go
+
+;78505869
+
+select * from code_value cv where cv.code_value = 192
+select * from code_value cv where cv.code_set = 220 and cv.cdf_meaning = "INVVIEW"
+
+select * from object_identifier i where i.object_id = 78502867 
+

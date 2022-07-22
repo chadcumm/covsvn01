@@ -1,0 +1,42 @@
+free set t_rec go
+record t_rec
+(
+	1 activity_type
+		2 diets = f8
+		2 supplements = f8
+		2 tube_feeding = f8
+	1 subactivity_type
+		2 diets = f8
+		2 supplements = f8
+		2 tube_feeding = f8
+	1 catalog_type
+		2 nutritional_services = f8
+) go
+
+set t_rec->activity_type.diets 					= uar_get_code_by("DISPLAY",106,"Diets") go
+set t_rec->activity_type.supplements 			= uar_get_code_by("DISPLAY",106,"Supplements") go
+set t_rec->activity_type.tube_feeding 			= uar_get_code_by("DISPLAY",106,"Tube Feeding") go
+set t_rec->subactivity_type.diets 				= uar_get_code_by("DISPLAY",5801,"Diets") go
+set t_rec->subactivity_type.supplements 		= uar_get_code_by("DISPLAY",5801,"Supplements") go
+set t_rec->subactivity_type.tube_feeding 		= uar_get_code_by("DISPLAY",5801,"Tube Feeding") go
+set t_rec->catalog_type.nutritional_services	= uar_get_code_by("MEANING",6000,"DIETARY") go
+
+call echorecord(t_rec) go
+
+update into order_catalog oc set oc.activity_subtype_cd = t_rec->subactivity_type.diets
+	where oc.catalog_type_cd = t_rec->catalog_type.nutritional_services
+	and   oc.activity_type_cd = t_rec->activity_type.diets
+	and   oc.active_ind = 1
+go
+
+update into order_catalog oc set oc.activity_subtype_cd = t_rec->subactivity_type.supplements
+	where oc.catalog_type_cd = t_rec->catalog_type.nutritional_services
+	and   oc.activity_type_cd = t_rec->activity_type.supplements
+	and   oc.active_ind = 1
+go
+
+update into order_catalog oc set oc.activity_subtype_cd = t_rec->subactivity_type.tube_feeding
+	where oc.catalog_type_cd = t_rec->catalog_type.nutritional_services
+	and   oc.activity_type_cd = t_rec->activity_type.tube_feeding
+	and   oc.active_ind = 1
+go

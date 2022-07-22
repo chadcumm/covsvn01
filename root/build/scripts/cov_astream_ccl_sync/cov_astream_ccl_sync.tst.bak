@@ -1,0 +1,1 @@
+execute cov_astream_ccl_sync "ccluserdir","cc1.dat" go

@@ -1,0 +1,49 @@
+drop program 265163_test:dba go 
+create program 265163_test:dba 
+prompt 
+	"Output to File/Printer/MINE" = "MINE"
+	, "POC Event:" = "" 
+
+with OUTDEV, FILENAME1
+
+
+;if ($FILENAME1 = "")
+;	DECLARE FILEPATH = VC WITH CONSTANT( "CCLUSERDIR:poc_request01.dat" ) else
+	DECLARE FILEPATH = VC WITH CONSTANT(concat("CCLUSERDIR:",$FILENAME1 )) 
+;endif
+
+free record request
+call echo(filepath)
+declare line_in = vc 
+
+FREE DEFINE RTL3
+DEFINE RTL3 IS FILEPATH
+select into "nl:"
+from rtl3t r
+detail
+	line_in = concat(line_in,r.line)
+with nocounter
+;call echo(line_in) go
+set stat = cnvtjsontorec(line_in) 
+
+for (i=1 to size(request->encounter_list,5))
+	for (k=1 to size(request->encounter_list[i].order_list,5))
+		set request->encounter_list[i].order_list[k].order_dt_tm = cnvtdatetime(Curdate,curtime3)
+		set request->encounter_list[i].order_list[k].start_dt_tm = cnvtdatetime(Curdate,curtime3)
+		set request->encounter_list[i].order_list[k].default_dt_tm = cnvtdatetime(Curdate,curtime3)
+		for (j=1 to size(request->encounter_list[i].order_list[k].result_list,5))
+			set request->encounter_list[i].order_list[k].result_list[j].result_dt_tm = cnvtdatetime(Curdate,curtime3)
+		endfor
+	endfor
+endfor
+
+call echorecord(request)
+set stat = tdbexecute(250024,250024,265163,"REC",request,"REC",265163reply)
+set retval = 100
+call echorecord(request)
+call echorecord(265163reply)
+
+end go
+
+
+

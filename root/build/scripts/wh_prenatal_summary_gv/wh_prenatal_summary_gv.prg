@@ -1,0 +1,910 @@
+DROP PROGRAM wh_prenatal_summary_gv :dba GO
+CREATE PROGRAM wh_prenatal_summary_gv :dba
+ IF (NOT (validate (rhead ,0 ) ) )
+  SET rhead = "{\rtf1\ansi \deff0{\fonttbl{\f0\fswiss Arial;}}"
+  SET rhead_colors1 = "{\colortbl;\red0\green0\blue0;\red255\green255\blue255;"
+  SET rhead_colors2 = "\red99\green99\blue99;\red22\green107\blue178;"
+  SET rhead_colors3 = "\red0\green0\blue255;\red123\green193\blue67;\red255\green0\blue0;}"
+  SET reol = "\par "
+  SET rtab = "\tab "
+  SET wr = "\plain \f0 \fs16 \cb2 "
+  SET wr11 = "\plain \f0 \fs11 \cb2 "
+  SET wr18 = "\plain \f0 \fs18 \cb2 "
+  SET wr20 = "\plain \f0 \fs20 \cb2 "
+  SET wu = "\plain \f0 \fs16 \ul \cb2 "
+  SET wb = "\plain \f0 \fs16 \b \cb2 "
+  SET wbu = "\plain \f0 \fs16 \b \ul \cb2 "
+  SET wi = "\plain \f0 \fs16 \i \cb2 "
+  SET ws = "\plain \f0 \fs16 \strike \cb2"
+  SET wb2 = "\plain \f0 \fs18 \b \cb2 "
+  SET wb18 = "\plain \f0 \fs18 \b \cb2 "
+  SET wb20 = "\plain \f0 \fs20 \b \cb2 "
+  SET rsechead = "\plain \f0 \fs28 \b \ul \cb2 "
+  SET rsubsechead = "\plain \f0 \fs22 \b \cb2 "
+  SET rsecline = "\plain \f0 \fs20 \b \cb2 "
+  SET hi = "\pard\fi-2340\li2340 "
+  SET rtfeof = "}"
+  SET wbuf26 = "\plain \f0 \fs26 \b \ul \cb2 "
+  SET wbuf30 = "\plain \f0 \fs30 \b \ul \cb2 "
+  SET rpard = "\pard "
+  SET rtitle = "\plain \f0 \fs36 \b \cb2 "
+  SET rpatname = "\plain \f0 \fs38 \b \cb2 "
+  SET rtabstop1 = "\tx300"
+  SET rtabstopnd = "\tx400"
+  SET wsd = "\plain \f0 \fs13 \cb2 "
+  SET wsb = "\plain \f0 \fs13 \b \cb2 "
+  SET wrs = "\plain \f0 \fs14 \cb2 "
+  SET wbs = "\plain \f0 \fs14 \b \cb2 "
+  DECLARE snot_documented = vc WITH public ,constant ("--" )
+  SET color0 = "\cf0 "
+  SET colorgrey = "\cf3 "
+  SET colornavy = "\cf4 "
+  SET colorblue = "\cf5 "
+  SET colorgreen = "\cf6 "
+  SET colorred = "\cf7 "
+  SET row_start = "\trowd"
+  SET row_end = "\row"
+  SET cell_start = "\intbl "
+  SET cell_end = "\cell"
+  SET cell_text_center = "\qc "
+  SET cell_text_left = "\ql "
+  SET cell_border_top = "\clbrdrt\brdrt\brdrw1"
+  SET cell_border_left = "\clbrdrl\brdrl\brdrw1"
+  SET cell_border_bottom = "\clbrdrb\brdrb\brdrw1"
+  SET cell_border_right = "\clbrdrr\brdrr\brdrw1"
+  SET cell_border_top_left = "\clbrdrt\brdrt\brdrw1\clbrdrl\brdrl\brdrw1"
+  SET block_start = "{"
+  SET block_end = "}"
+ ENDIF
+ IF (NOT (validate (reply ,0 ) ) )
+  FREE RECORD reply
+  RECORD reply (
+    1 text = vc
+    1 status_data
+      2 status = c1
+      2 subeventstatus [1 ]
+        3 operationname = c25
+        3 operationstatus = c1
+        3 targetobjectname = c25
+        3 targetobjectvalue = vc
+  )
+ ENDIF
+ FREE RECORD ps_request
+ RECORD ps_request (
+   1 person_cnt = i2
+   1 person [1 ]
+     2 person_id = f8
+     2 person_name = vc
+     2 person_dob = vc
+     2 pregnancy_list [* ]
+       3 pregnancy_id = f8
+       3 onset_dt_tm = dq8
+       3 onset_date_formatted = vc
+       3 problem_id = f8
+   1 visit_cnt = i2
+   1 visit [1 ]
+     2 encntr_id = f8
+   1 prsnl_cnt = i2
+ )
+ SET ps_request->person[1 ].person_id = request->person[1 ].person_id
+ DECLARE sectionseparator (null ) = null WITH protect
+ DECLARE pregsummarysection (null ) = null WITH protect
+ DECLARE antepartumnotesection (null ) = null WITH protect
+ DECLARE problemssection (null ) = null WITH protect
+ DECLARE riskgenscreensection (null ) = null WITH protect
+ DECLARE egaandeddsection (null ) = null WITH protect
+ DECLARE measurementssection (null ) = null WITH protect
+ DECLARE prenatalexamnotesection (null ) = null WITH protect
+ DECLARE physicalexamsection (null ) = null WITH protect
+ DECLARE bloodtypesection (null ) = null WITH protect
+ DECLARE prenataltestsandlabsection (null ) = null WITH protect
+ DECLARE allergiessection (null ) = null WITH protect
+ DECLARE medicationsection (null ) = null WITH protect
+ DECLARE immunizationsection (null ) = null WITH protect
+ DECLARE menstrualhistorysection (null ) = null WITH protect
+ DECLARE pregnancyhistorysection (null ) = null WITH protect
+ DECLARE medicalhistorysection (null ) = null WITH protect
+ DECLARE socpsychosocialsection (null ) = null WITH protect
+ DECLARE infectionhistorysection (null ) = null WITH protect
+ DECLARE anesthesiatransfsection (null ) = null WITH protect
+ DECLARE birthplansection (null ) = null WITH protect
+ DECLARE educationsection (null ) = null WITH protect
+ DECLARE regpreginfosection (null ) = null WITH protect
+ DECLARE prenatalvisitencsection (null ) = null WITH protect
+ DECLARE visitlocinfosection (null ) = null WITH protect
+ DECLARE diagnosissection (null ) = null WITH protect
+ DECLARE bold_line = vc WITH public ,constant (fillstring (140 ,"-" ) )
+ DECLARE bold_line_head = vc WITH public ,constant (fillstring (166 ,"-" ) )
+ DECLARE is_preg_summary = i2 WITH protect ,noconstant (1 )
+ DECLARE is_antpr_note = i2 WITH protect ,noconstant (1 )
+ DECLARE is_problems = i2 WITH protect ,noconstant (1 )
+ DECLARE is_risk_genetic_scr = i2 WITH protect ,noconstant (1 )
+ DECLARE is_gest_age_edd = i2 WITH protect ,noconstant (1 )
+ DECLARE is_measurements = i2 WITH protect ,noconstant (1 )
+ DECLARE is_prenatal_exam_nt = i2 WITH protect ,noconstant (1 )
+ DECLARE is_physical_exams = i2 WITH protect ,noconstant (1 )
+ DECLARE is_blood_types = i2 WITH protect ,noconstant (1 )
+ DECLARE is_prenatal_tst_lab = i2 WITH protect ,noconstant (1 )
+ DECLARE is_allergies = i2 WITH protect ,noconstant (1 )
+ DECLARE is_medications = i2 WITH protect ,noconstant (1 )
+ DECLARE is_immunizations = i2 WITH protect ,noconstant (1 )
+ DECLARE is_mnstrl_hist = i2 WITH protect ,noconstant (1 )
+ DECLARE is_preg_hist = i2 WITH protect ,noconstant (1 )
+ DECLARE is_med_hist = i2 WITH protect ,noconstant (1 )
+ DECLARE is_soc_psy_hist = i2 WITH protect ,noconstant (1 )
+ DECLARE is_infec_hist = i2 WITH protect ,noconstant (1 )
+ DECLARE is_anst_transfusion = i2 WITH protect ,noconstant (1 )
+ DECLARE is_birth_plan = i2 WITH protect ,noconstant (1 )
+ DECLARE is_education = i2 WITH protect ,noconstant (1 )
+ DECLARE is_reg_preg_info = i2 WITH protect ,noconstant (1 )
+ DECLARE is_prnt_vst_enc = i2 WITH protect ,noconstant (1 )
+ DECLARE is_vst_loc_info = i2 WITH protect ,noconstant (1 )
+ DECLARE is_diagnosis = i2 WITH protect ,noconstant (1 )
+ DECLARE preg_summary_order = i4 WITH protect ,noconstant (1 )
+ DECLARE antpr_note_order = i4 WITH protect ,noconstant (2 )
+ DECLARE problems_order = i4 WITH protect ,noconstant (3 )
+ DECLARE risk_genetic_scr_order = i4 WITH protect ,noconstant (4 )
+ DECLARE gest_age_edd_order = i4 WITH protect ,noconstant (5 )
+ DECLARE measurements_order = i4 WITH protect ,noconstant (6 )
+ DECLARE prenatal_exam_nt_order = i4 WITH protect ,noconstant (7 )
+ DECLARE physical_exams_order = i4 WITH protect ,noconstant (8 )
+ DECLARE blood_types_order = i4 WITH protect ,noconstant (9 )
+ DECLARE prenatal_tst_lab_order = i4 WITH protect ,noconstant (10 )
+ DECLARE allergies_order = i4 WITH protect ,noconstant (11 )
+ DECLARE medications_order = i4 WITH protect ,noconstant (12 )
+ DECLARE immunizations_order = i4 WITH protect ,noconstant (13 )
+ DECLARE mnstrl_hist_order = i4 WITH protect ,noconstant (14 )
+ DECLARE preg_hist_order = i4 WITH protect ,noconstant (15 )
+ DECLARE med_hist_order = i4 WITH protect ,noconstant (16 )
+ DECLARE soc_psy_hist_order = i4 WITH protect ,noconstant (17 )
+ DECLARE infec_hist_order = i4 WITH protect ,noconstant (18 )
+ DECLARE anst_transfusion_order = i4 WITH protect ,noconstant (19 )
+ DECLARE birth_plan_order = i4 WITH protect ,noconstant (20 )
+ DECLARE education_order = i4 WITH protect ,noconstant (21 )
+ DECLARE reg_preg_info_order = i4 WITH protect ,noconstant (22 )
+ DECLARE prnt_vst_enc_order = i4 WITH protect ,noconstant (23 )
+ DECLARE vst_loc_info_order = i4 WITH protect ,noconstant (24 )
+ DECLARE diagnosis_order = i4 WITH protect ,noconstant (25 )
+ DECLARE scount = i4 WITH protect ,constant (25 )
+ DECLARE sectionindex = i4 WITH noconstant (0 ) ,protect
+ DECLARE issectioninreport = i2 WITH protect ,noconstant (0 )
+ IF ((validate (i18nuar_def ,999 ) = 999 ) )
+  CALL echo ("Declaring i18nuar_def" )
+  DECLARE i18nuar_def = i2 WITH persist
+  SET i18nuar_def = 1
+  DECLARE uar_i18nlocalizationinit ((p1 = i4 ) ,(p2 = vc ) ,(p3 = vc ) ,(p4 = f8 ) ) = i4 WITH
+  persist
+  DECLARE uar_i18ngetmessage ((p1 = i4 ) ,(p2 = vc ) ,(p3 = vc ) ) = vc WITH persist
+  DECLARE uar_i18nbuildmessage () = vc WITH persist
+  DECLARE uar_i18ngethijridate ((imonth = i2 (val ) ) ,(iday = i2 (val ) ) ,(iyear = i2 (val ) ) ,(
+   sdateformattype = vc (ref ) ) ) = c50 WITH image_axp = "shri18nuar" ,image_aix =
+  "libi18n_locale.a(libi18n_locale.o)" ,uar = "uar_i18nGetHijriDate" ,persist
+  DECLARE uar_i18nbuildfullformatname ((sfirst = vc (ref ) ) ,(slast = vc (ref ) ) ,(smiddle = vc (
+    ref ) ) ,(sdegree = vc (ref ) ) ,(stitle = vc (ref ) ) ,(sprefix = vc (ref ) ) ,(ssuffix = vc (
+    ref ) ) ,(sinitials = vc (ref ) ) ,(soriginal = vc (ref ) ) ) = c250 WITH image_axp =
+  "shri18nuar" ,image_aix = "libi18n_locale.a(libi18n_locale.o)" ,uar = "i18nBuildFullFormatName" ,
+  persist
+  DECLARE uar_i18ngetarabictime ((ctime = vc (ref ) ) ) = c20 WITH image_axp = "shri18nuar" ,
+  image_aix = "libi18n_locale.a(libi18n_locale.o)" ,uar = "i18n_GetArabicTime" ,persist
+ ENDIF
+ IF (NOT (validate (i18nhandle ) ) )
+  DECLARE i18nhandle = i4 WITH protect ,noconstant (0 )
+ ENDIF
+ SET stat = uar_i18nlocalizationinit (i18nhandle ,curprog ,"" ,curcclrev )
+ DECLARE cinvalidgender = vc WITH public ,constant (uar_i18ngetmessage (i18nhandle ,"cap1" ,
+"  The Prenatal Summary report is not available for this patient. If you feel this is an error, contact the help desk at your site."
+   ) )
+ DECLARE ccreatedate = vc WITH public ,constant (uar_i18ngetmessage (i18nhandle ,"cap3" ,
+   " Created: " ) )
+ DECLARE cdisclaimer = vc WITH public ,constant (uar_i18ngetmessage (i18nhandle ,"cap4" ,
+   "Note: Items documented with '--' had no clinical data which qualified at time of report creation"
+   ) )
+ DECLARE cnoactivepreg = vc WITH public ,constant (uar_i18ngetmessage (i18nhandle ,"cap5" ,
+   "    No active pregnancy found." ) )
+ DECLARE captions_genview_title = vc WITH public ,constant (uar_i18ngetmessage (i18nhandle ,"cap6" ,
+   "Prenatal Summary" ) )
+ DECLARE footer_dob = vc WITH public ,constant (uar_i18ngetmessage (i18nhandle ,"cap7" ,"  DOB:" ) )
+ DECLARE endofrptcaption = vc WITH public ,constant (uar_i18ngetmessage (i18nhandle ,"cap8" ,
+   "***** END OF REPORT *****" ) )
+ DECLARE bedrockdisclaimer = vc WITH public ,constant (uar_i18ngetmessage (i18nhandle ,"cap9" ,
+   "No sections have been selected for display in Bedrock under the Prenatal Summary GenView Configuration."
+   ) )
+ SET gv_run_dt_tm = format (cnvtdatetime (curdate ,curtime3 ) ,"MM/DD/YY;;d" )
+ DECLARE whorgsecpref = i2 WITH protect ,noconstant (0 )
+ DECLARE prsnl_override_flag = i2 WITH protect ,noconstant (0 )
+ DECLARE preg_org_sec_ind = i4 WITH noconstant (0 ) ,public
+ DECLARE os_idx = i4 WITH noconstant (0 )
+ IF ((validate (antepartum_run_ind ) = 0 ) )
+  DECLARE antepartum_run_ind = i4 WITH public ,noconstant (0 )
+ ENDIF
+ IF (NOT (validate (whsecuritydisclaim ) ) )
+  DECLARE whsecuritydisclaim = vc WITH public ,constant (uar_i18ngetmessage (i18nhandle ,"cap99" ,
+    "(Report contains only data from encounters at associated organizations)" ) )
+ ENDIF
+ IF (NOT (validate (preg_sec_orgs ) ) )
+  FREE RECORD preg_sec_orgs
+  RECORD preg_sec_orgs (
+    1 qual [* ]
+      2 org_id = f8
+      2 confid_level = i4
+  )
+ ENDIF
+ DECLARE getpersonneloverride ((person_id = f8 (val ) ) ,(prsnl_id = f8 (val ) ) ) = i2 WITH protect
+ DECLARE getpreferences () = i2 WITH protect
+ DECLARE getorgsecurity () = null WITH protect
+ DECLARE loadorganizationsecuritylist () = null
+ IF ((validate (honor_org_security_flag ) = 0 ) )
+  DECLARE honor_org_security_flag = i2 WITH public ,noconstant (0 )
+  SET whorgsecpref = getpreferences (null )
+  CALL getorgsecurity (null )
+  SET prsnl_override_flag = getpersonneloverride (request->person[1 ].person_id ,reqinfo->updt_id )
+  IF ((prsnl_override_flag = 0 ) )
+   IF ((preg_org_sec_ind = 1 )
+   AND (whorgsecpref = 1 ) )
+    SET honor_org_security_flag = 1
+   ENDIF
+  ENDIF
+ ENDIF
+ SUBROUTINE  getpersonneloverride (person_id ,prsnl_id )
+  CALL echo (build ("person_id=" ,person_id ) )
+  CALL echo (build ("prsnl_id=" ,prsnl_id ) )
+  DECLARE override_ind = i2 WITH protect ,noconstant (0 )
+  IF ((((person_id <= 0.0 ) ) OR ((prsnl_id <= 0.0 ) )) )
+   RETURN (0 )
+  ENDIF
+  SELECT INTO "nl:"
+   FROM (person_prsnl_reltn ppr ),
+    (code_value_extension cve )
+   PLAN (ppr
+    WHERE (ppr.prsnl_person_id = prsnl_id )
+    AND (ppr.active_ind = 1 )
+    AND ((ppr.person_id + 0 ) = person_id )
+    AND (ppr.beg_effective_dt_tm <= cnvtdatetime (curdate ,curtime3 ) )
+    AND (ppr.end_effective_dt_tm > cnvtdatetime (curdate ,curtime3 ) ) )
+    JOIN (cve
+    WHERE (cve.code_value = ppr.person_prsnl_r_cd )
+    AND (cve.code_set = 331 )
+    AND (((cve.field_value = "1" ) ) OR ((cve.field_value = "2" ) ))
+    AND (cve.field_name = "Override" ) )
+   DETAIL
+    override_ind = 1
+   WITH nocounter
+  ;end select
+  RETURN (override_ind )
+ END ;Subroutine
+ SUBROUTINE  getpreferences (null )
+  DECLARE powerchart_app_number = i4 WITH protect ,constant (600005 )
+  DECLARE spreferencename = vc WITH protect ,constant ("PREGNANCY_SMART_TMPLT_ORG_SEC" )
+  DECLARE prefvalue = vc WITH noconstant ("0" ) ,protect
+  SELECT INTO "nl:"
+   FROM (app_prefs ap ),
+    (name_value_prefs nvp )
+   PLAN (ap
+    WHERE (ap.prsnl_id = 0.0 )
+    AND (ap.position_cd = 0.0 )
+    AND (ap.application_number = powerchart_app_number ) )
+    JOIN (nvp
+    WHERE (nvp.parent_entity_name = "APP_PREFS" )
+    AND (nvp.parent_entity_id = ap.app_prefs_id )
+    AND (trim (nvp.pvc_name ,3 ) = cnvtupper (spreferencename ) ) )
+   DETAIL
+    prefvalue = nvp.pvc_value
+   WITH nocounter
+  ;end select
+  RETURN (cnvtint (prefvalue ) )
+ END ;Subroutine
+ SUBROUTINE  getorgsecurity (null )
+  SELECT INTO "nl:"
+   FROM (dm_info d1 )
+   WHERE (d1.info_domain = "SECURITY" )
+   AND (d1.info_name = "SEC_ORG_RELTN" )
+   AND (d1.info_number = 1 )
+   DETAIL
+    preg_org_sec_ind = 1
+   WITH nocounter
+  ;end select
+  CALL echo (build ("org_sec_ind=" ,preg_org_sec_ind ) )
+  IF ((preg_org_sec_ind = 1 ) )
+   CALL loadorganizationsecuritylist (null )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  loadorganizationsecuritylist (null )
+  DECLARE org_cnt = i2 WITH noconstant (0 )
+  DECLARE stat = i2 WITH protect ,noconstant (0 )
+  IF ((validate (sac_org ) = 1 ) )
+   FREE RECORD sac_org
+  ENDIF
+  RECORD sac_org (
+    1 organizations [* ]
+      2 organization_id = f8
+      2 confid_cd = f8
+      2 confid_level = i4
+  )
+  EXECUTE secrtl
+  DECLARE orgcnt = i4 WITH protected ,noconstant (0 )
+  DECLARE secstat = i2
+  DECLARE logontype = i4 WITH protect ,noconstant (- (1 ) )
+  DECLARE confid_cd = f8 WITH protected ,noconstant (0.0 )
+  DECLARE role_profile_org_id = f8 WITH protected ,noconstant (0.0 )
+  CALL uar_secgetclientlogontype (logontype )
+  CALL echo (build ("logontype:" ,logontype ) )
+  IF ((logontype = 0 ) )
+   SELECT DISTINCT INTO "nl:"
+    FROM (prsnl_org_reltn por ),
+     (organization o ),
+     (prsnl p )
+    PLAN (p
+     WHERE (p.person_id = reqinfo->updt_id ) )
+     JOIN (por
+     WHERE (por.person_id = p.person_id )
+     AND (por.active_ind = 1 )
+     AND (por.beg_effective_dt_tm <= cnvtdatetime (curdate ,curtime3 ) )
+     AND (por.end_effective_dt_tm > cnvtdatetime (curdate ,curtime3 ) ) )
+     JOIN (o
+     WHERE (por.organization_id = o.organization_id ) )
+    DETAIL
+     orgcnt = (orgcnt + 1 ) ,
+     IF ((mod (orgcnt ,10 ) = 1 ) ) secstat = alterlist (sac_org->organizations ,(orgcnt + 9 ) )
+     ENDIF
+     ,sac_org->organizations[orgcnt ].organization_id = por.organization_id ,
+     sac_org->organizations[orgcnt ].confid_cd = por.confid_level_cd ,
+     confid_cd = uar_get_collation_seq (por.confid_level_cd ) ,
+     sac_org->organizations[orgcnt ].confid_level =
+     IF ((confid_cd > 0 ) ) confid_cd
+     ELSE 0
+     ENDIF
+    WITH nocounter
+   ;end select
+   SET secstat = alterlist (sac_org->organizations ,orgcnt )
+  ENDIF
+  IF ((logontype = 1 ) )
+   CALL echo ("entered into NHS logon" )
+   DECLARE hprop = i4 WITH protect ,noconstant (0 )
+   DECLARE tmpstat = i2
+   DECLARE spropname = vc
+   DECLARE sroleprofile = vc
+   SET hprop = uar_srvcreateproperty ()
+   SET tmpstat = uar_secgetclientattributesext (5 ,hprop )
+   SET spropname = uar_srvfirstproperty (hprop )
+   SET sroleprofile = uar_srvgetpropertyptr (hprop ,nullterm (spropname ) )
+   CALL echo (sroleprofile )
+   DECLARE nhstrustchild_org_org_reltn_cd = f8
+   SET nhstrustchild_org_org_reltn_cd = uar_get_code_by ("MEANING" ,369 ,"NHSTRUSTCHLD" )
+   SELECT INTO "nl:"
+    FROM (prsnl_org_reltn_type prt ),
+     (prsnl_org_reltn por ),
+     (organization o )
+    PLAN (prt
+     WHERE (prt.role_profile = sroleprofile )
+     AND (prt.active_ind = 1 )
+     AND (prt.beg_effective_dt_tm <= cnvtdatetime (curdate ,curtime3 ) )
+     AND (prt.end_effective_dt_tm > cnvtdatetime (curdate ,curtime3 ) ) )
+     JOIN (o
+     WHERE (o.organization_id = prt.organization_id ) )
+     JOIN (por
+     WHERE (outerjoin (prt.organization_id ) = por.organization_id )
+     AND (por.person_id = outerjoin (prt.prsnl_id ) )
+     AND (por.active_ind = outerjoin (1 ) )
+     AND (por.beg_effective_dt_tm <= outerjoin (cnvtdatetime (curdate ,curtime3 ) ) )
+     AND (por.end_effective_dt_tm > outerjoin (cnvtdatetime (curdate ,curtime3 ) ) ) )
+    ORDER BY por.prsnl_org_reltn_id
+    DETAIL
+     orgcnt = 1 ,
+     stat = alterlist (sac_org->organizations ,1 ) ,
+     sac_org->organizations[1 ].organization_id = prt.organization_id ,
+     role_profile_org_id = sac_org->organizations[orgcnt ].organization_id ,
+     sac_org->organizations[1 ].confid_cd = por.confid_level_cd ,
+     confid_cd = uar_get_collation_seq (por.confid_level_cd ) ,
+     sac_org->organizations[1 ].confid_level =
+     IF ((confid_cd > 0 ) ) confid_cd
+     ELSE 0
+     ENDIF
+    WITH maxrec = 1
+   ;end select
+   SELECT INTO "nl:"
+    FROM (prsnl_org_reltn por )
+    PLAN (por
+     WHERE (por.person_id = reqinfo->updt_id )
+     AND (por.active_ind = 1 )
+     AND (por.beg_effective_dt_tm <= cnvtdatetime (curdate ,curtime3 ) )
+     AND (por.end_effective_dt_tm > cnvtdatetime (curdate ,curtime3 ) ) )
+    HEAD REPORT
+     IF ((orgcnt > 0 ) ) stat = alterlist (sac_org->organizations ,10 )
+     ENDIF
+    DETAIL
+     IF ((role_profile_org_id != por.organization_id ) ) orgcnt = (orgcnt + 1 ) ,
+      IF ((mod (orgcnt ,10 ) = 1 ) ) stat = alterlist (sac_org->organizations ,(orgcnt + 9 ) )
+      ENDIF
+      ,sac_org->organizations[orgcnt ].organization_id = por.organization_id ,sac_org->organizations[
+      orgcnt ].confid_cd = por.confid_level_cd ,confid_cd = uar_get_collation_seq (por
+       .confid_level_cd ) ,sac_org->organizations[orgcnt ].confid_level =
+      IF ((confid_cd > 0 ) ) confid_cd
+      ELSE 0
+      ENDIF
+     ENDIF
+    FOOT REPORT
+     stat = alterlist (sac_org->organizations ,orgcnt )
+    WITH nocounter
+   ;end select
+   CALL uar_srvdestroyhandle (hprop )
+  ENDIF
+  SET org_cnt = size (sac_org->organizations ,5 )
+  CALL echo (build ("org_cnt: " ,org_cnt ) )
+  SET stat = alterlist (preg_sec_orgs->qual ,(org_cnt + 1 ) )
+  FOR (count = 1 TO org_cnt )
+   SET preg_sec_orgs->qual[count ].org_id = sac_org->organizations[count ].organization_id
+   SET preg_sec_orgs->qual[count ].confid_level = sac_org->organizations[count ].confid_level
+  ENDFOR
+  SET preg_sec_orgs->qual[(org_cnt + 1 ) ].org_id = 0.00
+  SET preg_sec_orgs->qual[(org_cnt + 1 ) ].confid_level = 0
+  CALL echorecord (preg_sec_orgs )
+ END ;Subroutine
+ DECLARE 57_female = f8 WITH protect ,constant (uar_get_code_by ("MEANING" ,57 ,"FEMALE" ) )
+ DECLARE 56_female = f8 WITH protect ,constant (uar_get_code_by ("MEANING" ,56 ,"FEMALE" ) )
+ DECLARE valid_gender = i2 WITH protect ,noconstant (0 )
+ SELECT INTO "nl:"
+  FROM (person p ),
+   (person_patient pp )
+  PLAN (p
+   WHERE (p.person_id = request->person[1 ].person_id ) )
+   JOIN (pp
+   WHERE (outerjoin (p.person_id ) = pp.person_id ) )
+  HEAD REPORT
+   IF ((((p.sex_cd = 57_female ) ) OR ((pp.birth_sex_cd = 56_female ) )) ) valid_gender = 1
+   ENDIF
+  WITH nocounter
+ ;end select
+ SELECT INTO "nl:"
+  FROM (name_value_prefs nvp )
+  WHERE (nvp.active_ind = 1 )
+  AND (nvp.pvc_name = "WH_PSG_SEC_ACTIVE_IND" )
+  DETAIL
+   CASE (nvp.parent_entity_name )
+    OF "PREGNANCY_SUMMARY" :
+     is_preg_summary = cnvtint (nvp.pvc_value )
+    OF "ANTEPARTUM_NOTE" :
+     is_antpr_note = cnvtint (nvp.pvc_value )
+    OF "PROBLEMS" :
+     is_problems = cnvtint (nvp.pvc_value )
+    OF "RISK_FACTORS_GENETIC_SCR" :
+     is_risk_genetic_scr = cnvtint (nvp.pvc_value )
+    OF "GESTATIONAL_AGE_EDD" :
+     is_gest_age_edd = cnvtint (nvp.pvc_value )
+    OF "MEASUREMENTS" :
+     is_measurements = cnvtint (nvp.pvc_value )
+    OF "PRENATAL_EXAM_NOTES" :
+     is_prenatal_exam_nt = cnvtint (nvp.pvc_value )
+    OF "PHYSICAL_EXAMS" :
+     is_physical_exams = cnvtint (nvp.pvc_value )
+    OF "BLOOD_TYPES_IMMUNE_GLOB" :
+     is_blood_types = cnvtint (nvp.pvc_value )
+    OF "PRENATAL_TST_LAB_RES" :
+     is_prenatal_tst_lab = cnvtint (nvp.pvc_value )
+    OF "ALLERGIES" :
+     is_allergies = cnvtint (nvp.pvc_value )
+    OF "MEDICATIONS" :
+     is_medications = cnvtint (nvp.pvc_value )
+    OF "IMMUNIZATIONS" :
+     is_immunizations = cnvtint (nvp.pvc_value )
+    OF "MENSTRUAL_HISTORY" :
+     is_mnstrl_hist = cnvtint (nvp.pvc_value )
+    OF "PREGNANCY_HISTORY" :
+     is_preg_hist = cnvtint (nvp.pvc_value )
+    OF "MEDICAL_HISTORY" :
+     is_med_hist = cnvtint (nvp.pvc_value )
+    OF "SOCIAL_PSYCHOSOCIAL_HIST" :
+     is_soc_psy_hist = cnvtint (nvp.pvc_value )
+    OF "INFECTION_HISTORY" :
+     is_infec_hist = cnvtint (nvp.pvc_value )
+    OF "ANESTHESIA_TRANSFUSIONS" :
+     is_anst_transfusion = cnvtint (nvp.pvc_value )
+    OF "BIRTH_PLAN_PATIENT_RQSTS" :
+     is_birth_plan = cnvtint (nvp.pvc_value )
+    OF "EDUCATION" :
+     is_education = cnvtint (nvp.pvc_value )
+    OF "REGISTRATION_PREG_INFO" :
+     is_reg_preg_info = cnvtint (nvp.pvc_value )
+    OF "PRENATAL_VISITS_ENC" :
+     is_prnt_vst_enc = cnvtint (nvp.pvc_value )
+    OF "VISIT_ENCOUNTER_LOC_INFO" :
+     is_vst_loc_info = cnvtint (nvp.pvc_value )
+    OF "PRENATAL_VST_DIAGNOSIS" :
+     is_diagnosis = cnvtint (nvp.pvc_value )
+   ENDCASE
+  WITH nocounter
+ ;end select
+ SELECT INTO "nl:"
+  FROM (name_value_prefs nvp )
+  WHERE (nvp.active_ind = 1 )
+  AND (nvp.pvc_name = "WH_PSG_SEC_SORT_ORD" )
+  DETAIL
+   CASE (nvp.parent_entity_name )
+    OF "PREGNANCY_SUMMARY" :
+     preg_summary_order = cnvtint (nvp.pvc_value )
+    OF "ANTEPARTUM_NOTE" :
+     antpr_note_order = cnvtint (nvp.pvc_value )
+    OF "PROBLEMS" :
+     problems_order = cnvtint (nvp.pvc_value )
+    OF "RISK_FACTORS_GENETIC_SCR" :
+     risk_genetic_scr_order = cnvtint (nvp.pvc_value )
+    OF "GESTATIONAL_AGE_EDD" :
+     gest_age_edd_order = cnvtint (nvp.pvc_value )
+    OF "MEASUREMENTS" :
+     measurements_order = cnvtint (nvp.pvc_value )
+    OF "PRENATAL_EXAM_NOTES" :
+     prenatal_exam_nt_order = cnvtint (nvp.pvc_value )
+    OF "PHYSICAL_EXAMS" :
+     physical_exams_order = cnvtint (nvp.pvc_value )
+    OF "BLOOD_TYPES_IMMUNE_GLOB" :
+     blood_types_order = cnvtint (nvp.pvc_value )
+    OF "PRENATAL_TST_LAB_RES" :
+     prenatal_tst_lab_order = cnvtint (nvp.pvc_value )
+    OF "ALLERGIES" :
+     allergies_order = cnvtint (nvp.pvc_value )
+    OF "MEDICATIONS" :
+     medications_order = cnvtint (nvp.pvc_value )
+    OF "IMMUNIZATIONS" :
+     immunizations_order = cnvtint (nvp.pvc_value )
+    OF "MENSTRUAL_HISTORY" :
+     mnstrl_hist_order = cnvtint (nvp.pvc_value )
+    OF "PREGNANCY_HISTORY" :
+     preg_hist_order = cnvtint (nvp.pvc_value )
+    OF "MEDICAL_HISTORY" :
+     med_hist_order = cnvtint (nvp.pvc_value )
+    OF "SOCIAL_PSYCHOSOCIAL_HIST" :
+     soc_psy_hist_order = cnvtint (nvp.pvc_value )
+    OF "INFECTION_HISTORY" :
+     infec_hist_order = cnvtint (nvp.pvc_value )
+    OF "ANESTHESIA_TRANSFUSIONS" :
+     anst_transfusion_order = cnvtint (nvp.pvc_value )
+    OF "BIRTH_PLAN_PATIENT_RQSTS" :
+     birth_plan_order = cnvtint (nvp.pvc_value )
+    OF "EDUCATION" :
+     education_order = cnvtint (nvp.pvc_value )
+    OF "REGISTRATION_PREG_INFO" :
+     reg_preg_info_order = cnvtint (nvp.pvc_value )
+    OF "PRENATAL_VISITS_ENC" :
+     prnt_vst_enc_order = cnvtint (nvp.pvc_value )
+    OF "VISIT_ENCOUNTER_LOC_INFO" :
+     vst_loc_info_order = cnvtint (nvp.pvc_value )
+    OF "PRENATAL_VST_DIAGNOSIS" :
+     diagnosis_order = cnvtint (nvp.pvc_value )
+   ENDCASE
+  WITH nocounter
+ ;end select
+ SELECT INTO "nl:"
+  temp_dt_tm =
+  IF ((pr.onset_dt_tm != null ) ) pr.onset_dt_tm
+  ELSE pr.beg_effective_dt_tm
+  ENDIF
+  FROM (pregnancy_instance pi ),
+   (problem pr ),
+   (person p )
+  PLAN (pi
+   WHERE (pi.person_id = ps_request->person[1 ].person_id )
+   AND (pi.active_ind = 1 )
+   AND (pi.historical_ind = 0 )
+   AND (pi.preg_end_dt_tm = cnvtdatetime ("31-DEC-2100" ) ) )
+   JOIN (pr
+   WHERE (pr.problem_id = pi.problem_id )
+   AND (pr.active_ind = 1 ) )
+   JOIN (p
+   WHERE (p.person_id = pi.person_id ) )
+  ORDER BY temp_dt_tm DESC
+  HEAD REPORT
+   stat = alterlist (ps_request->pregnancy_list ,1 ) ,
+   ps_request->person[1 ].pregnancy_list[1 ].onset_date_formatted = format (temp_dt_tm ,
+    "YYYYMMDD;;d" ) ,
+   ps_request->person[1 ].pregnancy_list[1 ].onset_dt_tm = temp_dt_tm ,
+   ps_request->person[1 ].pregnancy_list[1 ].problem_id = pi.problem_id ,
+   ps_request->person[1 ].pregnancy_list[1 ].pregnancy_id = pi.pregnancy_id ,
+   ps_request->person[1 ].person_name = trim (substring (1 ,50 ,p.name_full_formatted ) ) ,
+   ps_request->person[1 ].person_dob = datetimezoneformat (p.birth_dt_tm ,p.birth_tz ,"@SHORTDATE" )
+  WITH nocounter
+ ;end select
+ IF ((validate (debug_ind ,0 ) = 1 ) )
+  CALL echorecord (ps_request )
+ ENDIF
+ IF ((valid_gender = 0 )
+ AND (curqual = 0 ) )
+  SET reply->text = concat (reply->text ,rhead ,rhead_colors1 ,rhead_colors2 ,rhead_colors3 ,
+   "\tx1500\tx7300" ,rtitle ,colornavy ,captions_genview_title ,wr ,reol ,rsecline ,colorgrey ,
+   bold_line_head ,wr ,reol ,reol ,wr ,rpard ,rtabstopnd ,rtab ,colorred ,cinvalidgender ,color0 ,
+   wrs ,reol ,reol ,rsecline ,colorgrey ,bold_line_head ,wr ,rpard ,reol ,wsd ,colorgrey ,
+   cdisclaimer ,reol ,rpard )
+  GO TO reply_text
+ ELSEIF ((valid_gender = 1 )
+ AND (curqual = 0 ) )
+  SET reply->text = concat (reply->text ,rhead ,rhead_colors1 ,rhead_colors2 ,rhead_colors3 ,
+   "\tx1500\tx7300" ,rtitle ,colornavy ,captions_genview_title ,wr ,reol ,rsecline ,colorgrey ,
+   bold_line ,wr ,reol ,reol ,wr ,rpard ,rtabstopnd ,rtab ,color0 ,cnoactivepreg ,wrs ,reol ,reol ,
+   rsecline ,colorgrey ,bold_line ,wr ,rpard ,reol ,wsd ,colorgrey ,cdisclaimer ,reol ,rpard )
+  GO TO reply_text
+ ELSE
+  SET reply->text = concat (reply->text ,rhead ,rhead_colors1 ,rhead_colors2 ,rhead_colors3 )
+ ENDIF
+ EXECUTE wh_psg_person_info WITH replace ("REQUEST" ,"PS_REQUEST" )
+ SET reply->text = concat (reply->text ,rsecline ,colorgrey ,bold_line ,reol )
+ FOR (sectionindex = 1 TO scount )
+  CASE (sectionindex )
+   OF preg_summary_order :
+    CALL pregsummarysection (null )
+   OF antpr_note_order :
+    CALL antepartumnotesection (null )
+   OF problems_order :
+    CALL problemssection (null )
+   OF risk_genetic_scr_order :
+    CALL riskgenscreensection (null )
+   OF gest_age_edd_order :
+    CALL egaandeddsection (null )
+   OF measurements_order :
+    CALL measurementssection (null )
+   OF prenatal_exam_nt_order :
+    CALL prenatalexamnotesection (null )
+   OF physical_exams_order :
+    CALL physicalexamsection (null )
+   OF blood_types_order :
+    CALL bloodtypesection (null )
+   OF prenatal_tst_lab_order :
+    CALL prenataltestsandlabsection (null )
+   OF allergies_order :
+    CALL allergiessection (null )
+   OF medications_order :
+    CALL medicationsection (null )
+   OF immunizations_order :
+    CALL immunizationsection (null )
+   OF mnstrl_hist_order :
+    CALL menstrualhistorysection (null )
+   OF preg_hist_order :
+    CALL pregnancyhistorysection (null )
+   OF med_hist_order :
+    CALL medicalhistorysection (null )
+   OF soc_psy_hist_order :
+    CALL socpsychosocialsection (null )
+   OF infec_hist_order :
+    CALL infectionhistorysection (null )
+   OF anst_transfusion_order :
+    CALL anesthesiatransfsection (null )
+   OF birth_plan_order :
+    CALL birthplansection (null )
+   OF education_order :
+    CALL educationsection (null )
+   OF reg_preg_info_order :
+    CALL regpreginfosection (null )
+   OF prnt_vst_enc_order :
+    CALL prenatalvisitencsection (null )
+   OF vst_loc_info_order :
+    CALL visitlocinfosection (null )
+   OF diagnosis_order :
+    CALL diagnosissection (null )
+  ENDCASE
+ ENDFOR
+ IF ((validate (preg_summary_flag ) = 0 ) )
+  IF ((issectioninreport = 1 ) )
+   SET reply->text = concat (reply->text ,rpard ,wsd ,colorgrey ,cdisclaimer ,reol ,reol ,rpard )
+  ELSE
+   SET reply->text = concat (reply->text ,rpard ,wsd ,colorgrey ,bedrockdisclaimer ,reol ,reol ,
+    rpard )
+  ENDIF
+  IF ((honor_org_security_flag = 1 ) )
+   SET reply->text = concat (reply->text ,rpard ,wsd ,colorred ,whsecuritydisclaim ,reol ,reol ,
+    rpard )
+  ENDIF
+  SET reply->text = concat (reply->text ,"\tx1500\tx7300" ,wsd ,colorgrey ,rtab ,endofrptcaption ,
+   reol ,reol ,rpard )
+ ELSE
+  SET reply->text = concat (reply->text ,rpard ,"\tx7000" ,rtab ,wr11 ,colorgrey ,ps_request->person[
+   1 ].person_name ,footer_dob ," " ,ps_request->person[1 ].person_dob ,reol ,rpard )
+ ENDIF
+ SUBROUTINE  pregsummarysection (null )
+  IF (is_preg_summary )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_gravida WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  antepartumnotesection (null )
+  IF (is_antpr_note )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_antepartum_note WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  problemssection (null )
+  IF (is_problems )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_problem_list WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  riskgenscreensection (null )
+  IF (is_risk_genetic_scr )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_gen_screen WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  egaandeddsection (null )
+  IF (is_gest_age_edd )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_det_gest_age WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  measurementssection (null )
+  IF (is_measurements )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_measurements WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  prenatalexamnotesection (null )
+  IF (is_prenatal_exam_nt )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_ob_exams WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  physicalexamsection (null )
+  IF (is_physical_exams )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_init_phys_exam WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  bloodtypesection (null )
+  IF (is_blood_types )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_blood_types WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  prenataltestsandlabsection (null )
+  IF (is_prenatal_tst_lab )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_lab_results WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  allergiessection (null )
+  IF (is_allergies )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_allergies WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  medicationsection (null )
+  IF (is_medications )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_med_profile WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  immunizationsection (null )
+  IF (is_immunizations )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_immunization WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  menstrualhistorysection (null )
+  IF (is_mnstrl_hist )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_menstrual_hist WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  pregnancyhistorysection (null )
+  IF (is_preg_hist )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_pregnancy_hist WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  medicalhistorysection (null )
+  IF (is_med_hist )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_health_hist WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  socpsychosocialsection (null )
+  IF (is_soc_psy_hist )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_social_habits WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  infectionhistorysection (null )
+  IF (is_infec_hist )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_infections WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  anesthesiatransfsection (null )
+  IF (is_anst_transfusion )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_anes_trans WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  birthplansection (null )
+  IF (is_birth_plan )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_birth_plan WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  educationsection (null )
+  IF (is_education )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_ob_educ_hist WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  regpreginfosection (null )
+  IF (is_reg_preg_info )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_demographics WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  prenatalvisitencsection (null )
+  IF (is_prnt_vst_enc )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_visit_history WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  visitlocinfosection (null )
+  IF (is_vst_loc_info )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_visit_loc_hist WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  diagnosissection (null )
+  IF (is_diagnosis )
+   SET issectioninreport = 1
+   CALL sectionseparator (null )
+   EXECUTE wh_psg_diagnoses WITH replace ("REQUEST" ,"PS_REQUEST" )
+   SET reply->text = concat (reply->text ,wr11 ,reol ,rsecline ,colorgrey ,bold_line ,wrs ,reol )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  sectionseparator (null )
+  SET reply->text = concat (reply->text ,rpard ,"\tx7000" ,rtab ,wr11 ,colorgrey ,ps_request->person[
+   1 ].person_name ,footer_dob ," " ,ps_request->person[1 ].person_dob ,reol ,rpard )
+ END ;Subroutine
+#reply_text
+ IF ((validate (preg_summary_flag ) = 0 ) )
+  SET reply->text = concat (reply->text ,rtfeof )
+ ENDIF
+#exit_script
+ CALL echorecord (reply )
+ SET script_version = "000"
+END GO

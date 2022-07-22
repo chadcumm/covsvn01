@@ -1,0 +1,218 @@
+select * from prsnl p where p.username = "DKITZ*"   	
+;   12735916.00
+
+select 
+ctl.cdi_trans_log_id
+,p.username
+,ctl.batch_name_key
+,ctl.action_dt_tm
+,ctl.ax_docid
+,ctl.page_cnt
+,ctl.action_type_flag
+,ctl.create_dt_tm
+,ctl.doc_type
+,ctl.encntr_id
+,ctl.person_id
+,ctl.ax_docid
+,ctl.page_cnt
+,ctl.active_ind
+,ctl.cdi_queue_cd
+,ctl.blob_handle
+,ctl.ax_docid
+,ctl.batch_name
+,ctl.batch_name_key
+,ctl.perf_prsnl_id
+,ctl.external_batch_ident
+,ctl.*
+;,ctmd.*
+from
+	cdi_trans_log ctl
+	;,cdi_trans_mod_Detail ctmd
+	,prsnl p
+plan ctl
+	where ctl.action_dt_tm >= cnvtdatetime("8-APR-2020 10:15:00")
+	;and ctl.cdi_queue_cd =    19168325.00
+	;and  ctl.action_type_flag in(0,6,9)
+	;and ctl.ax_docid = 0
+	;and   ctl.perf_prsnl_id =    12735916.00 ;david
+	;and   ctl.perf_prsnl_id =  16550078 ;rhonda
+	;and   ctl.batch_name_key = "WQM 6/9/2020 11:05:30 AM"
+	and    ctl.batch_name_key = "WQM 7/20/2020 2:45:50 PM"
+	;and   ctl.cdi_trans_log_id = 315997619
+join p
+	where p.person_id = ctl.perf_prsnl_id
+;join ctmd
+;where ctmd.cdi_trans_log_id = ctl.cdi_trans_log_id
+order by ctl.action_dt_tm desc,ctl.cdi_trans_log_id desc
+with nocounter,uar_code(d),format(date,";;q"),time = 30
+
+select ctl.external_batch_ident,
+* from cdi_trans_log ctl where ctl.blob_handle = "104.170.114.202.2020070220144639817621B9A#1.00" 
+;or ctl.batch_name_key = "DKITZMIL20209141627"
+order by ctl.action_dt_tm desc
+with nocounter,uar_code(d),format(date,";;q")
+
+select *
+from cdi_trans_log ctl where ctl.cdi_trans_log_id = 304338557
+with nocounter,uar_code(d),format(date,";;q")
+
+select ctl.external_batch_ident,*
+from cdi_trans_log ctl where ctl.blob_handle = "104.170.114.202.2020070321152202069034EE1#1.00"
+with nocounter,uar_code(d),format(date,";;q")
+
+select * from cdi_batch_summary cbs where cbs.external_batch_ident =               602726
+
+
+select count(*),ctl.batch_name_key
+from cdi_trans_log ctl
+plan ctl
+	where ctl.action_type_flag = 6
+	and   ctl.action_dt_tm >= cnvtdatetime(curdate -30,0)
+	and ctl.cdi_queue_cd =    19168325.00
+group by 
+	ctl.batch_name_key
+with nocounter
+	
+select * from prsnl p where p.username = "CPDISERVICE"
+select * from prsnl p where p.person_id = 739923
+select * from code_value cv where cv.code_value in( 2716282021.00
+            ,2717074137.00,        441.00,31767941.00, 2562470291.00)
+            
+select 
+	 p.username
+	,cra.* 
+from 
+	 ccl_report_audit cra
+	,prsnl p
+plan cra
+	where 	cra.object_name = "COV_WQM_ACT_RPT**"
+join p
+	where	cra.updt_id = p.person_id
+order by
+	cra.begin_dt_tm desc
+with uar_code(d),format(date,";;q")
+
+
+
+select
+	 e.loc_facility_cd  
+	,ea.alias
+	,p.name_full_formatted
+	,ce.event_cd
+	,ce.event_end_dt_tm
+	,pr.name_full_formatted
+	,*
+from 
+	 clinical_event ce 
+	,ce_blob_result cen
+	,encntr_alias ea
+	,encounter e
+	,person p
+	,cdi_trans_log ctl
+	,prsnl pr
+plan ce
+	where ce.event_id in(  2562488700.00)
+	and   ce.valid_from_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and	  ce.result_status_cd in(
+									  value(uar_get_code_by("MEANING",8,"AUTH"))
+									 ,value(uar_get_code_by("MEANING",8,"MODIFIED"))
+									 ,value(uar_get_code_by("MEANING",8,"ALTERED"))
+								)
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   ce.event_tag        != "Date\Time Correction"
+	
+join p
+	where p.person_id = ce.person_id
+join e
+	where e.encntr_id = ce.encntr_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.active_ind = 1
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+	and   ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join cen
+	where cen.event_id = ce.event_id
+join ctl
+	where ctl.blob_handle = cen.blob_handle
+join pr
+	where pr.person_id = ctl.perf_prsnl_id
+with uar_code(d),format(date,";;q")
+
+
+
+
+
+select 
+	ctl.event_id,ctl.cdi_queue_cd,ctl.action_type_flag,*
+from cdi_trans_log ctl 
+plan ctl 
+	;where ctl.blob_handle = "104.170.114.202.20200805130854149756AB29E*"
+	where ctl.batch_name_key = "WQM 8/13/2020 10:27:10 AM"
+with uar_code(d,m),format(date,";;q")
+	
+select 
+	ctl1.event_id
+	,*
+from 
+	 cdi_trans_log ctl1
+	,cdi_trans_log ctl2
+plan ctl1 
+	where ctl1.action_type_flag = 0
+	and   ctl1.cdi_queue_cd = value(uar_get_code_by("MEANING",257571,"HNAM"))
+	and   ctl1.action_dt_tm >= cnvtdatetime(curdate,0)
+join ctl2
+	where ctl2.batch_name_key = ctl1.batch_name_key
+	and   ctl2.cdi_queue_cd = value(uar_get_code_by("MEANING",257571,"WORKQUEUE"))
+	
+select distinct
+	 action_date=format(ctl1.action_dt_tm,";;q")
+	,prsnl=pr.name_full_formatted
+	,facility=uar_get_code_display(e.loc_facility_cd)
+	,fin=ea.alias
+	,patient=p.name_full_formatted
+	,document_type=uar_get_code_display(ce.event_cd)
+	,document_date=format(ce.event_end_dt_tm,";;q")
+	,document_id=ce.event_id
+from 
+	 cdi_trans_log ctl1
+	,cdi_trans_log ctl2
+	,clinical_event ce 
+	,ce_blob_result cen
+	,encntr_alias ea
+	,encounter e
+	,person p
+	,prsnl pr
+plan ctl1 
+	where ctl1.action_type_flag = 0
+	and   ctl1.cdi_queue_cd = value(uar_get_code_by("MEANING",257571,"HNAM"))
+	and   ctl1.action_dt_tm >= cnvtdatetime(curdate-1,0)
+join ctl2
+	where ctl2.batch_name_key = ctl1.batch_name_key
+	and   ctl2.cdi_queue_cd = value(uar_get_code_by("MEANING",257571,"WORKQUEUE"))
+join ce
+	where ce.event_id = ctl1.event_id
+	and   ce.valid_from_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and	  ce.result_status_cd in(
+									  value(uar_get_code_by("MEANING",8,"AUTH"))
+									 ,value(uar_get_code_by("MEANING",8,"MODIFIED"))
+									 ,value(uar_get_code_by("MEANING",8,"ALTERED"))
+								)
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   ce.event_tag        != "Date\Time Correction"
+	
+join p
+	where p.person_id = ce.person_id
+join e
+	where e.encntr_id = ce.encntr_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.active_ind = 1
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+	and   ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join cen
+	where cen.event_id = ce.event_id
+join pr
+	where pr.person_id = ctl1.perf_prsnl_id
+with uar_code(d),format(date,";;q")

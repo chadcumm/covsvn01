@@ -1,0 +1,72 @@
+select
+
+	 ea.alias
+
+	,facility=uar_get_code_display(e.loc_facility_cd)
+
+	,document=uar_get_code_display(ce.event_cd)
+
+	,ce.event_title_text
+
+	,ce.event_end_dt_tm ";;q"
+
+	,ce.performed_dt_tm ";;q"
+
+	,status = uar_get_code_display(ce.result_status_cd)
+
+	,p1.name_full_formatted
+
+	,position=uar_get_code_display(p1.position_cd)
+	,ce.updt_dt_tm ";;q"
+
+	,ce.event_id
+
+from
+
+	clinical_event ce
+
+	,encntr_alias ea
+
+	,encounter e
+
+	,prsnl p1
+
+plan ce
+
+	where ce.event_cd = value(uar_get_code_by("DISPLAY",72,"PreAnesthesia Note"))
+
+	and   ce.event_end_dt_tm <= cnvtdatetime("01-APR-2019")
+
+	and   ce.result_status_cd = value(uar_get_code_by("MEANING",8,"IN PROGRESS"))
+
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate,curtime3)
+	and   ce.event_title_text = "*Progress*"
+
+join e
+
+	where e.encntr_id = ce.encntr_id
+
+join ea
+
+	where ea.encntr_id = e.encntr_id
+
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+
+	and   ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+
+	and   ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+
+	and   ea.active_ind = 1
+
+join p1
+
+	where p1.person_id = ce.performed_prsnl_id
+	and   p1.position_cd = value(uar_get_code_by("DISPLAY",88,"Perioperative - Anes Nurse (Non-Staff)"))
+
+order by
+ce.updt_dt_tm desc
+	,facility
+
+	,ea.alias
+
+	,ce.event_end_dt_tm

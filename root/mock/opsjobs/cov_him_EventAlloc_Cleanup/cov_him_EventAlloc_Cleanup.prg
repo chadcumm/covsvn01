@@ -1,0 +1,77 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Todd A. Blanchard
+	Date Written:		11/19/2021
+	Solution:			Revenue Cycle - HIM
+	Source file name:	cov_him_EventAlloc_Cleanup.prg
+	Object name:		cov_him_EventAlloc_Cleanup
+	Request #:			11638
+ 
+	Program purpose:	Completes 'in error' records from table HIM_EVENT_ALLOCATION.
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:		Called by CCL cov_mak_defic_by_phys_ops, which is run from
+ 						Ops Job 'HIM Physician Deficiencies Correction'.
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+ 	Mod Date	Developer				Comment
+ 	----------	--------------------	--------------------------------------
+ 
+******************************************************************************/
+ 
+drop program cov_him_EventAlloc_Cleanup:DBA go
+create program cov_him_EventAlloc_Cleanup:DBA
+
+
+/**************************************************************
+; DVDev DECLARED SUBROUTINES
+**************************************************************/
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/ 
+
+declare inerror_var			= f8 with constant(uar_get_code_by("MEANING", 103, "INERROR"))
+declare completed_var		= f8 with constant(uar_get_code_by("MEANING", 103, "COMPLETED"))
+
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+
+update into HIM_EVENT_ALLOCATION
+set 
+	completed_dt_tm = cnvtdatetime(curdate, curtime)
+	, action_status_cd = completed_var
+	, updt_id = reqinfo->updt_id
+	, updt_dt_tm = cnvtdatetime(curdate, curtime)
+	, updt_cnt = (updt_cnt + 1)
+	, updt_task = 440392103 ; SR Number
+where 
+	action_status_cd = inerror_var
+
+commit
+
+
+if (validate(request->batch_selection) = 1)
+	set reply->status_data.status = "S"
+endif
+
+ 
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+
+;#exitscript
+ 
+end
+go
+
+

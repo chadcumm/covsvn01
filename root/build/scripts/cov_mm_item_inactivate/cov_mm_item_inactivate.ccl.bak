@@ -1,0 +1,132 @@
+SELECT
+	distinct
+	concat(trim( oii.value_key),",",i.value)
+	;,id.item_id
+	;,oii.object_type_cd
+	;,oii.identifier_type_cd
+	;,oii.generic_object
+	;,oii.vendor_manf_cd
+	;,oii.active_status_cd
+	;,pc.pref_card_pick_list_id
+	,pc.item_id
+
+FROM
+	object_identifier_index   oii,identifier i, object_identifier oi,item_definition id,pref_card_pick_list pc
+
+where oii.value_key >" "; "10094"
+;where oii.value = "11060"
+and oii.identifier_type_cd =            3101.00
+and oii.object_type_cd =        3119.00
+and oii.object_id = oi.object_id
+and i.identifier_id = oi.identifier_id
+and i.identifier_type_cd =        3097.00
+and id.item_id = oi.object_id
+and id.active_ind = 1
+and pc.item_id = outerjoin(id.item_id)
+and pc.active_ind = outerjoin(1)
+
+with maxrec = 300 go
+
+;78505869
+
+		select sc.surg_area_cd
+		from
+			 item_master im
+			,pref_card_pick_list ccpl
+			,preference_card sc
+			,package_type pt
+		plan im
+			where im.item_id in(   78530952.00
+   ,78543819.00
+   ,78531042.00
+  , 78529097.00
+ ,  78544363.00
+,   78527617.00
+   ,78529975.00
+  , 78525830.00
+ ,  78543359.00
+,   78538756.00
+   ,78543449.00
+  , 78539296.00
+ ,  78539446.00
+,   78539626.00
+  , 78542220.00
+ ,  78536954.00
+,78571613)
+		join ccpl
+			where ccpl.item_id = im.item_id
+			and   ccpl.active_ind = 1
+		join sc
+			where sc.pref_card_id = ccpl.pref_card_id
+		join pt
+			where pt.item_id = im.item_id
+			and   pt.base_package_type_ind = 1
+		order by im.item_id
+		,sc.surg_area_cd
+		
+
+   
+;12479,SUCT FRAZIER 10FR
+
+select * from code_value cv where cv.code_value = 192
+select * from code_value cv where cv.code_set = 220 and cv.cdf_meaning = "INVVIEW"
+
+select * from object_identifier i where i.object_id = 78502867 
+
+select into "nl:" from identifier i where i.identifier_id = 78565332 detail call echo("good")
+with nocounter, forupdate(I) go
+
+;comliance measure - inactive items on pref cards
+Select distinct ITEM_NUMBER = oii.value
+,DESCRIPTION = oii2.value
+,oii.object_id,im.ITEM_ID
+from preference_card sc,
+     pref_card_pick_list ccpl,
+     item_master im,
+     item_definition id,
+     package_type pt,
+     object_identifier_index oii,
+     object_identifier_index oii2
+plan sc where sc.active_ind=1
+join ccpl where ccpl.pref_card_id = sc.pref_card_id
+and ccpl.active_ind=1
+join im where im.item_id = ccpl.item_id
+join id where id.item_id = im.item_id
+and id.active_status_dt_tm < sysdate - 7
+join pt where pt.item_id = id.item_id
+          and pt.base_package_type_ind = 1
+join oii where oii.object_id = id.item_id
+           and oii.generic_object = 0.00
+           and oii.identifier_type_cd =
+           (select cv.code_value
+           from code_value cv
+           where cv.code_set = 11000
+           and cv.cdf_meaning = "ITEM_NBR" )
+join oii2 where oii2.object_id = id.item_id
+            and oii2.generic_object = 0.00
+            and oii2.active_ind = 0
+            and oii2.identifier_type_cd =
+           (select cv.code_value
+            from code_value cv
+            where cv.code_set = 11000
+            and cv.cdf_meaning = "DESC")
+order by oii.object_id
+with time=60 go
+
+select *
+from
+	 item_master im
+	,pref_card_pick_list ccpl
+	,preference_card sc
+	,package_type pt
+plan im
+	where im.item_id = 78601766
+join ccpl
+	where ccpl.item_id = im.item_id
+	and   ccpl.active_ind = 1
+join sc
+	where sc.pref_card_id = ccpl.pref_card_id
+join pt
+	where pt.item_id = im.item_id
+	and   pt.base_package_type_ind = 1 go
+

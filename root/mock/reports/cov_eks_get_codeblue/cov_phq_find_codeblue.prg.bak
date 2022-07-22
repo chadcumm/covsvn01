@@ -1,0 +1,46 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+	Author:			Geetha
+	Date Written:		Jun'2022
+	Solution:			Quality
+	Source file name:	      cov_phq_find_codeblue.prg
+	Object name:		cov_phq_find_codeblue
+	Request#:			13014
+	Program purpose:	      Alert on Code Blue event
+	Executing from:		Rule / Smart Zone
+ 	Special Notes:		
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+Mod Date	Developer			Comment
+-------------------------------------------------------------------------------
+ 
+/22    Geetha    CR#13014     Initial release
+ 
+******************************************************************************/
+
+drop program cov_phq_find_codeblue:dba go
+create program cov_phq_find_codeblue:dba
+
+
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+
+declare inpatient_var  = f8 with constant(uar_get_code_by("DISPLAY", 71, "Inpatient")), protect
+
+Encounter type: Inpt, Observation, Outpt in a bed for procedure, ED, Outpt, Behavorial Health (really for SBH only).
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+
+
+
+#exitscript
+end go
+

@@ -1,0 +1,413 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Todd A. Blanchard
+	Date Written:		06/23/2020
+	Solution:			Revenue Cycle - Acute Care Management
+	Source file name:	cov_acm_ReadmitRisk.prg
+	Object name:		cov_acm_ReadmitRisk
+	Request #:			7159, 8283, 10090, 10375, 12461
+ 
+	Program purpose:	Lists patients and their readmissions risks upon discharge.
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+ 	Mod Date	Developer				Comment
+ 	----------	--------------------	--------------------------------------
+001	08/05/2020	Todd A. Blanchard		Added tables for historical data.
+										Added encntr_type data.
+002	05/10/2021	Todd A. Blanchard		Added discharge unit data.
+003	07/23/2021	Todd A. Blanchard		Added all inpatient discharge data.
+004	04/07/2022	Todd A. Blanchard		Added medical service data.
+ 
+******************************************************************************/
+ 
+drop program cov_acm_ReadmitRisk:DBA go
+create program cov_acm_ReadmitRisk:DBA
+ 
+prompt 
+	"Output to File/Printer/MINE" = "MINE"    ;* Enter or select the printer or file name to send this report to.
+	, "Facility" = 0
+	, "Start Date of Discharge" = "SYSDATE"
+	, "End Date of Discharge" = "SYSDATE" 
+
+with OUTDEV, facility, start_datetime, end_datetime
+ 
+ 
+/**************************************************************
+; DVDev DECLARED SUBROUTINES
+**************************************************************/
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+ 
+declare mrn_var					= f8 with constant(uar_get_code_by("DISPLAYKEY", 319, "MRN"))
+declare fin_var					= f8 with constant(uar_get_code_by("DISPLAYKEY", 319, "FINNBR"))
+declare attending_phy_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 333, "ATTENDINGPHYSICIAN"))
+declare social_worker_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 333, "SOCIALWORKER"))
+declare inpatient_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "INPATIENT")) ;003
+ 
+declare risk_factor_var			= i2 with constant(5)
+ 
+declare op_facility_var			= c2 with noconstant("")
+declare num						= i4 with noconstant(0) ;003
+ 
+ 
+; define operator for $facility
+if (substring(1, 1, reflect(parameter(parameter2($facility), 0))) = "L") ; multiple values selected
+    set op_facility_var = "IN"
+elseif (parameter(parameter2($facility), 1) = 0.0) ; any selected
+    set op_facility_var = "!="
+else ; single value selected
+    set op_facility_var = "="
+endif
+ 
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+ 
+record rr_data (
+	1	p_facility			= vc
+	1	p_startdate			= vc
+	1	p_enddate			= vc
+ 
+	1	cnt					= i4
+	1	list[*]
+		2	person_id		= f8
+		2	patient_name	= c100
+		2	fin				= c20
+		
+		2	encntr_id		= f8
+		2	encntr_type		= c40 ;001
+		2	med_service		= c40 ;004
+		2	discharge_date	= dq8
+		2	discharge_disp	= c40
+		2	los				= f8
+		2	los_disp		= c20
+		2	facility		= c100
+		2	nurse_unit		= c40 ;002
+		
+		2	risk_factor		= c2 ;003
+		2	risk_category	= c255
+		2	risk_score		= c3 ;003
+		
+		2	primary_ins		= c100
+		2	secondary_ins	= c100
+)
+ 
+/**************************************************************/
+; set prompt data
+set rr_data->p_facility		= cnvtstring($facility)
+set rr_data->p_startdate	= $start_datetime
+set rr_data->p_enddate		= $end_datetime
+ 
+ 
+/**************************************************************/
+; select readmit data
+select if (parameter(parameter2($facility), 1) = 0.0) ; any selected
+	where
+		e.organization_id in (
+			3144501.00, 675844.00, 3144505.00, 3144499.00, 3144502.00, 3144503.00, 3144504.00
+			)
+		and e.disch_dt_tm between cnvtdatetime($start_datetime) and cnvtdatetime($end_datetime)
+		and e.active_ind = 1
+		;001
+		and (
+			lcrw.lh_cnt_readmit_worklist_id is not null
+			or lcrwph.lh_cnt_read_wl_pt_hist_id is not null
+		)
+		;001
+		and (
+			lcrr.lh_cnt_readmit_risk_id is not null
+			or lcrrh.lh_cnt_readmit_risk_hist_id is not null
+		)
+else
+	where
+		operator(e.organization_id, op_facility_var, $facility)
+		and e.disch_dt_tm between cnvtdatetime($start_datetime) and cnvtdatetime($end_datetime)
+		and e.active_ind = 1
+		;001
+		and (
+			lcrw.lh_cnt_readmit_worklist_id is not null
+			or lcrwph.lh_cnt_read_wl_pt_hist_id is not null
+		)
+		;001
+		and (
+			lcrr.lh_cnt_readmit_risk_id is not null
+			or lcrrh.lh_cnt_readmit_risk_hist_id is not null
+		)
+endif
+
+into "NL:" 
+from
+	ENCOUNTER e
+ 
+	, (inner join PERSON p on p.person_id = e.person_id
+		and p.active_ind = 1)
+ 
+	, (inner join ENCNTR_ALIAS eaf on eaf.encntr_id = e.encntr_id
+		and eaf.encntr_alias_type_cd = fin_var
+		and eaf.end_effective_dt_tm > sysdate
+		and eaf.active_ind = 1)
+	
+	; readmit worklist
+	, (left join LH_CNT_READMIT_WORKLIST lcrw on lcrw.encntr_id = e.encntr_id
+		and lcrw.end_effective_dt_tm > sysdate
+		and lcrw.active_ind = 1)
+	
+	; risk score
+	, (left join LH_CNT_READMIT_RISK lcrr on lcrr.lh_cnt_readmit_worklist_id = lcrw.lh_cnt_readmit_worklist_id
+		and lcrr.risk_factor_flag = risk_factor_var
+		and lcrr.end_effective_dt_tm > sysdate
+		and lcrr.active_ind = 1)
+	
+	; readmit worklist history ;001
+	, (left join LH_CNT_READ_WL_PT_HIST lcrwph on lcrwph.encntr_id = e.encntr_id
+		and lcrwph.end_effective_dt_tm > sysdate
+		and lcrwph.active_ind = 1)
+	
+	; risk score history ;001
+	, (left join LH_CNT_READMIT_RISK_HIST lcrrh on lcrrh.lh_cnt_readmit_worklist_id = lcrwph.lh_cnt_readmit_worklist_id
+		and lcrrh.risk_factor_flag = risk_factor_var
+		and lcrrh.end_effective_dt_tm > sysdate
+		and lcrrh.active_ind = 1)
+ 
+ 	; primary health plan
+	, (left join ENCNTR_PLAN_RELTN epr on epr.encntr_id = e.encntr_id
+		and epr.priority_seq = 1
+		and epr.beg_effective_dt_tm <= sysdate
+		and epr.end_effective_dt_tm > sysdate
+		and epr.active_ind = 1)
+ 
+	, (left join ORGANIZATION org_epr on org_epr.organization_id = epr.organization_id)
+	
+ 	; secondary health plan
+	, (left join ENCNTR_PLAN_RELTN epr2 on epr2.encntr_id = e.encntr_id
+		and epr2.priority_seq = 2
+		and epr2.beg_effective_dt_tm <= sysdate
+		and epr2.end_effective_dt_tm > sysdate
+		and epr2.active_ind = 1)
+ 
+	, (left join ORGANIZATION org_epr2 on org_epr2.organization_id = epr2.organization_id)
+ 
+ 	; encounter org
+	, (inner join ORGANIZATION org_e on org_e.organization_id = e.organization_id)
+		
+order by
+	e.encntr_id
+	, p.person_id
+ 
+ 
+; populate rr_data record structure
+head report
+	cnt = 0
+ 
+detail
+	cnt = cnt + 1
+	
+	call alterlist(rr_data->list, cnt) ;003
+	
+	los = 0.0
+	days = 0
+	hours = 0
+ 
+	rr_data->cnt							= cnt 
+	rr_data->list[cnt].person_id			= p.person_id
+	rr_data->list[cnt].patient_name			= p.name_full_formatted
+	rr_data->list[cnt].fin					= eaf.alias
+	
+	rr_data->list[cnt].encntr_id			= e.encntr_id
+	rr_data->list[cnt].encntr_type			= uar_get_code_display(e.encntr_type_cd) ;001
+	rr_data->list[cnt].med_service			= uar_get_code_display(e.med_service_cd) ;004
+	rr_data->list[cnt].discharge_date		= e.disch_dt_tm
+	rr_data->list[cnt].discharge_disp		= uar_get_code_display(e.disch_disposition_cd)
+	
+	los = datetimediff(e.disch_dt_tm, e.reg_dt_tm)
+	days = floor(los)
+	hours = floor((los - days) * 24)
+	
+	rr_data->list[cnt].los					= los
+	rr_data->list[cnt].los_disp				= build2(build(days, evaluate(days, 1, " day", " days")), " ", 
+													 build(hours, evaluate(hours, 1, " hour", " hours")))
+	
+	rr_data->list[cnt].facility				= org_e.org_name
+	rr_data->list[cnt].nurse_unit			= uar_get_code_display(e.loc_nurse_unit_cd) ;002
+	
+	if (lcrw.encntr_id > 0.0)
+		rr_data->list[cnt].risk_factor			= cnvtstring(lcrr.risk_factor_flag) ;003
+		rr_data->list[cnt].risk_category		= lcrr.risk_factor_txt
+		rr_data->list[cnt].risk_score			= cnvtstring(lcrr.risk_factor_value) ;003
+	else
+		rr_data->list[cnt].risk_factor			= cnvtstring(lcrrh.risk_factor_flag) ;003
+		rr_data->list[cnt].risk_category		= lcrrh.risk_factor_txt
+		rr_data->list[cnt].risk_score			= cnvtstring(lcrrh.risk_factor_value) ;003
+	endif
+	
+	rr_data->list[cnt].primary_ins			= org_epr.org_name
+	rr_data->list[cnt].secondary_ins		= org_epr2.org_name
+  
+WITH nocounter, time = 120
+
+call echorecord(rr_data)
+ 
+ 
+/**************************************************************/
+; select non-readmit data ;003
+select if (parameter(parameter2($facility), 1) = 0.0) ; any selected
+	where
+		e.organization_id in (
+			3144501.00, 675844.00, 3144505.00, 3144499.00, 3144502.00, 3144503.00, 3144504.00
+			)
+		and e.disch_dt_tm between cnvtdatetime($start_datetime) and cnvtdatetime($end_datetime)
+		and e.encntr_type_cd = inpatient_var
+		and e.active_ind = 1
+		; exclude readmit encounters
+		and not expand(num, 1, rr_data->cnt, e.encntr_id, rr_data->list[num].encntr_id)
+else
+	where
+		operator(e.organization_id, op_facility_var, $facility)
+		and e.disch_dt_tm between cnvtdatetime($start_datetime) and cnvtdatetime($end_datetime)
+		and e.encntr_type_cd = inpatient_var
+		and e.active_ind = 1
+		; exclude readmit encounters
+		and not expand(num, 1, rr_data->cnt, e.encntr_id, rr_data->list[num].encntr_id)
+endif
+
+into "NL:" 
+from
+	ENCOUNTER e
+ 
+	, (inner join PERSON p on p.person_id = e.person_id
+		and p.active_ind = 1)
+ 
+	, (inner join ENCNTR_ALIAS eaf on eaf.encntr_id = e.encntr_id
+		and eaf.encntr_alias_type_cd = fin_var
+		and eaf.end_effective_dt_tm > sysdate
+		and eaf.active_ind = 1)
+ 
+ 	; primary health plan
+	, (left join ENCNTR_PLAN_RELTN epr on epr.encntr_id = e.encntr_id
+		and epr.priority_seq = 1
+		and epr.beg_effective_dt_tm <= sysdate
+		and epr.end_effective_dt_tm > sysdate
+		and epr.active_ind = 1)
+ 
+	, (left join ORGANIZATION org_epr on org_epr.organization_id = epr.organization_id)
+	
+ 	; secondary health plan
+	, (left join ENCNTR_PLAN_RELTN epr2 on epr2.encntr_id = e.encntr_id
+		and epr2.priority_seq = 2
+		and epr2.beg_effective_dt_tm <= sysdate
+		and epr2.end_effective_dt_tm > sysdate
+		and epr2.active_ind = 1)
+ 
+	, (left join ORGANIZATION org_epr2 on org_epr2.organization_id = epr2.organization_id)
+ 
+ 	; encounter org
+	, (inner join ORGANIZATION org_e on org_e.organization_id = e.organization_id)
+		
+order by
+	e.encntr_id
+	, p.person_id
+ 
+ 
+; populate rr_data record structure
+head report
+	cnt = rr_data->cnt
+ 
+detail
+	cnt = cnt + 1
+	
+	call alterlist(rr_data->list, cnt)
+	
+	los = 0.0
+	days = 0
+	hours = 0
+ 
+	rr_data->cnt							= cnt 
+	rr_data->list[cnt].person_id			= p.person_id
+	rr_data->list[cnt].patient_name			= p.name_full_formatted
+	rr_data->list[cnt].fin					= eaf.alias
+	
+	rr_data->list[cnt].encntr_id			= e.encntr_id
+	rr_data->list[cnt].encntr_type			= uar_get_code_display(e.encntr_type_cd) ;001
+	rr_data->list[cnt].med_service			= uar_get_code_display(e.med_service_cd) ;004
+	rr_data->list[cnt].discharge_date		= e.disch_dt_tm
+	rr_data->list[cnt].discharge_disp		= uar_get_code_display(e.disch_disposition_cd)
+	
+	los = datetimediff(e.disch_dt_tm, e.reg_dt_tm)
+	days = floor(los)
+	hours = floor((los - days) * 24)
+	
+	rr_data->list[cnt].los					= los
+	rr_data->list[cnt].los_disp				= build2(build(days, evaluate(days, 1, " day", " days")), " ", 
+													 build(hours, evaluate(hours, 1, " hour", " hours")))
+	
+	rr_data->list[cnt].facility				= org_e.org_name
+	rr_data->list[cnt].nurse_unit			= uar_get_code_display(e.loc_nurse_unit_cd) ;002
+	
+	rr_data->list[cnt].primary_ins			= org_epr.org_name
+	rr_data->list[cnt].secondary_ins		= org_epr2.org_name
+  
+WITH nocounter, expand = 1, time = 120
+
+call echorecord(rr_data)
+ 
+ 
+/**************************************************************/
+; select data
+select distinct into $OUTDEV
+	facility					= rr_data->list[d1.seq].facility
+	, person_id					= rr_data->list[d1.seq].person_id
+	, patient_name				= rr_data->list[d1.seq].patient_name
+	, fin						= rr_data->list[d1.seq].fin
+ 
+	, encntr_id					= rr_data->list[d1.seq].encntr_id
+	, encntr_type				= rr_data->list[d1.seq].encntr_type ;001
+	, med_service				= rr_data->list[d1.seq].med_service ;004
+	, discharge_date			= format(rr_data->list[d1.seq].discharge_date, "mm/dd/yyyy;;D")
+	, discharge_unit			= rr_data->list[d1.seq].nurse_unit ;002
+	, discharge_disp			= rr_data->list[d1.seq].discharge_disp
+	, los						= rr_data->list[d1.seq].los
+	, los_disp					= rr_data->list[d1.seq].los_disp
+	
+	, risk_factor				= rr_data->list[d1.seq].risk_factor
+	, risk_category				= rr_data->list[d1.seq].risk_category
+	, risk_score				= rr_data->list[d1.seq].risk_score
+	
+	, primary_ins				= rr_data->list[d1.seq].primary_ins
+	, secondary_ins				= rr_data->list[d1.seq].secondary_ins
+    
+from
+	(dummyt d1 with seq = value(rr_data->cnt))
+ 
+plan d1
+ 
+order by
+	facility
+	, year(rr_data->list[d1.seq].discharge_date) ;001
+	, month(rr_data->list[d1.seq].discharge_date) ;001
+	, day(rr_data->list[d1.seq].discharge_date) ;001
+	, patient_name
+	, person_id
+ 
+with nocounter, separator = " ", format, time = 60
+ 
+ 
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+ 
+end
+go
+

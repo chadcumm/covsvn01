@@ -1,0 +1,718 @@
+select * from ccl_report_audit cra where cra.object_name = cnvtupper("cov_rpt_op_readiness:dba")
+order by cra.begin_dt_tm desc
+with format(date,";;q"),uar_code(d)
+
+select 
+	 cv1.display
+	,cv1.description
+	,cv1.definition
+	,cv2.display
+	,cv2.cdf_meaning
+from
+     code_value cv1
+	,code_value cv2
+	,code_value_group cvg
+plan cv1
+    where cv1.code_set              = 100496
+	and   cv1.definition            = trim(cnvtlower("COV_RPT_OP_READINESS"))
+	and   cv1.active_ind 			= 1
+	and   cv1.begin_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   cv1.end_effective_dt_tm 	>= cnvtdatetime(curdate,curtime3)
+	and   cv1.cdf_meaning			= "EVENT_CODE"
+join cvg
+	where cvg.parent_code_value		= cv1.code_value
+	and   cvg.code_set				in(72)
+join cv2
+	where cv2.code_value			= cvg.child_code_value
+	and   cv2.active_ind			= 1
+order by
+	 cv1.description
+	,cvg.collation_seq
+	,cv2.code_value
+
+
+select 
+	 cv1.display
+	,cv1.description
+	,cv1.definition
+	,cv2.display
+	,cve1.field_name
+	,cve1.field_value
+	,cve2.field_name
+	,cve2.field_value
+from
+     code_value cv1
+	,code_value cv2
+	,code_value_group cvg
+	,code_value_extension cve1
+	,code_value_extension cve2
+plan cv1
+    where cv1.code_set              = 100496
+	and   cv1.definition            = trim(cnvtlower("COV_RPT_OP_READINESS"))
+	and   cv1.active_ind 			= 1
+	and   cv1.begin_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   cv1.end_effective_dt_tm 	>= cnvtdatetime(curdate,curtime3)
+	and   cv1.cdf_meaning			= "VENTILATOR"
+join cvg
+	where cvg.parent_code_value		= cv1.code_value
+	and   cvg.code_set				in(72)
+join cv2
+	where cv2.code_value			= cvg.child_code_value
+	and   cv2.active_ind			= 1
+join cve1
+	where cve1.code_value			= outerjoin(cv1.code_value)
+	and   cve1.field_name			= outerjoin("LOOKBACK_HRS")
+join cve2
+	where cve2.code_value			= outerjoin(cv1.code_value)
+	and   cve2.field_name			= outerjoin("VENT_TYPE")
+order by
+	 cv1.description
+	,cvg.collation_seq
+	,cv2.code_value
+	
+select	
+	 cv1.display
+	,cv1.description
+	,cv1.definition
+	,cv2.display
+	,cv2.cdf_meaning
+from
+     code_value cv1
+	,code_value cv2
+	,code_value_group cvg
+plan cv1
+    where cv1.code_set              = 100496
+	and   cv1.definition            = trim(cnvtlower("COV_RPT_OP_READINESS"))
+	and   cv1.active_ind 			= 1
+	and   cv1.begin_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   cv1.end_effective_dt_tm 	>= cnvtdatetime(curdate,curtime3)
+	and   cv1.cdf_meaning			= "ORDERS"
+join cvg
+	where cvg.parent_code_value		= cv1.code_value
+	and   cvg.code_set				= 6004
+join cv2
+	where cv2.code_value			= cvg.child_code_value
+order by
+	 cv1.description
+	,cv2.code_value
+	
+select 
+	 cv1.display
+	,cv1.description
+	,cv1.definition
+	,cv2.display
+	,cv2.cdf_meaning
+	,cv3.code_set
+	,cv3.display	
+from
+     code_value cv1
+	,code_value cv2
+	,code_value cv3
+	,code_value_group cvg
+	,code_value_group cvb
+	,code_value_extension cve
+plan cv1
+	where cv1.code_set              = 100496
+	and   cv1.definition            = trim(cnvtlower("COV_RPT_OP_READINESS"))
+	and   cv1.active_ind 			= 1
+	and   cv1.begin_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   cv1.end_effective_dt_tm 	>= cnvtdatetime(curdate,curtime3)
+	and   cv1.cdf_meaning			= "ORDERS"
+join cvg
+	where cvg.parent_code_value		= cv1.code_value
+	and   cvg.code_set				= 100496
+join cvb
+	where cvb.parent_code_value		= cvg.child_code_value
+join cv2
+	where cv2.code_value			= cvg.child_code_value
+	and   cv2.active_ind			= 1
+join cv3
+	where cv3.code_value			= cvb.child_code_value
+	and   cv3.active_ind			= 1
+join cve
+	where cve.code_value			= cv2.code_value
+	and   cve.field_name			= "OE_FIELD_ID"
+	
+		
+select
+     l_location_disp = uar_get_code_display(l.location_cd)
+	,l.location_cd
+from
+     location   l
+    ,organization   o
+    ,code_value_set cvs
+	,code_value cv1
+	,code_value cv2
+plan cvs
+	where cvs.definition 			= "COVCUSTOM"
+join cv1
+	where cv1.code_set 				= cvs.code_set
+	and   cv1.definition 			= trim(cnvtlower("cov_rpt_op_readiness"))	
+	and   cv1.active_ind 			= 1
+	and   cv1.begin_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   cv1.end_effective_dt_tm 	>= cnvtdatetime(curdate,curtime3)
+	and   cv1.cdf_meaning 			= "FACILITY"
+join l 
+	where 	l.location_type_cd 		= value(uar_get_code_by("MEANING",222,"FACILITY"))
+    and 	l.active_ind 			= 1
+join cv2
+	where	cv2.code_value 			= l.location_cd
+	and 	cv2.display 			= cv1.display
+join o 
+	where o.organization_id 		= l.organization_id
+order by
+    l_location_disp
+go
+
+
+select *
+from
+	code_value_set cvs
+	,code_value cv
+plan cvs
+	where cvs.definition = "COVCUSTOM"
+join cv
+	where cv.code_set = cvs.code_set
+	and   cv.definition = trim(cnvtlower(curprog))	
+	and   cv.active_ind = 1
+	and   cv.begin_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   cv.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+order by
+	cv.cdf_meaning
+	,cv.begin_effective_dt_tm desc
+go
+
+select * from code_value cv where cv.code_value =  2555137243.00
+
+select 
+	 e.encntr_type_cd
+	,e.encntr_status_cd
+	,e.reg_dt_tm
+	,e.inpatient_admit_dt_tm
+	,e.disch_dt_tm
+	,e.encntr_id
+	,d.*
+	,n.source_string
+	,n.vocab_axis_cd
+	,n.source_vocabulary_cd
+	,n.*
+from
+	 encounter e
+	,diagnosis d
+	,nomenclature n
+plan e
+	where e.encntr_id = 119093521
+	and   e.active_ind = 1
+	and   e.encntr_type_cd = value(uar_get_code_by("MEANING",71,"INPATIENT"))
+join d
+	where d.encntr_id = e.encntr_id
+	and   d.active_ind = 1
+	and   cnvtdatetime(sysdate) between d.beg_effective_dt_tm and d.end_effective_dt_tm
+	;and   d.classification_cd in(
+	;								 value(uar_get_code_by("MEANING",12033,"MEDICAL"))
+	;								,value(uar_get_code_by("MEANING",12033,"PATSTATED"))
+	;							 )
+join n
+	where (   (n.nomenclature_id = d.originating_nomenclature_id)
+	       or 
+	       	  (n.nomenclature_id = d.nomenclature_id)
+	      )
+	
+	;and   n.source_string_keycap = patstring(concat("*","CORONAVIRUS","*"))
+order by
+	 e.loc_facility_cd
+	,e.encntr_id
+with format(date,";;q"),uar_code(d)
+
+select * from nomenclature n where n.source_string_keycap = patstring(concat("*",cnvtupper("covid-19"),"*"))
+
+
+select
+	 cvs.code_set 
+	,cv1.cdf_meaning
+	,cv1.display
+	,cv1.definition
+	,cvg.code_set
+	,cv2.display
+	,cv2.code_value
+from
+     code_value_set cvs
+	,code_value cv1
+	,code_value cv2
+	,code_value_group cvg
+plan cvs
+	where cvs.definition 			= "COVCUSTOM"
+join cv1
+	where cv1.code_set 				= cvs.code_set
+	and   cv1.definition 			= trim(cnvtlower("cov_rpt_op_readiness"))	
+	and   cv1.active_ind 			= 1
+	and   cv1.begin_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   cv1.end_effective_dt_tm 	>= cnvtdatetime(curdate,curtime3)
+join cvg
+	where cvg.parent_code_value		= cv1.code_value
+join cv2
+	where cv2.code_value			= cvg.child_code_value
+
+
+select
+	 cvs.code_set 
+	,cv1.cdf_meaning
+	,cv1.display
+	,cv1.definition
+	,cvg1.code_set
+	,cv2.display
+	,cv2.code_value
+	,cve.*
+from
+     code_value_set cvs
+	,code_value cv1
+	,code_value cv2
+	,code_value cv3
+	,code_value_group cvg1
+	,code_value_group cvg2
+	,code_value_extension cve
+plan cvs
+	where cvs.definition 			= "COVCUSTOM"
+join cv1
+	where cv1.code_set 				= cvs.code_set
+	and   cv1.definition 			= trim(cnvtlower("cov_rpt_op_readiness"))	
+	and   cv1.active_ind 			= 1
+	and   cv1.begin_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   cv1.end_effective_dt_tm 	>= cnvtdatetime(curdate,curtime3)
+join cvg1
+	where cvg1.parent_code_value	= outerjoin(cv1.code_value)
+	;and   cvg1.code_set 			= 100496
+join cvg2
+	where cvg2.parent_code_value	= outerjoin(cvg1.child_code_value)
+join cv2
+	where cv2.code_value			= outerjoin(cvg1.child_code_value)	
+join cv3
+	where cv3.code_value			= outerjoin(cvg2.child_code_value)	
+join cve
+	where cve.code_value			= outerjoin(cv1.code_value)
+	
+select * from code_value cv where cv.code_value= 3367861995.00
+select * from code_value_extension cve where cve.code_set = 100496
+
+select
+	 cv1.cdf_meaning
+	,cv1.display
+	,cv1.definition
+	,cvg.code_set
+	,cv2.display
+	,cv2.code_value
+	,cve.*
+from
+     code_value cv1
+	,code_value cv2
+	,code_value_group cvg
+	,code_value_extension cve
+plan cv1
+	where cv1.code_set 				= 100496
+	and   cv1.definition 			= trim(cnvtlower("cov_rpt_op_readiness"))
+	and   cv1.active_ind 			= 1
+	and   cv1.begin_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   cv1.end_effective_dt_tm 	>= cnvtdatetime(curdate,curtime3)
+	and   cv1.cdf_meaning			= "VENTILATOR"
+join cvg
+	where cvg.parent_code_value		= cv1.code_value
+join cv2
+	where cv2.code_value			= cvg.child_code_value
+	and   cv2.active_ind			= 1
+join cve
+	where cve.code_value			= outerjoin(cv1.code_value)
+	and   cve.field_name			= outerjoin("LOOKBACK_HRS")
+with format(date,";;q"),uar_code(d)
+
+			
+select 
+	 encntr_id 				= e.encntr_id
+	,person_id				= e.person_id
+	,loc_facility_cd			= e.loc_facility_cd
+	,loc_unit_cd				= e.loc_nurse_unit_cd
+	,encntr_type_cd			= e.encntr_type_cd
+	,reg_dt_tm				= e.reg_dt_tm
+	,inpatient_dt_tm			= e.inpatient_admit_dt_tm
+	,disch_dt_tm				= e.disch_dt_tm
+	,dob						= cnvtdatetimeutc(datetimezone(p.birth_dt_tm,p.birth_tz),1)
+	,los_hours				= datetimediff(sysdate,e.inpatient_admit_dt_tm,3)
+	,los_days				= datetimediff(sysdate,e.inpatient_admit_dt_tm,1)
+from 
+	encounter e
+	,person p
+plan e
+	where e.encntr_id = 116722528 
+join p
+	where p.person_id = e.person_id
+with format(date,";;q"),uar_code(d)
+
+select 
+	 oc.catalog_cd
+	,oc.dept_display_name
+	,oc.active_ind
+	,ptr.task_assay_cd
+	,cv.code_value
+	,cv.display
+	,cv.code_set
+from
+	order_catalog oc
+	,profile_task_r ptr
+	,code_value_event_r cver
+	,code_value cv
+plan oc
+	where oc.catalog_cd in( 3349587789.00,  3348598617.00,  3348530075.00,  3363387807.00,  3361700765.00,  3358207083.00)
+join ptr
+	where ptr.catalog_cd = oc.catalog_cd
+	and   ptr.active_ind = 1
+join cver
+	where cver.parent_cd = ptr.task_assay_cd
+join cv
+	where cv.code_value = cver.event_cd
+with nocounter,uar_code(d),format(date,";;q")
+
+
+	select distinct
+		/* o.order_id
+		,o.order_status_cd
+		,e.loc_facility_cd
+		,e.encntr_status_cd
+		,e.encntr_type_cd
+		,ce.task_assay_cd
+		,ce.event_cd
+		,ce.event_end_dt_tm
+		,ce.result_val
+		,ce.event_tag
+		,ce.event_id
+		,ce.*
+		*/
+		result=trim(ce.result_val)
+	from
+		orders o
+		,encounter e
+		,clinical_event ce
+	plan o
+		where o.catalog_cd in( 3349587789.00,  3348598617.00,  3348530075.00,  3363387807.00,  3361700765.00,  3358207083.00)
+	join e
+		where e.encntr_id = o.encntr_id
+	join ce
+		where ce.order_id = o.order_id
+		and   ce.event_cd in(3350122787,3361701755,3361702989,3350126077,3355850351,3358526621)
+
+
+	
+	
+	/*
+	order by
+		 e.loc_facility_cd
+		,e.encntr_type_cd
+		,o.orig_order_dt_tm desc
+	*/
+	order by ce.result_val
+	with format(date,";;q"),uar_code(d)
+	
+	
+set t_rec->beg_dt_tm = datetimefind(cnvtlookbehind("1,D",cnvtdatetime(curdate,curtime3)), 'D', 'B', 'B') ;begin of previous 1 day
+set t_rec->end_dt_tm = datetimefind(cnvtlookbehind("1,D",cnvtdatetime(curdate,curtime3)), 'D', 'E', 'E') ;end of previous 1 day
+
+	
+select
+	lt.long_text
+from
+	clinical_event ce
+	,result r
+	,result_comment rc
+	,long_text lt
+plan ce
+	where ce.event_id = 2174678443
+join r
+	where ce.order_id = r.order_id
+join rc
+	where rc.result_id = r.result_id
+join lt
+	where lt.long_text_id = rc.long_text_id
+	
+select distinct
+		o.order_id
+		,od.*
+	from
+		orders o
+		,order_detail od
+	plan o
+		where o.catalog_cd in( 3349587789.00,  3348598617.00,  3348530075.00,  3363387807.00,  3361700765.00,  3358207083.00)
+	join od
+		where od.order_id = o.order_id
+		
+		
+		;Non-Invasive Ventilation Activity	
+		;Ventilator Activity	   16806092.00	Ventilator discontinue
+		;Non-Invasive Ventilation Activity	  245994621.00	Discontinue
+
+select 
+	 e.encntr_type_cd
+	,e.encntr_status_cd
+	,e.reg_dt_tm
+	,e.inpatient_admit_dt_tm
+	,e.disch_dt_tm
+	,p.name_full_formatted
+	,e.encntr_id
+	,ce.*
+from
+	 encntr_domain ed
+	,encounter e
+	,person p
+	,clinical_event ce
+plan ed	
+	where ed.loc_facility_cd=   21250403.00
+	and ed.encntr_id =     118968895.00
+	
+	and
+	ed.active_ind = 1
+	and   ed.end_effective_dt_tm = cnvtdatetime("31-DEC-2100 00:00:00")
+join e
+	where e.encntr_id = ed.encntr_id
+	and   e.active_ind = 1
+	and   e.encntr_type_cd = value(uar_get_code_by("MEANING",71,"INPATIENT"))
+join p
+	where p.person_id = e.person_id
+join ce
+	where ce.encntr_id = e.encntr_id
+	and   ce.person_id = e.person_id
+	;and   cnvtupper(ce.result_val) not in("*DISCONTINUE*")
+	/*and   ce.event_cd in(
+							 value(uar_get_code_by("DISPLAY",72,"Non-Invasive Ventilation Activity"))
+							,value(uar_get_code_by("DISPLAY",72,"Ventilator Activity"))
+						)
+	*/
+	and	  ce.result_status_cd in(
+									  value(uar_get_code_by("MEANING",8,"AUTH"))
+									 ,value(uar_get_code_by("MEANING",8,"MODIFIED"))
+									 ,value(uar_get_code_by("MEANING",8,"ALTERED"))
+								)
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   ce.event_tag        != "Date\Time Correction"
+	and   ce.result_val        >  " "
+order by
+	 e.loc_facility_cd
+	,e.encntr_id
+	,ce.event_cd
+	,ce.event_end_dt_tm
+with format(date,";;q"),uar_code(d)
+
+
+
+select * from code_value cv where cv.code_value in(20136426,21705046,21705682,2556636771,2556647889,2556649249,2556649561,2556645665,
+			703526,703530,703535,703558,2700535,2796669,4157752,16744681,16865976,28214345,34432465,34432585,34432673,154353053,2555284843,2564387993,
+			2565522047,
+			33913513,2562425615,2565579019
+			)
+
+select ce.ce_dynamic_label_id,* from clinical_event ce where ce.event_id =   2179738779.00
+select * from encntr_alias ea where ea.alias = "2008501380"  
+
+select 
+	/* e.encntr_type_cd
+	,e.encntr_status_cd
+	,e.reg_dt_tm
+	,e.inpatient_admit_dt_tm
+	,e.disch_dt_tm
+	,p.name_full_formatted
+	,e.encntr_id
+	*/
+	distinct
+	wvs.display_name
+	,wvs.working_view_section_id
+	,wv.display_name
+	,ce.event_cd
+	,ce.result_val
+	,ce2.event_cd
+	,ce2.result_val
+	,ce.event_end_dt_tm
+	,ce2.event_end_dt_tm
+from
+	 encounter e
+	,person p
+	,clinical_event ce
+	,clinical_Event ce2
+	, working_view wv
+	 ,working_view_section   wvs  
+     , working_view_item   wvi  
+     , v500_event_code   vec 
+      , working_view_item   wvi1
+     , v500_event_code   vec1 
+plan e
+	where e.encntr_id =  118942416.00
+	and   e.active_ind = 1
+	;and   e.encntr_type_cd = value(uar_get_code_by("MEANING",71,"INPATIENT"))
+join p
+	where p.person_id = e.person_id
+join ce
+	where ce.encntr_id = e.encntr_id
+	and   ce.person_id = e.person_id
+	;and   cnvtupper(ce.result_val) not in("*DISCONTINUE*")
+	and   ce.event_cd in(
+							 value(uar_get_code_by("DISPLAY",72,"Non-Invasive Ventilation Activity"))
+							,value(uar_get_code_by("DISPLAY",72,"Ventilator Activity"))
+							
+						)
+	
+	and	  ce.result_status_cd in(
+									  value(uar_get_code_by("MEANING",8,"AUTH"))
+									 ,value(uar_get_code_by("MEANING",8,"MODIFIED"))
+									 ,value(uar_get_code_by("MEANING",8,"ALTERED"))
+								)
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   ce.event_tag        != "Date\Time Correction"
+	and   ce.result_val        >  " "
+join vec
+	where vec.event_cd = ce.event_cd
+join wvi
+	where cnvtupper(wvi.primitive_event_set_name) = cnvtupper(vec.event_set_name)
+join wvs
+	where wvs.working_view_section_id = wvi.working_view_section_id
+join wv
+	where wv.working_view_id = wvs.working_view_id
+	and   wv.display_name = "Respiratory Therapy"
+join ce2
+	where ce2.encntr_id = e.encntr_id
+	and   ce2.person_id = e.person_id
+	and   ce2.event_cd in(  value(uar_get_code_by("DISPLAY",72,"Ventilator Model"))
+							,value(uar_get_code_by("DISPLAY",72,"BiPAP/CPAP Machine Model")))
+	and   ce2.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   ce2.event_tag        != "Date\Time Correction"
+	and   ce2.result_val        >  " "
+join vec1
+	where vec1.event_cd = ce2.event_cd
+join wvi1
+	where wvi1.working_view_section_id = wvi.working_view_section_id
+order by
+	 ce.event_end_dt_tm desc
+with format(date,";;q"),uar_code(d) 
+
+/*
+
+							*/
+select wvs.display_name,wvs.event_set_name,wvs.working_view_section_id
+     from working_view   wv  
+     , working_view_section   wvs  
+     , working_view_item   wvi  
+     , v500_event_code   vec  
+      where wv.display_name in ("Respiratory Therapy")  
+      and wv.active_ind = 1
+      and wv.working_view_id = wvs.working_view_id  
+      and wvs.working_view_section_id = wvi.working_view_section_id  
+      and cnvtupper(wvi.primitive_event_set_name) = cnvtupper(vec.event_set_name) 
+order by
+	wvs.display_name,wvi.primitive_event_set_name
+	
+	
+select 
+	ce.event_cd
+	,ce.task_assay_cd
+	,ccr.*
+from
+	 clinical_event ce
+	,ce_coded_result ccr
+plan ce
+	where ce.event_id = 2182884234
+join ccr
+	where ccr.event_id = outerjoin(ce.event_id)
+with format(date,";;q"),uar_code(d) 
+
+
+
+SELECT
+D.DESCRIPTION
+, a.sequence
+, n.short_string
+
+FROM
+DISCRETE_TASK_ASSAY   D,
+REFERENCE_RANGE_FACTOR   R,
+ALPHA_RESPONSES   A,
+Nomenclature N
+
+
+plan  d
+WHERE d.task_assay_cd in(    3624025.00,    3623807.00)
+join R
+where d.task_assay_cd = r.task_assay_cd
+and r.active_ind = 1
+join a
+where r.reference_range_factor_id = a.reference_range_factor_id
+join n
+where n.nomenclature_id = a .nomenclature_id
+and n.active_ind = 1
+order by D.DESCRIPTION, a.sequence
+with format(date,";;q"),uar_code(d) 
+
+select * from code_value cv where cv.code_value= 2565561011
+
+select
+	 cvo.code_set
+	,cvo.code_value
+	,facility=uar_get_code_display(cvo.code_value)
+	,cvo.alias_type_meaning
+	,cvo.alias
+from
+	 code_value_outbound cvo
+plan cvo
+	where cvo.contributor_source_cd = value(uar_get_code_by("DISPLAY",73,"COVDEV1"))
+	and   cvo.code_set = 220
+	;and   cvo.alias_type_meaning in("NURSEUNIT", "FACILITY","AMBULATORY")
+order by
+	facility
+with format(date,";;q"),uar_code(d) 
+
+select device_alias=substring(1,20,bm.device_alias),
+room = substring(1,10,UAR_GET_CODE_DISPLAY(b.resource_loc_cd)),
+b.active_ind, b.parent_entity_name, b.parent_entity_id,
+b.updt_dt_tm "@SHORTDATETIME", Assoc_time= B.Association_dt_tm "@SHORTDATETIME",
+B.Dis_association_dt_tm "@SHORTDATETIME", b.resource_loc_cd
+from bmdi_acquired_data_track b, bmdi_monitored_device bm
+plan b
+where b.resource_loc_cd > 0 and b.active_ind = 0 and b.parent_entity_id = 0
+join bm where b.resource_loc_cd = bm.resource_loc_cd and b.monitored_device_id=bm.monitored_device_id
+order by b.resource_loc_cd, device_alias
+
+select o.orig_order_dt_tm,o.status_dt_tm,ce.event_cd,
+ce.valid_from_dt_tm,ce.clinsig_updt_dt_tm,ce.verified_dt_tm,ce.event_end_dt_tm,
+ce.result_val from orders o, clinical_event ce where o.order_id=2801560713
+and ce.order_id = o.order_id with format(date,";;q"),uar_code(d)
+
+
+select 
+ce.event_cd,
+ce.valid_from_dt_tm,ce.clinsig_updt_dt_tm,ce.verified_dt_tm,ce.event_end_dt_tm,
+ce.result_val
+from
+clinical_Event ce where ce.event_cd =  3358526621.00
+with format(date,";;q"),uar_code(d)
+
+select
+	 e.encntr_id
+	,e.disch_dt_tm
+from
+	encounter e
+plan e
+	where e.loc_facility_cd = 21250403
+	and e.disch_disposition_cd in(638666.00, 2554369135) ;expired, expired(hospice claims only) 41
+	and e.data_status_cd in(25, 35)
+	and e.reg_dt_tm <= sysdate
+	and e.active_ind = 1
+	and e.encntr_type_cd = value(uar_get_code_by("MEANING",71,"INPATIENT"))
+
+/*	
+select * from code_value cv where cv.code_value in(638666.00, 2554369135,25, 35)
+         25.00	          8	AUTH	Auth (Verified)
+         35.00	          8	MODIFIED	Modified
+     638666.00	         19	EXPIRED	*Expired 20
+ 2554369135.00	         19		Expired (Hospice Claims Only) 41
+*/
+select * from code_value cv where cv.code_set = 19
+select * from code_value cv where cv.code_value in( 
+ value(uar_get_code_by("MEANING",8,"AUTH")),
+ value(uar_get_code_by("MEANING",8,"MODIFIED"))
+)
+
+
+select * from order_catalog oc where oc.description = "COVID*"

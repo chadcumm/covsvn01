@@ -1,0 +1,114 @@
+<prompt-def program = 'AMB_DEFICIENT_TASKS_RPT' group = '0' auto-arrange = 'true' stream-ver = '0' export-dt-tm = '202003111515' version = '148' script-enabled = 'false' prompt-control-version = '3.000000' updt_dt_tm = '06/04/2014 09:26:18' resource-enabled = 'false'><control name = 'OUTDEV' control = '6' height = '25' width = '275' position = '0' result-type = '1' exclude = 'false'><display align = 'left'>Output to File/Printer/MINE</display>
+<description></description>
+<default>MINE</default>
+<component name = 'CWizOutputDevice'><property name = 'OUTPUT-DEVICES:00'><![CDATA[HIDE-BROWSER='true' DEVICES='' DISPLAY-ALL='false' DISALLOW-FREETEXT='true'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROGRAM'><![CDATA[PROMPT-CONTROL-VERSION='3.000000' AUTO-ARRANGE='true' OWNER='' DU-BASE-HORZ='8' VERSION='148' STREAM-VER='0' REPORT-NAME='' UPDT_DT_TM='06/04/2014 09:26:18' DU-BASE-VERT='16' SCRIPT-ENABLED='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ]]></property>
+<property name = 'PROMPT'><![CDATA[CTRL-VERT-OFFSET='' REQUIRED='false' HIDE-LABEL='false' BOTTOM='25' BORDER='false' AUTO-GROUP='false' LABEL-POS-LEFT='10' LABEL-POS-TOP='10' CTRL-WIDTH='' LEFT='160' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='275' CTRL-HORZ-OFFSET='' LABEL-POS-HEIGHT='13' LABEL-LEFT='true' TOP='10' TRIM='false' LABEL-POS-WIDTH='130' CTRL-LEFT='' ]]></property>
+</component>
+</control>
+<control name = 'start_date' control = '5' height = '18' width = '200' position = '1' result-type = '1' exclude = 'false'><display align = 'left'>Task Begin Date</display>
+<description></description>
+<default>CURDATE</default>
+<component name = 'CWizDateTime'><property name = 'DATE-TIME-ATTR:00'><![CDATA[OUTPUT-FORMAT='MM/dd/yyyy' ANCHOR-HOUR='' MONTH='' DATE-TODAY='true' DATE-LONG='true' DATE-OFFSET='0.000000' DATE-CAL='true' LINK-INPUT='' HOUR='' ANCHOR-YEAR='' DAY='' DATE-ENABLE='true' DATE-INVDATE='true' DATE-FMT='0' ENABLE-MASK='1' MINUTE='' AUTO-UPDATE='false' ANCHOR-MONTH='' YEAR='' ANCHOR-DAY='' DATE-SPIN='true' ANCHOR-MINUTE='' DATE-SRVTM='true'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[CTRL-VERT-OFFSET='' REQUIRED='true' HIDE-LABEL='false' BOTTOM='18' BORDER='false' AUTO-GROUP='false' LABEL-POS-LEFT='10' LABEL-POS-TOP='42' CTRL-WIDTH='' LEFT='160' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='200' CTRL-HORZ-OFFSET='' LABEL-POS-HEIGHT='13' LABEL-LEFT='true' TOP='42' TRIM='false' LABEL-POS-WIDTH='98' CTRL-LEFT='' ]]></property>
+</component>
+</control>
+<control name = 'end_date' control = '5' height = '18' width = '200' position = '2' result-type = '1' exclude = 'false'><display align = 'left'>Task End Date</display>
+<description></description>
+<default>CURDATE</default>
+<component name = 'CWizDateTime'><property name = 'DATE-TIME-ATTR:00'><![CDATA[OUTPUT-FORMAT='MM/dd/yyyy' ANCHOR-HOUR='' MONTH='' DATE-TODAY='true' DATE-LONG='true' DATE-OFFSET='0.000000' DATE-CAL='true' LINK-INPUT='' HOUR='' ANCHOR-YEAR='' DAY='' DATE-ENABLE='true' DATE-INVDATE='true' DATE-FMT='0' ENABLE-MASK='1' MINUTE='' AUTO-UPDATE='false' ANCHOR-MONTH='' YEAR='' ANCHOR-DAY='' DATE-SPIN='true' ANCHOR-MINUTE='' DATE-SRVTM='true'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[CTRL-VERT-OFFSET='' REQUIRED='true' HIDE-LABEL='false' BOTTOM='18' BORDER='false' AUTO-GROUP='false' LABEL-POS-LEFT='10' LABEL-POS-TOP='67' CTRL-WIDTH='' LEFT='160' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='200' CTRL-HORZ-OFFSET='' LABEL-POS-HEIGHT='13' LABEL-LEFT='true' TOP='67' TRIM='false' LABEL-POS-WIDTH='87' CTRL-LEFT='' ]]></property>
+</component>
+</control>
+<control name = 'Organization_prompt' control = '2' height = '25' width = '275' position = '3' result-type = '3' exclude = 'false'><display align = 'left'>Organization</display>
+<description></description>
+<default></default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[MODIFIABLE='false' SORT='false' INC-ANY='false' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='false' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='' QUERY-STRING='select o.organization_id,
+o.org_name  
+
+from organization o
+    ,prsnl_org_reltn por
+
+plan por
+    where por.person_id &#061; reqinfo->updt_id
+        and por.active_ind &#061; 1
+        and por.end_effective_dt_tm > cnvtdatetime(curdate,curtime)
+
+join o 
+    where o.organization_id &#061; por.organization_id
+        and o.org_class_cd&#061;value(UAR_GET_CODE_BY("MEANING",396,"ORG"))
+        and o.active_ind &#061; 1
+        and o.end_effective_dt_tm > cnvtdatetime(curdate,curtime)
+
+order by o.org_name     
+' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;2520.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;ORGANIZATION_ID&#034; TITLE&#061;&#034;ORGANIZATION_ID&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#0]]></property>
+<property name = 'SETTINGS:01'><![CDATA[34;true&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1760.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;ORG_NAME&#034; TITLE&#061;&#034;ORG_NAME&#034; &#125;'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[CTRL-VERT-OFFSET='' REQUIRED='true' HIDE-LABEL='false' BOTTOM='25' BORDER='false' AUTO-GROUP='false' LABEL-POS-LEFT='10' LABEL-POS-TOP='92' CTRL-WIDTH='' LEFT='160' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='275' CTRL-HORZ-OFFSET='' LABEL-POS-HEIGHT='13' LABEL-LEFT='true' TOP='92' TRIM='false' LABEL-POS-WIDTH='79' CTRL-LEFT='' ]]></property>
+</component>
+</control>
+<control name = 'task_type_prompt' control = '2' height = '25' width = '275' position = '4' result-type = '3' exclude = 'false'><display align = 'left'>Choose a task type</display>
+<description></description>
+<default></default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[MODIFIABLE='false' SORT='false' INC-ANY='true' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='false' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='' QUERY-STRING='select distinct 
+cv.code_value, 
+cv.display
+from code_value cv,
+    order_task ot
+plan cv
+    where cv.code_set &#061; 6026
+    and cv.active_ind &#061; 1
+    and cv.display !&#061; "(Do Not Use)*"
+    and cv.cdf_meaning not in ("RESPONSE","MEDRECON","NURSECOL")
+join ot
+    where ot.task_type_cd &#061; cv.code_value
+    and ot.cernertask_flag &#061; 0
+    and ot.dcp_forms_ref_id &#061; 0
+order by cv.display' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1960.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;CODE_VALUE&#034; TITLE&#061;&#034;CODE_VALUE&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1440.000000]]></property>
+<property name = 'SETTINGS:01'><![CDATA[&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;DISPLAY&#034; TITLE&#061;&#034;DISPLAY&#034; &#125;'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[CTRL-VERT-OFFSET='' REQUIRED='true' HIDE-LABEL='false' BOTTOM='25' BORDER='false' AUTO-GROUP='false' LABEL-POS-LEFT='10' LABEL-POS-TOP='124' CTRL-WIDTH='' LEFT='160' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='275' CTRL-HORZ-OFFSET='' LABEL-POS-HEIGHT='13' LABEL-LEFT='true' TOP='124' TRIM='false' LABEL-POS-WIDTH='115' CTRL-LEFT='' ]]></property>
+</component>
+</control>
+<control name = 'provider_prompt' control = '2' height = '25' width = '250' position = '5' result-type = '3' exclude = 'false'><display align = 'left'>Ordering Provider</display>
+<description></description>
+<default></default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[INC-ANY-DISPLAY='Any (*)' MODIFIABLE='false' SORT='false' INC-ANY='true' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' INC-ANY-KEY='*' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='false' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='' QUERY-STRING='select pr.person_id,
+pr.name_full_formatted
+
+from 
+    prsnl_org_reltn por
+    ,prsnl pr
+    
+plan por
+    where por.organization_id&#061;$organization_prompt
+        and por.active_ind &#061; 1
+        and por.end_effective_dt_tm > cnvtdatetime(curdate,curtime)
+    
+join pr
+    where  pr.person_id &#061; por.person_id
+        and pr.active_ind&#061;1
+        and pr.end_effective_dt_tm > cnvtdatetime(curdate,curtime)
+
+order by pr.name_full_formatted
+' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1780.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;PERSON_ID&#034; TITLE&#061;&#034;PERSON_ID&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;&#034; FORMAT&]]></property>
+<property name = 'SETTINGS:01'><![CDATA[#061;&#034;&#034; WIDTH&#061;&#034;960.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;EXP&#034; TITLE&#061;&#034;EXP&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;2&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;TRIM(p.name_full_formatted)&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;0.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;TRIM(p.name_full_formatted)&#034; TITLE&#061;&#034;TRIM(p.name_full_formatted)&#034; &#125;'                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[CTRL-VERT-OFFSET='' REQUIRED='true' HIDE-LABEL='false' BOTTOM='25' BORDER='false' AUTO-GROUP='false' LABEL-POS-LEFT='10' LABEL-POS-TOP='156' CTRL-WIDTH='' LEFT='160' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' CTRL-HORZ-OFFSET='' LABEL-POS-HEIGHT='13' LABEL-LEFT='true' TOP='156' TRIM='false' LABEL-POS-WIDTH='107' CTRL-LEFT='' ]]></property>
+</component>
+</control>
+<control name = 'excel_prompt' control = '1' height = '18' width = '14' position = '6' result-type = '3' exclude = 'false'><display align = 'left'>Run in spreadsheet format</display>
+<description></description>
+<default>1</default>
+<component name = 'CHECKBOX'><property name = 'CHK-SETTINGS'><![CDATA[CHECKED='1' UNCHECKED='0' INIT-STATE='true'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[CTRL-VERT-OFFSET='' REQUIRED='false' HIDE-LABEL='false' BOTTOM='18' BORDER='false' AUTO-GROUP='false' LABEL-POS-LEFT='10' LABEL-POS-TOP='188' CTRL-WIDTH='' LEFT='160' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='14' CTRL-HORZ-OFFSET='' LABEL-POS-HEIGHT='13' LABEL-LEFT='true' TOP='188' TRIM='false' LABEL-POS-WIDTH='124' CTRL-LEFT='' ]]></property>
+</component>
+</control>
+</prompt-def>

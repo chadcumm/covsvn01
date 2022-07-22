@@ -1,0 +1,97 @@
+select * from code_Value cv where cv.code_value = 683987
+
+select * from ccl_report_audit cra where cra.begin_dt_tm >= cnvtdatetime(curdate,0)
+ and cra.object_name = "COV_AMB_CNTRSBSTNC_RPT*"
+order by cra.updt_dt_tm desc
+
+select * from organization o where o.organization_id = 675844
+
+select 
+  e.organization_id			;001 - Changed from location_cd to organization_id
+, prac = org.org_name  ;001 - Change from loc to prac and e.location_cd description to org_name
+, ordering_provider = trim(pr.name_full_formatted)
+, dea = pra.alias
+, o.person_id
+, o.order_id
+, o.hna_order_mnemonic
+, current_start_dt = format(o.current_start_dt_tm, "mm/dd/yyyy hh:mm;;d")
+, patient_name = trim(p.name_full_formatted)
+, dob = format(p.birth_dt_tm, "mm/dd/yyyy;;d")
+, zip = a.zipcode
+, ov.review_dt_tm ";;q"
+, ov.review_type_flag
+, ov.reviewed_status_flag
+, ov.review_sequence
+, status = if (ov.reviewed_status_flag = 0)
+			"Not Reviewed"
+		   elseif (ov.reviewed_status_flag = 1)
+		   	"Accepted"
+		   elseif (ov.reviewed_status_flag = 2)
+		   	"Rejected"
+		   elseif (ov.reviewed_status_flag = 3)
+		   	"No Longer Needing Review"
+		   elseif (ov.reviewed_status_flag = 4)
+		   	"Superceded"
+		   elseif (ov.reviewed_status_flag = 5)
+		   	"Reviewed"
+			endif
+,assigned=p2.name_full_formatted
+,reviwer=p1.name_full_formatted
+,*
+from
+	 encounter e
+	, order_action oa
+	, orders o
+	, mltm_ndc_main_drug_code mn
+	, prsnl pr
+	, prsnl_alias pra
+	, person p
+	, address a
+	, organization org	
+	, order_review ov	
+	, prsnl p1
+	, prsnl p2
+plan org WHERE org.organization_id = 675844 ;> 0.0		
+ 	AND org.active_ind = 1										
+ 	AND org.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)	
+join e where e.organization_id = org.organization_id
+	and e.reg_dt_tm between cnvtdatetime("13-AUG-2019 00:00:00") and cnvtdatetime("15-AUG-2019 00:00:00")
+	and e.active_ind = 1 
+join o where o.person_id = e.person_id
+	and o.encntr_id = e.encntr_id
+	and o.active_ind = 1
+	and o.activity_type_cd = value(uar_get_code_by("MEANING",106,"PHARMACY"))
+	and o.dcp_clin_cat_cd = value(uar_get_code_by("MEANING",16389,"MEDICATIONS"))
+	and o.template_order_id = 0.00
+	and o.orig_ord_as_flag not in(2,3) ;exclude home, patient own meds
+join oa where oa.order_id = o.order_id
+	and oa.action_type_cd = value(uar_get_code_by("MEANING",6003,"ORDER"))
+join mn where mn.drug_identifier = substring(9,6,o.cki)
+	and cnvtint(mn.csa_schedule) > 0 
+join pr where pr.person_id = oa.order_provider_id
+	and pr.physician_ind = 1
+	and pr.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and pr.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
+	and pr.active_ind = 1
+ 	and pr.name_last_key NOT IN ("CERNER*","ZZMD*")	
+join p where p.person_id = e.person_id
+	and p.active_ind = 1
+	and p.name_last_key NOT IN ("ZZZ*","TTTT*","FFFF*") ;001 - Filtering out test patients
+join pra where pra.person_id = outerjoin(pr.person_id)
+	and pra.alias_pool_cd = outerjoin(value(uar_get_code_by("DISPLAY",263,"DEA"))) 
+join a where p.person_id = a.parent_entity_id
+	and a.parent_entity_name = "PERSON"
+	and a.address_type_cd = value(uar_get_code_by("MEANING",212,"HOME"))
+	and a.active_ind = 1
+	and a.beg_effective_dt_tm <= cnvtdatetime(sysdate)
+	and a.end_effective_dt_tm >= cnvtdatetime(sysdate)
+join ov
+	where ov.order_id 		  = outerjoin(o.order_id)
+	and   ov.review_type_flag = outerjoin( 2.00)	;Doctor Cosign
+	;and   ov.action_sequence  = outerjoin(oa.action_sequence)
+join p1
+	where p1.person_id = outerjoin(ov.review_personnel_id)
+join p2
+	where p2.person_id = outerjoin(ov.provider_id)
+order by org.org_name, pr.name_full_formatted, o.person_id, o.order_id
+

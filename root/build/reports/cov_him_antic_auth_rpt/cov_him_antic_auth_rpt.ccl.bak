@@ -1,0 +1,9 @@
+select
+	;into "nl:"
+	document = uar_Get_code_display(ce.event_cd)
+from
+	clinical_event ce
+plan ce
+	where ce.result_status_cd = code_values->cv.cs_8.anticipated_cd
+	and   ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00")
+with nocounter

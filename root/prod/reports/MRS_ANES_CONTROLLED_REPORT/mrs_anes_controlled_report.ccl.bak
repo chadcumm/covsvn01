@@ -1,0 +1,76 @@
+SELECT INTO "nl:"
+	unit = uar_get_code_display(e.loc_nurse_unit_cd)
+	, room = uar_get_code_display(e.loc_room_cd)
+	, bed = uar_get_code_display(e.loc_bed_cd)
+	, p.name_full_formatted
+	, p2.name_full_formatted
+	, p3.name_full_formatted
+	, sma.*
+	, smi.ADMIN_START_DT_TM
+ 
+FROM
+	encounter   e
+	, person   p
+	, sa_medication_admin   sma
+	, sa_med_admin_item   smi
+	, sa_medication   sm
+	, sa_ref_medication   sr
+	, sa_anesthesia_record   sar
+	, surgical_case   sc
+	, med_identifier   mi
+	, prsnl   p2
+	, prsnl   p3
+	, MED_DISPENSE   MD
+ 
+plan e
+where e.loc_facility_cd = $p_facility
+  and e.active_ind = 1
+  ;and (e.disch_dt_tm = null
+;		or e.disch_dt_tm >= cnvtdatetime(curdate,curtime3))
+join p where p.person_id = e.person_id
+ 
+join sc
+where sc.encntr_id = e.encntr_id  ; surgical case
+  and sc.sched_start_dt_tm >= cnvtdatetime($p_start_date)
+  and sc.sched_start_dt_tm  <= cnvtdatetime($p_end_date)
+ 
+join p2
+where p2.person_id = outerjoin(sc.anesth_prsnl_id)
+ 
+join p3
+where p3.person_id = outerjoin(sc.surgeon_prsnl_id)
+ 
+join sar where sar.surgical_case_id = sc.surg_case_id  ; anesthesia record
+join sm where sm.sa_anesthesia_record_id = sar.sa_anesthesia_record_id ; anesthesia medication
+join sr where sr.sa_ref_medication_id = sm.sa_ref_medication_id ; anesthesia ref medication
+join mi
+where mi.item_id = sr.item_id  ; med identifier (formulary name)
+  and mi.med_product_id = sr.med_product_id
+  and mi.med_identifier_type_cd = value(uar_get_code_by("DISPLAYKEY", 11000, "DESCRIPTION"))
+  and mi.active_ind = 1
+;  and mi.item_id = 102658624
+ 
+join sma
+     where sma.sa_medication_id = sm.sa_medication_id  ; medication administration
+       and sma.active_ind = 1 ;002
+join smi
+     where smi.sa_medication_admin_id = sma.sa_medication_admin_id  ; medication administration item
+       and smi.active_ind = 1 ;002
+ 
+join md
+	where md.item_id = mi.item_id
+	and md.legal_status_cd in (
+	   2437,
+       2438,
+       2439,
+       2440,
+       2441)
+ 
+ORDER BY
+	unit
+	, room
+	, bed
+	, p.name_full_formatted
+	, e.encntr_id
+	, sr.item_id
+	, smi.sa_med_admin_item_id

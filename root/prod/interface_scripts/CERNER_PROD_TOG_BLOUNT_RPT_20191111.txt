@@ -1,0 +1,301 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				JJ049611, Cerner
+	Date Written:		3/11/2019
+	Solution:			Oncology
+	Source file name:	TOG_BLOUNT_RPT.prg
+	Object name:		TOG_BLOUNT_RPT
+	Request #:			
+ 
+	Program purpose:	
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:		Ops Job Name: FSI TOG Blount ESI Report
+ 	                    Ops Job Control Group: CHSTNAPP3_Interfaces
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+Mod 	Date		Developer				Comment
+-----	---------- 	-------------------	---------------------------------------
+001   	11/11/2019 	Dawn Greer, DBA	 	Added Documentation/Changed the code to
+                                        not fail if no data is pulled
+******************************************************************************/
+DROP PROGRAM  TOG_BLOUNT_RPT : DBA GO
+CREATE PROGRAM TOG_BLOUNT_RPT : DBA
+ 
+prompt
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+ 
+with OUTDEV
+ 
+SET Y = 0
+ 
+/***** RECORD STRUCTURE *****/
+FREE RECORD ERROR
+RECORD ERROR(
+   1 OUTPUT_CNT = i4		;001 - Added Count Field
+   1 QUAL[*]
+    2 NAME = VC
+    2 MSGID = VC
+    2 MSG_CTRL = VC
+ 	2 MRN = VC
+ 	2 FIN = VC
+    2 ERROR_TEXT = VC
+    2 EVENT = VC
+    2 PERSON_ID = VC
+    2 ENCNTR_ID = VC
+    2 ORDER_ID = VC
+    2 STAT = VC
+    2 CONT_SYSTEM = VC
+    2 CONT_SYSTEM_ID = F8
+    2 MESSAGE = VC
+    2 MESSAGE_SIZE = F8
+    2 REPORT_INFO = VC
+    2 CREATE_DT = VC
+ 	2 REPORT_ID = VC
+ 	2 REPORT_DESC = VC
+ 	2 DICT_DATE = VC
+    2 DATE = VC
+    2 TIME = VC
+)
+ 
+ 
+/***** SELECT DATA *****/
+SELECT INTO "nl:"
+EL.CONTRIBUTOR_SYSTEM_CD,
+EL.UPDT_DT_TM,
+EL.PERSON_ID,
+EL.ENCNTR_ID,
+EL.ORDER_ID,
+EL.EVENT_ID,
+NAME = SUBSTRING (1,25,EL.NAME_FULL_FORMATTED),
+EVENT = CONCAT(TRIM(EL.MSH_MSG_TYPE),"^",TRIM (EL.MSH_MSG_TRIG)),
+ENCNTR_ALIAS = SUBSTRING(2, 20, EL.ENCNTR_ALIAS),
+PERSON_ALIAS = SUBSTRING(2, 20, EL.PERSON_ALIAS),
+EL.MSH_CTRL_IDENT,
+EL.MSGID,
+EL.START_DT_TM "MM/DD/YY HH:MM:SS;;Q",
+EL.MSH_SENDING_APP,
+EL.ESI_INSTANCE "##",
+EL.ERROR_TEXT,
+CREATE_DTTM = build(FORMAT(EL.CREATE_DT_TM ,"MM/DD/YY HH:MM;;D")),
+ERROR_TEXT = EL.ERROR_TEXT
+FROM
+ ESI_LOG  EL
+PLAN EL
+ WHERE
+   EL.ERROR_STAT= "ESI_STAT_FAILURE"
+   AND EL.CREATE_DT_TM >= CNVTDATETIME(curdate-1, 000000)
+   AND EL.CREATE_DT_TM <= CNVTDATETIME(curdate-1, 235959)
+AND EL.CONTRIBUTOR_SYSTEM_CD IN (2555869107.00 /*BLOUNT*/, 2804250365.00 /*LABDAQ*/)   ;001 - Added documentation on codes
+
+HEAD REPORT	;001
+  Y = 0	;001
+  CALL ALTERLIST(ERROR->Qual, 10)	;001
+ 
+DETAIL
+ Y= Y+1
+ 	
+ IF (mod(y,10) = 1)		;001
+ 	CALL ALTERLIST(ERROR->QUAL, Y + 9)	;001
+ ENDIF 	;001
+ 
+ ERROR->QUAL[Y]->NAME = NAME
+ ERROR->QUAL[Y]->CREATE_DT = CREATE_DTTM
+ ERROR->QUAL[Y]->ERROR_TEXT = ERROR_TEXT
+ ERROR->QUAL[Y]->EVENT = EVENT
+ ERROR->QUAL[Y]->PERSON_ID = CNVTSTRING(EL.PERSON_ID)
+ ERROR->QUAL[Y]->ENCNTR_ID = CNVTSTRING(EL.ENCNTR_ID)
+ ERROR->QUAL[Y]->ORDER_ID = CNVTSTRING(EL.ORDER_ID)
+ ERROR->QUAL[Y]->STAT = EL.ERROR_STAT
+ ERROR->QUAL[Y]->CONT_SYSTEM = UAR_GET_CODE_DISPLAY(EL.CONTRIBUTOR_SYSTEM_CD)
+ ERROR->QUAL[Y]->MRN = PERSON_ALIAS
+ ERROR->QUAL[Y]->FIN = ENCNTR_ALIAS
+ ERROR->QUAL[Y]->MSG_CTRL = EL.MSH_CTRL_IDENT
+ ERROR->QUAL[Y]->MSGID = EL.MSGID
+ ERROR->QUAL[Y]->CONT_SYSTEM_ID = EL.CONTRIBUTOR_SYSTEM_CD
+
+FOOT REPORT			;001
+   ERROR->output_cnt = Y	;001
+   CALL ALTERLIST(ERROR->QUAL, Y)	;001
+   
+WITH NOCOUNTER
+ 
+ 
+;*****  Output Data *****
+set directory = "/cerner/d_p0665/ccluserdir/"
+set report_name = build("tog_blount_report","_",format(cnvtdatetime(curdate,curtime3),"mmddyyhhmm;;D"),".txt")
+set filename = build(directory,report_name)
+call echo(build("Outputing to [",filename,"]"))
+
+IF (ERROR->Output_cnt > 0 )		;001
+ 
+;***** SELECT STATEMENT TO FORMAT THE REPORT OUTPUT TO EMAIL*****
+;SELECT INTO $OUTDEV
+select into value(filename)
+DATE_FAILED = ERROR->QUAL[D.SEQ]->CREATE_DT,
+C_SYSTEM = ERROR->QUAL[D.SEQ]->CONT_SYSTEM,
+CSYSTEMID = ERROR->QUAL[D.SEQ]->CONT_SYSTEM_ID
+From (dummyt D with seq = size(ERROR->QUAL,5))
+Plan D
+Order by C_SYSTEM, CSYSTEMID, DATE_FAILED
+ 
+HEAD REPORT
+ROW+0
+ 
+HEAD PAGE
+ROW + 0
+ 
+HEAD CSYSTEMID
+ LINE = FILLSTRING (128,"_"),
+ TODAY = FORMAT (CURDATE,"MM/DD/YYYY;;D"),
+ TIME = FORMAT (CURTIME,"HH:MM;;S"),
+ BEGDATE = FORMAT (CURDATE-1,"MM/DD/YYYY;;D")
+ 
+ ROW + 2
+ COL 50 "FSI Error Report from ESI LOG"
+  ROW+1
+ COL 51 "Contributor System: "
+ COL 71  ERROR->QUAL[D.SEQ]->CONT_SYSTEM
+ ROW +1
+ COL 46 "Date Range: ", BEGDATE, "  00:00 - 23:59"
+ row +1         COL 110, "Page: ",
+                COL + 1, CURPAGE,
+ 
+ ROW + 1,       COL 0, LINE,
+ 
+ ROW + 1,       COL 1,	 "Event",
+ 				COL 9,   "System"
+                COL 25,	 "Date/Time",
+                COL 41,	 "Name",
+                COL 95, "MRN",
+                COL 110, "FIN",
+ 
+ ROW + 1,       COL 0, LINE,
+ ROW + 1
+ ROW + 1
+ 
+ 
+DETAIL
+ 
+COL 1, 		ERROR->QUAL[D.SEQ]->EVENT
+COL 9, 		ERROR->QUAL[D.SEQ]->CONT_SYSTEM
+COL 25, 	ERROR->QUAL[D.SEQ]->CREATE_DT
+IF (ERROR->QUAL[D.SEQ]->NAME != "")
+COL 41, 	ERROR->QUAL[D.SEQ]->NAME
+ENDIF
+ 
+FIN_SZ = SIZE(ERROR->QUAL[D.SEQ]->FIN,1)
+NEW_FIN_SZ = FIN_SZ -1
+NEW_FIN = SUBSTRING(1, NEW_FIN_SZ, ERROR->QUAL[D.SEQ]->FIN)
+ 
+MRN_SZ = SIZE(ERROR->QUAL[D.SEQ]->MRN,1)
+NEW_MRN_SZ = MRN_SZ -1
+NEW_MRN = SUBSTRING(1, NEW_MRN_SZ, ERROR->QUAL[D.SEQ]->MRN)
+ 
+COL 95, NEW_MRN,
+COL 110, NEW_FIN,
+ 
+ROW + 1
+IF (ERROR->QUAL[D.SEQ]->MSGID != "")
+COL 05,	 "MSG ID: ", ERROR->QUAL[D.SEQ]->MSGID
+ENDIF
+COL 45,	 "MSG CTRL ID: ", ERROR->QUAL[D.SEQ]->MSG_CTRL
+ 
+ROW + 1
+IF (ERROR->QUAL[D.SEQ]->ORDER_ID != "")
+COL 85,  "ORD ID: ", ERROR->QUAL[D.SEQ]->ORDER_ID
+ENDIF
+ 
+ 
+ROW + 1
+ 
+IF (ERROR->QUAL[D.SEQ]->STAT= "ESI_STAT_FAILURE")
+                COL 5,"*** FAILURE ***"
+ELSEIF (ERROR->QUAL[D.SEQ]->STAT= "ESI_STAT_WARNING")
+                COL 5, "*** WARNING ***"
+ELSEIF (ERROR->QUAL[D.SEQ]->STAT= "ESI_STAT_SUCCESS")
+                COL 5,"*** SUCCESS ***"
+ENDIF
+ 
+ERROR_TEXT_1 = SUBSTRING(1, 97, ERROR->QUAL[D.SEQ]->ERROR_TEXT)
+ERROR_TEXT_2 = SUBSTRING(98, 97, ERROR->QUAL[D.SEQ]->ERROR_TEXT)
+ERROR_TEXT_3 = SUBSTRING(195, 97, ERROR->QUAL[D.SEQ]->ERROR_TEXT)
+ERROR_TEXT_4 = SUBSTRING(292, 97, ERROR->QUAL[D.SEQ]->ERROR_TEXT)
+ 
+COL 22, "Error: "
+COL 30, ERROR_TEXT_1
+ 
+IF (ERROR_TEXT_2 != " ")
+ ROW + 1
+ COL 30, ERROR_TEXT_2
+ENDIF
+ 
+IF (ERROR_TEXT_3 != " ")
+ ROW + 1
+ COL 30, ERROR_TEXT_3
+ENDIF
+ 
+IF (ERROR_TEXT_4 != " ")
+ ROW + 1
+ COL 30, ERROR_TEXT_4
+ENDIF
+ 
+ROW + 1
+ 
+FOOT CSYSTEMID
+ROW + 1
+ col 46 "***** END OF REPORT - ",  ERROR->QUAL[D.SEQ]->CONT_SYSTEM, " *****"
+BREAK
+ 
+FOOT PAGE
+ row + 0
+ 
+FOOT REPORT
+ row + 0
+ col 55 "***** END OF REPORT *****"
+with nocounter
+
+;ELSE		;001 - Send e-mail to show no errors
+;
+;select into value(filename)
+;MSG = "***** NO DATA ******"
+;From (dummyt D)
+;Plan D
+;
+;DETAIL
+;  row + 0
+;  col 55 "*** FSI Error Report from ESI LOG *****"
+;  row + 1
+;  col 55 "***** TOG_BLOUNT_RPT ****** NO ERRORS *****"
+; 
+ENDIF	;001
+ 
+;*** email report ***
+set recipients = '"bballew@covhlth.net" '
+;set copy = '-c "kasey.berry@cerner.com" '
+set command = 'echo "TOG_BLOUNT_RPT" | mailx -s "TOG_BLOUNT_RPT" -a /cerner/d_p0665/ccluserdir/tog_blount_report*.txt '
+ 
+set dclcom = CONCAT(command,recipients)
+;set dclcom = CONCAT(command,copy,recipients)
+set dcllen = size(trim(dclcom))
+set dclstatus = 0
+call dcl(dclcom,dcllen,dclstatus)
+ 
+;**** delete file after being sent ****
+set dclcom1 = 'rm /cerner/d_p0665/ccluserdir/tog_blount_report*.txt'
+set dcllen1 = size(trim(dclcom1))
+set dclstatus1 = 0
+call dcl(dclcom1,dcllen1,dclstatus1)
+ 
+;**** statement included to interact with System Operations ****
+;SET REPLY->STATUS_DATA->STATUS = "S"
+ 
+end
+go

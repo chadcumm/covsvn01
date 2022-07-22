@@ -1,0 +1,129 @@
+<html>
+<head><title>Covenant Alert Template</title>
+<meta name="discern" content="CCLLINK,CCLNEWWINDOW,CCLEVENT,MPAGES_EVENT" >
+<script language="javascript">
+ 
+//var patientDataSplit = "@MESSAGE:[PATIENTDATA]";
+var patientDataSplit = "@PATIENTID:{TRUE}|@ENCOUNTERID:{TRUE}|@PATIENT:{TRUE}|@PTNURSENC:{TRUE}|@PTROOMENC:{TRUE}|@MEDICALNUMBER:{TRUE}|@AGEYRS:{TRUE}|@PTFACENC:{TRUE}|@BIRTHDATE:{TRUE}|@CURDATETIME";
+var patientData = patientDataSplit.split("|");
+var patientID = patientData[0];
+var encounterID = patientData[1];
+var patientName = patientData[2];
+var patientNurseUnit = patientData[3];
+var patientRoom = patientData[4];
+var medicalNumber = patientData[5];
+var patientAge = patientData[6]
+var patientFacility = patientData[7];
+var patientBirthDate = patientData[8];
+var currentDate = patientData[9];
+var activityID = "0";
+var symptomsData = "@MESSAGE:[SYMPTOMS]";
+ 
+function fillInPatientBanner() {
+	if (currentDate.substring(0,1) != "@"){
+		document.getElementById('date').innerHTML = currentDate;
+	}
+ 
+	if (patientName.substring(0,1) != "@"){
+		document.getElementById('patient').innerHTML = patientName;
+	}
+ 
+	if (patientAge.substring(0,1) != "@"){
+		document.getElementById('age').innerHTML = patientAge;
+	}
+ 
+	if (patientNurseUnit.substring(0,1) != "@"){
+		document.getElementById('nurse').innerHTML = patientNurseUnit;
+	}
+ 
+ 	if (patientRoom.substring(0,1) != "@"){
+ 		document.getElementById('room').innerHTML = patientRoom;
+ 	}
+ 
+	if (patientFacility.substring(0,1) != "@"){
+ 		document.getElementById('fac').innerHTML = patientFacility;
+ 	}
+ 
+	if (medicalNumber.substring(0,1) != "@") {
+		document.getElementById('mrn').innerHTML = medicalNumber;
+	}
+ 
+	if (patientBirthDate.substring(0,1) != "@") {
+		document.getElementById('birth').innerHTML = patientBirthDate;
+	}
+ 
+	if (symptomsData.length > 0) {
+		document.getElementById('symptoms').innerHTML = symptomsData;
+	}
+	else {
+ 
+	}
+ 
+}
+ 
+</script>
+<STYLE>
+table {border-collapse: collapse;	empty-cells: show;	border: 0.000in none #000000; }
+ #scrolldiv {overflow:auto; height: 100%;  width: 100%; border: thin inset;  background-color: white ; padding: 0.05000in 0.1000in 0.000in 0.1000in;}
+.RowTypeWhite {
+	padding: 0.00in 0.020in 0.00in 0.020in;
+	font: 9pt Helvetica;
+	color: black;
+	text-align: left;
+	vertical-align: middle;
+	background: white;
+}
+.RowTypeWhite1{
+	padding: 0.00in 0.020in 0.00in 0.020in;
+	font: 14pt Helvetica;
+	color: black;
+	text-align: left;
+	vertical-align: middle;
+	background: white;
+}
+</style>
+<BODY style='overflow:hidden;' onload="javascript:fillInPatientBanner();">
+<table width='100%' height='100%'>
+	<tr>
+		<td width='100.00%' class='RowTypeWhite' colspan='3'><b>NAME:  </b><span id='patient'></span></td>
+	</tr>
+		<tr>
+		<td width='100.00%' class='RowTypeWhite' colspan='3'><b>DATE:  </b><span id='date'></span></td>
+	</tr>
+		<tr>
+		<td width='100.00%' class='RowTypeWhite' colspan='3'><b>MRN:  </b><span id='mrn'></span></td>
+	</tr>
+		<tr>
+		<td width='100.00%' class='RowTypeWhite' colspan='3'><b>BIRTH DATE:  </b><span id='birth'></span></td>
+	</tr>
+		<tr>
+		<td width='100.00%' class='RowTypeWhite' colspan='3'><b>AGE:  </b><span id='age'></span></td>
+	</tr>
+	<tr>
+		<td width='100.00%' class='RowTypeWhite' colspan='3'><b>LOCATION:  </b><span id='fac'></span> ; &nbsp;&nbsp;<span id='nurse'></span> ; &nbsp;&nbsp;<span id='room'></span></td>
+	</tr>
+	<tr>
+		<td width='100.00%' class='RowTypeWhite' colspan='3'><span id='symptoms'></span></td>
+	</tr>
+	<tr>
+		<td width='100.00%' class='RowTypeWhite' colspan='3'><font color='red'><b>Documentation indicates that the patient has had exposure to Coronavirus Disease 2019 (COVID-19)and is symptomatic.  <br>
+		<br>
+The WHO recommends Contact and Droplet precautions, with protective eyewear for patients with suspected or confirmed COVID-19, and Airborne isolation when performing aerosol-generating procedures.  <br>
+<br>
+The CDC recommends placing the patient in a private room with the door closed and implementing Contact precautions and the use of an N95 mask, or equivalent, and protective eyewear.  Airborne Infection Isolation Rooms (AIIRs) should be used for patients undergoing aerosol-generating procedures. <br>
+<br>
+There is an existing  order for isolation precautions. Determine if the isolation type is appropriate for this patient and if PPE is needed.  If you are not the person caring for this patient please notify the appropriate caregiver as soon as possible.</b></font></td>
+	</tr>
+ 
+	<tr>
+		<td width='100.00%' class='RowTypeWhite' colspan='3'>For the most recent health care information from the CDC web site for
+COVID-19 click <a href="https://www.cdc.gov/coronavirus/2019-ncov/index.html" class="jtabs" target="_blank">here</a>.</td>
+	</tr>
+ 
+	<tr>
+		<td width='100.00%' class='RowTypeWhite' colspan='3'>For the WHO web site for COVID-19 click <a href="https://www.who.int/emergencies/diseases/novel-coronavirus-2019/technical-guidance" class="jtabs" target="_blank">here</a>.</td>
+	</tr>
+</table>
+</BODY>
+</head>
+</HTML>

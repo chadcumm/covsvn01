@@ -1,0 +1,4 @@
+select * from code_value cv where cv.code_value=15783919
+select * from pregnancy_instance pi go
+select uar_get_code_display(per.component_type_cd),
+	* from pregnancy_entity_r per go

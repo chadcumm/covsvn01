@@ -1,0 +1,85 @@
+select 
+ ce.clinical_event_id
+,uar_get_code_display(ce.event_cd)
+,uar_get_code_Display(ce2.event_cd)
+,uar_get_code_display(ce2.result_status_cd)
+,ce2.event_title_text
+,ce.verified_prsnl_id
+,cep.action_prsnl_id
+,cep.event_id
+,p.name_full_formatted
+,uar_get_code_display(cep.action_type_cd)
+,uar_Get_code_display(cep.action_status_cd)
+from 
+	clinical_Event ce
+	,clinical_event ce2 
+	,prsnl p
+	,code_value cv
+	,ce_event_prsnl cep
+plan ce
+	where ce.clinical_event_id =       836994349.00;  836994386.00  ;836994252.00
+join ce2
+	where ce2.encntr_id = ce.encntr_id
+	and   ce2.clinical_event_id != ce.clinical_event_id
+join cep
+	where cep.event_id 			= ce2.event_id 
+	and   cep.action_type_cd 	= value(uar_get_code_by("MEANING",21,"PERFORM"))
+	and   cep.action_status_cd 	= value(uar_get_code_by("MEANING",103,"REQUESTED"))
+	and   cep.action_prsnl_id 	= ce.verified_prsnl_id
+join p	
+	where p.person_id = cep.action_prsnl_id
+join cv
+	where cv.code_value = ce2.event_cd
+    and	  cv.display = "Surgery Operative Note"    
+    
+    
+    
+    
+    
+   select 
+ ce.clinical_event_id
+,uar_get_code_Display(ce.event_cd)
+,uar_get_code_display(ce.result_status_cd)
+,ce.event_title_text
+,ce.performed_prsnl_id
+,p.name_full_formatted
+from 
+	clinical_Event ce 
+	,prsnl p
+	,code_value cv
+plan ce
+	where ce.encntr_id = 113453852  
+join p	
+	where p.person_id = ce.performed_prsnl_id 
+join cv
+	where cv.code_value = ce.event_cd
+   ; and	  cv.display = "Surgery Operative Note" 
+order by ce.updt_dt_tm desc   
+
+
+select
+ p.name_full_formatted,
+,pd.surg_case_id,*
+from
+
+	 clinical_event ce
+	,perioperative_document pd
+	,surg_case_procedure scp
+	,prsnl p
+
+plan ce
+	where ce.clinical_event_id =      836994361.00;     836994361.00;   ClinicalEventID
+join pd
+	where pd.periop_doc_id = cnvtreal(substring(1,9,ce.reference_nbr))
+join scp
+	where scp.surg_case_id  = pd.surg_case_id
+	and   scp.proc_complete_qty > 0
+	and   scp.primary_proc_ind = 1
+join p
+	where p.person_id = scp.primary_surgeon_id
+
+
+select * from surg_case_procedure scp where scp.surg_case_id =   143802793.00
+
+
+select * from case_attendance ca where ca.surg_case_id = 143802793

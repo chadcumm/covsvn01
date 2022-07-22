@@ -1,0 +1,104 @@
+drop program cov_careselect_order_info go
+create program cov_careselect_order_info
+
+prompt 
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "Beginning Date  Time" = "SYSDATE"
+	, "Ending Date  Time" = "SYSDATE" 
+
+with OUTDEV, BEG_DT_TM, END_DT_TM
+
+
+SELECT DISTINCT into $OUTDEV
+                O.ORDER_MNEMONIC
+                , O.order_id
+                , DATE_TIME = format(O.ORIG_ORDER_DT_TM,"mm/dd/yyyy hh:mm:ss")
+                , DSN = OD.oe_field_display_value
+                , SCORE = OD3.oe_field_display_value
+                , ORDER_PROVIDER_POS = UAR_GET_CODE_DISPLAY(P.POSITION_CD)
+                , ORDER_PROVIDER_NAME = P.name_full_formatted
+                , FIN = EA.ALIAS
+                , PER.name_full_formatted ;if patient name is needed
+                , ACTION_POS = UAR_GET_CODE_DISPLAY (P2.position_cd)
+                , ACTION_NAME = P2.name_full_formatted
+                , OC_CATALOG_TYPE_DISP = UAR_GET_CODE_DISPLAY(OC.CATALOG_TYPE_CD)
+                , OC_ACTIVITY_SUBTYPE_DISP = UAR_GET_CODE_DISPLAY(OC.ACTIVITY_SUBTYPE_CD)
+                , RFE_FREE_TEXT = OD2.oe_field_display_value
+                , OA_ACTION_TYPE_DISP = UAR_GET_CODE_DISPLAY(OA.ACTION_TYPE_CD)
+                , OA_COMMUNICATION_TYPE_DISP = UAR_GET_CODE_DISPLAY(OA.COMMUNICATION_TYPE_CD)
+                , E_ENCNTR_TYPE_DISP = UAR_GET_CODE_DISPLAY(E.ENCNTR_TYPE_CD)
+                , CE_EVENT_DISP = UAR_GET_CODE_DISPLAY(CE.EVENT_CD)
+                , CE.RESULT_VAL
+                , POWERPLAN_NAME = PC.description
+
+FROM
+                ORDERS   O
+                , ORDER_CATALOG   OC
+                , ORDER_DETAIL   OD
+                , ORDER_ACTION   OA
+                , PRSNL   P
+                , ENCNTR_ALIAS   EA
+                , PERSON   PER
+                , PRSNL   P2
+                , ORDER_DETAIL   OD2
+                , ENCOUNTER   E
+                , ORDER_DETAIL   OD3
+                , CLINICAL_EVENT   CE
+                , pathway_catalog  PC
+
+PLAN O 
+WHERE O.orig_order_dt_tm BETWEEN CNVTDATETIME($BEG_DT_TM) and CNVTDATETIME($END_DT_TM)  ;UPDATE ;DATES
+
+JOIN OC WHERE O.catalog_cd = oc.catalog_cd
+and OC.activity_subtype_cd in ;VERIFY ACTIVITY SUBTYPES
+                (
+                value(uar_get_code_by("MEANING",5801,"MRI"))
+                , value(uar_get_code_by("MEANING",5801,"MR"))
+                , value(uar_get_code_by("MEANING",5801,"CT"))
+                , value(uar_get_code_by("MEANING",5801,"NM"))
+                , value(uar_get_code_by("MEANING",5801,"PT"))
+                , value(uar_get_code_by("MEANING",5801,"PET"))
+                , value(uar_get_code_by("MEANING",5801,"NUCMED"))
+                )   
+                
+JOIN OD WHERE O.order_id = od.order_id   
+and od.oe_field_id = 2555451325 ;DSN
+;and od.oe_field_display_value = NULL ;ONLY BRING BACK MISSING DSN ;COMMENT OUT FOR ALL
+
+
+JOIN OA WHERE O.order_id = oa.order_id  
+and oa.action_type_cd = 2534
+
+JOIN P WHERE OA.order_provider_id = p.person_id
+
+JOIN EA WHERE outerjoin(O.encntr_id) = EA.encntr_id
+and ea.encntr_alias_type_cd = outerjoin(1077) ;CLIENT FIN ID
+;and ea.alias = "zzzzzzzz" ;if searching by FIN
+and ea.active_ind = 1
+and ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+and ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+
+JOIN PER WHERE O.person_id = PER.person_id
+
+JOIN P2 WHERE oa.action_personnel_id = p2.person_id
+
+JOIN OD2 WHERE outerjoin (O.order_id) = od2.order_id
+and od2.oe_field_id = outerjoin(12683) ;RFE FREE TEXT
+
+JOIN E WHERE outerjoin (o.encntr_id) = E.encntr_id
+
+JOIN OD3 WHERE outerjoin (o.order_id) = OD3.order_id
+and od3.oe_field_id = outerjoin (2555451333) ;SCORE
+
+JOIN CE WHERE outerjoin(O.person_id) = ce.person_id
+and ce.event_cd = outerjoin (3346954.00)    ;Tracking Acuity Value
+
+JOIN PC WHERE outerjoin(O.pathway_catalog_id) = PC.pathway_catalog_id
+
+ORDER BY
+                date_time   DESC
+
+WITH MAXREC = 1000, NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 120
+
+end
+go

@@ -1,0 +1,161 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+	Author:				Chad Cummings
+	Date Written:		03/30/2020
+	Solution:			
+	Source file name:	cov_import_cv_allergy_ft.prg
+	Object name:		cov_import_cv_allergy_ft
+	Request #:
+
+	Program purpose:
+
+	Executing from:		CCL
+
+ 	Special Notes:		Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod 	Mod Date	  Developer				      Comment
+--- 	----------	--------------------	----------------------------------
+000 	03/30/2020  Chad Cummings			Initial Release
+******************************************************************************/
+
+drop program cov_import_cv_allergy_ft:dba go
+create program cov_import_cv_allergy_ft:dba
+
+prompt 
+	"Output to File/Printer/MINE" = "MINE"
+	, "Import File" = ""
+	, "Parent Code Set" = 0
+	, "Child Code Set" = 0
+	, "Program Name" = "" 
+
+with OUTDEV, import_file, p_code_set, c_code_set, program_name
+
+
+call echo(build("loading script:",curprog))
+set nologvar = 0	;do not create log = 1		, create log = 0
+set noaudvar = 0	;do not create audit = 1	, create audit = 0
+%i ccluserdir:cov_custom_ccl_common.inc
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom Section  ************************************"))
+
+if (not(validate(reply,0)))
+record  reply
+(
+	1 text = vc
+	1 status_data
+	 2 status = c1
+	 2 subeventstatus[1]
+	  3 operationname = c15
+	  3 operationstatus = c1
+	  3 targetobjectname = c15
+	  3 targetobjectvalue = c100
+)
+endif
+
+call set_codevalues(null)
+call check_ops(null)
+
+free set t_rec
+record t_rec
+(
+	1 outdev		= vc
+	1 import_file	= vc
+	1 p_code_set	= i4
+	1 c_code_set	= i4
+	1 program_name	= vc
+	1 cnt			= i4
+	1 l_cnt			= i2
+	1 l_qual[*]
+	 2 line_in		= vc
+	1 p_cnt			= i2
+	1 p_qual[*]
+	 2 code_set		= i4
+)
+
+if (not validate(frec))
+    record frec
+    (
+    1 file_desc         = i4
+    1 file_offset       = i4
+    1 file_dir          = i4
+    1 file_name         = vc
+    1 file_buf          = vc
+    ) with protect
+endif
+
+call addEmailLog("chad.cummings@covhlth.com")
+
+set t_rec->outdev		= $OUTDEV
+set t_rec->import_file 	= $IMPORT_FILE
+set t_rec->p_code_set	= $P_CODE_SET
+set t_rec->c_code_set	= $C_CODE_SET
+set t_rec->program_name	= $PROGRAM_NAME
+
+call writeLog(build2("* END   Custom Section  ************************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Importing File *************************************"))
+
+set frec->file_name = t_rec->import_file
+
+set frec->file_buf = "r" /* file_buf values are case sensitive so lowercase r is used */
+set stat = cclio("OPEN",frec)
+set frec->file_buf = notrim(fillstring(3000," "))
+if (frec->file_desc != 0)
+	set stat = 1
+	while (stat > 0)
+		set stat = cclio("GETS",frec)
+		if (stat > 0)
+			set pos = findstring(char(0),frec->file_buf)
+			set pos = evaluate(pos,0,size(frec->file_buf),pos)
+			if (pos > 0)
+				set t_rec->l_cnt = (t_rec->l_cnt + 1)
+				set stat = alterlist(t_rec->l_qual,t_rec->l_cnt)
+				set t_rec->l_qual[t_rec->l_cnt].line_in = substring(1,pos,frec->file_buf)
+			endif
+		endif
+       endwhile
+       set stat = cclio("close",frec)
+endif
+
+call writeLog(build2("* END   Importing File *************************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom   *******************************************"))
+call writeLog(build2("* END   Custom   *******************************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom   *******************************************"))
+call writeLog(build2("* END   Custom   *******************************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom   *******************************************"))
+call writeLog(build2("* END   Custom   *******************************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom   *******************************************"))
+call writeLog(build2("* END   Custom   *******************************************"))
+call writeLog(build2("************************************************************"))
+
+#exit_script
+call exitScript(null)
+call echorecord(t_rec)
+call echorecord(code_values)
+call echorecord(program_log)
+
+
+end
+go

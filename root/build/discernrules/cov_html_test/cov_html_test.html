@@ -1,0 +1,146 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+ <html>
+ <head>
+ <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+ <title>Covenant HTML Testing</title>
+ <script language="javascript">
+ 
+function initPage(){
+ 
+	var driveLocation = "F:\\";
+	var folderName = "cov_test_html";
+ 
+	var folder = createFolder(driveLocation,folderName);
+ 
+ 
+	document.getElementById('spFolderLoc').innerHTML = "<a target='_blank' title='Open' href='" + driveLocation + "'>Open</a>";
+};
+ 
+function createFolder(driveLocation, folderName) {
+	var WshShell = new ActiveXObject("WScript.Shell");
+	var fileSystemObject = new ActiveXObject("Scripting.FileSystemObject");
+	/*
+	driveLocation += "\\" + folderName;
+ 
+	var folderArray = driveLocation.split("\\");
+ 
+	/* The beginning of the drive location may be different depending on
+	the string passed in for parsing.  If we have a C:\ kind of string, then
+	we do not need to adjust our start.  If we have a \\gmfileshare01\ kind
+	of string, then we need to bump our iterator up two notches so as to
+	capture gmfileshare01 as the actual drive. */ /*
+	if (driveLocation.substr(0, 2) == "\\\\") {
+		var folderLocation = "\\\\" + folderArray[2];
+		var folderStart = 3;
+	} else {
+		var folderLocation = folderArray[0];
+		var folderStart = 1;
+	}
+	for (var folder = folderStart; folder < folderArray.length; folder++) {
+		if (folderArray[folder] != "") {
+			folderLocation += "\\" + folderArray[folder];
+			if (!fileSystemObject.FolderExists(folderLocation)) {
+				fileSystemObject.CreateFolder(folderLocation);
+			}
+		}
+	}
+	*/
+	return fileSystemObject;
+}
+ </script>
+ <style>
+ table {
+     border-collapse:collapse;
+     empty-cells:     show;
+     border:         0.000in none #000000;
+ }
+ 
+ .Header {
+     border-width:     0.014in;
+     border-color:     #444444;
+     border-style:     none none none none;
+     padding:         0.000in 0.0200in 0.000in 0.0200in;
+     font:             bold 12pt Helvetica;
+     color:             Green;
+     text-align:     left;
+     vertical-align: middle;
+ }
+ 
+ .OptionBtnHdr{
+     border-width:     0.00in;
+     border-color:     #FFFFFF;
+     border-style:     none none none none;
+     padding:         0.000in 0.0200in 0.000in 0.0200in;
+     font:             bold 8pt Helvetica;
+     color:             Black;
+     text-align:     left;
+     vertical-align: middle;
+ }
+ .FieldName000 {
+     border-width:     0.014in;
+     border-color:     #CCCCFF;
+     border-style:     none none solid none;
+     padding:         0.000in 0.000in 0.000in 0.100in;
+     font:             bold 10pt Helvetica;
+     color:             #000000;
+     text-align:     left;
+     vertical-align: middle;
+ }
+ .FieldName001 {
+     border-width:     0.00in;
+     border-color:     #FFFFFF;
+     border-style:     none none none none;
+     padding:         0.000in 0.000in 0.000in 0.1800in;
+     font:             9pt Helvetica;
+     color:             #000000;
+     text-align:     left;
+     vertical-align: middle;
+ }
+ .RowTypeLine{
+     border-width:     0.014in;
+     border-color:     #666699;
+     border-style:     solid none none none;
+     padding:         0.000in 0.000in 0.000in 0.200in;
+     font:             8pt Helvetica;
+     color:             #000000;
+     text-align:     left;
+     vertical-align: middle;
+ }
+ .divClass{
+     overflow:        auto;
+     position:        absolute;
+     width:            1600px;
+ }
+ .tbl {
+     border-width:     0.014in;
+     border-color:     #666699;
+     border-style:     solid solid solid solid;
+ }
+ .alternateRow { background-color: #E8E8F3; }
+ 
+ </style>
+ </head>
+ <body onload='javascript:initPage();'>
+     <table width='100%' id='hdrTable' colspan='1'>
+         <tr>
+             <!--td id="title" width='100.000%' class='Header' colspan='1'><script>getTableTitle();</script></td-->
+         </tr>
+         <tr>
+             <td width='100.000%' class='RowTypeLine' colspan='1'><br></td>
+         </tr>
+         <tr>
+             <td>
+                 <span id='spFileList'></span>
+             </td>
+         </tr>
+         <tr>
+             <td width='100.000%' class='FieldName001' colspan='1'><br></td>
+         </tr>
+         <tr>
+             <td>
+                 <span id='spFolderLoc'></span>
+             </td>
+         </tr>
+     </table>
+ </body>
+ </html>

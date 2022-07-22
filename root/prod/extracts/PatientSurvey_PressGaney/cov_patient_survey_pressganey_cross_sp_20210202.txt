@@ -1,0 +1,183 @@
+ALTER PROCEDURE [dbo].[cov_patient_survey_pressganey_cross_sp]                                                                            
+--------------------------------------------------------------------------------------------                                                                          
+-- Author: Dawn Greer, DBA                                                                        
+-- Create date: 9/26/2018                                                                  
+--                                                                 
+-- Procedure Name: cov_patient_survey_pressganey_cross_sp                                                                       
+-- Description: Pull information from NextGen to                                                                         
+--  send patient surveys to Press Ganey to                                                                         
+--  process.                                                                        
+                                                                            
+-- Modifications:                                                                            
+--  11/06/2018 - DG - Deceased_Flag logic was wrong so it's been updated    
+--  5/6/2019 - DG - Added a process to be able to exclude providers  
+--  2/7/2020 - DG - No longer needed since patients are in Covenant NextGen
+
+-- Execute Example:                                                                    
+--  exec cov_patient_survey_pressganey_cross_sp                                                  
+----------------------------------------------------------------------------------------------                                                                   
+AS                                                                            
+BEGIN                                                                            
+-- SET NOCOUNT ON added to prevent extra result sets from                                                                            
+ -- interfering with SELECT statements.                                                                            
+ SET NOCOUNT ON;                                                                            
+                                                                            
+DECLARE @dy INT,                                                                            
+  @sd VARCHAR(10),                        
+  @ed VARCHAR(10)                                                                             
+  SET @dy = DATEPART(WEEKDAY, GETDATE()-1)                                                                             
+                                                      
+  IF @dy = 2                                                                             
+   BEGIN                                                                             
+    SET @sd = CONVERT(VARCHAR, DATEADD(dd, -14, GETDATE()), 112)                                                                             
+    SET @ed = CONVERT(VARCHAR, DATEADD(dd, -8, GETDATE()), 112)                                                                             
+   END                                                                             
+  IF @dy = 3                                
+   BEGIN                                                                             
+    SET @sd = CONVERT(VARCHAR, DATEADD(dd, -15, GETDATE()), 112)                                                                             
+    SET @ed = CONVERT(VARCHAR, DATEADD(dd, -9, GETDATE()), 112)                                                         
+   END                                                                             
+  IF @dy = 4                                                                             
+   BEGIN                                                                             
+    SET @sd = CONVERT(VARCHAR, DATEADD(dd, -16, GETDATE()), 112)                                                                             
+    SET @ed = CONVERT(VARCHAR, DATEADD(dd, -10, GETDATE()), 112)                                          
+   END               
+  IF @dy = 5                                                  
+   BEGIN            
+    SET @sd = CONVERT(VARCHAR, DATEADD(dd, -17, GETDATE()), 112)                                                               
+    SET @ed = CONVERT(VARCHAR, DATEADD(dd, -11, GETDATE()), 112)                      
+   END                                                                             
+  IF @dy = 6                                                                             
+   BEGIN                                          
+    SET @sd = CONVERT(VARCHAR, DATEADD(dd, -18, GETDATE()), 112)                                                                             
+    SET @ed = CONVERT(VARCHAR, DATEADD(dd, -12, GETDATE()), 112)                                                                             
+   END                                                                             
+  IF @dy = 7                                                                             
+   BEGIN                                                           
+    SET @sd = CONVERT(VARCHAR, DATEADD(dd, -19, GETDATE()), 112)                                                                             
+    SET @ed = CONVERT(VARCHAR, DATEADD(dd, -13, GETDATE()), 112)                                                                             
+   END                                                                             
+  IF @dy = 1                                                                             
+   BEGIN                                                                             
+    SET @sd = CONVERT(VARCHAR, DATEADD(dd, -20, GETDATE()), 112)                                                                             
+    SET @ed = CONVERT(VARCHAR, DATEADD(dd, -14, GETDATE()), 112)                                                  
+   END                                                                                
+                                                                 
+SELECT DISTINCT 'MD0101' AS Survey_Designator,            
+'31668' AS Client_ID,            
+ISNULL(p.last_name,'') AS Last_Name,                                                                      
+ISNULL(SUBSTRING(p.middle_name,1,1),'') AS Middle_Initial,                                 
+ISNULL(p.first_name,'') AS First_Name,                                                                       
+ISNULL(p.address_line_1,'') AS Address_1,                                                                        
+ISNULL(p.address_line_2,'') AS Address_2,                                                                        
+ISNULL(p.city,'') AS City,                                                                        
+ISNULL(RTRIM(LTRIM(p.state)),'') AS State,                                                                        
+CASE WHEN LEN(p.zip) > 5 THEN SUBSTRING(p.zip,1,5) + '-' + SUBSTRING(p.zip,6,LEN(p.zip))                                                                        
+ ELSE ISNULL(p.zip,'') END AS Zip_Code,                                                                        
+CASE WHEN p.home_phone LIKE '%^MOBILE%' THEN ''       
+ WHEN p.home_phone LIKE '%NONE%' THEN ''      
+ WHEN LEN(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(p.home_phone,'(',''),')',''),'-',''),' ',''),'\',''),'/','')) < 10 THEN ''      
+ WHEN REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(p.home_phone,'(',''),')',''),'-',''),' ',''),'\',''),'/','') = '9999999999' THEN ''      
+ WHEN REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(p.home_phone,'(',''),')',''),'-',''),' ',''),'\',''),'/','') = '0000000000' THEN ''      
+ ELSE ISNULL(SUBSTRING(ISNULL(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(p.home_phone,'(',''),')',''),'-',''),' ',''),'\',''),'/',''),''),1,10),'') END AS Telephone_Number,           
+CASE WHEN p.cell_phone LIKE '%^MOBILE%' THEN ''        
+ WHEN p.cell_phone LIKE '%NONE%' THEN ''    
+ WHEN LEN(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(p.cell_phone,'(',''),')',''),'-',''),' ',''),'\',''),'/','')) < 10 THEN ''      
+ WHEN REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(p.cell_phone,'(',''),')',''),'-',''),' ',''),'\',''),'/','') = '9999999999' THEN ''       
+ WHEN REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(p.cell_phone,'(',''),')',''),'-',''),' ',''),'\',''),'/','') = '0000000000' THEN ''       
+ ELSE ISNULL(SUBSTRING(ISNULL(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(p.cell_phone,'(',''),')',''),'-',''),' ',''),'\',''),'/',''),''),1,10),'') END AS Mobile_Number,        
+'' AS MS_DRG,            
+CASE WHEN p.sex = 'M' THEN '1'                                                        
+ WHEN p.sex = 'F' THEN '2'                                                                        
+ ELSE 'M' END AS Gender,             
+mlrace.mstr_list_item_desc AS Race,            
+REPLACE(CONVERT(VARCHAR(10),CONVERT(DATE,p.date_of_birth),101),'/','') AS Date_of_Birth,                                                                        
+'0' AS Language,  --English for all at this time               
+'Cross-' + ISNULL(RTRIM(LTRIM(p.person_nbr)),'') AS Medical_Record_Number,                                                                        
+ISNULL(pe.practice_id,'') + '-' + ISNULL(CAST(pe.enc_nbr AS VARCHAR),'') AS Unique_ID,                                                     
+'CMG' AS Location_Code,                                                                   
+ISNULL(pr.practice_name,'') AS Location_Name,                                                    
+ISNULL(pm.national_provider_id,'') AS Attending_Physician_NPI,            
+ISNULL(pm.first_name,'') + ' ' + ISNULL(SUBSTRING(pm.middle_name,1,1),'') + ' ' + ISNULL(pm.last_name,'') + ' ' +             
+ CASE WHEN CHARINDEX(' ',pm.degree) > 0 THEN ISNULL(SUBSTRING(pm.degree,1,CHARINDEX(' ',pm.degree)-1),'')                                                     
+ ELSE ISNULL(pm.degree,'') END AS Attending_Physician_Name,            
+CASE WHEN pm.degree LIKE 'NP%' THEN 'Nurse Practitioner'            
+ WHEN pm.degree LIKE 'PA%' THEN 'Physician Assistant'            
+ ELSE 'Physician' END AS Provider_Type,            
+ISNULL(sm1.description,'') AS Provider_Specialty,            
+ISNULL(lm.address_line_1,'') AS Site_Address_1,            
+ISNULL(lm.address_line_2,'') AS Site_Address_2,            
+ISNULL(lm.city,'') AS Site_City,            
+ISNULL(lm.state,'') AS Site_State,        
+CASE WHEN LEN(lm.zip) > 5 THEN SUBSTRING(lm.zip,1,5) + '-' + SUBSTRING(lm.zip,6,LEN(lm.zip))                                                                        
+ ELSE ISNULL(lm.zip,'') END AS Site_Zip,             
+'9' AS Patient_Admission_Source,                                                                        
+REPLACE(CONVERT(VARCHAR(10),CONVERT(DATE,pe.enc_timestamp),101),'/','') AS Visit_Admit_Date,               
+CONVERT(VARCHAR(10),pe.enc_timestamp,108) AS Visit_Admit_Time,            
+REPLACE(CONVERT(VARCHAR(10),CONVERT(DATE,pe.enc_timestamp),101),'/','') AS Discharge_Date,               
+CONVERT(VARCHAR(10),pe.enc_timestamp,108) AS Discharge_Time,            
+'01' AS Patient_Discharge_Status,            
+'' AS Unit,            
+'' AS Service,            
+ISNULL(sm1.description,'') AS Specialty,            
+ISNULL(pay.payer_name,'') + ' ' + ISNULL(pay.Financial_Class,'') AS Payor_Insurance_Fin_Class,             
+'' AS Length_of_Stay,            
+'' AS Room,            
+'' AS Bed,            
+'2' AS Hospitalist,            
+'' AS Fast_Track_Acute_Flag,            
+CASE WHEN p.email_address = 'NONE' THEN ''                        
+ WHEN p.email_address NOT LIKE '%@%' THEN ''             
+ WHEN p.email_address LIKE '%@.com%' THEN ''                       
+ WHEN p.email_address LIKE '%refused%' THEN ''                        
+ ELSE ISNULL(p.email_address,'') END AS Email,            
+'' AS Hospitalist_1,            
+'' AS Hospitalist_2,            
+'' AS ER_Admit,            
+'' AS Other_Diagnosis_or_Procedure_Code,            
+'' AS Procedure_Code_1,            
+'' AS Procedure_Code_2,            
+'' AS Procedure_Code_3,            
+'' AS Procedure_Code_4,            
+'' AS Procedure_Code_5,            
+'' AS Procedure_Code_6,            
+CASE WHEN (p.expired_date IS NOT NULL AND p.expired_date <> '') OR p.expired_ind = 'Y' THEN 'Y' ELSE 'N' END AS Deceased_Flag,            
+'' AS No_Publicity_Flag,            
+'' AS State_Regulation_Flag,            
+'' AS Newborn_Patient,            
+'' AS Transferred_Admitted_To_Inpatient,            
+'$' AS EOR_Indicator                                          
+FROM CMGREPORTDB1.NGPROD.dbo.charges c (NOLOCK) LEFT OUTER JOIN CMGREPORTDB1.NGPROD.dbo.sliding_fee_adjustment_log sfa (NOLOCK)                                               
+ ON c.charge_id = sfa.charge_id AND sfa.sliding_fee_action = 'O'                                                                
+JOIN CMGREPORTDB1.NGPROD.dbo.patient_encounter pe (NOLOCK) ON c.source_id = pe.enc_id AND c.source_type = 'V' AND pe.practice_id = c.practice_id                     
+ AND pe.billable_ind = 'Y'                              
+JOIN CMGREPORTDB1.NGPROD.dbo.cov_patient_lists_vw p (NOLOCK) ON pe.person_id = p.person_id                                                                
+JOIN CMGREPORTDB1.NGPROD.dbo.patient pa (NOLOCK) ON pa.person_id = pe.person_id AND pe.practice_id = pa.practice_id                                                                
+JOIN CMGREPORTDB1.NGPROD.dbo.location_mstr lm (NOLOCK) ON lm.location_id = c.location_id AND lm.delete_ind = 'N'                                                                  
+JOIN CMGREPORTDB1.NGPROD.dbo.practice pr (NOLOCK) ON c.practice_id = pr.practice_id AND pr.delete_ind = 'N'                                                                
+JOIN CMGREPORTDB1.NGPROD.dbo.provider_mstr pm (NOLOCK) ON c.rendering_id = pm.provider_id AND pm.delete_ind = 'N'                                                                
+LEFT JOIN CMGREPORTDB1.NGPROD.dbo.mstr_lists mlloc (NOLOCK) ON pm.provider_subgrouping2_id  = mlloc.mstr_list_item_id                                               
+ AND mlloc.mstr_list_type = 'provider_subgrouping' AND mlloc.delete_ind = 'N'                                                                
+LEFT JOIN CMGREPORTDB1.NGPROD.dbo.person guar (NOLOCK) ON pe.guar_id = guar.person_id AND pe.guar_type = 'P'                  
+LEFT JOIN CMGREPORTDB1.NGPROD.dbo.employer_mstr guar_emp (NOLOCK) ON pe.guar_id = guar_emp.employer_id AND pe.guar_type = 'E'                 
+LEFT JOIN Cov_NextGen_Integration..cov_NextGen_Patient_Ins_Payers_Crossville_vw pay (NOLOCK) ON                  
+ pe.enc_id = ISNULL(pay.enc_id,'00000000-0000-0000-0000-000000000000') AND pay.cob = 1                                                                
+LEFT JOIN CMGREPORTDB1.NGPROD.dbo.specialty_mstr sm1 (NOLOCK) ON pm.specialty_code_1 = sm1.specialty_code                                                                
+LEFT JOIN CMGREPORTDB1.NGPROD.dbo.mstr_lists mllang (NOLOCK) ON mllang.mstr_list_item_id = p.language_id                                               
+ AND mllang.mstr_list_type = 'language' AND mllang.delete_ind = 'N'                                                                                       
+LEFT JOIN CMGREPORTDB1.NGPROD.dbo.person_race_xref prx (NOLOCK) ON p.person_id = prx.person_id AND prx.race_order = 1                                                                
+LEFT JOIN CMGREPORTDB1.NGPROD.dbo.mstr_lists mlrace (NOLOCK) ON mlrace.mstr_list_item_id = prx.race_Item_id                            
+ AND mlrace.mstr_list_type = 'race' AND mlrace.delete_ind = 'N'                                                                
+LEFT JOIN CMGREPORTDB1.NGPROD.dbo.mstr_lists mlethnicity (NOLOCK) ON mlethnicity.mstr_list_item_id = p.ethnicity_id                                               
+ AND mlethnicity.mstr_list_type = 'ethnicity' AND mlethnicity.delete_ind = 'N'                               
+JOIN CMGREPORTDB1.NGPROD.dbo.service_item_mstr sim (NOLOCK) ON c.service_item_id = sim.service_item_id                                                                
+ AND sim.service_item_lib_id IN (SELECT lm.library_id FROM CMGREPORTDB1.NGPROD.dbo.library_mstr lm (NOLOCK) WHERE lm.delete_ind = 'N'                              
+    AND lm.library_type = 'SI' AND lm.description LIKE '%Service Item%')                                                                
+JOIN CMGREPORTDB1.NGPROD.dbo.mstr_lists mldept (NOLOCK) ON mldept.mstr_list_item_id = sim.department                                               
+ AND mldept.mstr_list_type = 'department' AND mldept.delete_ind = 'N'                                                                                                                                  
+WHERE mldept.mstr_list_item_desc IN ('Established Visits','New Office Visits','21 OFFICE VISITS','Office Visit')                                        
+AND pm.national_provider_id NOT IN (SELECT prov_npi FROM cov_nextgen_PG_Exclusions)  
+AND c.begin_date_of_service >= @sd                                                  
+AND c.begin_date_of_service <= @ed                                                                             
+ORDER BY Location_Name, Last_Name, First_Name, Unique_ID                                                                        
+END 

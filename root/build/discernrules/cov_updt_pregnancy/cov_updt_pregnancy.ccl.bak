@@ -1,0 +1,23 @@
+select * from code_value cv where cv.code_value=15783919
+select * from pregnancy_instance pi order by pi.updt_dt_tm desc go
+select uar_get_code_display(per.component_type_cd),
+	* from pregnancy_entity_r per go
+	
+select * from pregnancy_instance pi where pi.active_ind in(0,1) and pi.person_id = 18009997
+order by pi.updt_dt_tm desc go
+
+delete from pregnancy_instance where pregnancy_instance_id in(         149310256.00,
+         149310253.00,
+         149310250.00,
+         149310247.00,
+         149302147.00) go
+
+select p.annotated_display,* from problem p where p.person_id=18009997 order by p.annotated_display
+
+select * from nomenclature n where n.nomenclature_id =      7777483.00
+
+delete from problem where problem_instance_id in(       120371439.00,
+       120371431.00,
+       120368223.00,
+       120371445.00,
+       120371453.00) go

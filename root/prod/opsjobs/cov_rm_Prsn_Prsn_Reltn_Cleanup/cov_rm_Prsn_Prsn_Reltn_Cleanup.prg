@@ -1,0 +1,137 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Todd A. Blanchard
+	Date Written:		04/29/2022
+	Solution:			Revenue Cycle - Registration Management
+	Source file name:	cov_rm_Person_Person_Reltn_Cleanup.prg
+	Object name:		cov_rm_Person_Person_Reltn_Cleanup
+	Request #:			12040
+ 
+	Program purpose:	Inactivates invalid freetext records in table PERSON_PERSON_RELTN.
+ 
+	Executing from:		Ops Job
+ 
+ 	Special Notes:		3206_Freetext Family Member Relationships - WI
+ 	
+ 						Adapted from Cerner program audit_3206.
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+ 	Mod Date	Developer				Comment
+ 	----------	--------------------	--------------------------------------
+ 
+******************************************************************************/
+ 
+drop program cov_rm_Prsn_Prsn_Reltn_Cleanup:DBA go
+create program cov_rm_Prsn_Prsn_Reltn_Cleanup:DBA
+
+
+/**************************************************************
+; DVDev DECLARED SUBROUTINES
+**************************************************************/
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/ 
+
+declare count			= i4 with protect, noconstant(0)
+declare iExit			= i2 with protect, noconstant(0)
+declare x				= i4 with protect, noconstant(0)
+declare TotalCnt		= i4 with protect, noconstant(0)
+ 
+declare dFreetextCd		= f8 with noconstant(uar_get_code_by("MEANING", 302, "FREETEXT"))
+declare dFamilyCd		= f8 with noconstant(uar_get_code_by("MEANING", 351, "FAMILY"))
+
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+
+free record items
+record items
+(
+   1 list[*]
+     2 Id= f8
+)
+
+
+; process data
+while(iExit = 0)
+    ;populate the record structure
+    set count = 0
+    set stat = alterlist(items->list,0)
+    
+    select into 'NL:'
+    from
+    	PERSON_PERSON_RELTN ppr
+    	, PERSON p
+    where
+	    p.person_id = ppr.related_person_id
+	    and ppr.person_reltn_type_cd = dFamilyCd
+	    and p.person_type_cd = dFreetextCd
+	    and p.ft_entity_id > 0
+	    and p.active_ind = 1
+	    and ppr.active_ind = 1
+	    and ppr.beg_effective_dt_tm < sysdate
+	    and ppr.end_effective_dt_tm > sysdate
+    order by 
+    	ppr.person_person_reltn_id
+    
+    head ppr.person_person_reltn_id
+        count = count+1
+        
+        if (mod(count,5000) = 1)
+            stat = alterlist(items->list,count+4999)
+        endif
+        
+        items->list[count]->Id = ppr.person_person_reltn_id
+    with nocounter, maxrec = 5000
+ 
+    if(curqual = 0)
+        set iExit = 1
+    endif
+ 
+    ;update the records
+    for(x = 1 to count)
+        update into PERSON_PERSON_RELTN
+        set 
+        	active_ind = 0
+	        , active_status_cd = reqdata->inactive_status_cd
+	        , active_status_dt_tm = sysdate
+	        , updt_dt_tm = sysdate
+	        , updt_id = reqinfo->updt_id
+	        , updt_task  = -3206
+        where 
+        	person_person_reltn_id = items->list[x]->Id
+         
+        set TotalCnt = TotalCnt + 1
+        
+        commit
+    
+        call echo(build('Update Count: Completed ', x, ' of ', count))
+        call echo(build('Total Updated: ', TotalCnt))
+    endfor
+    
+    call echo(build("Exit: ",iExit))
+endwhile
+
+
+if (validate(request->batch_selection) = 1)
+	set reply->status_data.status = "S"
+endif
+
+ 
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+
+;#exitscript
+ 
+end
+go
+

@@ -1,0 +1,240 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+	Author:				Chad Cummings
+	Date Written:		03/30/2020
+	Solution:			
+	Source file name:	cov_custom_cve_insert.prg
+	Object name:		cov_custom_cve_insert
+	Request #:
+
+	Program purpose:
+
+	Executing from:		CCL
+
+ 	Special Notes:		Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod 	Mod Date	  Developer				      Comment
+--- 	----------	--------------------	----------------------------------
+000 	03/30/2020  Chad Cummings			Initial Release
+******************************************************************************/
+
+drop program cov_custom_cve_insert:dba go
+create program cov_custom_cve_insert:dba
+
+prompt 
+	"Output to File/Printer/MINE" = "MINE"
+	, "Code Set" = 0
+	, "CODE_VALUE" = 0
+	, "FIELD_NAME" = ""
+	, "FIELD_VALUE" = "" 
+
+with OUTDEV, CODE_SET, CODE_VALUE, FIELD_NAME, FIELD_VALUE
+
+/*
+<appid>4170105</appid>
+       <taskid>4170151</taskid>
+<deststepid>4171666</deststepid>
+    </input>
+    <properties>
+       <propList>
+          <propName>Crm.LogLevel</propName>
+          <propValue>4</propValue>
+       </propList>
+       <propList>
+          <propName>Cpm.RequestName</propName>
+          <propValue>core_ens_cd_value_ext</propValue>
+
+
+<extension_list>
+       <action_type_flag>1</action_type_flag>
+       <code_set>100498</code_set>
+       <code_value>3153968377</code_value>
+       <field_name>CATEGORY</field_name>
+       <field_type>2</field_type>
+       <field_value>drug</field_value>
+    </extension_list>
+*/
+
+call echo(build("loading script:",curprog))
+set nologvar = 1	;do not create log = 1		, create log = 0
+set noaudvar = 1	;do not create audit = 1	, create audit = 0
+%i ccluserdir:cov_custom_ccl_common.inc
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom Section  ************************************"))
+
+if (not(validate(reply,0)))
+record  reply
+(
+	1 text = vc
+	1 status_data
+	 2 status = c1
+	 2 subeventstatus[1]
+	  3 operationname = c15
+	  3 operationstatus = c1
+	  3 targetobjectname = c15
+	  3 targetobjectvalue = c100
+)
+endif
+
+free record 4171666req
+record 4171666req (
+  1 extension_list [*]   
+    2 action_type_flag = i2   
+    2 code_set = i4   
+    2 code_value = f8   
+    2 field_name = vc  
+    2 field_type = i4   
+    2 field_value = vc  
+) 
+
+set reply->status_data.status = "F"
+
+call set_codevalues(null)
+call check_ops(null)
+
+free set t_rec
+record t_rec
+(
+	1 cnt			= i4
+	1 code_set		= i4
+	1 code_value	= f8
+	1 display		= vc
+	1 description	= vc
+	1 definition	= vc
+	1 field_name	= vc
+	1 field_value	= vc
+	1 exist_ind		= i2
+)
+
+set t_rec->code_set 	= $CODE_SET
+set t_rec->code_value 	= $CODE_VALUE
+set t_rec->field_name 	= $FIELD_NAME
+set t_rec->field_value 	= $FIELD_VALUE
+
+if (t_rec->code_set <= 0)
+	set reply->status_data.status = "Z"
+	set reply->status_data.subeventstatus.operationname = "CODE_SET"
+	set reply->status_data.subeventstatus.operationstatus = "Z"
+	set reply->status_data.subeventstatus.targetobjectname = "CODE_SET"
+	set reply->status_data.subeventstatus.targetobjectvalue = "Value from prompt is empty"
+	go to exit_script
+endif
+
+if (t_rec->code_value <= 0)
+	set reply->status_data.status = "Z"
+	set reply->status_data.subeventstatus.operationname = "CODE_VALUE"
+	set reply->status_data.subeventstatus.operationstatus = "Z"
+	set reply->status_data.subeventstatus.targetobjectname = "CODE_VALUE"
+	set reply->status_data.subeventstatus.targetobjectvalue = "Value from prompt is empty"
+	go to exit_script
+endif
+
+
+if (t_rec->field_name = " ")
+	set reply->status_data.status = "Z"
+	set reply->status_data.subeventstatus.operationname = "FIELD_NAME"
+	set reply->status_data.subeventstatus.operationstatus = "Z"
+	set reply->status_data.subeventstatus.targetobjectname = "FIELD_NAME"
+	set reply->status_data.subeventstatus.targetobjectvalue = "Value from prompt is empty"
+	go to exit_script
+endif
+
+if (t_rec->field_value = " ")
+	set reply->status_data.status = "Z"
+	set reply->status_data.subeventstatus.operationname = "FIELD_VALUE"
+	set reply->status_data.subeventstatus.operationstatus = "Z"
+	set reply->status_data.subeventstatus.targetobjectname = "FIELD_VALUE"
+	set reply->status_data.subeventstatus.targetobjectvalue = "Value from prompt is empty"
+	go to exit_script
+endif
+
+
+
+;call addEmailLog("chad.cummings@covhlth.com")
+
+call writeLog(build2("* END   Custom Section  ************************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Getting Code Value   *******************************"))
+select into "nl:"
+from
+	 code_value cv
+	,code_value_extension cve
+	,(dummyt d1)
+plan cv
+	where cv.code_set = t_rec->code_set
+	and   cv.code_value = t_rec->code_value
+join d1
+join cve	
+	where cve.code_value = cv.code_value
+	and   cve.field_name = t_rec->field_name
+order by
+	cv.code_value
+head report
+	row +0
+head cv.code_value
+	t_rec->definition = cv.definition
+	t_rec->description = cv.description
+	t_rec->display = cv.display
+	if (cve.field_value > " ")
+		t_rec->exist_ind = 1
+	endif
+with nocounter,outerjoin=d1
+call writeLog(build2("* END   Getting Code Value *********************************"))
+call writeLog(build2("************************************************************"))
+
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Getting Code Value   *******************************"))
+if (t_rec->exist_ind = 0)
+	set stat = initrec(4171666req)
+	set stat = alterlist(4171666req->extension_list,1)
+	set 4171666req->extension_list[1].action_type_flag	= 1
+	set 4171666req->extension_list[1].code_set			= t_rec->code_set
+	set 4171666req->extension_list[1].code_value		= t_rec->code_value
+	set 4171666req->extension_list[1].field_name		= t_rec->field_name
+	set 4171666req->extension_list[1].field_type		= 2
+	set 4171666req->extension_list[1].field_value		= t_rec->field_value
+	
+	set stat = tdbexecute(4170105,4170151,4171666,"REC",4171666req,"REC",4171666rep) 
+	/*
+	<extension_list>
+       <action_type_flag>1</action_type_flag>
+       <code_set>100498</code_set>
+       <code_value>3153968377</code_value>
+       <field_name>CATEGORY</field_name>
+       <field_type>2</field_type>
+       <field_value>drug</field_value>
+    </extension_list>
+    */
+else
+	set reply->status_data.status = "Z"
+	set reply->status_data.subeventstatus.operationname = "FIELD_VALUE"
+	set reply->status_data.subeventstatus.operationstatus = "Z"
+	set reply->status_data.subeventstatus.targetobjectname = "FIELD_VALUE"
+	set reply->status_data.subeventstatus.targetobjectvalue = "Value already exists"
+	go to exit_script
+endif
+call writeLog(build2("* END   Getting Code Value *********************************"))
+call writeLog(build2("************************************************************"))
+
+set reply->status_data.status = "S"
+
+#exit_script
+call exitScript(null)
+call echorecord(t_rec)
+call echorecord(code_values)
+call echorecord(program_log)
+
+
+end
+go

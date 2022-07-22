@@ -1,0 +1,36 @@
+<REPORTLAYOUT name="cov_phq_lwbs_metrics" group="0" orientation="1" outputtype="1" printhead="0" intermecprinthead="0" unittype="0" pageheight="11" pagewidth="8.5" leftmargin="0.5" rightmargin="0.5" topmargin="0.5" bottommargin="0.5" destination="0" severity="1" i18nenabledliterals="0" htmltable="0" locked="0" subreport="0" version="1" timestamp="43360.4395833333" xmlversion="6" programhasprompts="1" executingprogram="" tableview="0" tableborderwidth="0.014" tablebordercolor="0" tablecolumndefault="1" tablebackcolor="16777215" tablebackmode="0" fileversion="2018.7.1.70"><RPTDESCRIPTION><![CDATA[]]></RPTDESCRIPTION><RPTSPOOLWITHOPTIONS><![CDATA[deleted,DIO=value(_DIOTYPE)]]></RPTSPOOLWITHOPTIONS><RPTLAYOUT name="DetailSection" height="1" order="0" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="DetailSection" left="0.271" top="0.49" width="11.001" height="1" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/></RPTLAYOUT><RPTDRIVER name="cov_phq_lwbs_metrics" params="'NL:',$quarter, $year_prmt"/><RPTRECORD><![CDATA[record lwbs (
+  1 plist [*]  
+    2 facility_cd = f8   
+    2 facility = vc   
+    2 ed_group = vc   
+    2 encntrid = f8   
+    2 age = vc   
+    2 adult_flag = i4   
+    2 pedi_flag = i4   
+    2 lwbs_flag = i4   
+    2 chkout_dispo_cd = f8   
+    2 disposition = vc   
+    2 nomen_id = f8   
+    2 discharge_to = vc   
+    2 triage_flag = i4   
+    2 mmc_lws_tot = i4   
+) 
+]]></RPTRECORD><RPTRECORD><![CDATA[record metrics (
+  1 list [*]  
+    2 facility_cd = f8   
+    2 facility = vc   
+    2 total_patients = i4   
+    2 adlt_denominator = i4   
+    2 pedi_denominator = i4   
+    2 lwbs_adlt_numarator = i4   
+    2 lwbs_pedi_numarator = i4   
+    2 lwbs_adlt_rate = f8   
+    2 lwbs_pedi_rate = f8   
+    2 lwt_adlt_numarator = i4   
+    2 lwt_pedi_numarator = i4   
+    2 lwt_adlt_rate = f8   
+    2 lwt_pedi_rate = f8   
+    2 lwbs_rate = f8   
+    2 lwt_rate = f8   
+) 
+]]></RPTRECORD><RPTHEADERS/></REPORTLAYOUT>

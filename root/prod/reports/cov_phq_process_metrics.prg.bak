@@ -1,0 +1,545 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 	Author:			Geetha Paramasivam
+	Date Written:		Oct'2021
+	Solution:			Quality
+	Source file name:  	cov_phq_process_metrics.prg
+	Object name:		cov_phq_process_metrics
+	Request#:			10021
+ 	Program purpose:	      Based on Med Rec activity
+	Executing from:		DA2
+  	Special Notes:
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+Mod Date	Developer	     Comment
+------------------------------------------------------------------------------
+May'22 	Geetha	CR#10021  Initial Release
+******************************************************************************/
+ 
+ 
+drop program cov_phq_process_metrics:dba go
+create program cov_phq_process_metrics:dba
+ 
+prompt
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "Start Admit Date/Time" = "SYSDATE"
+	, "End Admit Date/Time" = "SYSDATE"
+	, "Select Facility" = 0
+	, "Select Metrics" = "Process"
+ 
+with OUTDEV, start_datetime, end_datetime, acute_facility_list, metric_type
+ 
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+declare cnt = i4 with noconstant(0)
+declare tp_pmcnt = i4 with noconstant(0)
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+ 
+Record pat(
+	1 rec_cnt = i4
+	1 list[*]
+		2 facility = vc
+		2 fin = vc
+		2 pat_name = vc
+		2 arrivedt = dq8
+		2 dischdt = dq8
+		2 personid = f8
+		2 encntrid = f8
+		2 least_med_doc_tm = dq8
+		2 least_med_doc_tm_cnt = i4
+		2 least_med_query_tm = dq8
+		2 least_admission_medrec_tm = dq8
+		2 hp_tm = dq8
+		2 pm_rec_cnt = i4
+		2 process[*]
+			3 pm1_orm_snapshot_id = f8
+			3 pm1_ext_rx_queried = vc
+			3 pm1_whom_pr = vc
+			3 pm1_pr_pos = vc
+			3 pm1_time_comple = vc
+			3 pm1_comp_before_meddoc = vc
+			3 pm2_medhist_doc = vc
+			3 pm2_whom_pr = vc
+			3 pm2_pr_pos = vc
+			3 pm2_medhist_doc_time = dq8
+			3 pm2_medhist_doc_time_vc = vc
+			3 pm2_admit_medrec_dt = dq8
+			3 pm2_hp_dt = dq8
+			3 pm2_comp_before_admit_medrec = vc
+			3 pm2_comp_before_hp = vc
+ 
+ 
+)
+ 
+/*
+Process Metric: 1) Y/N External Rx queried? If so, by whom/position/time completed/completed before meds were documented?
+Process Metric: 2) Y/N Med History documented? If so, by whom/position/time completed/completed before provider interacted with admission med rec and H&P
+Process Metric: 3) Y/N Admission History completed? If so, by whom/position/time completed
+Process Metric: 4) Admission PSO/Date/Time/By Whom/Position
+Process Metric: 7) Flag for Encounter if at least one medication has a drop down menu selection of "not taking" and the Provider stopped the med on Admission Med Rec
+Process Metric: 8) Y/N Discharge Med Rec completed? If so, by whom/position/time completed
+Process Metric: 12)Y/N Did someone other than the Attending update/touch the Discharge Med Rec AFTER the Attending completed the Discharge Med Rec
+			 and created the Discharge Summary? If so, by whom/position/time completed
+ 
+Outcome Metric: 5)  If possible, flag for encounter it at least one medication's order detail was continued on Admission Med Rec, but the order detail varies
+			  from what is documented in the Med History
+Outcome Metric: 6)  Flag for Encounter if at least one medication has a drop down menu selection of "not taking" and the Provider continued the med on Admission Med Rec
+Outcome Metric: 9)  If possible, flag for encounter it at least one medication's order detail was continued on Discharge Med Rec,
+			  but the order detail varies from what is documented in the Med History
+Outcome Metric: 10) Flag for Encounter if at least one medication has a drop down menu selection of "not taking" and the Provider continued the med on Discharge Med Rec
+Outcome Metric: 11) Flag for Encounter if at least one medication has a drop down menu selection of "not taking" and the Provider stopped the med on Discharge Med Rec
+Outcome Metric: 13) Leapfrog audit scores
+ 
+ 
+*/
+ 
+;-----------------------------------------------------------------------------------------------------------
+ 
+If($metric_type = 'Process')
+ 
+;---------------------------------------------------------------------------------------------
+;Patient pool
+ 
+select into $outdev
+e.encntr_id, e.person_id
+ 
+from encounter e
+	,encntr_alias ea
+	,person p
+ 
+plan e where e.loc_facility_cd = $acute_facility_list
+	and e.reg_dt_tm between cnvtdatetime($start_datetime) and cnvtdatetime($end_datetime)
+	and e.encntr_type_cd in(309308.00, 309312.00);Inpatient, Observation
+	and e.encntr_id != 0.0
+	and e.active_ind = 1
+ 
+join ea where ea.encntr_id = e.encntr_id
+	and ea.encntr_alias_type_cd = 1077
+	and ea.active_ind = 1
+ 
+join p where p.person_id = e.person_id
+	and p.active_ind = 1
+ 
+order by e.encntr_id
+ 
+Head report
+	cnt = 0
+Head e.encntr_id
+	cnt += 1
+	pat->rec_cnt = cnt
+      if (mod(cnt,10) = 1 or cnt = 1)
+		stat = alterlist(pat->list, cnt + 9)
+	endif
+	pat->list[cnt].facility = uar_get_code_display(e.loc_facility_cd)
+	pat->list[cnt].fin = ea.alias
+	pat->list[cnt].pat_name = p.name_full_formatted
+	pat->list[cnt].arrivedt = e.arrive_dt_tm
+	pat->list[cnt].dischdt = e.disch_dt_tm
+	pat->list[cnt].encntrid = e.encntr_id
+	pat->list[cnt].personid = e.person_id
+Foot report
+	stat = alterlist(pat->list, cnt)	
+with nocounter
+ 
+
+;---------------------------------------- Snapshot History --------------------------------------------------------------
+ 
+;Process Metric: 1
+;A)Y/N External Rx queried? If so, by whom/position/time completed
+;B)Completed before meds were documented? - (query below)
+ 
+;A) ============================================================================= 
+select into $outdev
+ 
+orh.encntr_id, orh.performed_dt_tm ';;q', pr.name_full_formatted
+ 
+from 	(dummyt   d1  with seq = size(pat->list, 5))
+	, orm_ord_hist_snapshot orh
+	, (left join prsnl pr on pr.person_id = orh.performed_person_id)
+
+plan d1
+
+join orh where orh.encntr_id = pat->list[d1.seq].encntrid
+	/*and orh.orm_ord_hist_snapshot_id = (select max(orh1.orm_ord_hist_snapshot_id) from orm_ord_hist_snapshot orh1
+							where orh1.encntr_id = orh.encntr_id
+							group by orh1.encntr_id)*/
+join pr
+ 
+order by orh.encntr_id, orh.orm_ord_hist_snapshot_id
+
+Head orh.encntr_id
+	idx = 0
+	icnt = 0
+      idx = locateval(icnt ,2 ,pat->rec_cnt , orh.encntr_id ,pat->list[icnt].encntrid)
+      pat->list[idx].least_med_query_tm = orh.performed_dt_tm
+      pmcnt = 0
+Head orh.orm_ord_hist_snapshot_id      
+     	pmcnt += 1
+	call alterlist(pat->list[idx].process, pmcnt)
+     	pat->list[idx].process[pmcnt].pm1_ext_rx_queried = 'Y'
+	pat->list[idx].process[pmcnt].pm1_whom_pr = pr.name_full_formatted
+	pat->list[idx].process[pmcnt].pm1_pr_pos = uar_get_code_display(pr.position_cd)
+	pat->list[idx].process[pmcnt].pm1_time_comple = format(orh.performed_dt_tm, 'mm/dd/yy hh:mm:ss ;;q')
+Foot orh.orm_ord_hist_snapshot_id
+	if(orh.performed_dt_tm < cnvtdatetime(pat->list[idx].least_med_query_tm))
+		pat->list[idx].least_med_query_tm = orh.performed_dt_tm
+	endif
+Foot orh.encntr_id
+	pat->list[idx].pm_rec_cnt = pmcnt
+
+with nocounter
+
+;----------------------------------------------------------------------------------------------------------------
+ 
+;Process Metric: 2) 
+;A)Y/N Med History documented? If so, by whom/position/time completed
+;B)Completed before provider interacted with admission med rec and 
+;C)H&P
+ 
+;A)================================================ 
+select into $outdev
+oc.encntr_id, oc.order_compliance_id, oc.performed_dt_tm ';;q', pr.name_full_formatted
+
+from 	(dummyt   d1  with seq = size(pat->list, 5))
+ 	, order_compliance oc
+	, (left join prsnl pr on pr.person_id = oc.performed_prsnl_id)
+ 
+plan d1 
+ 
+join oc where oc.encntr_id = pat->list[d1.seq].encntrid
+	and oc.encntr_compliance_status_flag = 0.00 ;Complete
+	/*and oc.order_compliance_id = (select max(oc1.order_compliance_id) from order_compliance oc1
+						where oc1.encntr_id = oc.encntr_id
+						and oc.encntr_compliance_status_flag = 0.00 ;Complete
+						group by oc1.encntr_id)*/
+join pr
+ 
+order by oc.encntr_id, oc.order_compliance_id
+
+Head oc.encntr_id
+	idx = 0
+	icnt = 0
+      idx = locateval(icnt ,2 ,pat->rec_cnt , oc.encntr_id ,pat->list[icnt].encntrid)
+      pmcnt = pat->list[idx].pm_rec_cnt
+	pat->list[idx].least_med_doc_tm = oc.performed_dt_tm
+	pat->list[idx].least_med_doc_tm_cnt = pmcnt+1
+Head oc.order_compliance_id      
+      pmcnt += 1
+	call alterlist(pat->list[idx].process, pmcnt)
+     	pat->list[idx].process[pmcnt].pm2_medhist_doc = 'Y'
+      pat->list[idx].process[pmcnt].pm2_whom_pr = pr.name_full_formatted
+      pat->list[idx].process[pmcnt].pm2_pr_pos = uar_get_code_display(pr.position_cd)
+     	pat->list[idx].process[pmcnt].pm2_medhist_doc_time = oc.performed_dt_tm
+     	pat->list[idx].process[pmcnt].pm2_medhist_doc_time_vc = format(oc.performed_dt_tm,'mm/dd/yy hh:mm:ss ;;q')
+Foot oc.order_compliance_id
+	if(oc.performed_dt_tm < cnvtdatetime(pat->list[idx].least_med_doc_tm))
+		pat->list[idx].least_med_doc_tm = oc.performed_dt_tm
+		pat->list[idx].least_med_doc_tm_cnt = pmcnt
+	endif
+Foot oc.encntr_id
+	pat->list[idx].pm_rec_cnt = pmcnt
+with nocounter 
+
+;========================================
+;B)Completed before provider interacted with admission med rec? 
+
+select into $outdev
+
+ ore.encntr_id, ore.recon_status_cd, ore.recon_type_flag, ore.performed_dt_tm
+
+from	(dummyt   d1  with seq = size(pat->list, 5))
+	,order_recon ore
+
+plan d1
+
+join ore where ore.encntr_id = pat->list[d1.seq].encntrid
+	;and not(ore.recon_status_cd in(31628373.00, 31628379.00)) ;Invalidated ;Not Started
+	and ore.recon_type_flag = 1 ;Admission
+	
+order by ore.encntr_id, ore.order_recon_id	
+
+Head ore.encntr_id
+	idx = 0
+	icnt = 0
+      idx = locateval(icnt ,2 ,pat->rec_cnt , ore.encntr_id ,pat->list[icnt].encntrid)
+      pat->list[idx].least_admission_medrec_tm = ore.performed_dt_tm
+Head ore.order_recon_id
+	null
+Foot ore.order_recon_id
+	if(ore.performed_dt_tm < cnvtdatetime(pat->list[idx].least_admission_medrec_tm))	
+		pat->list[idx].least_admission_medrec_tm = ore.performed_dt_tm
+	endif	
+with nocounter
+
+;-----------------------------
+
+select into $outdev
+
+ enc = pat->list[d1.seq].encntrid
+
+from	(dummyt   d1  with seq = size(pat->list, 5))
+	, (dummyt   d2  with seq = 1)
+
+plan d1 where maxrec(d2, size(pat->list[d1.seq].process, 5))
+join d2
+
+order by enc
+
+Head enc
+	idx = 0
+	icnt = 0
+      idx = locateval(icnt ,2 ,pat->rec_cnt , enc ,pat->list[icnt].encntrid)
+	pmcnt = pat->list[idx].pm_rec_cnt
+	pmcnt += 1
+	call alterlist(pat->list[idx].process, pmcnt)
+	pat->list[idx].process[pmcnt].pm2_admit_medrec_dt = pat->list[idx].least_admission_medrec_tm
+	if( cnvtdatetime(pat->list[idx].least_med_doc_tm) < cnvtdatetime(pat->list[idx].least_admission_medrec_tm)) 
+		pat->list[idx].process[pmcnt].pm2_comp_before_admit_medrec = 'Y' 
+	endif
+Foot enc
+	pat->list[idx].pm_rec_cnt = pmcnt	
+with nocounter
+	
+;===============================================
+;C)Med history completed before H&P ?
+
+select into $outdev
+
+from	(dummyt   d1  with seq = size(pat->list, 5))
+	,clinical_event ce
+	
+plan d1
+
+join ce where ce.encntr_id = pat->list[d1.seq].encntrid
+	and ce.event_cd = 3713594.00	;History and Physical
+	and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+	and ce.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
+	and ce.view_level = 1
+	
+order by ce.encntr_id, ce.event_id
+
+Head ce.encntr_id
+	idx = 0
+	icnt = 0
+      idx = locateval(icnt ,2 ,pat->rec_cnt , ce.encntr_id ,pat->list[icnt].encntrid)
+	pmcnt = pat->list[d1.seq].pm_rec_cnt
+	pat->list[idx].hp_tm = ce.event_end_dt_tm
+	pmcnt += 1
+	call alterlist(pat->list[idx].process, pmcnt)
+	pat->list[idx].process[pmcnt].pm2_hp_dt = ce.event_end_dt_tm
+Foot ce.encntr_id	
+	if(cnvtdatetime(pat->list[d1.seq].least_med_doc_tm) != null)
+	 if(cnvtdatetime(pat->list[d1.seq].least_med_doc_tm) < cnvtdatetime(pat->list[d1.seq].hp_tm)) 
+		pat->list[d1.seq].process[pmcnt].pm2_comp_before_hp = 'Y' 
+	 endif
+	endif 
+with nocounter
+	
+;-------------------------------------------------------------------------------------------------------
+
+;Process Metric: 1
+;A)Y/N External Rx queried? If so, by whom/position/time completed - (query on top)
+;B)Completed before meds were documented?
+
+;B) =================================== 
+
+select into $outdev
+
+ enc = pat->list[d1.seq].encntrid
+
+from	(dummyt   d1  with seq = size(pat->list, 5))
+	, (dummyt   d2  with seq = 1)
+
+plan d1 where maxrec(d2, size(pat->list[d1.seq].process, 5))
+join d2
+
+order by enc
+
+Head enc
+	if( cnvtdatetime(pat->list[d1.seq].least_med_query_tm) < cnvtdatetime(pat->list[d1.seq].least_med_doc_tm)) 
+		pat->list[d1.seq].process[d2.seq].pm1_comp_before_meddoc = 'Y' 
+	endif
+with nocounter
+ 
+;----------------------------------------------------------------------------------------------------------------
+
+;Process Metric: 3) Y/N Admission History completed? If so, by whom/position/time completed
+ 
+ 
+ 
+;----------------------------------------------------------------------------------------------------------------
+ 
+ 
+ 
+ 
+;--------------------------------------------------------------------------------------------------------------------
+ 
+call echorecord(pat)
+ 
+;--------------------------------------------------------------------------------------------------------------------
+ 
+;Final Output
+ 
+select into $outdev
+	fac = substring(1, 30, pat->list[d1.seq].facility)
+	, fin = substring(1, 30, pat->list[d1.seq].fin)
+	, patient_name = substring(1, 50, pat->list[d1.seq].pat_name)
+	, encntr_id = pat->list[d1.seq].encntrid
+	, arrive_dt = format(pat->list[d1.seq].arrivedt, 'mm/dd/yy hh:mm:ss ;;q')
+	, discharge_dt = format(pat->list[d1.seq].dischdt, 'mm/dd/yy hh:mm:ss ;;q')
+	, pm1_external_rx_queried = substring(1, 30, pat->list[d1.seq].process[d2.seq].pm1_ext_rx_queried)
+	, pm1_rx_queried_dt = substring(1, 30, pat->list[d1.seq].process[d2.seq].pm1_time_comple)
+	, pm1_rx_queried_by = substring(1, 100, pat->list[d1.seq].process[d2.seq].pm1_whom_pr)
+	, pm1_rx_queried_position = substring(1, 100, pat->list[d1.seq].process[d2.seq].pm1_pr_pos)
+	, pm1_rx_queried_before_meddoc = substring(1, 30, pat->list[d1.seq].process[d2.seq].pm1_comp_before_meddoc)
+	, pm2_med_hist_documented = substring(1, 30, pat->list[d1.seq].process[d2.seq].pm2_medhist_doc)
+	, pm2_med_hist_doc_dt = format(pat->list[d1.seq].process[d2.seq].pm2_medhist_doc_time, 'mm/dd/yy hh:mm:ss ;;q')
+	, pm2_med_hist_doc_by = substring(1, 100, pat->list[d1.seq].process[d2.seq].pm2_whom_pr)
+	, pm2_med_hist_doc_position = substring(1, 100, pat->list[d1.seq].process[d2.seq].pm2_pr_pos)
+	, admission_medrec_dt = format(pat->list[d1.seq].process[d2.seq].pm2_admit_medrec_dt, 'mm/dd/yy hh:mm:ss ;;q')
+	, pm2_med_hist_complet_before_admit_medrec = substring(1, 30, pat->list[d1.seq].process[d2.seq].pm2_comp_before_admit_medrec)
+	, hp_dt = format(pat->list[d1.seq].process[d2.seq].pm2_hp_dt, 'mm/dd/yy hh:mm:ss ;;q')
+	, pm2_med_hist_complet_before_hp = substring(1, 30, pat->list[d1.seq].process[d2.seq].pm2_comp_before_hp)
+ 
+from
+	(dummyt   d1  with seq = size(pat->list, 5))
+	, (dummyt   d2  with seq = 1)
+
+plan d1 where maxrec(d2, size(pat->list[d1.seq].process, 5))
+join d2
+ 
+with nocounter, separator=" ", format
+ 
+endif
+ 
+#exitscript
+ 
+end
+go
+ 
+
+ 
+/*
+ 
+ 
+;---------------------- Via Audit History ------------------------------------------------------------------------------------------
+ 
+;Process Metric: 1) Y/N External Rx queried? If so, by whom/position/time completed/completed before meds were documented?
+/*
+select into $outdev
+ 
+fin = substring(1, 30, pat->list[d.seq].fin), mha.encntr_id,  mha.med_history_audit_id, mha.audit_dt_tm ';;q'
+, mha.message_txt, mha.request_ident ,audit_prsnl = pr2.name_full_formatted
+ 
+from  (dummyt d with seq = size(pat->list, 5))
+	, med_history_audit mha
+	, (left join prsnl pr2 on pr2.person_id = mha.prsnl_id and pr2.active_ind = 1)
+ 
+plan d
+ 
+join mha where mha.encntr_id = pat->list[d.seq].encntrid
+	and mha.med_history_audit_id = (select min(mha1.med_history_audit_id) from med_history_audit mha1
+							where mha1.encntr_id = mha.encntr_id
+							and mha1.status_cd in(269410869.00,  269410881.00) ;Partial Success, Success
+							group by mha1.encntr_id)
+join pr2
+ 
+order by mha.encntr_id, mha.med_history_audit_id
+ 
+with nocounter, separator=" ", format, time = 180, uar_code(d,1), format(date,"mm-dd-yyyy hh:mm:ss;;d")
+go to exitscript
+ 
+/*
+Head mha.encntr_id
+	idx = 0
+	icnt = 0
+      idx = locateval(icnt ,2 ,pat->rec_cnt , mha.encntr_id ,pat->list[icnt].encntrid)
+      mcnt = 0
+      if(idx > 0)
+	     	pat->list[idx].pm1_ext_rx_queried = 'Y' ;rx_queried?
+		pat->list[idx].pm1_whom_pr = audit_prsnl ;by whom
+		pat->list[idx].pm1_pr_pos = uar_get_code_display(pr2.position_cd) ;pos
+		pat->list[idx].pm1_time_comple = format(mha.audit_dt_tm, 'mm/dd/yy hh:mm:ss ;;q') ;complete dt
+		pat->list[idx].pm1_comp_before_meddoc = if(mha.audit_dt_tm < cnvtdatetime(pat->list[idx].med_doc_dt)) 'Y' endif
+	endif
+with nocounter
+*/
+ 
+ 
+ /*
+ 
+;------------------Temp ------------------------------------------------------------------------
+;Med documentation
+ 
+select oc.encntr_id, oc.order_compliance_id, oc.performed_dt_tm ';;q', pr.name_full_formatted
+from   order_compliance oc
+	, (left join prsnl pr on pr.person_id = oc.performed_prsnl_id)
+ 
+plan oc where oc.encntr_id =   126279883.00
+ 
+join pr
+ 
+order by oc.encntr_id
+ 
+;--------------------------------------------------------------
+ 
+;History - not matching with Powerchart
+select
+ 
+ mha.encntr_id,  mha.med_history_audit_id, mha.audit_dt_tm ';;q'
+, mha.message_txt, mha.request_ident ,audit_prsnl = pr2.name_full_formatted, prescriber = pr3.name_full_formatted
+ 
+from  med_history_audit mha
+	, (left join prsnl pr2 on pr2.person_id = mha.prsnl_id)
+	, (left join prsnl pr3 on pr3.person_id = mha.prescriber_prsnl_id)
+ 
+plan mha where mha.encntr_id =   129134931.00 ; pat->list[d.seq].encntrid
+	/*and mha.med_history_audit_id = (select min(mha1.med_history_audit_id) from med_history_audit mha1
+							where mha1.encntr_id = mha.encntr_id
+							and mha1.status_cd in(269410869.00,  269410881.00) ;Partial Success, Success
+							group by mha1.encntr_id)**
+join pr2
+join pr3
+ 
+order by mha.encntr_id, mha.med_history_audit_id
+with nocounter, separator=" ", format, time = 180, uar_code(d,1), format(date,"mm-dd-yyyy hh:mm:ss;;d")
+ 
+ 
+ 
+ 
+ 
+;Medication History Snapshot - perfect matching with Powerchart Snapshot
+select
+orh.encntr_id, orh.orm_ord_hist_snapshot_id, orh.performed_dt_tm, pr = pr2.name_full_formatted
+ 
+from  orm_ord_hist_snapshot orh
+	, (left join prsnl pr2 on pr2.person_id = orh.performed_person_id)
+ 
+plan orh where orh.encntr_id =    126279883.00
+join pr2
+ 
+order by orh.orm_ord_hist_snapshot_id
+ 
+with nocounter, separator=" ", format, time = 180, uar_code(d,1), format(date,"mm-dd-yyyy hh:mm:ss;;d")
+ 
+ 
+select * from  med_history_audit mha
+where mha.encntr_id =   129134931.00
+with nocounter, separator=" ", format, time = 180, uar_code(d,1), format(date,"mm-dd-yyyy hh:mm:ss;;d")
+ 
+;--------------------------------------------------------------------------------------------------------------------
+ 
+;with nocounter, separator=" ", format, time = 180, uar_code(d,1), format(date,"mm-dd-yyyy hh:mm:ss;;d")
+;go to exitscript
+ 
+ 

@@ -1,0 +1,164 @@
+select
+	 p.name_full_formatted
+	,pa.pathway_id
+	,uar_get_code_display(pa.pw_status_cd)
+	,pa.type_mean
+	,pa.description
+	,pa.status_dt_tm ";;q"
+	,pa.person_id
+	,pa.encntr_id
+	,*
+ 
+from
+	pathway pa
+	,person p
+plan pa
+	;where pa.person_id = 16588335
+	;and pa.person_id = personid
+    ;where pa.encntr_id in(110455985);110435338.00,110449250.00, 110450958.00,  110433553.00,  110435344.00)
+	where pa.pw_status_cd = 674355; cs16769_planned_status
+	and pa.encntr_id = 110458571
+	;and pa.active_ind = 1
+	;and pa.type_mean in ("CAREPLAN");, "PHASE")
+	/* and cnvtupper(pa.description) in(
+                            				 "ACUTE CARE FLOOR"
+                            				,"ADMISSION ORDERS"
+                            				,"POST CATH LAB PROCEDURE ORDERS"
+                            				,"POST DIALYSIS FLOOR ORDERS"
+                            				,"POST EXTUBATION"
+                            				,"POST PLASMAPHERESIS FLOOR ORDERS"
+                            				,"POST PROCEDURE"
+                            				,"POST PROCEDURE ORDERS"
+                            				,"POSTOPERATIVE"
+                            				,"POST-PROCEDURE"
+                            				,"TPA INITIATED / POST INFUSION"
+                            				) */
+join p
+	where p.person_id = pa.person_id
+order by pa.type_mean, pa.status_dt_tm
+with format(date,";;q")
+
+
+select * from act_pw_comp apc where apc.pathway_id =  217801459
+select * from order_proposal op where op.order_id =     406640819.00
+select * from orders o where o.order_id =     406640819.00
+
+select * from prsnl p where p.username = "CERNER"
+ 
+select
+	*
+from
+	 eks_dlg_event ede
+plan ede
+	where ede.updt_dt_tm >= cnvtdatetime(curdate,0)
+	and ede.dlg_name = "*SYNC*"
+order by ede.dlg_dt_tm desc
+with format(date,";;q")
+ 
+select * from long_text lt where lt.long_text_id = 0
+ 
+ 
+select * from EKS_DLG_EVENT_ATTR e where e.dlg_event_id =     7293523.00
+ 
+ 
+select
+	 nurse_unit=uar_Get_code_display(elh.loc_nurse_unit_cd)
+	,elh.activity_dt_tm ";;q"
+	,elh.end_effective_dt_tm ";;q"
+	,elh.encntr_id
+	,elh.active_ind
+	,*
+from encntr_loc_hist elh where elh.encntr_id =   110455985.00
+ 
+;16596728        110455985
+select
+	 cv.code_value
+	,uar_get_code_display(l.location_type_cd)
+	,l.location_type_cd
+	,cv.display
+from
+	 location l
+	,code_value cv
+plan cv
+	where cv.code_set = 220
+	and   cv.active_ind = 1
+	and   cv.display = "*TEMP*"
+join l
+	where l.location_cd = cv.code_value
+	and   l.location_type_cd =           794.00
+order by
+	cv.display
+ 
+select * from code_value cv where cv.code_value = 794
+;        794.00	        222	NURSEUNIT	Nurse Unit(s)
+ 
+select
+	 p.name_full_formatted
+	,p.person_id
+	,e.encntr_id
+	,encounter_type = uar_get_code_display(e.encntr_type_cd)
+	,e.reg_dt_tm ";;q"
+	,e.disch_dt_tm ";;q"
+from
+	 person p
+	,encounter e
+plan p
+	where p.name_last_key = "ZZZTEST"
+	and   p.name_first_key = "TESTROLES"
+join e
+	where e.person_id = p.person_id
+	and   e.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   e.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+ 
+;ZZZTEST, COLE	   16596328.00	  110454779.00	Inpatient	15-AUG-2018 09:52:00.00
+ 
+select
+	 orec.recon_type_flag
+	,orec.performed_dt_tm ";;q"
+	,status = uar_get_code_display(orec.recon_status_cd)
+	,ord.order_nbr
+	,ord.order_mnemonic
+	,ord.clinical_display_line
+	,*
+	from
+		 order_recon orec
+		,order_recon_detail ord
+ 
+	plan orec
+		where	orec.encntr_id			= 110451313
+		and		orec.recon_type_flag	in(1,2,3) ;admission, transfer, discharge
+	join ord
+		where ord.order_recon_id = outerjoin(orec.order_recon_id)
+ 
+	order by
+		 ord.order_nbr
+		,orec.performed_dt_tm desc
+ 
+select
+	oc.*
+from
+	order_compliance oc
+plan oc
+	where oc.encntr_id = 110451313
+	
+	
+	
+	
+	
+	select o.order_id,o.order_mnemonic,o.orig_order_dt_tm ";;q"
+	,o.current_start_dt_tm,* from orders o where o.encntr_id = 110458731 
+	with format(date,";;q")               
+	
+	
+select * from encntr_domain ed where ed.encntr_id=110435135
+and ed.loc_nurse_unit_cd = 2553913483.00
+select pc.description,
+p.pw_cat_group_id, * from pathway p,pathway_Catalog pc where p.encntr_id =   110435135.00 and pc.pathway_catalog_id = p.
+pw_cat_group_id
+  
+    ; 2561665139.00
+    ; 2561665143.00
+
+select * from eks_alert_escalation order by updt_dt_tm desc with format(date,";;q")
+
+delete from eks_alert_escalation where person_id in(    16597234.00,  16584528.00,   16601331.00) go

@@ -1,0 +1,199 @@
+
+Fields are TAB delimited.
+Rows are LF terminated.															
+
+Field #	FIELD NAME			Length	Field Data							Notes
+001		FAC					9		Facility							Spaces if empty	
+002		IOE					9		Pat_Type_IOE                        Spaces if empty	
+003		PATTYPE				9		Pat_Type                            Spaces if empty	
+004		ADMDT				8		Admit_Dt_Tm                         Spaces if empty	
+005		DSCHDT				8		Disch_Dt_Tm                         Spaces if empty	
+006		ACDTDT				8		Acc_Dt_Tm                           Spaces if empty	
+007		PFN					18		First_Name                          Spaces if empty	
+008		PLN					25		Last_Name                           Spaces if empty	
+009		PMN					18		M_Name                              Spaces if empty	
+010		PBD					8		Birth_Dt_Tm                         Spaces if empty	
+011		PED					8		Deceased_Dt_Tm                      Spaces if empty	
+012		PSEX				1		Sex_Alias                           Spaces if empty	
+013		PAD1				30		Address                             Spaces if empty	
+014		PAD2				30		Address2                            Spaces if empty	
+015		PCTY1				30		City                                Spaces if empty	
+016		PST1				2		State                               Spaces if empty	
+017		PZIP				9		ZipCode                             Spaces if empty	
+018		PHP					10		Phone_Home                          Spaces if empty	
+019		PWP					10		Phone_Biz                           Spaces if empty	
+020		PSSN				9		SSN                                 Spaces if empty	
+021		PEN					33		Emp_Name                            Spaces if empty	
+022		PEAD1				30		Emp_Addr1                           Spaces if empty	
+023		PEAD2				30		Emp_Addr2                           Spaces if empty	
+024		PCTY1				30		Emp_City                            Spaces if empty	
+025		PST1				2		Emp_St                              Spaces if empty	
+026		PEZIP				9		Emp_Zip                             Spaces if empty	
+027		PEPH				10		Phone_Biz                           Spaces if empty	
+028		PMRN				20		MRN                                 Spaces if empty	
+029		PPAT				20		FIN                                 Spaces if empty	
+030		PMS					1		Marital_Alias                       Spaces if empty	
+031		PEMS				2		Emp_Status                          Spaces if empty	
+032		PREC				1		EthniCity                           Spaces if empty	
+033		GFN					18		GuarFirstName			            Spaces if empty	
+034		GLN					25		GuarLastName			            Spaces if empty	
+035		GMN					18		GuarMiddleName			            Spaces if empty	
+036		GBD					8		GuarDateOfBirth                     Spaces if empty	
+037		GSEX				9		GuarSex                             Spaces if empty	
+038		GAD1				30		GuarAddress1                        Spaces if empty	
+039		GAD2				30		GuarAddress2                        Spaces if empty	
+040		GCTY1				30		City                                Spaces if empty	
+041		GST1				2		State                               Spaces if empty	
+042		GZIP				9		GuarZipCode                         Spaces if empty	
+043		GHP					10		GuarPhone                           Spaces if empty	
+044		GWP					10		GuarPhoneBiz                        Spaces if empty	
+045		GSSN				9		GuarSSN                             Spaces if empty	
+046		GEN					33		GuarEmpName                         Spaces if empty	
+047		GEAD1				30		GuarEmpAddress1                     Spaces if empty	
+048		GEAD2				30		GuarEmpAddress2                     Spaces if empty	
+049		GECTY1				30		GuarEmpCity                         Spaces if empty	
+050		GEST1				2		GuarEmpState                        Spaces if empty	
+051		GEZIP				9		GuarEmpZipCode                      Spaces if empty	
+052		GEPH				9		GuarEmpPhone                        Spaces if empty	
+053		GSC					1		Pipe symbol (|)						Literal value	
+054		GMS					1		GuarMarital                         Spaces if empty	
+055		GEMS				30		GuarEmp                             Spaces if empty	
+056		GREC				30		GuarEthnic                          Spaces if empty	
+057		GPRC				2		GuarRel                             Spaces if empty	
+058		RFN					18		NOKFirstName			            Spaces if empty	
+059		RLN					25		NOKLastName			                Spaces if empty	
+060		RMN					18		NOKMiddleName			            Spaces if empty	
+061		RBD					8		NOKDateOfBirth                      Spaces if empty	
+062		RSEX				9		NOKSex                              Spaces if empty	
+063		RAD1				30		NOKAddress1                         Spaces if empty	
+064		RAD2				30		NOKAddress2                         Spaces if empty	
+065		GCTY1				30		NOKCity                             Spaces if empty	
+066		GST1				2		NOKState                            Spaces if empty	
+067		RZIP				9		NOKZipCode                          Spaces if empty	
+068		RHP					10		NOKPhone                            Spaces if empty	
+069		RWP					10		NOKPhoneBiz                         Spaces if empty	
+070		RSSN				9		NOKSSN                              Spaces if empty	
+071		REN					33		NOKEmpName                          Spaces if empty	
+072		READ1				30		NOKEmpAddress1                      Spaces if empty	
+073		READ2				30		NOKEmpAddress2                      Spaces if empty	
+074		GCTY1				30		NOKEmpCity                          Spaces if empty	
+075		GST1				2		NOKEmpState                         Spaces if empty	
+076		REZIP				9		NOKEmpZipCode                       Spaces if empty	
+077		REPH				1		NOKEmpPhone                         Spaces if empty	
+078		RMS					30		NOKMarital                          Spaces if empty	
+079		REMS				30		NOKEmp                              Spaces if empty	
+080		RREC				2		NOKEthnic                           Spaces if empty	
+081		RPRC				20		NOKRel                              Spaces if empty	
+082		PHNBR				50		Referring_Id                        Spaces if empty	
+083		PHNAME				20		Referring_Name                      Spaces if empty	
+084		UPIN				20		Referring_Upin                      Spaces if empty	
+085		OCC1				1		Pipe symbol (|)						Literal value	
+086		OCC2				1		Pipe symbol (|)						Literal value	
+087		INS1CCD				20		Insurance_Plan_Code_A               Spaces if empty	
+088		INS1CND				30		Insurance_Plan_Name_A               Spaces if empty	
+089		INS1PN				20		Insurance_Policy_No_A               Spaces if empty	
+090		INS1GN				20		Insurance_Group_No_A                Spaces if empty	
+091		INS1AUTH			50		Authorization_Number_A              Spaces if empty	
+092		INS1AD1				30		Insurance_Address_1_A               Spaces if empty	
+093		INS1AD2				30		Insurance_Address_2_A               Spaces if empty	
+094		INS1CITY			30		Insurance_City_A                    Spaces if empty	
+095		INS1STATE			2		Insurance_State_A                   Spaces if empty	
+096		INS1ZIP				9		Insurance_Zip_Code_A                Spaces if empty	
+097		INS1CPH				10		Insurance_Phone_A                   Spaces if empty	
+098		INS1PAN				1		Pipe symbol (|)						Literal value	
+099		INS1OFN				18		Insurance_SubscriberNamef_A         Spaces if empty	
+100		INS1OLN				25		Insurance_SubscriberNamel_A         Spaces if empty	
+101		INS1OMN				18		Insurance_SubscriberNamem_A         Spaces if empty	
+102		INS1OBD				8		Insurance_SubscriberDOB_A           Spaces if empty	
+103		INS1OSEX			9		Insurance_SubscriberSex_A           Spaces if empty	
+104		INS1OA1				30		Insurance_Subscriber_Address_1_A    Spaces if empty	
+105		INS1OA2				30		Insurance_Subscriber_Address_2_A    Spaces if empty	
+106		INS1OCITY			30		Insurance_Subscriber_City_A         Spaces if empty	
+107		INS1OSTATE			2		Insurance_Subscriber_State_A        Spaces if empty	
+108		INS1OPZIP			9		Insurance_Subscriber_Zip_Code_A     Spaces if empty	
+109		INS1OPH				10		Insurance_SubscriberPhone_A         Spaces if empty	
+110		INS1OWPH			10		Insurance_SubscriberPhoneBiz_A      Spaces if empty	
+111		INS1OSSN			9		Insurance_SubscriberSSN_A	        Spaces if empty	
+112		INS1OEN				50		Insurance_SubscriberEmpName_A       Spaces if empty	
+113		INS1OEA1			30		Insurance_SubscriberEmpAdd1_A       Spaces if empty	
+114		INS1OEA2			30		Insurance_SubscriberEmpAdd2_A       Spaces if empty	
+115		INS1OECITY			30		Insurance_SubscriberEmpCity_A       Spaces if empty	
+116		INS1OESTATE			2		Insurance_SubscriberEmpState_A      Spaces if empty	
+117		INS1OEZIP			9		Insurance_SubscriberEmpZip_A        Spaces if empty	
+118		INS1OEPH			10		Insurance_SubscriberEmpPhone_A      Spaces if empty	
+119		INS1OMS				1		Pipe symbol (|)						Literal value	
+120		INS1OEMS			1		Pipe symbol (|)						Literal value	
+121		INS1OREC			1		Pipe symbol (|)						Literal value	
+122		INS1ORLC			2		Insurance_Rel_To_Pt_A			    Spaces if empty	
+123		INS2CCD				20		Insurance_Plan_Code_B               Spaces if empty	
+124		INS2CND				30		Insurance_Plan_Name_B               Spaces if empty	
+125		INS2PN				20		Insurance_Policy_No_B               Spaces if empty	
+126		INS2GN				20		Insurance_Group_No_B                Spaces if empty	
+127		INS2AUTH			50		Authorization_Number_B              Spaces if empty	
+128		INS2AD1				30		Insurance_Address_1_B               Spaces if empty	
+129		INS2AD2				30		Insurance_Address_2_B               Spaces if empty	
+130		INS2CITY			30		Insurance_City_B                    Spaces if empty	
+131		INS2STATE			2		Insurance_State_B                   Spaces if empty	
+132		INS2ZIP				9		Insurance_Zip_Code_B                Spaces if empty	
+133		INS2CPH				10		Insurance_Phone_B                   Spaces if empty	
+134		INS2PAN				1		Pipe symbol (|)						Literal value	
+135		INS2OFN				18		Insurance_SubscriberNamef_B         Spaces if empty	
+136		INS2OLN				25		Insurance_SubscriberNamel_B         Spaces if empty	
+137		INS2OMN				18		Insurance_SubscriberNamem_B         Spaces if empty	
+138		INS2OBD				8		Insurance_SubscriberDOB_B           Spaces if empty	
+139		INS2OSEX			9		Insurance_SubscriberSex_B           Spaces if empty	
+140		INS2OADDR1			30		Insurance_Subscriber_Address_1_B    Spaces if empty	
+141		INS2OADDR2			30		Insurance_Subscriber_Address_2_B    Spaces if empty	
+142		INS2OCITY			30		Insurance_Subscriber_City_B         Spaces if empty	
+143		INS2OSTATE			2		Insurance_Subscriber_State_B        Spaces if empty	
+144		INS2OPZIP			8		Insurance_Subscriber_Zip_Code_B     Spaces if empty	
+145		INS1OPH				10		Insurance_SubscriberPhone_B         Spaces if empty	
+146		INS1OWPH			10		Insurance_SubscriberPhoneBiz_B      Spaces if empty	
+147		INS1OSSN			9		Insurance_SubscriberSSN_B           Spaces if empty	
+148		INS2OEN				50		Insurance_SubscriberEmpName_B       Spaces if empty	
+149		INS2OEA1			30		Insurance_SubscriberEmpAdd1_B       Spaces if empty	
+150		INS2OEA2			30		Insurance_SubscriberEmpAdd2_B       Spaces if empty	
+151		INS2OECITY			30		Insurance_SubscriberEmpCity_B       Spaces if empty	
+152		INS2OESTATE			2		Insurance_SubscriberEmpState_B      Spaces if empty	
+153		INS2OEZIP			9		Insurance_SubscriberEmpZip_B        Spaces if empty	
+154		INS2OEPH			10		Insurance_SubscriberEmpPhone_B      Spaces if empty	
+155		INS2OMS				1		Pipe symbol (|)						Literal value	
+156		INS2OEMS			1		Pipe symbol (|)						Literal value	
+157		INS2OREC			1		Pipe symbol (|)						Literal value	
+158		INS2ORLC			2		Insurance_Rel_To_Pt_B			    Spaces if empty	
+159		INS3CCD				20		Insurance_Plan_Code_C               Spaces if empty	
+160		INS3CND				30		Insurance_Plan_Name_C               Spaces if empty	
+161		INS3PN				20		Insurance_Policy_No_C               Spaces if empty	
+162		INS3GN				20		Insurance_Group_No_C                Spaces if empty	
+163		INS3AUTH			50		Authorization_Number_C              Spaces if empty	
+164		INS3AD1				30		Insurance_Address_1_C               Spaces if empty	
+165		INS3AD2				30		Insurance_Address_2_C               Spaces if empty	
+166		INS3CITY			30		Insurance_City_C                    Spaces if empty	
+167		INS3STATE			2		Insurance_State_C                   Spaces if empty	
+168		INS3ZIP				9		Insurance_Zip_Code_C                Spaces if empty	
+169		INS3CPH				10		Insurance_Phone_C                   Spaces if empty	
+170		INS3PAN				1		Pipe symbol (|)						Literal value	
+171		INS3OFN				18		Insurance_SubscriberNamef_C         Spaces if empty	
+172		INS3OLN				25		Insurance_SubscriberNamel_C         Spaces if empty	
+173		INS3OMN				18		Insurance_SubscriberNamem_C         Spaces if empty	
+174		INS3OBD				8		Insurance_SubscriberDOB_C           Spaces if empty	
+175		INS3OSEX			9		Insurance_SubscriberSex_C           Spaces if empty	
+176		INS3OADDR1			30		Insurance_Subscriber_Address_1_C    Spaces if empty	
+177		INS3OADDR2			30		Insurance_Subscriber_Address_2_C    Spaces if empty	
+178		INS3OCITY			30		Insurance_Subscriber_City_C         Spaces if empty	
+179		INS3OSTATE			2		Insurance_Subscriber_State_C        Spaces if empty	
+180		INS3OPZIP			9		Insurance_Subscriber_Zip_Code_C     Spaces if empty	
+181		INS1OPH				10		Insurance_SubscriberPhone_C         Spaces if empty	
+182		INS1OWPH			10		Insurance_SubscriberPhoneBiz_C      Spaces if empty	
+183		INS1OSSN			9		Insurance_SubscriberSSN_C           Spaces if empty	
+184		INS3OEN				50		Insurance_SubscriberEmpName_C       Spaces if empty	
+185		INS3OEA1			30		Insurance_SubscriberEmpAdd1_C       Spaces if empty	
+186		INS3OEA2			30		Insurance_SubscriberEmpAdd2_C       Spaces if empty	
+187		INS3OECITY			30		Insurance_SubscriberEmpCity_C       Spaces if empty	
+188		INS3OESTATE			2		Insurance_SubscriberEmpState_C      Spaces if empty	
+189		INS3OEZIP			9		Insurance_SubscriberEmpZip_C        Spaces if empty	
+190		INS3OEPH			10		Insurance_SubscriberEmpPhone_C      Spaces if empty	
+191		INS3OMS				1		Pipe symbol (|)						Literal value	
+192		INS3OEMS			1		Pipe symbol (|)						Literal value	
+193		INS3OREC			1		Pipe symbol (|)						Literal value	
+194		INS3ORLC			2		Insurance_Rel_To_Pt_C			    Spaces if empty	

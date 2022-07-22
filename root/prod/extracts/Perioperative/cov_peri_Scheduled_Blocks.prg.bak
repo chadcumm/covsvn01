@@ -1,0 +1,547 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Todd A. Blanchard
+	Date Written:		04/27/2020
+	Solution:			Perioperative
+	Source file name:	cov_peri_Scheduled_Blocks.prg
+	Object name:		cov_peri_Scheduled_Blocks
+	Request #:			6473
+ 
+	Program purpose:	Lists default schedules for resources.
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:		Exported data is used by external process.
+ 
+ 						Output file: sched_blocks.csv
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+ 	Mod Date	Developer				Comment
+ 	----------	--------------------	--------------------------------------
+ 
+******************************************************************************/
+ 
+drop program cov_peri_Scheduled_Blocks:DBA go
+create program cov_peri_Scheduled_Blocks:DBA
+ 
+prompt 
+	"Output to File/Printer/MINE" = "MINE"
+	, "Output To File" = 0                   ;* Output to file 
+
+with OUTDEV, output_file
+ 
+ 
+/**************************************************************
+; DVDev DECLARED SUBROUTINES
+**************************************************************/
+ 
+declare get_minutes(data = i4)			= i4
+declare make_hours(data = i4)			= i4
+
+
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+
+declare file_var						= vc with constant("sched_blocks.csv")
+ 
+declare temppath_var					= vc with constant(build("cer_temp:", file_var))
+declare temppath2_var					= vc with constant(build("$cer_temp/", file_var))
+ 
+declare filepath_var					= vc with constant(build("/cerner/w_custom/", cnvtlower(curdomain),
+															"_cust/to_client_site/ClinicalNursing/Surgery/Scheduling/", file_var))
+ 
+declare output_var						= vc with noconstant("")
+ 
+declare cmd								= vc with noconstant("")
+declare len								= i4 with noconstant(0)
+declare stat							= i4 with noconstant(0)
+
+declare num								= i4 with noconstant(0)
+ 
+ 
+; define output value
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set output_var = value(temppath_var)
+else
+	set output_var = value($OUTDEV)
+endif
+ 
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+
+record block_data (
+	1 cnt							= i4
+	1 list[*]
+		2 def_sched_id				= f8
+		2 template_name				= c200			
+		2 day_begin					= i4
+		2 day_end					= i4
+		2 apply_range				= i4
+		
+		2 res_cnt					= i4
+		2 resources[*]
+			3 resource_cd			= f8
+			3 resource_name			= c100
+			3 applied				= c3
+			3 start_date			= dq8
+			3 end_date				= dq8
+			3 days_of_application	= c10
+			3 weeks_of_month		= c10
+		
+		2 slot_cnt					= i4
+		2 slots [*]
+			3 def_slot_id			= f8
+			3 start_time			= i4
+			3 end_time				= i4
+			3 slot_start_time		= i4
+			3 slot_end_time			= i4
+			3 slot_type_id			= f8
+			3 slot_type				= c100
+			3 release_to_id			= f8
+			3 release_to			= c100
+			3 release_time			= c50
+)
+
+
+record final_data (
+	1 row_cnt						= i4
+	1 rows[*]
+		2 cell_cnt					= i4
+		2 cells[*]
+			3 date_value			= dq8
+			3 nbr_value				= i4
+			3 double_value			= f8
+			3 string_value			= vc
+			3 display_flag			= i2
+)
+
+
+/**************************************************************/
+; select default schedule data
+select into "NL:"	
+from 
+	SCH_DEF_SCHED sdsch
+	
+where
+	sdsch.mnemonic_key in ("SN*")
+	and sdsch.active_ind = 1
+	
+order by
+	sdsch.mnemonic_key
+
+ 
+; populate record structure
+head report
+	cnt = 0
+	
+detail
+	cnt = cnt + 1
+ 
+	call alterlist(block_data->list, cnt)
+	
+	block_data->cnt = cnt
+	block_data->list[cnt].def_sched_id		= sdsch.def_sched_id
+	block_data->list[cnt].template_name		= sdsch.description
+	block_data->list[cnt].day_begin			= sdsch.beg_tm
+	block_data->list[cnt].day_end			= sdsch.end_tm
+	block_data->list[cnt].apply_range		= sdsch.apply_range
+	
+with nocounter
+ 
+
+/**************************************************************/
+; select default schedule applied to resource data
+select into "NL:"
+from
+	SCH_DEF_APPLY sda
+	
+    , (inner join SCH_RESOURCE sr on sr.resource_cd = sda.resource_cd)
+    
+    , (inner join SCH_FREQ sf on sf.frequency_id = sda.frequency_id)
+    
+where
+	expand(num, 1, size(block_data->list, 5), sda.def_sched_id, block_data->list[num].def_sched_id)
+    and (
+    	sda.def_state_meaning in ("ACTIVE", "MODIFIED")
+		or (
+			sda.def_state_meaning = "COMPLETE" 
+			and sda.end_dt_tm >= sysdate
+		)
+	)
+	and sda.active_ind = 1
+
+order by
+	sda.def_sched_id
+	, sda.beg_dt_tm
+	, sda.end_dt_tm
+	
+ 
+; populate record structure
+head report
+	numx = 0
+	
+head sda.def_sched_id
+	idx = 0
+	cntx = 0
+
+	idx = locateval(numx, 1, size(block_data->list, 5), sda.def_sched_id, block_data->list[numx].def_sched_id)
+	
+detail
+	cntx = cntx + 1
+ 
+	call alterlist(block_data->list[idx].resources, cntx)
+		
+	block_data->list[idx].res_cnt = cntx
+    block_data->list[idx].resources[cntx].resource_cd		= sr.resource_cd
+    block_data->list[idx].resources[cntx].resource_name		= sr.mnemonic
+    block_data->list[idx].resources[cntx].applied			= "Y"
+    block_data->list[idx].resources[cntx].start_date		= cnvtdatetime(sda.beg_dt_tm)
+    block_data->list[idx].resources[cntx].end_date			= cnvtdatetime(sda.end_dt_tm)
+
+	weeks_of_month = fillstring(10, " ")
+	
+	for (i = 1 to 5)
+		if (substring(i, 1, sf.week_string) = "X")
+			weeks_of_month = build(weeks_of_month, i)
+		endif
+	endfor
+			
+	block_data->list[idx].resources[cntx].weeks_of_month = weeks_of_month
+
+	days_of_application = fillstring(10, " ")
+
+	for (i = 1 to 7)
+		if (substring(i, 1, sf.days_of_week) = "X")
+;			case (i)
+;				of 1 :
+;					days_of_application = "U"
+;				of 2 :
+;					days_of_application = build(days_of_application, "M")
+;				of 3 :
+;					days_of_application = build(days_of_application, "T")
+;				of 4 :
+;					days_of_application = build(days_of_application, "W")
+;				of 5 :
+;					days_of_application = build(days_of_application, "H")
+;				of 6 :
+;					days_of_application = build(days_of_application, "F")
+;				of 7 :
+;					days_of_application = build(days_of_application, "S")
+;			endcase
+
+			days_of_application = build(days_of_application, i)
+		endif
+	endfor
+	
+	block_data->list[idx].resources[cntx].days_of_application = days_of_application
+	
+with nocounter
+ 
+
+/**************************************************************/
+; select default schedule resource data
+select into "NL:"
+from 
+	SCH_DEF_RES sdr
+	
+	, (inner join SCH_RESOURCE sr on sr.resource_cd = sdr.resource_cd
+		and sr.active_ind = 1)
+
+where	
+	expand(num, 1, size(block_data->list, 5), sdr.def_sched_id, block_data->list[num].def_sched_id)
+	and sdr.active_ind = 1
+
+ 
+; populate record structure
+head report
+	numx = 0
+	
+head sdr.def_sched_id
+	idx = 0
+	cntx = 0
+
+	idx = locateval(numx, 1, size(block_data->list, 5), sdr.def_sched_id, block_data->list[numx].def_sched_id)
+	
+detail
+    found = 0	
+	
+	for (i = 1 to block_data->list[idx].res_cnt)
+		if (block_data->list[idx].resources[i].resource_cd = sdr.resource_cd) 
+			found = 1
+		endif
+	endfor
+	
+    if (found = 0)    
+		cntx = cntx + 1
+		
+		call alterlist(block_data->list[idx].resources, cntx)
+		
+		block_data->list[idx].res_cnt = cntx
+		block_data->list[idx].resources[cntx].resource_cd		= sr.resource_cd
+		block_data->list[idx].resources[cntx].resource_name		= sr.mnemonic
+		block_data->list[idx].resources[cntx].applied			= "N"
+    endif
+	
+with nocounter
+ 
+
+/**************************************************************/
+; select default schedule slot data
+select into "NL:"
+from
+	SCH_DEF_SLOT sds
+	
+	, (left join CODE_VALUE cv1 on cv1.code_value = sds.vis_beg_units_cd
+    	and cv1.active_ind = 1)
+	
+	, (left join CODE_VALUE cv2 on cv2.code_value = sds.vis_end_units_cd
+    	and cv2.active_ind = 1)
+	
+where
+	expand(num, 1, size(block_data->list, 5), sds.def_sched_id, block_data->list[num].def_sched_id)
+	and sds.active_ind = 1
+
+order by
+	sds.def_sched_id
+	, sds.beg_offset
+	, sds.end_offset
+	, sds.slot_beg_offset
+	, sds.slot_end_offset
+	, sds.seq_nbr
+
+ 
+; populate record structure
+head report
+	numx = 0
+	
+head sds.def_sched_id
+	idx = 0
+	cntx = 0
+
+	idx = locateval(numx, 1, size(block_data->list, 5), sds.def_sched_id, block_data->list[numx].def_sched_id)
+	
+detail
+	cntx = cntx + 1
+ 
+	call alterlist(block_data->list[idx].slots, cntx)
+		
+	block_data->list[idx].slot_cnt = cntx	
+	block_data->list[idx].slots[cntx].def_slot_id = sds.def_slot_id
+		
+    if (((sds.vis_beg_units > 0) or (sds.vis_end_units > 0)) and (sds.seq_nbr > 0))
+		block_data->list[idx].slots[cntx].release_to_id = sds.slot_type_id
+		block_data->list[idx].slots[cntx].release_to = sds.slot_mnemonic
+		
+		if (sds.vis_beg_units > 0)
+			block_data->list[idx].slots[cntx].release_time = build2(trim(cnvtstring(sds.vis_beg_units)), " ", trim(cv1.display))
+		else
+			block_data->list[idx].slots[cntx].release_time = build2(trim(cnvtstring(sds.vis_end_units)), " ", trim(cv2.display))
+		endif	 
+    else 
+		block_data->list[idx].slots[cntx].slot_type_id = sds.slot_type_id
+		block_data->list[idx].slots[cntx].slot_type = sds.slot_mnemonic
+	endif
+
+	block_data->list[idx].slots[cntx].start_time = make_hours(sds.beg_offset + get_minutes(block_data->list[idx].day_begin))
+	block_data->list[idx].slots[cntx].end_time = make_hours(sds.end_offset + get_minutes(block_data->list[idx].day_begin))
+	
+	block_data->list[idx].slots[cntx].slot_start_time = make_hours(sds.slot_beg_offset + get_minutes(block_data->list[idx].day_begin))
+	block_data->list[idx].slots[cntx].slot_end_time = make_hours(sds.slot_end_offset + get_minutes(block_data->list[idx].day_begin))
+
+with nocounter
+
+
+/**************************************************************/
+; select final data
+set rstart = 0
+set rcnt = 0
+set ccnt = 22
+
+for (i = 1 to block_data->cnt)
+	set rstart = rcnt + 1
+
+	; slots
+	for (j = 1 to block_data->list[i].slot_cnt)
+		set rcnt = rcnt + 1
+		
+		call alterlist(final_data->rows, rcnt)
+		call alterlist(final_data->rows[rcnt].cells, ccnt)		
+		
+		set final_data->row_cnt									= rcnt
+		set final_data->rows[rcnt].cell_cnt						= ccnt
+		set final_data->rows[rcnt].cells[1].double_value		= block_data->list[i].def_sched_id
+		set final_data->rows[rcnt].cells[2].string_value		= block_data->list[i].template_name
+		
+		set final_data->rows[rcnt].cells[13].double_value		= block_data->list[i].slots[j].def_slot_id
+		set final_data->rows[rcnt].cells[14].nbr_value			= block_data->list[i].slots[j].start_time
+		set final_data->rows[rcnt].cells[15].nbr_value			= block_data->list[i].slots[j].end_time
+		set final_data->rows[rcnt].cells[16].nbr_value			= block_data->list[i].slots[j].slot_start_time
+		set final_data->rows[rcnt].cells[17].nbr_value			= block_data->list[i].slots[j].slot_end_time
+		set final_data->rows[rcnt].cells[18].double_value		= block_data->list[i].slots[j].slot_type_id
+		set final_data->rows[rcnt].cells[19].string_value		= block_data->list[i].slots[j].slot_type
+		set final_data->rows[rcnt].cells[20].double_value		= block_data->list[i].slots[j].release_to_id
+		set final_data->rows[rcnt].cells[21].string_value		= block_data->list[i].slots[j].release_to
+		set final_data->rows[rcnt].cells[22].string_value		= block_data->list[i].slots[j].release_time
+	endfor
+
+	if (rcnt >= rstart)
+		set final_data->rows[rstart].cells[10].nbr_value		= block_data->list[i].apply_range
+		set final_data->rows[rstart].cells[11].nbr_value		= block_data->list[i].day_begin
+		set final_data->rows[rstart].cells[12].nbr_value		= block_data->list[i].day_end
+	endif
+
+	; resources
+	for (j = 1 to block_data->list[i].res_cnt)
+		if (rstart > rcnt)
+			set rcnt = rcnt + 1
+			set rstart = rcnt
+			
+			call alterlist(final_data->rows, rcnt)
+			call alterlist(final_data->rows[rcnt].cells, ccnt)
+			
+			set final_data->row_cnt								= rcnt
+			set final_data->rows[rstart].cell_cnt				= ccnt
+			set final_data->rows[rstart].cells[1].double_value	= block_data->list[i].def_sched_id
+			set final_data->rows[rstart].cells[2].string_value	= block_data->list[i].template_name
+		endif
+
+		set final_data->rows[rstart].cells[5].double_value		= block_data->list[i].resources[j].resource_cd
+		set final_data->rows[rstart].cells[6].string_value		= block_data->list[i].resources[j].resource_name
+		set final_data->rows[rstart].cells[7].string_value		= block_data->list[i].resources[j].applied
+
+		if (block_data->list[i].resources[j].applied = "Y")
+			set final_data->rows[rstart].cells[3].string_value	= block_data->list[i].resources[j].days_of_application
+			set final_data->rows[rstart].cells[4].string_value	= block_data->list[i].resources[j].weeks_of_month
+			set final_data->rows[rstart].cells[8].date_value	= block_data->list[i].resources[j].start_date
+			set final_data->rows[rstart].cells[9].date_value	= block_data->list[i].resources[j].end_date
+		endif
+
+		set rstart = rstart + 1
+	endfor
+endfor
+
+
+call echorecord(block_data)
+call echorecord(final_data)
+
+
+/**************************************************************/
+; select data
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set modify filestream
+endif
+ 
+select if (validate(request->batch_selection) = 1 or $output_file = 1)
+	with nocounter, pcformat (^"^, ^,^, 1), format = stream, format
+else
+	with nocounter, separator = " ", format
+endif
+
+into value(output_var)
+	template_id					= final_data->rows[d1.seq].cells[1].double_value
+	, template_name				= trim(final_data->rows[d1.seq].cells[2].string_value, 3)
+
+	, days_of_application		= trim(final_data->rows[d1.seq].cells[3].string_value, 3)
+	, weeks_of_month			= trim(final_data->rows[d1.seq].cells[4].string_value, 3)
+	
+	, default_resource_cd		= evaluate2(
+									if (final_data->rows[d1.seq].cells[5].double_value > 0.0)
+										cnvtstring(final_data->rows[d1.seq].cells[5].double_value, 15 ,2)
+									else
+										" "
+									endif
+									)
+	, default_resource			= trim(final_data->rows[d1.seq].cells[6].string_value, 3)
+	
+	, template_applied			= trim(final_data->rows[d1.seq].cells[7].string_value, 3)
+	, template_start_date		= final_data->rows[d1.seq].cells[8].date_value "mm/dd/yyyy;;d"
+	, template_end_date			= final_data->rows[d1.seq].cells[9].date_value "mm/dd/yyyy;;d"
+	, apply_range				= final_data->rows[d1.seq].cells[10].nbr_value
+	
+	, day_begin					= final_data->rows[d1.seq].cells[11].nbr_value
+	, day_end					= final_data->rows[d1.seq].cells[12].nbr_value
+	
+	, slot_id					= final_data->rows[d1.seq].cells[13].double_value
+	, start_time				= format(final_data->rows[d1.seq].cells[14].nbr_value, "##:##;p0")
+	, end_time					= format(final_data->rows[d1.seq].cells[15].nbr_value, "##:##;p0")
+	, slot_start_time			= format(final_data->rows[d1.seq].cells[16].nbr_value, "##:##;p0")
+	, slot_end_time				= format(final_data->rows[d1.seq].cells[17].nbr_value, "##:##;p0")
+	
+	, slot_type_id				= evaluate2(
+									if (final_data->rows[d1.seq].cells[18].double_value > 0.0)
+										cnvtstring(final_data->rows[d1.seq].cells[18].double_value, 15 ,2)
+									else
+										" "
+									endif
+									)
+	, slot_type					= trim(final_data->rows[d1.seq].cells[19].string_value, 3)
+	
+	, slot_release_to_id		= evaluate2(
+									if (final_data->rows[d1.seq].cells[20].double_value > 0.0)
+										cnvtstring(final_data->rows[d1.seq].cells[20].double_value, 15 ,2)
+									else
+										" "
+									endif
+									)
+	, slot_release_to			= trim(final_data->rows[d1.seq].cells[21].string_value, 3)	
+	, slot_release_time			= trim(final_data->rows[d1.seq].cells[22].string_value, 3)
+
+from
+	(dummyt d1 with seq = value(final_data->row_cnt))
+	
+plan d1
+
+with nocounter
+ 
+ 
+/**************************************************************/
+; copy file to AStream
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set cmd = build2("cp ", temppath2_var, " ", filepath_var)
+	set len = size(trim(cmd))
+ 
+	call dcl(cmd, len, stat)
+	call echo(build2(cmd, " : ", stat))
+endif
+	
+	
+;go to exitscript
+ 
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+ 
+subroutine (get_minutes(data = i4(value)) = i4)
+	set hours = floor(data / 100)
+	set minutes = mod(data, 100)
+	
+	return (((hours * 60) + minutes))
+end
+
+
+subroutine (make_hours(data = i4(value)) = i4)
+	set minutes = data
+	set hours = 0
+	
+	while (minutes >= 60)
+		set minutes = minutes - 60
+		set hours = hours + 1
+	endwhile
+	
+	return (((hours * 100) + minutes))
+end
+ 
+#exitscript
+ 
+end
+go
+

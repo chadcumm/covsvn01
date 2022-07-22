@@ -1,0 +1,4 @@
+;set trace DEBUGJSON go
+;set trace echoinput2 go
+
+execute op_celr_mobj_driver_test "MINE","" go

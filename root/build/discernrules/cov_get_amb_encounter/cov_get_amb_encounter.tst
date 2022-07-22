@@ -1,0 +1,1 @@
+execute cov_get_amb_encounter go

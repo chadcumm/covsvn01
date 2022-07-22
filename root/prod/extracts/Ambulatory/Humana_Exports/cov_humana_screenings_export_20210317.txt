@@ -1,0 +1,1308 @@
+/************************************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+*************************************************************************************************
+ 
+	Author:				Dawn Greer, DBA
+	Date Written:		01/12/2019
+	Solution:			Ambulatory
+	Source file name:	cov_humana_screenings_export.prg
+	Object name:		cov_humana_screenings_export
+	Request #:			1552
+ 
+	Program purpose:	Export Colonoscopy/Breast/BMI data to send to
+						Humana for meeting measures.
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:		x
+ 
+**************************************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+**************************************************************************************************
+ 
+Mod  Date	     Developer				Comment
+---  -------	 --------------------	----------------------------------------------------------
+001  02/14/2019  Dawn Greer, DBA        Removed duplicate fields and added a
+                                        missing field to the output.  Removed
+                                        crlf after the titles.
+002  07/10/2020  Dawn Greer, DBA        Added CPT code to Line_Procedure_Cd
+                                        field for the BMI data.
+003  03/10/2021  Dawn Greer, DBA        Changed the name of the field
+                                        from PRINCIPAL_PROC_D
+                                        to PRINCIPAL_PROC_CD
+004  03/17/2021  Dawn Greer, DBA        Change file name 
+                                        from coveant_humana_cerner_screenings_export_YYYYMMDD.txt
+                                        to cov_humana_cerner_screenings_export_YYYYMMDD.txt                                      
+*************************************************************************************************/
+ 
+drop program cov_humana_screenings_export go
+create program cov_humana_screenings_export
+ 
+PROMPT
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	,"Output To File" = 1
+ 
+WITH OUTDEV, output_file
+ 
+/**************************************************************
+ DECLARED VARIABLES
+**************************************************************/
+DECLARE crlf				= vc WITH constant(build(char(13),char(10)))
+DECLARE cov_pipe			= vc WITH constant(char(124))
+ 
+DECLARE file_var			= vc WITH noconstant("cov_humana_cerner_screenings_export_")	;004
+DECLARE cur_date_var  		= vc WITH noconstant(build(YEAR(curdate),FORMAT(MONTH(curdate),"##;P0"),FORMAT(DAY(curdate),"##;P0")))
+DECLARE filepath_var		= vc WITH noconstant("")
+DECLARE temppath_var  		= vc WITH noconstant("cer_temp:")
+DECLARE temppath2_var		= vc WITH noconstant("$cer_temp/")
+DECLARE output_var			= vc WITH noconstant("")
+DECLARE output_rec  		= vc WITH noconstant(" ")
+ 
+DECLARE cmd					= vc WITH noconstant(" ")
+DECLARE len					= i4 WITH noconstant(0)
+DECLARE stat				= i4 WITH noconstant(0)
+ 
+DECLARE startdate			= F8
+DECLARE enddate				= F8
+ 
+SET startdate = CNVTDATETIME(CURDATE-21,0)
+SET enddate = CNVTDATETIME(CURDATE-15,235959)
+ 
+CALL ECHO (BUILD("***** Start Date: ",FORMAT(startdate, "MM/DD/YYYY HH:mm:ss;;q")," *****"))
+CALL ECHO (BUILD("***** End Date: ",FORMAT(enddate, "MM/DD/YYYY HH:mm:ss;;q"), " *****"))
+ 
+RECORD exp_data (
+	1 output_cnt = i4
+	1 list[*]
+	    2 SOURCE_CLAIM_ID  = VC
+	    2 CLAIM_LINE_ID  = VC
+	    2 PROV_ID = VC
+	    2 MEMBER_ID = VC
+	    2 FIRST_SERV_DATE = VC
+	    2 LAST_SERV_DATE = VC
+	    2 PRINCIPAL_PROC_CD = VC
+	    2 OTHER_PROC_CD1 = VC
+	    2 OTHER_PROC_CD2 = VC
+	    2 OTHER_PROC_CD3 = VC
+	    2 OTHER_PROC_CD4 = VC
+	    2 OTHER_PROC_CD5 = VC
+	    2 OTHER_PROC_CD6 = VC
+	    2 OTHER_PROC_CD7 = VC
+	    2 OTHER_PROC_CD8 = VC
+	    2 OTHER_PROC_CD9 = VC
+	    2 REVENUE_CD = VC
+	    2 PRIMARY_DIAG_CD = VC
+	    2 SEC_DIAG_CD1 = VC
+	    2 SEC_DIAG_CD2 = VC
+	    2 SEC_DIAG_CD3 = VC
+	    2 SEC_DIAG_CD4 = VC
+	    2 SEC_DIAG_CD5 = VC
+	    2 SEC_DIAG_CD6 = VC
+	    2 SEC_DIAG_CD7 = VC
+	    2 SEC_DIAG_CD8 = VC
+	    2 SEC_DIAG_CD9 = VC
+	    2 SEC_DIAG_CD10 = VC
+	    2 LINE_PROCCD_MODIFIER = VC
+	    2 LINE_PROCCD_MODIFIER_2 = VC
+	    2 LINE_PROCEDURE_CD = VC
+	    2 LOINC_CODE = VC
+	    2 LOINC_RESULT = VC
+	    2 BMI_WEIGHT = VC
+	    2 BP_SYSTOLIC = VC
+	    2 BP_DIASTOLIC = VC
+	    2 LDL_SCREEN = VC
+	    2 CUSTOM_FIELD1 = VC
+	    2 CUSTOM_FIELD2 = VC
+	    2 CUSTOM_FIELD3 = VC
+	    2 CUSTOM_FIELD4 = VC
+	    2 CUSTOM_FIELD5 = VC
+	    2 CUSTOM_FIELD6 = VC
+	    2 HUMANA_MEMBER_ID = VC
+	    2 MEMBER_FIRST_NAME = VC
+	    2 MEMBER_LAST_NAME = VC
+	    2 MEMBER_DOB = VC
+	    2 MEMBER_GENDER = VC
+	    2 AS_OF_DATE = VC
+	)
+ 
+ ; Set astream path
+SET filepath_var = "/cerner/w_custom/p0665_cust/to_client_site/Extracts/Humana/Screenings/"
+SET file_var = cnvtlower(build(file_var,cur_date_var,".csv"))
+SET filepath_var = build(filepath_var, file_var)
+SET temppath_var = build(temppath_var, file_var)
+SET temppath2_var = build(temppath2_var, file_var)
+ 
+IF (validate(request->batch_selection) = 1 or $output_file = 1)
+	SET output_var = value(temppath_var)
+ELSE
+	SET output_var = value($OUTDEV)
+ENDIF
+ 
+CALL ECHO ("***** GETTING COLONOSCOPY ORDER DATA ******")
+/**************************************************************
+; Get Colonoscopy Order Data
+**************************************************************/
+ 
+SELECT DISTINCT
+	SOURCE_CLAIM_ID = TRIM(fin_nbr.alias,3)
+	,CLAIM_LINE_ID = " "
+	,PROV_ID = TRIM(npi.alias,3)
+	,MEMBER_ID = TRIM(enc_ins.MEMBER_NBR,3)
+	,FIRST_SERV_DATE = FORMAT(enc.reg_dt_tm, "MM/DD/YYYY;;q")
+	,LAST_SERV_DATE = FORMAT(enc.reg_dt_tm, "MM/DD/YYYY;;q")
+	,PRINCIPAL_PROC_CD = " "
+	,OTHER_PROC_CD1 = " "
+	,OTHER_PROC_CD2 = " "
+	,OTHER_PROC_CD3 = " "
+	,OTHER_PROC_CD4 = " "
+	,OTHER_PROC_CD5 = " "
+	,OTHER_PROC_CD6 = " "
+	,OTHER_PROC_CD7 = " "
+	,OTHER_PROC_CD8 = " "
+	,OTHER_PROC_CD9 = " "
+	,REVENUE_CD = " "
+	,PRIMARY_DIAG_CD = TRIM(nom.source_identifier,3)
+	,SEC_DIAG_CD1 = " "
+	,SEC_DIAG_CD2 = " "
+	,SEC_DIAG_CD3 = " "
+	,SEC_DIAG_CD4 = " "
+	,SEC_DIAG_CD5 = " "
+	,SEC_DIAG_CD6 = " "
+	,SEC_DIAG_CD7 = " "
+	,SEC_DIAG_CD8 = " "
+	,SEC_DIAG_CD9 = " "
+	,SEC_DIAG_CD10 = " "
+	,LINE_PROCCD_MODIFIER = " "
+	,LINE_PROCCD_MODIFIER_2 = " "
+	,LINE_PROCEDURE_CD = SUBSTRING(FINDSTRING(' ',TRIM(ord_cat.description,3),1,1)+1,5,TRIM(ord_cat.description,3))
+	,LOINC_CODE = " "
+	,LOINC_RESULT = " "
+	,BMI_WEIGHT = " "
+	,BP_SYSTOLIC = " "
+	,BP_DIASTOLIC = " "
+	,LDL_SCREEN = " "
+	,CUSTOM_FIELD1 = TRIM(SUBSTRING(5,1,nom.concept_cki),3)
+	,CUSTOM_FIELD2 = " "
+	,CUSTOM_FIELD3 = " "
+	,CUSTOM_FIELD4 = " "
+	,CUSTOM_FIELD5 = " "
+	,CUSTOM_FIELD6 = " "
+	,HUMANA_MEMBER_ID = TRIM(enc_ins.MEMBER_NBR,3)
+	,MEMBER_FIRST_NAME = TRIM(pat.name_first_key,3)
+	,MEMBER_LAST_NAME = TRIM(pat.name_last_key,3)
+	,MEMBER_DOB = FORMAT(pat.birth_dt_tm, "MM/DD/YYYY;;q")
+	,MEMBER_GENDER = EVALUATE(pat.sex_cd, 362.00, "F", 363.00, "M",364.00, "U", 0.00, "U")
+	,AS_OF_DATE = FORMAT(CNVTDATETIME(CURDATE,CURTIME3) , "MM/DD/YYYY;;q")
+FROM ENCOUNTER enc
+	, (INNER JOIN ENCNTR_ALIAS fin_nbr ON (enc.encntr_id = fin_nbr.encntr_id
+			AND fin_nbr.active_ind = 1
+			AND fin_nbr.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND fin_nbr.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+    		AND fin_nbr.alias_pool_cd = 2554138229.00   ;FIN
+    		))
+	, (INNER JOIN PERSON pat ON (enc.person_id = pat.person_id
+			AND pat.active_ind = 1
+			AND pat.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND pat.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND pat.name_last_key NOT IN ("TTTT*","FFFF*","ZZZ*")
+			))
+	, (INNER JOIN ENCNTR_PLAN_RELTN enc_ins ON (enc.encntr_id = enc_ins.encntr_id
+			AND enc_ins.active_ind = 1
+			AND enc_ins.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND enc_ins.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			))
+	, (INNER JOIN HEALTH_PLAN hp_ins ON (enc_ins.health_plan_id = hp_ins.health_plan_id
+			AND hp_ins.active_ind = 1
+			AND hp_ins.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND hp_ins.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND hp_ins.health_plan_id IN (2982968.00 /*Medicare Humana*/)
+			))
+	, (INNER JOIN ENCNTR_PRSNL_RELTN epr ON (enc.encntr_id = epr.encntr_id
+			AND epr.priority_seq = 1
+			AND epr.encntr_prsnl_r_cd IN (1116 /*Admitting*/,1119 /*Attending*/,681283 /*NP*/,681284/*PA*/)
+			AND epr.active_ind = 1
+			AND epr.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND epr.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+    		))
+	, (INNER JOIN PRSNL_ALIAS npi ON (epr.prsnl_person_id = npi.person_id
+			AND npi.active_ind = 1
+			AND npi.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND npi.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND npi.prsnl_alias_type_cd = 4038127.00  ;npi
+			))
+	, (INNER JOIN ORDERS ord ON (ord.encntr_id = enc.encntr_id
+			AND ord.person_id = pat.person_id
+			AND ord.order_status_cd = 2543.00   ;Completed
+			))
+	, (INNER JOIN ORDER_CATALOG ord_cat ON (ord.catalog_cd = ord_cat.catalog_cd
+			AND ord_cat.active_ind = 1
+			AND ord_cat.catalog_cd IN ( 2557640891.00 /*44388*/,211716411 /*44391*/,2557640951.00 /*45330*/,2557640971 /*45378*/,
+				211717815 /*45379*/,2557640981 /*45380*/,2557642351 /*45381*/,2557642361 /*45382*/,2557642371 /*45384*/,
+				2557642381 /*45385*/,2557711759 /*45388*/,2557711769 /*45393*/,2557711749 /*4537853*/,2559797587.00 /*82274*/,
+				2552573681.00 /*G0104*/, 2557732691.00 /*G0105*/, 2557732701.00 /*G0121*/,2557495729.00 /*G0328*/)
+			AND ord_cat.catalog_type_cd IN (20454826.00 /*Ambulatory POC*/, 20460012.00 /*Ambulatory procedures*/)
+			))
+	, (INNER JOIN NOMEN_ENTITY_RELTN ner ON (ner.encntr_id = enc.encntr_id
+			AND ner.parent_entity_id = ord.order_id
+			AND ner.person_id = enc.person_id AND ner.person_id = ord.person_id
+			AND ner.active_ind = 1
+			AND ner.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND ner.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND ner.priority = 1
+			))
+	, (INNER JOIN NOMENCLATURE nom ON (nom.nomenclature_id = ner.nomenclature_id
+			AND nom.active_ind = 1
+			AND nom.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND nom.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			))
+WHERE enc.active_ind = 1
+	AND enc.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+	AND enc.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+	AND enc.encntr_type_cd IN (22282402 /*Clinic*/,2554389963/*Phone Message*/,2560523697/*Results Only*/,20058643/*Legacy Data*/)
+	AND (enc.reg_dt_tm >= CNVTDATETIME(startdate)
+	AND enc.reg_dt_tm <= CNVTDATETIME(enddate))
+ 
+ 
+/****************************************************************************
+	Populate Record structure with Colonoscopy Order Data
+*****************************************************************************/
+HEAD REPORT
+	cnt = 0
+	CALL alterlist(exp_data->list, 100)
+ 
+DETAIL
+	cnt = cnt + 1
+ 
+	IF(mod(cnt,10) = 1 AND cnt > 10)
+		CALL alterlist(exp_data->list, cnt + 9)
+	ENDIF
+	exp_data->list[cnt].SOURCE_CLAIM_ID = SOURCE_CLAIM_ID
+	exp_data->list[cnt].CLAIM_LINE_ID = CLAIM_LINE_ID
+	exp_data->list[cnt].PROV_ID = PROV_ID
+	exp_data->list[cnt].MEMBER_ID = MEMBER_ID
+	exp_data->list[cnt].FIRST_SERV_DATE = FIRST_SERV_DATE
+	exp_data->list[cnt].LAST_SERV_DATE = LAST_SERV_DATE
+	exp_data->list[cnt].PRINCIPAL_PROC_CD = PRINCIPAL_PROC_CD
+	exp_data->list[cnt].OTHER_PROC_CD1 = OTHER_PROC_CD1
+	exp_data->list[cnt].OTHER_PROC_CD2 = OTHER_PROC_CD2
+	exp_data->list[cnt].OTHER_PROC_CD3 = OTHER_PROC_CD3
+	exp_data->list[cnt].OTHER_PROC_CD4 = OTHER_PROC_CD4
+	exp_data->list[cnt].OTHER_PROC_CD5 = OTHER_PROC_CD5
+	exp_data->list[cnt].OTHER_PROC_CD6 = OTHER_PROC_CD6
+	exp_data->list[cnt].OTHER_PROC_CD7 = OTHER_PROC_CD7
+	exp_data->list[cnt].OTHER_PROC_CD8 = OTHER_PROC_CD8
+	exp_data->list[cnt].OTHER_PROC_CD9 = OTHER_PROC_CD9
+	exp_data->list[cnt].REVENUE_CD = REVENUE_CD
+	exp_data->list[cnt].PRIMARY_DIAG_CD = PRIMARY_DIAG_CD
+	exp_data->list[cnt].SEC_DIAG_CD1 = SEC_DIAG_CD1
+	exp_data->list[cnt].SEC_DIAG_CD2 = SEC_DIAG_CD2
+	exp_data->list[cnt].SEC_DIAG_CD3 = SEC_DIAG_CD3
+	exp_data->list[cnt].SEC_DIAG_CD4 = SEC_DIAG_CD4
+	exp_data->list[cnt].SEC_DIAG_CD5 = SEC_DIAG_CD5
+	exp_data->list[cnt].SEC_DIAG_CD6 = SEC_DIAG_CD6
+	exp_data->list[cnt].SEC_DIAG_CD7 = SEC_DIAG_CD7
+	exp_data->list[cnt].SEC_DIAG_CD8 = SEC_DIAG_CD8
+	exp_data->list[cnt].SEC_DIAG_CD9 = SEC_DIAG_CD9
+	exp_data->list[cnt].SEC_DIAG_CD10 = SEC_DIAG_CD10
+	exp_data->list[cnt].LINE_PROCCD_MODIFIER = LINE_PROCCD_MODIFIER
+	exp_data->list[cnt].LINE_PROCCD_MODIFIER_2 = LINE_PROCCD_MODIFIER_2
+	exp_data->list[cnt].LINE_PROCEDURE_CD = LINE_PROCEDURE_CD
+	exp_data->list[cnt].LOINC_CODE = LOINC_CODE
+	exp_data->list[cnt].LOINC_RESULT = LOINC_RESULT
+	exp_data->list[cnt].BMI_WEIGHT = BMI_WEIGHT
+	exp_data->list[cnt].BP_SYSTOLIC = BP_SYSTOLIC
+	exp_data->list[cnt].BP_DIASTOLIC = BP_DIASTOLIC
+	exp_data->list[cnt].LDL_SCREEN = LDL_SCREEN
+	exp_data->list[cnt].CUSTOM_FIELD1 = CUSTOM_FIELD1
+	exp_data->list[cnt].CUSTOM_FIELD2 = CUSTOM_FIELD2
+	exp_data->list[cnt].CUSTOM_FIELD3 = CUSTOM_FIELD3
+	exp_data->list[cnt].CUSTOM_FIELD4 = CUSTOM_FIELD4
+	exp_data->list[cnt].CUSTOM_FIELD5 = CUSTOM_FIELD5
+	exp_data->list[cnt].CUSTOM_FIELD6 = CUSTOM_FIELD6
+	exp_data->list[cnt].HUMANA_MEMBER_ID = HUMANA_MEMBER_ID
+	exp_data->list[cnt].MEMBER_FIRST_NAME = MEMBER_FIRST_NAME
+	exp_data->list[cnt].MEMBER_LAST_NAME = MEMBER_LAST_NAME
+	exp_data->list[cnt].MEMBER_DOB = MEMBER_DOB
+	exp_data->list[cnt].MEMBER_GENDER = MEMBER_GENDER
+	exp_data->list[cnt].AS_OF_DATE = AS_OF_DATE
+ 
+FOOT REPORT
+ 	exp_data->output_cnt = cnt
+ 	CALL alterlist(exp_data->list, cnt)
+WITH nocounter
+ 
+CALL ECHO ("***** GETTING COLONOSCOPY PROCEDURE DATA *****")
+CALL ECHO (BUILD("***** Start Date: ",FORMAT(startdate, "MM/DD/YYYY HH:mm:ss;;q"), " *****"))
+CALL ECHO (BUILD("***** End Date: ",FORMAT(enddate, "MM/DD/YYYY HH:mm:ss;;q"), " *****"))
+/**************************************************************
+; Get Colonoscopy Procedure Data
+**************************************************************/
+SELECT DISTINCT
+	SOURCE_CLAIM_ID = TRIM(fin_nbr.alias,3)
+	, CLAIM_LINE_ID = " "
+	, PROV_ID = TRIM(npi.alias,3)
+	, MEMBER_ID = TRIM(enc_ins.MEMBER_NBR,3)
+	, FIRST_SERV_DATE = FORMAT(EVALUATE2(IF (CNVTSTRING(proc.proc_dt_tm) = "0") enc.reg_dt_tm
+			ELSE proc.proc_dt_tm ENDIF), "MM/DD/YYYY;;Q")
+	, LAST_SERV_DATE = FORMAT(EVALUATE2(IF (CNVTSTRING(proc.proc_dt_tm) = "0") enc.reg_dt_tm
+			ELSE proc.proc_dt_tm ENDIF), "MM/DD/YYYY;;Q")
+	, PRINCIPAL_PROC_CD = " "
+	, OTHER_PROC_CD1 = " "
+	, OTHER_PROC_CD2 = " "
+	, OTHER_PROC_CD3 = " "
+	, OTHER_PROC_CD4 = " "
+	, OTHER_PROC_CD5 = " "
+	, OTHER_PROC_CD6 = " "
+	, OTHER_PROC_CD7 = " "
+	, OTHER_PROC_CD8 = " "
+	, OTHER_PROC_CD9 = " "
+	, REVENUE_CD = " "
+	, PRIMARY_DIAG_CD = TRIM(nom_diag.source_identifier,3)
+	, SEC_DIAG_CD1 = " "
+	, SEC_DIAG_CD2 = " "
+	, SEC_DIAG_CD3 = " "
+	, SEC_DIAG_CD4 = " "
+	, SEC_DIAG_CD5 = " "
+	, SEC_DIAG_CD6 = " "
+	, SEC_DIAG_CD7 = " "
+	, SEC_DIAG_CD8 = " "
+	, SEC_DIAG_CD9 = " "
+	, SEC_DIAG_CD10 = " "
+	, LINE_PROCCD_MODIFIER = " "
+	, LINE_PROCCD_MODIFIER_2 = " "
+	, LINE_PROCEDURE_CD = EVALUATE2(IF (nom.source_vocabulary_cd = 673967.00/*SNOMED*/) TRIM(nom.source_string,3)
+			ELSE TRIM(nom.source_identifier,3) ENDIF)
+	, LOINC_CODE = " "
+	, LOINC_RESULT = " "
+	, BMI_WEIGHT = " "
+	, BP_SYSTOLIC = " "
+	, BP_DIASTOLIC = " "
+	, LDL_SCREEN = " "
+	, CUSTOM_FIELD1 = SUBSTRING(5,1,nom_diag.concept_cki)
+	, CUSTOM_FIELD2 = " "
+	, CUSTOM_FIELD3 = " "
+	, CUSTOM_FIELD4 = " "
+	, CUSTOM_FIELD5 = " "
+	, CUSTOM_FIELD6 = " "
+	, HUMANA_MEMBER_ID = TRIM(enc_ins.MEMBER_NBR,3)
+	, MEMBER_FIRST_NAME = TRIM(pat.name_first_key,3)
+	, MEMBER_LAST_NAME = TRIM(pat.name_last_key,3)
+	, MEMBER_DOB = FORMAT(pat.birth_dt_tm, "MM/DD/YYYY;;q")
+	, MEMBER_GENDER = EVALUATE(pat.sex_cd, 362.00, "F", 363.00, "M",364.00, "U", 0.00, "U")
+	, AS_OF_DATE = FORMAT(CNVTDATETIME(CURDATE,CURTIME3) , "MM/DD/YYYY;;q")
+FROM
+	ENCOUNTER   enc
+	, (INNER JOIN PERSON pat ON (enc.person_id = pat.person_id
+			AND pat.active_ind = 1
+			AND pat.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND pat.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND pat.name_last_key NOT IN ("TTTT*","FFFF*","ZZZ*")
+			))
+	, (INNER JOIN ENCNTR_ALIAS fin_nbr ON (enc.encntr_id = fin_nbr.encntr_id
+			AND fin_nbr.active_ind = 1
+			AND fin_nbr.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND fin_nbr.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+    		AND fin_nbr.alias_pool_cd = 2554138229.00   ;FIN
+  			))
+	, (INNER JOIN ENCNTR_PLAN_RELTN enc_ins ON (enc.encntr_id = enc_ins.encntr_id
+			AND enc_ins.active_ind = 1
+			AND enc_ins.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND enc_ins.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			))
+	, (INNER JOIN HEALTH_PLAN hp_ins ON (enc_ins.health_plan_id = hp_ins.health_plan_id
+			AND hp_ins.active_ind = 1
+			AND hp_ins.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND hp_ins.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND hp_ins.health_plan_id IN (2982968.00 /*Medicare Humana*/)
+			))
+	, (INNER JOIN ENCNTR_PRSNL_RELTN epr ON (enc.encntr_id = epr.encntr_id
+			AND epr.priority_seq = 1
+			AND epr.encntr_prsnl_r_cd IN (1116/*Admitting*/,1119/*Attending*/,681283/*NP*/,681284 /*PA*/)
+			AND epr.active_ind = 1
+			AND epr.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND epr.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			))
+	, (INNER JOIN PRSNL_ALIAS npi ON (epr.prsnl_person_id = npi.person_id
+			AND npi.active_ind = 1
+			AND npi.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND npi.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND npi.prsnl_alias_type_cd = 4038127.00  ;npi
+			))
+	, (INNER JOIN PROCEDURE proc ON (proc.encntr_id = ENC.encntr_id
+			AND proc.active_ind = 1
+			AND proc.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND proc.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND ((proc.proc_dt_tm >= CNVTDATETIME(startdate) AND proc.proc_dt_tm <= CNVTDATETIME(enddate))
+				OR (enc.reg_dt_tm >= CNVTDATETIME(startdate) AND enc.reg_dt_tm <= CNVTDATETIME(enddate)))
+			))
+	, (INNER JOIN NOMENCLATURE nom ON (proc.nomenclature_id = nom.nomenclature_id
+			AND nom.active_ind = 1
+			AND nom.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND nom.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND nom.nomenclature_id IN (60677402/*44388*/,283988885/*44388*/,60658190/*44389*/,283992216/*44389*/,
+				60677404/*44391*/,60677405/*44392*/,283990970/*44392*/,284004260/*44394*/,60680371/*44394*/,60683826/*44402*/,
+				60683828/*44403*/,60683829/*44404*/,60683461/*44406*/,283288958/*45378*/,60677829/*45378*/,284167497/*45379*/,
+				60677830/*45379*/,283288974/*45380*/,60677831/*45380*/,283291100/*45381*/,60677832/*45381*/,60677833/*45382*/,
+				283873498/*45382*/,60677834/*45384*/,283291331/*45384*/,60677835/*45385*/,283288961/*45385*/,60677836/*45386*/,
+				283886808/*45386*/,284008188/*45387*/,283872489/*45388*/,60676447/*45388*/,60676448/*45389*/,60676449/*45390*/,
+				283848121/*45390*/,60677838/*45391*/,60677839/*45392*/,60676450/*45393*/,284000320/*45398*/,60676451/*45398*/,
+				281116934/*G6024*/)
+			))
+	, (LEFT JOIN DIAGNOSIS diag ON (enc.encntr_id = diag.encntr_id
+			AND diag.active_ind = 1
+			AND diag.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND diag.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND diag.clinical_diag_priority = 1
+			))
+	, (LEFT JOIN NOMENCLATURE nom_diag ON (nom_diag.nomenclature_id = diag.nomenclature_id
+			AND nom_diag.active_ind = 1
+			AND nom_diag.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND nom_diag.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			))
+WHERE enc.active_ind = 1
+	AND enc.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+	AND enc.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+	AND enc.encntr_type_cd IN (22282402 /*Clinic*/,2554389963/*Phone Message*/,2560523697/*Results Only*/,20058643/*Legacy Data*/)
+ 
+ 
+/****************************************************************************
+	Populate Record structure with Colonoscopy Procedure Data
+*****************************************************************************/
+HEAD REPORT
+	cnt = exp_data->output_cnt
+ 
+	IF(mod(cnt,10)> 0)
+   		CALL alterlist(exp_data->list, cnt + (10-mod(cnt,10)))
+	ENDIF
+ 
+DETAIL
+ 
+	cnt = cnt + 1
+ 
+	IF(mod(cnt,10) = 1 AND cnt > 10)
+		CALL alterlist(exp_data->list, cnt + 9)
+	ENDIF
+	exp_data->list[cnt].SOURCE_CLAIM_ID = SOURCE_CLAIM_ID
+	exp_data->list[cnt].CLAIM_LINE_ID = CLAIM_LINE_ID
+	exp_data->list[cnt].PROV_ID = PROV_ID
+	exp_data->list[cnt].MEMBER_ID = MEMBER_ID
+	exp_data->list[cnt].FIRST_SERV_DATE = FIRST_SERV_DATE
+	exp_data->list[cnt].LAST_SERV_DATE = LAST_SERV_DATE
+	exp_data->list[cnt].PRINCIPAL_PROC_CD = PRINCIPAL_PROC_CD
+	exp_data->list[cnt].OTHER_PROC_CD1 = OTHER_PROC_CD1
+	exp_data->list[cnt].OTHER_PROC_CD2 = OTHER_PROC_CD2
+	exp_data->list[cnt].OTHER_PROC_CD3 = OTHER_PROC_CD3
+	exp_data->list[cnt].OTHER_PROC_CD4 = OTHER_PROC_CD4
+	exp_data->list[cnt].OTHER_PROC_CD5 = OTHER_PROC_CD5
+	exp_data->list[cnt].OTHER_PROC_CD6 = OTHER_PROC_CD6
+	exp_data->list[cnt].OTHER_PROC_CD7 = OTHER_PROC_CD7
+	exp_data->list[cnt].OTHER_PROC_CD8 = OTHER_PROC_CD8
+	exp_data->list[cnt].OTHER_PROC_CD9 = OTHER_PROC_CD9
+	exp_data->list[cnt].REVENUE_CD = REVENUE_CD
+	exp_data->list[cnt].PRIMARY_DIAG_CD = PRIMARY_DIAG_CD
+	exp_data->list[cnt].SEC_DIAG_CD1 = SEC_DIAG_CD1
+	exp_data->list[cnt].SEC_DIAG_CD2 = SEC_DIAG_CD2
+	exp_data->list[cnt].SEC_DIAG_CD3 = SEC_DIAG_CD3
+	exp_data->list[cnt].SEC_DIAG_CD4 = SEC_DIAG_CD4
+	exp_data->list[cnt].SEC_DIAG_CD5 = SEC_DIAG_CD5
+	exp_data->list[cnt].SEC_DIAG_CD6 = SEC_DIAG_CD6
+	exp_data->list[cnt].SEC_DIAG_CD7 = SEC_DIAG_CD7
+	exp_data->list[cnt].SEC_DIAG_CD8 = SEC_DIAG_CD8
+	exp_data->list[cnt].SEC_DIAG_CD9 = SEC_DIAG_CD9
+	exp_data->list[cnt].SEC_DIAG_CD10 = SEC_DIAG_CD10
+	exp_data->list[cnt].LINE_PROCCD_MODIFIER = LINE_PROCCD_MODIFIER
+	exp_data->list[cnt].LINE_PROCCD_MODIFIER_2 = LINE_PROCCD_MODIFIER_2
+	exp_data->list[cnt].LINE_PROCEDURE_CD = LINE_PROCEDURE_CD
+	exp_data->list[cnt].LOINC_CODE = LOINC_CODE
+	exp_data->list[cnt].LOINC_RESULT = LOINC_RESULT
+	exp_data->list[cnt].BMI_WEIGHT = BMI_WEIGHT
+	exp_data->list[cnt].BP_SYSTOLIC = BP_SYSTOLIC
+	exp_data->list[cnt].BP_DIASTOLIC = BP_DIASTOLIC
+	exp_data->list[cnt].LDL_SCREEN = LDL_SCREEN
+	exp_data->list[cnt].CUSTOM_FIELD1 = CUSTOM_FIELD1
+	exp_data->list[cnt].CUSTOM_FIELD2 = CUSTOM_FIELD2
+	exp_data->list[cnt].CUSTOM_FIELD3 = CUSTOM_FIELD3
+	exp_data->list[cnt].CUSTOM_FIELD4 = CUSTOM_FIELD4
+	exp_data->list[cnt].CUSTOM_FIELD5 = CUSTOM_FIELD5
+	exp_data->list[cnt].CUSTOM_FIELD6 = CUSTOM_FIELD6
+	exp_data->list[cnt].HUMANA_MEMBER_ID = HUMANA_MEMBER_ID
+	exp_data->list[cnt].MEMBER_FIRST_NAME = MEMBER_FIRST_NAME
+	exp_data->list[cnt].MEMBER_LAST_NAME = MEMBER_LAST_NAME
+	exp_data->list[cnt].MEMBER_DOB = MEMBER_DOB
+	exp_data->list[cnt].MEMBER_GENDER = MEMBER_GENDER
+	exp_data->list[cnt].AS_OF_DATE = AS_OF_DATE
+ 
+FOOT REPORT
+ 	exp_data->output_cnt = cnt
+ 	CALL alterlist(exp_data->list, cnt)
+WITH nocounter
+ 
+CALL ECHO ("***** GETTING BREAST ORDER DATA ******")
+/**************************************************************
+; Get Breast Order Data
+**************************************************************/
+ 
+SELECT DISTINCT
+	SOURCE_CLAIM_ID = TRIM(fin_nbr.alias,3)
+	,CLAIM_LINE_ID = " "
+	,PROV_ID = TRIM(npi.alias,3)
+	,MEMBER_ID = TRIM(enc_ins.MEMBER_NBR,3)
+	,FIRST_SERV_DATE = FORMAT(enc.reg_dt_tm, "MM/DD/YYYY;;q")
+	,LAST_SERV_DATE = FORMAT(enc.reg_dt_tm, "MM/DD/YYYY;;q")
+	,PRINCIPAL_PROC_CD = " "
+	,OTHER_PROC_CD1 = " "
+	,OTHER_PROC_CD2 = " "
+	,OTHER_PROC_CD3 = " "
+	,OTHER_PROC_CD4 = " "
+	,OTHER_PROC_CD5 = " "
+	,OTHER_PROC_CD6 = " "
+	,OTHER_PROC_CD7 = " "
+	,OTHER_PROC_CD8 = " "
+	,OTHER_PROC_CD9 = " "
+	,REVENUE_CD = " "
+	,PRIMARY_DIAG_CD = TRIM(nom.source_identifier,3)
+	,SEC_DIAG_CD1 = " "
+	,SEC_DIAG_CD2 = " "
+	,SEC_DIAG_CD3 = " "
+	,SEC_DIAG_CD4 = " "
+	,SEC_DIAG_CD5 = " "
+	,SEC_DIAG_CD6 = " "
+	,SEC_DIAG_CD7 = " "
+	,SEC_DIAG_CD8 = " "
+	,SEC_DIAG_CD9 = " "
+	,SEC_DIAG_CD10 = " "
+	,LINE_PROCCD_MODIFIER = " "
+	,LINE_PROCCD_MODIFIER_2 = " "
+	,LINE_PROCEDURE_CD = TRIM(ord_cat.description,3)
+	,LOINC_CODE = " "
+	,LOINC_RESULT = " "
+	,BMI_WEIGHT = " "
+	,BP_SYSTOLIC = " "
+	,BP_DIASTOLIC = " "
+	,LDL_SCREEN = " "
+	,CUSTOM_FIELD1 = TRIM(SUBSTRING(5,1,nom.concept_cki),3)
+	,CUSTOM_FIELD2 = " "
+	,CUSTOM_FIELD3 = " "
+	,CUSTOM_FIELD4 = " "
+	,CUSTOM_FIELD5 = " "
+	,CUSTOM_FIELD6 = " "
+	,HUMANA_MEMBER_ID = TRIM(enc_ins.MEMBER_NBR,3)
+	,MEMBER_FIRST_NAME = TRIM(pat.name_first_key,3)
+	,MEMBER_LAST_NAME = TRIM(pat.name_last_key,3)
+	,MEMBER_DOB = FORMAT(pat.birth_dt_tm, "MM/DD/YYYY;;q")
+	,MEMBER_GENDER = EVALUATE(pat.sex_cd, 362.00, "F", 363.00, "M",364.00, "U", 0.00, "U")
+	,AS_OF_DATE = FORMAT(CNVTDATETIME(CURDATE,CURTIME3) , "MM/DD/YYYY;;q")
+FROM ENCOUNTER enc
+	, (INNER JOIN ENCNTR_ALIAS fin_nbr ON (enc.encntr_id = fin_nbr.encntr_id
+			AND fin_nbr.active_ind = 1
+			AND fin_nbr.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND fin_nbr.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+    		AND fin_nbr.alias_pool_cd = 2554138229.00   ;FIN
+    		))
+	, (INNER JOIN PERSON pat ON (enc.person_id = pat.person_id
+			AND pat.active_ind = 1
+			AND pat.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND pat.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND pat.name_last_key NOT IN ("TTTT*","FFFF*","ZZZ*")
+			))
+	, (INNER JOIN ENCNTR_PLAN_RELTN enc_ins ON (enc.encntr_id = enc_ins.encntr_id
+			AND enc_ins.active_ind = 1
+			AND enc_ins.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND enc_ins.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			))
+	, (INNER JOIN HEALTH_PLAN hp_ins ON (enc_ins.health_plan_id = hp_ins.health_plan_id
+			AND hp_ins.active_ind = 1
+			AND hp_ins.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND hp_ins.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND hp_ins.health_plan_id IN (2982968.00 /*Medicare Humana*/)
+			))
+	, (INNER JOIN ENCNTR_PRSNL_RELTN epr ON (enc.encntr_id = epr.encntr_id
+			AND epr.priority_seq = 1
+			AND epr.encntr_prsnl_r_cd IN (1116 /*Admitting*/,1119 /*Attending*/,681283 /*NP*/,681284/*PA*/)
+			AND epr.active_ind = 1
+			AND epr.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND epr.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+    		))
+	, (INNER JOIN PRSNL_ALIAS npi ON (epr.prsnl_person_id = npi.person_id
+			AND npi.active_ind = 1
+			AND npi.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND npi.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND npi.prsnl_alias_type_cd = 4038127.00  ;npi
+			))
+	, (INNER JOIN ORDERS ord ON (ord.encntr_id = enc.encntr_id
+			AND ord.person_id = pat.person_id
+			AND ord.order_status_cd = 2543.00   ;Completed
+			))
+	, (INNER JOIN ORDER_CATALOG ord_cat ON (ord.catalog_cd = ord_cat.catalog_cd
+			AND ord_cat.active_ind = 1
+			AND ord_cat.catalog_cd IN (2557870887.00, 2557870909.00, 2557870909.00, 2556629075.00, 2556629075.00,
+				2556629175.00, 2556629185.00, 2556629105.00, 2556629105.00, 2556629125.00, 2556629085.00, 2556629085.00,
+				2556629055.00, 2556629055.00, 2556629045.00, 2556629045.00, 2556629045.00, 2556629045.00, 2556629095.00,
+				2556629095.00, 2556629095.00, 2556629095.00, 2556629115.00, 2556629115.00, 2556629115.00, 2556629115.00,
+				2556629155.00, 2556629155.00, 2556629165.00, 2556629165.00, 2559401783.00, 2559401783.00, 2556628945.00,
+				2556628945.00, 2556628945.00, 2556628945.00, 2556629015.00, 2556629025.00, 2556628955.00, 2556628975.00,
+				2556629035.00, 2556628985.00, 2556628985.00, 2556628995.00, 2556628965.00, 2556628965.00, 2556628965.00,
+				2556628965.00, 2556628965.00, 2552790731.00, 2552790699.00, 2552790699.00, 2552790715.00, 2552790715.00,
+				2552777119.00, 2552776591.00, 2552776591.00, 2552777103.00, 2552777103.00)
+			AND ord_cat.catalog_type_cd IN (2517.00 /*Radiology*/,20454826.00 /*Ambulatory POC*/,
+				20460012.00 /*Ambulatory procedures*/)
+			))
+	, (INNER JOIN NOMEN_ENTITY_RELTN ner ON (ner.encntr_id = enc.encntr_id
+			AND ner.parent_entity_id = ord.order_id
+			AND ner.person_id = enc.person_id AND ner.person_id = ord.person_id
+			AND ner.active_ind = 1
+			AND ner.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND ner.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND ner.priority = 1
+			))
+	, (INNER JOIN NOMENCLATURE nom ON (nom.nomenclature_id = ner.nomenclature_id
+			AND nom.active_ind = 1
+			AND nom.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND nom.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			))
+WHERE enc.active_ind = 1
+	AND enc.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+	AND enc.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+	AND enc.encntr_type_cd IN (22282402 /*Clinic*/,2554389963/*Phone Message*/,2560523697/*Results Only*/,20058643/*Legacy Data*/)
+	AND (enc.reg_dt_tm >= CNVTDATETIME(startdate)
+	AND enc.reg_dt_tm <= CNVTDATETIME(enddate))
+ 
+ 
+/****************************************************************************
+	Populate Record structure with Breast Order Data
+*****************************************************************************/
+HEAD REPORT
+	cnt = exp_data->output_cnt
+ 
+	IF(mod(cnt,10)> 0)
+   		CALL alterlist(exp_data->list, cnt + (10-mod(cnt,10)))
+	ENDIF
+DETAIL
+	cnt = cnt + 1
+ 
+	IF(mod(cnt,10) = 1 AND cnt > 10)
+		CALL alterlist(exp_data->list, cnt + 9)
+	ENDIF
+	exp_data->list[cnt].SOURCE_CLAIM_ID = SOURCE_CLAIM_ID
+	exp_data->list[cnt].CLAIM_LINE_ID = CLAIM_LINE_ID
+	exp_data->list[cnt].PROV_ID = PROV_ID
+	exp_data->list[cnt].MEMBER_ID = MEMBER_ID
+	exp_data->list[cnt].FIRST_SERV_DATE = FIRST_SERV_DATE
+	exp_data->list[cnt].LAST_SERV_DATE = LAST_SERV_DATE
+	exp_data->list[cnt].PRINCIPAL_PROC_CD = PRINCIPAL_PROC_CD
+	exp_data->list[cnt].OTHER_PROC_CD1 = OTHER_PROC_CD1
+	exp_data->list[cnt].OTHER_PROC_CD2 = OTHER_PROC_CD2
+	exp_data->list[cnt].OTHER_PROC_CD3 = OTHER_PROC_CD3
+	exp_data->list[cnt].OTHER_PROC_CD4 = OTHER_PROC_CD4
+	exp_data->list[cnt].OTHER_PROC_CD5 = OTHER_PROC_CD5
+	exp_data->list[cnt].OTHER_PROC_CD6 = OTHER_PROC_CD6
+	exp_data->list[cnt].OTHER_PROC_CD7 = OTHER_PROC_CD7
+	exp_data->list[cnt].OTHER_PROC_CD8 = OTHER_PROC_CD8
+	exp_data->list[cnt].OTHER_PROC_CD9 = OTHER_PROC_CD9
+	exp_data->list[cnt].REVENUE_CD = REVENUE_CD
+	exp_data->list[cnt].PRIMARY_DIAG_CD = PRIMARY_DIAG_CD
+	exp_data->list[cnt].SEC_DIAG_CD1 = SEC_DIAG_CD1
+	exp_data->list[cnt].SEC_DIAG_CD2 = SEC_DIAG_CD2
+	exp_data->list[cnt].SEC_DIAG_CD3 = SEC_DIAG_CD3
+	exp_data->list[cnt].SEC_DIAG_CD4 = SEC_DIAG_CD4
+	exp_data->list[cnt].SEC_DIAG_CD5 = SEC_DIAG_CD5
+	exp_data->list[cnt].SEC_DIAG_CD6 = SEC_DIAG_CD6
+	exp_data->list[cnt].SEC_DIAG_CD7 = SEC_DIAG_CD7
+	exp_data->list[cnt].SEC_DIAG_CD8 = SEC_DIAG_CD8
+	exp_data->list[cnt].SEC_DIAG_CD9 = SEC_DIAG_CD9
+	exp_data->list[cnt].SEC_DIAG_CD10 = SEC_DIAG_CD10
+	exp_data->list[cnt].LINE_PROCCD_MODIFIER = LINE_PROCCD_MODIFIER
+	exp_data->list[cnt].LINE_PROCCD_MODIFIER_2 = LINE_PROCCD_MODIFIER_2
+	exp_data->list[cnt].LINE_PROCEDURE_CD = LINE_PROCEDURE_CD
+	exp_data->list[cnt].LOINC_CODE = LOINC_CODE
+	exp_data->list[cnt].LOINC_RESULT = LOINC_RESULT
+	exp_data->list[cnt].BMI_WEIGHT = BMI_WEIGHT
+	exp_data->list[cnt].BP_SYSTOLIC = BP_SYSTOLIC
+	exp_data->list[cnt].BP_DIASTOLIC = BP_DIASTOLIC
+	exp_data->list[cnt].LDL_SCREEN = LDL_SCREEN
+	exp_data->list[cnt].CUSTOM_FIELD1 = CUSTOM_FIELD1
+	exp_data->list[cnt].CUSTOM_FIELD2 = CUSTOM_FIELD2
+	exp_data->list[cnt].CUSTOM_FIELD3 = CUSTOM_FIELD3
+	exp_data->list[cnt].CUSTOM_FIELD4 = CUSTOM_FIELD4
+	exp_data->list[cnt].CUSTOM_FIELD5 = CUSTOM_FIELD5
+	exp_data->list[cnt].CUSTOM_FIELD6 = CUSTOM_FIELD6
+	exp_data->list[cnt].HUMANA_MEMBER_ID = HUMANA_MEMBER_ID
+	exp_data->list[cnt].MEMBER_FIRST_NAME = MEMBER_FIRST_NAME
+	exp_data->list[cnt].MEMBER_LAST_NAME = MEMBER_LAST_NAME
+	exp_data->list[cnt].MEMBER_DOB = MEMBER_DOB
+	exp_data->list[cnt].MEMBER_GENDER = MEMBER_GENDER
+	exp_data->list[cnt].AS_OF_DATE = AS_OF_DATE
+ 
+FOOT REPORT
+ 	exp_data->output_cnt = cnt
+ 	CALL alterlist(exp_data->list, cnt)
+WITH nocounter
+ 
+CALL ECHO ("***** GETTING BREAST PROCEDURE DATA *****")
+CALL ECHO (BUILD("***** Start Date: ",FORMAT(startdate, "MM/DD/YYYY HH:mm:ss;;q"), " *****"))
+CALL ECHO (BUILD("***** End Date: ",FORMAT(enddate, "MM/DD/YYYY HH:mm:ss;;q"), " *****"))
+/**************************************************************
+; Get Breast Procedure Data
+**************************************************************/
+SELECT DISTINCT
+	SOURCE_CLAIM_ID = TRIM(fin_nbr.alias,3)
+	, CLAIM_LINE_ID = " "
+	, PROV_ID = TRIM(npi.alias,3)
+	, MEMBER_ID = TRIM(enc_ins.MEMBER_NBR,3)
+	, FIRST_SERV_DATE = FORMAT(EVALUATE2(IF (CNVTSTRING(proc.proc_dt_tm) = "0") enc.reg_dt_tm
+			ELSE proc.proc_dt_tm ENDIF), "MM/DD/YYYY;;Q")
+	, LAST_SERV_DATE = FORMAT(EVALUATE2(IF (CNVTSTRING(proc.proc_dt_tm) = "0") enc.reg_dt_tm
+			ELSE proc.proc_dt_tm ENDIF), "MM/DD/YYYY;;Q")
+	, PRINCIPAL_PROC_CD = " "
+	, OTHER_PROC_CD1 = " "
+	, OTHER_PROC_CD2 = " "
+	, OTHER_PROC_CD3 = " "
+	, OTHER_PROC_CD4 = " "
+	, OTHER_PROC_CD5 = " "
+	, OTHER_PROC_CD6 = " "
+	, OTHER_PROC_CD7 = " "
+	, OTHER_PROC_CD8 = " "
+	, OTHER_PROC_CD9 = " "
+	, REVENUE_CD = " "
+	, PRIMARY_DIAG_CD = TRIM(nom_diag.source_identifier,3)
+	, SEC_DIAG_CD1 = " "
+	, SEC_DIAG_CD2 = " "
+	, SEC_DIAG_CD3 = " "
+	, SEC_DIAG_CD4 = " "
+	, SEC_DIAG_CD5 = " "
+	, SEC_DIAG_CD6 = " "
+	, SEC_DIAG_CD7 = " "
+	, SEC_DIAG_CD8 = " "
+	, SEC_DIAG_CD9 = " "
+	, SEC_DIAG_CD10 = " "
+	, LINE_PROCCD_MODIFIER = " "
+	, LINE_PROCCD_MODIFIER_2 = " "
+	, LINE_PROCEDURE_CD = EVALUATE2(IF (nom.source_vocabulary_cd = 673967.00/*SNOMED*/) TRIM(nom.source_string,3)
+			ELSE TRIM(nom.source_identifier,3) ENDIF)
+	, LOINC_CODE = " "
+	, LOINC_RESULT = " "
+	, BMI_WEIGHT = " "
+	, BP_SYSTOLIC = " "
+	, BP_DIASTOLIC = " "
+	, LDL_SCREEN = " "
+	, CUSTOM_FIELD1 = SUBSTRING(5,1,nom_diag.concept_cki)
+	, CUSTOM_FIELD2 = " "
+	, CUSTOM_FIELD3 = " "
+	, CUSTOM_FIELD4 = " "
+	, CUSTOM_FIELD5 = " "
+	, CUSTOM_FIELD6 = " "
+	, HUMANA_MEMBER_ID = TRIM(enc_ins.MEMBER_NBR,3)
+	, MEMBER_FIRST_NAME = TRIM(pat.name_first_key,3)
+	, MEMBER_LAST_NAME = TRIM(pat.name_last_key,3)
+	, MEMBER_DOB = FORMAT(pat.birth_dt_tm, "MM/DD/YYYY;;q")
+	, MEMBER_GENDER = EVALUATE(pat.sex_cd, 362.00, "F", 363.00, "M",364.00, "U", 0.00, "U")
+	, AS_OF_DATE = FORMAT(CNVTDATETIME(CURDATE,CURTIME3) , "MM/DD/YYYY;;q")
+FROM
+	ENCOUNTER   enc
+	, (INNER JOIN PERSON pat ON (enc.person_id = pat.person_id
+			AND pat.active_ind = 1
+			AND pat.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND pat.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND pat.name_last_key NOT IN ("TTTT*","FFFF*","ZZZ*")
+			))
+	, (INNER JOIN ENCNTR_ALIAS fin_nbr ON (enc.encntr_id = fin_nbr.encntr_id
+			AND fin_nbr.active_ind = 1
+			AND fin_nbr.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND fin_nbr.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+    		AND fin_nbr.alias_pool_cd = 2554138229.00   ;FIN
+  			))
+	, (INNER JOIN ENCNTR_PLAN_RELTN enc_ins ON (enc.encntr_id = enc_ins.encntr_id
+			AND enc_ins.active_ind = 1
+			AND enc_ins.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND enc_ins.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			))
+	, (INNER JOIN HEALTH_PLAN hp_ins ON (enc_ins.health_plan_id = hp_ins.health_plan_id
+			AND hp_ins.active_ind = 1
+			AND hp_ins.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND hp_ins.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND hp_ins.health_plan_id IN (2982968.00 /*Medicare Humana*/)
+			))
+	, (INNER JOIN ENCNTR_PRSNL_RELTN epr ON (enc.encntr_id = epr.encntr_id
+			AND epr.priority_seq = 1
+			AND epr.encntr_prsnl_r_cd IN (1116/*Admitting*/,1119/*Attending*/,681283/*NP*/,681284 /*PA*/)
+			AND epr.active_ind = 1
+			AND epr.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND epr.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			))
+	, (INNER JOIN PRSNL_ALIAS npi ON (epr.prsnl_person_id = npi.person_id
+			AND npi.active_ind = 1
+			AND npi.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND npi.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND npi.prsnl_alias_type_cd = 4038127.00  ;npi
+			))
+	, (INNER JOIN PROCEDURE proc ON (proc.encntr_id = ENC.encntr_id
+			AND proc.active_ind = 1
+			AND proc.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND proc.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND ((proc.proc_dt_tm >= CNVTDATETIME(startdate) AND proc.proc_dt_tm <= CNVTDATETIME(enddate))
+				OR (enc.reg_dt_tm >= CNVTDATETIME(startdate) AND enc.reg_dt_tm <= CNVTDATETIME(enddate)))
+			))
+	, (INNER JOIN NOMENCLATURE nom ON (proc.nomenclature_id = nom.nomenclature_id
+			AND nom.active_ind = 1
+			AND nom.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND nom.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND nom.nomenclature_id IN (284004575/*77051*/,280898282/*77067*/,279820132/*726741000124117*/,
+				283849742/*77065*/,281116876/*G0204*/,279824926/*3330609010*/,6697303/*384223018*/,279662173/*77067*/,
+				280731040/*3332409014*/,8203423/*119035015*/,7783111/*208630014*/,281116957/*G0202*/,279812288/*3330608019*/,
+				8059732/*119040011*/,280898281/*77066*/,279662157/*77066*/,281116938/*G0202*/,281116878/*G0206*/,
+				284004005/*77057*/,283888471/*77056*/,273236614/*361026012*/,8132303/*481971012*/,7694111/*208625010*/,
+				280898280/*77065*/,283849769/*77066*/,10990346/*2696031015*/,279810951/*3330622019*/,7062984/*361029017*/,
+				8059733/*72085010*/,283887602/*77067*/,7213365/*41281017*/,60681301/*3014F*/,8132302/*481970013*/,
+				281243731/*3525671013*/,279662156/*77065*/,280731041/*3332410016*/)
+			))
+	, (LEFT JOIN DIAGNOSIS diag ON (enc.encntr_id = diag.encntr_id
+			AND diag.active_ind = 1
+			AND diag.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND diag.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND diag.clinical_diag_priority = 1
+			))
+	, (LEFT JOIN NOMENCLATURE nom_diag ON (nom_diag.nomenclature_id = diag.nomenclature_id
+			AND nom_diag.active_ind = 1
+			AND nom_diag.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND nom_diag.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			))
+WHERE enc.active_ind = 1
+	AND enc.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+	AND enc.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+	AND enc.encntr_type_cd IN (22282402 /*Clinic*/,2554389963/*Phone Message*/,2560523697/*Results Only*/,20058643/*Legacy Data*/)
+ 
+ 
+/****************************************************************************
+	Populate Record structure with Breast Procedure Data
+*****************************************************************************/
+HEAD REPORT
+	cnt = exp_data->output_cnt
+ 
+	IF(mod(cnt,10)> 0)
+   		CALL alterlist(exp_data->list, cnt + (10-mod(cnt,10)))
+	ENDIF
+ 
+DETAIL
+ 
+	cnt = cnt + 1
+ 
+	IF(mod(cnt,10) = 1 AND cnt > 10)
+		CALL alterlist(exp_data->list, cnt + 9)
+	ENDIF
+	exp_data->list[cnt].SOURCE_CLAIM_ID = SOURCE_CLAIM_ID
+	exp_data->list[cnt].CLAIM_LINE_ID = CLAIM_LINE_ID
+	exp_data->list[cnt].PROV_ID = PROV_ID
+	exp_data->list[cnt].MEMBER_ID = MEMBER_ID
+	exp_data->list[cnt].FIRST_SERV_DATE = FIRST_SERV_DATE
+	exp_data->list[cnt].LAST_SERV_DATE = LAST_SERV_DATE
+	exp_data->list[cnt].PRINCIPAL_PROC_CD = PRINCIPAL_PROC_CD
+	exp_data->list[cnt].OTHER_PROC_CD1 = OTHER_PROC_CD1
+	exp_data->list[cnt].OTHER_PROC_CD2 = OTHER_PROC_CD2
+	exp_data->list[cnt].OTHER_PROC_CD3 = OTHER_PROC_CD3
+	exp_data->list[cnt].OTHER_PROC_CD4 = OTHER_PROC_CD4
+	exp_data->list[cnt].OTHER_PROC_CD5 = OTHER_PROC_CD5
+	exp_data->list[cnt].OTHER_PROC_CD6 = OTHER_PROC_CD6
+	exp_data->list[cnt].OTHER_PROC_CD7 = OTHER_PROC_CD7
+	exp_data->list[cnt].OTHER_PROC_CD8 = OTHER_PROC_CD8
+	exp_data->list[cnt].OTHER_PROC_CD9 = OTHER_PROC_CD9
+	exp_data->list[cnt].REVENUE_CD = REVENUE_CD
+	exp_data->list[cnt].PRIMARY_DIAG_CD = PRIMARY_DIAG_CD
+	exp_data->list[cnt].SEC_DIAG_CD1 = SEC_DIAG_CD1
+	exp_data->list[cnt].SEC_DIAG_CD2 = SEC_DIAG_CD2
+	exp_data->list[cnt].SEC_DIAG_CD3 = SEC_DIAG_CD3
+	exp_data->list[cnt].SEC_DIAG_CD4 = SEC_DIAG_CD4
+	exp_data->list[cnt].SEC_DIAG_CD5 = SEC_DIAG_CD5
+	exp_data->list[cnt].SEC_DIAG_CD6 = SEC_DIAG_CD6
+	exp_data->list[cnt].SEC_DIAG_CD7 = SEC_DIAG_CD7
+	exp_data->list[cnt].SEC_DIAG_CD8 = SEC_DIAG_CD8
+	exp_data->list[cnt].SEC_DIAG_CD9 = SEC_DIAG_CD9
+	exp_data->list[cnt].SEC_DIAG_CD10 = SEC_DIAG_CD10
+	exp_data->list[cnt].LINE_PROCCD_MODIFIER = LINE_PROCCD_MODIFIER
+	exp_data->list[cnt].LINE_PROCCD_MODIFIER_2 = LINE_PROCCD_MODIFIER_2
+	exp_data->list[cnt].LINE_PROCEDURE_CD = LINE_PROCEDURE_CD
+	exp_data->list[cnt].LOINC_CODE = LOINC_CODE
+	exp_data->list[cnt].LOINC_RESULT = LOINC_RESULT
+	exp_data->list[cnt].BMI_WEIGHT = BMI_WEIGHT
+	exp_data->list[cnt].BP_SYSTOLIC = BP_SYSTOLIC
+	exp_data->list[cnt].BP_DIASTOLIC = BP_DIASTOLIC
+	exp_data->list[cnt].LDL_SCREEN = LDL_SCREEN
+	exp_data->list[cnt].CUSTOM_FIELD1 = CUSTOM_FIELD1
+	exp_data->list[cnt].CUSTOM_FIELD2 = CUSTOM_FIELD2
+	exp_data->list[cnt].CUSTOM_FIELD3 = CUSTOM_FIELD3
+	exp_data->list[cnt].CUSTOM_FIELD4 = CUSTOM_FIELD4
+	exp_data->list[cnt].CUSTOM_FIELD5 = CUSTOM_FIELD5
+	exp_data->list[cnt].CUSTOM_FIELD6 = CUSTOM_FIELD6
+	exp_data->list[cnt].HUMANA_MEMBER_ID = HUMANA_MEMBER_ID
+	exp_data->list[cnt].MEMBER_FIRST_NAME = MEMBER_FIRST_NAME
+	exp_data->list[cnt].MEMBER_LAST_NAME = MEMBER_LAST_NAME
+	exp_data->list[cnt].MEMBER_DOB = MEMBER_DOB
+	exp_data->list[cnt].MEMBER_GENDER = MEMBER_GENDER
+	exp_data->list[cnt].AS_OF_DATE = AS_OF_DATE
+ 
+FOOT REPORT
+ 	exp_data->output_cnt = cnt
+ 	CALL alterlist(exp_data->list, cnt)
+WITH nocounter
+ 
+CALL ECHO ("***** GETTING BMI DATA *****")
+CALL ECHO (BUILD("***** Start Date: ",FORMAT(startdate, "MM/DD/YYYY HH:mm:ss;;q"), " *****"))
+CALL ECHO (BUILD("***** End Date: ",FORMAT(enddate, "MM/DD/YYYY HH:mm:ss;;q"), " *****"))
+/**************************************************************
+ Get BMI Data
+**************************************************************/
+SELECT DISTINCT
+	SOURCE_CLAIM_ID = TRIM(fin_nbr.alias,3)
+	, CLAIM_LINE_ID = " "
+	, PROV_ID = TRIM(npi.alias,3)
+	, MEMBER_ID = TRIM(enc_ins.MEMBER_NBR,3)
+	, FIRST_SERV_DATE = FORMAT(enc.reg_dt_tm, "MM/DD/YYYY;;Q")
+	, LAST_SERV_DATE = FORMAT(enc.reg_dt_tm, "MM/DD/YYYY;;Q")
+	, PRINCIPAL_PROC_CD = " "
+	, OTHER_PROC_CD1 = " "
+	, OTHER_PROC_CD2 = " "
+	, OTHER_PROC_CD3 = " "
+	, OTHER_PROC_CD4 = " "
+	, OTHER_PROC_CD5 = " "
+	, OTHER_PROC_CD6 = " "
+	, OTHER_PROC_CD7 = " "
+	, OTHER_PROC_CD8 = " "
+	, OTHER_PROC_CD9 = " "
+	, REVENUE_CD = " "
+	, PRIMARY_DIAG_CD = TRIM(nom_diag.source_identifier,3)
+	, SEC_DIAG_CD1 = " "
+	, SEC_DIAG_CD2 = " "
+	, SEC_DIAG_CD3 = " "
+	, SEC_DIAG_CD4 = " "
+	, SEC_DIAG_CD5 = " "
+	, SEC_DIAG_CD6 = " "
+	, SEC_DIAG_CD7 = " "
+	, SEC_DIAG_CD8 = " "
+	, SEC_DIAG_CD9 = " "
+	, SEC_DIAG_CD10 = " "
+	, LINE_PROCCD_MODIFIER = " "
+	, LINE_PROCCD_MODIFIER_2 = " "
+		;002 - Added CPT code for BMI Data
+	, LINE_PROCEDURE_CD = EVALUATE2(IF (SIZE(TRIM(cm.field6,3)) = 0) " " ELSE SUBSTRING(1,5,TRIM(cm.field6,3)) ENDIF)
+	, LOINC_CODE = " "
+	, LOINC_RESULT = " "
+	, BMI_WEIGHT = CEWT.RESULT_VAL
+	, BP_SYSTOLIC = CESY.RESULT_VAL
+	, BP_DIASTOLIC = CEDI.RESULT_VAL
+	, LDL_SCREEN = " "
+	, CUSTOM_FIELD1 = SUBSTRING(5,1,nom_diag.concept_cki)
+	, CUSTOM_FIELD2 = " "
+	, CUSTOM_FIELD3 = " "
+	, CUSTOM_FIELD4 = " "
+	, CUSTOM_FIELD5 = " "
+	, CUSTOM_FIELD6 = " "
+	, HUMANA_MEMBER_ID = TRIM(enc_ins.MEMBER_NBR,3)
+	, MEMBER_FIRST_NAME = TRIM(pat.name_first_key,3)
+	, MEMBER_LAST_NAME = TRIM(pat.name_last_key,3)
+	, MEMBER_DOB = FORMAT(pat.birth_dt_tm, "MM/DD/YYYY;;q")
+	, MEMBER_GENDER = EVALUATE(pat.sex_cd, 362.00, "F", 363.00, "M",364.00, "U", 0.00, "U")
+	, AS_OF_DATE = FORMAT(CNVTDATETIME(CURDATE,CURTIME3) , "MM/DD/YYYY;;q")
+FROM
+	ENCOUNTER   enc
+	, (INNER JOIN PERSON pat ON (enc.person_id = pat.person_id
+			AND pat.active_ind = 1
+			AND (pat.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND pat.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3))
+			AND pat.name_last_key NOT IN ("TTTT*","FFFF*","ZZZ*")
+			))
+	, (INNER JOIN ENCNTR_ALIAS fin_nbr ON (enc.encntr_id = fin_nbr.encntr_id
+			AND fin_nbr.active_ind = 1
+			AND (fin_nbr.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND fin_nbr.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3))
+    		AND fin_nbr.alias_pool_cd = 2554138229.00   ;FIN
+  			))
+	, (INNER JOIN ENCNTR_PLAN_RELTN enc_ins ON (enc.encntr_id = enc_ins.encntr_id
+			AND enc_ins.active_ind = 1
+			AND (enc_ins.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND enc_ins.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3))
+			))
+	, (INNER JOIN HEALTH_PLAN hp_ins ON (enc_ins.health_plan_id = hp_ins.health_plan_id
+			AND hp_ins.active_ind = 1
+			AND (hp_ins.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND hp_ins.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3))
+			AND hp_ins.health_plan_id IN (2982968.00 /*Medicare Humana*/)
+			))
+	, (INNER JOIN ENCNTR_PRSNL_RELTN epr ON (enc.encntr_id = epr.encntr_id
+			AND epr.priority_seq = 1
+			AND epr.encntr_prsnl_r_cd IN (1116/*Admitting*/,1119/*Attending*/,681283/*NP*/,681284 /*PA*/)
+			AND epr.active_ind = 1
+			AND (epr.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND epr.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3))
+			))
+	, (INNER JOIN PRSNL_ALIAS npi ON (epr.prsnl_person_id = npi.person_id
+			AND npi.active_ind = 1
+			AND (npi.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND npi.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3))
+			AND npi.prsnl_alias_type_cd = 4038127.00  ;npi
+			))
+	, (LEFT JOIN CLINICAL_EVENT CEWT ON (CEWT.encntr_id = enc.encntr_id AND CEWT.event_cd = 4154123.00/*Weight*/))
+	, (LEFT JOIN CLINICAL_EVENT CESY ON (CESY.encntr_id = enc.encntr_id AND CESY.event_cd = 703501.00/*Systolic*/))
+	, (LEFT JOIN CLINICAL_EVENT CEDI ON (CEDI.encntr_id = enc.encntr_id AND CEDI.event_cd = 703516.00/*Diastolic*/))
+	, (INNER JOIN DIAGNOSIS diag ON (enc.encntr_id = diag.encntr_id
+			AND diag.active_ind = 1
+			AND (diag.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND diag.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3))
+			AND diag.clinical_diag_priority = 1
+			))
+	, (INNER JOIN NOMENCLATURE nom_diag ON (nom_diag.nomenclature_id = diag.nomenclature_id
+			AND nom_diag.active_ind = 1
+			AND (nom_diag.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND nom_diag.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3))
+			AND ((nom_diag.source_identifier >= "V85.0" AND nom_diag.source_identifier <="V85.5")
+				OR (nom_diag.source_identifier >= "Z68.00" AND nom_diag.source_identifier <= "Z68.54"))
+			))
+	, (INNER JOIN CHARGE_EVENT chgeve ON (chgeve.encntr_id = enc.encntr_id		;002
+			AND chgeve.active_ind = 1
+			))
+	, (INNER JOIN CHARGE c ON (c.charge_event_id = chgeve.charge_event_id		;002
+			AND c.active_ind = 1
+			AND c.activity_type_cd = 636674.00 /*Evaluation and Managemente*/
+			))
+	, (INNER JOIN CHARGE_MOD cm ON (cm.charge_item_id = c.charge_item_id		;002
+			AND cm.field1_id IN (615214.00 /*CPT4*/, 3692.00 /*CPT4 MOD*/, 2555056221.00/*CPT4 MOD*/)
+			AND NOT cm.FIELD6 = NULL
+			AND cm.ACTIVE_IND = 1
+			AND cm.field6 IN ('0022','0024','0118','0128','0138','0148','0158','0180','0181','0182','0183','0184','0185','0187',
+				'0188','018F','018G','018H','018I','018J','018K','018M','018O','018X','018Y','018Z','0190','0191','0192','0193',
+				'0194','0199','0210','0211','0212','0213','0214','0215','0217','0218','021F','021G','021H','021I','021J','021K',
+				'021M','021O','021X','021Y','021Z','0220','0221','0222','0223','0224','0225','0227','0228','022F','022G','022H',
+				'022I','022J','022K','022M','022O','022X','022Y','022Z','0280','0281','0282','0283','0284','0285','0287','0288',
+				'0289','028F','028G','028H','028I','028J','028K','028M','028O','028X','028Y','028Z','0510','0511','0512','0513',
+				'0514','0515','0516','0517','0519','0520','0521','0522','0523','0524','0525','0526','0527','0528','0529','0550',
+				'0551','0552','0559','0650','0652','0653','0654','0655','0657','0658','065F','065G','065H','065I','065J','065K',
+				'065M','065O','065X','065Y','065Z','0660','0661','0662','0663','0664','0665','0667','0668','0669','066F','066G',
+				'066H','066I','066J','066K','066M','066O','066X','066Y','066Z','0860','0862','0863','0864','0865','0867','0868',
+				'086F','086G','086H','086I','086J','086K','086M','086O','086X','086Y','086Z','0900','0902','0903','0904','0905',
+				'0907','0911','0912','0913','0914','0915','0916','0917','0919','0982','0983','1000','1001','1002','1003','1004',
+				'1005','93784','93788','93790','98960','98961','98962','99078','99091','99201','99202','99203','99204','99205',
+				'99211','99212','99213','99214','99215','99241','99242','99243','99244','99245','99304','99305','99306','99307',
+				'99308','99309','99310','99315','99316','99318','99324','99325','99326','99327','99328','99334','99335','99336',
+				'99337','99341','99342','99343','99344','99345','99347','99348','99349','99350','99381','99382','99383','99384',
+				'99385','99386','99387','99391','99392','99393','99394','99395','99396','99397','99401','99402','99403','99404',
+				'99411','99412','99429','99453','99454','99455','99456','99457','99483','99510','G0155','G0176','G0177','G0402',
+				'G0409','G0410','G0411','G0438','G0439','G0463','H0002','H0004','H0017','H0018','H0019','H0031','H0034','H0035',
+				'H0036','H0037','H0039','H0040','H2000','H2001','H2010','H2011','H2012','H2013','H2014','H2015','H2016','H2017',
+				'H2018','H2019','H2020','M0064','S0201','S9480','S9484','S9485','T1015','T2048')
+							))
+WHERE enc.active_ind = 1
+	AND (enc.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+	AND enc.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3))
+	AND enc.encntr_type_cd IN (22282402 /*Clinic*/,2554389963/*Phone Message*/,2560523697/*Results Only*/,20058643/*Legacy Data*/)
+ 	AND (enc.reg_dt_tm >= CNVTDATETIME(startdate) AND enc.reg_dt_tm <= CNVTDATETIME(enddate))
+ 
+/****************************************************************************
+	Populate Record structure with BMI Data
+*****************************************************************************/
+HEAD REPORT
+	cnt = exp_data->output_cnt
+ 
+	IF(mod(cnt,10)> 0)
+   		CALL alterlist(exp_data->list, cnt + (10-mod(cnt,10)))
+	ENDIF
+ 
+DETAIL
+ 
+	cnt = cnt + 1
+ 
+	IF(mod(cnt,10) = 1 AND cnt > 10)
+		CALL alterlist(exp_data->list, cnt + 9)
+	ENDIF
+	exp_data->list[cnt].SOURCE_CLAIM_ID = SOURCE_CLAIM_ID
+	exp_data->list[cnt].CLAIM_LINE_ID = CLAIM_LINE_ID
+	exp_data->list[cnt].PROV_ID = PROV_ID
+	exp_data->list[cnt].MEMBER_ID = MEMBER_ID
+	exp_data->list[cnt].FIRST_SERV_DATE = FIRST_SERV_DATE
+	exp_data->list[cnt].LAST_SERV_DATE = LAST_SERV_DATE
+	exp_data->list[cnt].PRINCIPAL_PROC_CD = PRINCIPAL_PROC_CD
+	exp_data->list[cnt].OTHER_PROC_CD1 = OTHER_PROC_CD1
+	exp_data->list[cnt].OTHER_PROC_CD2 = OTHER_PROC_CD2
+	exp_data->list[cnt].OTHER_PROC_CD3 = OTHER_PROC_CD3
+	exp_data->list[cnt].OTHER_PROC_CD4 = OTHER_PROC_CD4
+	exp_data->list[cnt].OTHER_PROC_CD5 = OTHER_PROC_CD5
+	exp_data->list[cnt].OTHER_PROC_CD6 = OTHER_PROC_CD6
+	exp_data->list[cnt].OTHER_PROC_CD7 = OTHER_PROC_CD7
+	exp_data->list[cnt].OTHER_PROC_CD8 = OTHER_PROC_CD8
+	exp_data->list[cnt].OTHER_PROC_CD9 = OTHER_PROC_CD9
+	exp_data->list[cnt].REVENUE_CD = REVENUE_CD
+	exp_data->list[cnt].PRIMARY_DIAG_CD = PRIMARY_DIAG_CD
+	exp_data->list[cnt].SEC_DIAG_CD1 = SEC_DIAG_CD1
+	exp_data->list[cnt].SEC_DIAG_CD2 = SEC_DIAG_CD2
+	exp_data->list[cnt].SEC_DIAG_CD3 = SEC_DIAG_CD3
+	exp_data->list[cnt].SEC_DIAG_CD4 = SEC_DIAG_CD4
+	exp_data->list[cnt].SEC_DIAG_CD5 = SEC_DIAG_CD5
+	exp_data->list[cnt].SEC_DIAG_CD6 = SEC_DIAG_CD6
+	exp_data->list[cnt].SEC_DIAG_CD7 = SEC_DIAG_CD7
+	exp_data->list[cnt].SEC_DIAG_CD8 = SEC_DIAG_CD8
+	exp_data->list[cnt].SEC_DIAG_CD9 = SEC_DIAG_CD9
+	exp_data->list[cnt].SEC_DIAG_CD10 = SEC_DIAG_CD10
+	exp_data->list[cnt].LINE_PROCCD_MODIFIER = LINE_PROCCD_MODIFIER
+	exp_data->list[cnt].LINE_PROCCD_MODIFIER_2 = LINE_PROCCD_MODIFIER_2
+	exp_data->list[cnt].LINE_PROCEDURE_CD = LINE_PROCEDURE_CD
+	exp_data->list[cnt].LOINC_CODE = LOINC_CODE
+	exp_data->list[cnt].LOINC_RESULT = LOINC_RESULT
+	exp_data->list[cnt].BMI_WEIGHT = BMI_WEIGHT
+	exp_data->list[cnt].BP_SYSTOLIC = BP_SYSTOLIC
+	exp_data->list[cnt].BP_DIASTOLIC = BP_DIASTOLIC
+	exp_data->list[cnt].LDL_SCREEN = LDL_SCREEN
+	exp_data->list[cnt].CUSTOM_FIELD1 = CUSTOM_FIELD1
+	exp_data->list[cnt].CUSTOM_FIELD2 = CUSTOM_FIELD2
+	exp_data->list[cnt].CUSTOM_FIELD3 = CUSTOM_FIELD3
+	exp_data->list[cnt].CUSTOM_FIELD4 = CUSTOM_FIELD4
+	exp_data->list[cnt].CUSTOM_FIELD5 = CUSTOM_FIELD5
+	exp_data->list[cnt].CUSTOM_FIELD6 = CUSTOM_FIELD6
+	exp_data->list[cnt].HUMANA_MEMBER_ID = HUMANA_MEMBER_ID
+	exp_data->list[cnt].MEMBER_FIRST_NAME = MEMBER_FIRST_NAME
+	exp_data->list[cnt].MEMBER_LAST_NAME = MEMBER_LAST_NAME
+	exp_data->list[cnt].MEMBER_DOB = MEMBER_DOB
+	exp_data->list[cnt].MEMBER_GENDER = MEMBER_GENDER
+	exp_data->list[cnt].AS_OF_DATE = AS_OF_DATE
+ 
+FOOT REPORT
+ 	exp_data->output_cnt = cnt
+ 	CALL alterlist(exp_data->list, cnt)
+WITH nocounter
+ 
+/****************************************************************************
+	Build Output
+*****************************************************************************/
+IF (exp_data->output_cnt > 0)
+ 	CALL ECHO ("******* Build Output *******")
+ 
+ 	SET output_rec = ""
+ 
+	SELECT DISTINCT INTO VALUE(output_var)
+	FROM (DUMMYT dt with seq = exp_data->output_cnt)
+	ORDER BY dt.seq
+ 
+	HEAD REPORT
+		output_rec = build("SOURCE_CLAIM_ID", cov_pipe,
+						"CLAIM_LINE_ID", cov_pipe,
+						"PROV_ID", cov_pipe,
+						"MEMBER_ID", cov_pipe,
+						"FIRST_SERV_DATE", cov_pipe,
+						"LAST_SERV_DATE", cov_pipe,
+						"PRINCIPAL_PROC_CD", cov_pipe,
+						"OTHER_PROC_CD1", cov_pipe,
+						"OTHER_PROC_CD2", cov_pipe,
+						"OTHER_PROC_CD3",cov_pipe,
+						"OTHER_PROC_CD4",cov_pipe,
+						"OTHER_PROC_CD5", cov_pipe,
+						"OTHER_PROC_CD6", cov_pipe,
+						"OTHER_PROC_CD7", cov_pipe,
+						"OTHER_PROC_CD8", cov_pipe,
+						"OTHER_PROC_CD9", cov_pipe,
+						"REVENUE_CD", cov_pipe,
+						"PRIMARY_DIAG_CD", cov_pipe,
+						"SEC_DIAG_CD1",cov_pipe,
+						"SEC_DIAG_CD2",cov_pipe,
+						"SEC_DIAG_CD3", cov_pipe,
+						"SEC_DIAG_CD4", cov_pipe,
+						"SEC_DIAG_CD5", cov_pipe,
+						"SEC_DIAG_CD6", cov_pipe,
+						"SEC_DIAG_CD7", cov_pipe,
+						"SEC_DIAG_CD8", cov_pipe,
+						"SEC_DIAG_CD9", cov_pipe,
+						"SEC_DIAG_CD10", cov_pipe,
+						"LINE_PROCCD_MODIFIER", cov_pipe,
+						"LINE_PROCCD_MODIFIER_2",cov_pipe,
+						"LINE_PROCEDURE_CD",cov_pipe,
+						"LOINC_CODE", cov_pipe,
+						"LOINC_RESULT", cov_pipe,
+						"BMI_WEIGHT", cov_pipe,
+						"BP_SYSTOLIC", cov_pipe,
+						"BP_DIASTOLIC", cov_pipe,
+						"LDL_SCREEN", cov_pipe,
+						"CUSTOM_FIELD1", cov_pipe,
+						"CUSTOM_FIELD2", cov_pipe,
+						"CUSTOM_FIELD3", cov_pipe,
+						"CUSTOM_FIELD4", cov_pipe,
+						"CUSTOM_FIELD5", cov_pipe,
+						"CUSTOM_FIELD6",cov_pipe,
+						"HUMANA_MEMBER_ID",cov_pipe,
+						"MEMBER_FIRST_NAME", cov_pipe,
+						"MEMBER_LAST_NAME", cov_pipe,
+						"MEMBER_DOB", cov_pipe,
+						"MEMBER_GENDER",cov_pipe,
+						"AS_OF_DATE")	;001 - Removed crlf
+		col 0 output_rec
+		row + 1
+ 
+	head dt.seq
+		output_rec = ""
+		output_rec = build(output_rec,
+						exp_data->list[dt.seq].SOURCE_CLAIM_ID, cov_pipe,
+						exp_data->list[dt.seq].CLAIM_LINE_ID, cov_pipe,
+						exp_data->list[dt.seq].PROV_ID, cov_pipe,
+						exp_data->list[dt.seq].MEMBER_ID, cov_pipe,
+						exp_data->list[dt.seq].FIRST_SERV_DATE, cov_pipe,
+						exp_data->list[dt.seq].LAST_SERV_DATE, cov_pipe,
+						exp_data->list[dt.seq].PRINCIPAL_PROC_CD, cov_pipe,
+						exp_data->list[dt.seq].OTHER_PROC_CD1, cov_pipe,
+						exp_data->list[dt.seq].OTHER_PROC_CD2, cov_pipe,
+						exp_data->list[dt.seq].OTHER_PROC_CD3, cov_pipe,
+						exp_data->list[dt.seq].OTHER_PROC_CD4, cov_pipe,
+						exp_data->list[dt.seq].OTHER_PROC_CD5, cov_pipe,
+						exp_data->list[dt.seq].OTHER_PROC_CD6, cov_pipe,
+						exp_data->list[dt.seq].OTHER_PROC_CD7, cov_pipe,
+						exp_data->list[dt.seq].OTHER_PROC_CD8, cov_pipe,
+						exp_data->list[dt.seq].OTHER_PROC_CD9, cov_pipe,
+						exp_data->list[dt.seq].REVENUE_CD, cov_pipe,
+						exp_data->list[dt.seq].PRIMARY_DIAG_CD, cov_pipe,
+						exp_data->list[dt.seq].SEC_DIAG_CD1, cov_pipe,
+						exp_data->list[dt.seq].SEC_DIAG_CD2, cov_pipe,
+						exp_data->list[dt.seq].SEC_DIAG_CD3, cov_pipe,	;001 - Added missing field
+						exp_data->list[dt.seq].SEC_DIAG_CD4, cov_pipe,
+						exp_data->list[dt.seq].SEC_DIAG_CD5, cov_pipe,
+						exp_data->list[dt.seq].SEC_DIAG_CD6, cov_pipe,
+						exp_data->list[dt.seq].SEC_DIAG_CD7, cov_pipe,
+						exp_data->list[dt.seq].SEC_DIAG_CD8, cov_pipe,
+						exp_data->list[dt.seq].SEC_DIAG_CD9, cov_pipe,
+						exp_data->list[dt.seq].SEC_DIAG_CD10, cov_pipe,
+						exp_data->list[dt.seq].LINE_PROCCD_MODIFIER, cov_pipe,
+						exp_data->list[dt.seq].LINE_PROCCD_MODIFIER_2, cov_pipe,
+						exp_data->list[dt.seq].LINE_PROCEDURE_CD, cov_pipe,
+						exp_data->list[dt.seq].LOINC_CODE, cov_pipe,
+						exp_data->list[dt.seq].LOINC_RESULT, cov_pipe,
+						exp_data->list[dt.seq].BMI_WEIGHT, cov_pipe,
+						exp_data->list[dt.seq].BP_SYSTOLIC, cov_pipe,
+						exp_data->list[dt.seq].BP_DIASTOLIC, cov_pipe,
+						exp_data->list[dt.seq].LDL_SCREEN, cov_pipe,
+						exp_data->list[dt.seq].CUSTOM_FIELD1, cov_pipe,
+						exp_data->list[dt.seq].CUSTOM_FIELD2, cov_pipe,
+						exp_data->list[dt.seq].CUSTOM_FIELD3, cov_pipe,
+						exp_data->list[dt.seq].CUSTOM_FIELD4, cov_pipe,
+						exp_data->list[dt.seq].CUSTOM_FIELD5, cov_pipe,
+						exp_data->list[dt.seq].CUSTOM_FIELD6, cov_pipe,
+						exp_data->list[dt.seq].HUMANA_MEMBER_ID, cov_pipe,
+						exp_data->list[dt.seq].MEMBER_FIRST_NAME, cov_pipe,
+ 						exp_data->list[dt.seq].MEMBER_LAST_NAME, cov_pipe,
+						exp_data->list[dt.seq].MEMBER_DOB, cov_pipe,
+						exp_data->list[dt.seq].MEMBER_GENDER, cov_pipe,
+						exp_data->list[dt.seq].AS_OF_DATE)
+ 
+		output_rec = trim(output_rec,3)
+ 
+	FOOT dt.seq
+		col 0 output_rec
+		IF (dt.seq < exp_data->output_cnt) row + 1 ELSE row + 0 ENDIF
+ 
+	WITH nocounter, maxcol = 32000, format=stream, formfeed = none, maxrow=1, NOHEADING, NOFORMFEED
+ 
+ENDIF
+CALL ECHORECORD (exp_data)
+CALL ECHO (output_rec)
+ ;Copy file to AStream
+IF (validate(request->batch_selection) = 1 OR $output_file = 1)
+	SET cmd = build2("cp ", temppath2_var, " ", filepath_var)
+	SET len = size(trim(cmd))
+ 
+	CALL dcl(cmd, len, stat)
+	CALL echo(build2(cmd, " : ", stat))
+ENDIF
+END
+GO

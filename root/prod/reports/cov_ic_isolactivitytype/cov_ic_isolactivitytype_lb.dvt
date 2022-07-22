@@ -1,0 +1,318 @@
+<REPORTLAYOUT name="cov_ic_isolactivitytype_lb" group="0" orientation="0" outputtype="0" printhead="0" intermecprinthead="0" unittype="0" pageheight="11" pagewidth="8.5" leftmargin="0.5" rightmargin="0.5" topmargin="0.5" bottommargin="0.5" destination="0" severity="1" i18nenabledliterals="0" htmltable="0" locked="0" subreport="0" version="185" timestamp="43536.4924189815" xmlversion="6" programhasprompts="1" executingprogram="" tableview="0" tableborderwidth="0.014" tablebordercolor="0" tablecolumndefault="1" tablebackcolor="16777215" tablebackmode="0" panel="1" fileversion="2018.7.1.70"><RPTDESCRIPTION><![CDATA[]]></RPTDESCRIPTION><RPTSPOOLWITHOPTIONS><![CDATA[deleted,DIO=value(_DIOTYPE)]]></RPTSPOOLWITHOPTIONS><RPTLAYOUT name="HeadReportSection" height="0.792" order="0" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="HeadReportSection" left="0.271" top="0.448" width="8.501" height="0.792" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/><RPTITEM index="0"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="OUTPUT_USERNAME" left="0.5" top="0.532" width="1.813" height="0.261" anchor="0" angle="0" flags="256" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[concat("Ran by: ",OUTPUT_USERNAME)]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="1"><RPTFONT ver="1" name="Helvetica" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblDateTime" left="0.511" top="0.261" width="7.49" height="0.261" anchor="0" angle="0" flags="20" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[* * * Last 24 Hours * * *]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="2"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CURTIME" left="7.438" top="0.532" width="0.521" height="0.261" anchor="0" angle="0" flags="320" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[CURTIME]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="3"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="CURDATE" left="6.75" top="0.532" width="0.865" height="0.261" anchor="0" angle="0" flags="320" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[CURDATE]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="4"><RPTFONT ver="1" name="Helvetica" size="1600" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblReportName" left="0.5" top="0.001" width="7.511" height="0.355" anchor="0" angle="0" flags="20" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Isolation Documentation]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="5"><RPTFONT ver="1" name="Helvetica" size="1000" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="QUAL_FACILITY" left="0.5" top="0.532" width="7.5" height="0.261" anchor="0" angle="0" flags="272" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[trim(QUAL_FACILITY,3)]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM></RPTLAYOUT><RPTLAYOUT name="HeadPageSection" height="0.063" order="1" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="HeadPageSection" left="0.271" top="1.417" width="8.501" height="0.063" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/><RPTDISPLAY/><RPTDISPLAY><![CDATA[output_rec_cnt != 0]]></RPTDISPLAY></RPTLAYOUT><RPTLAYOUT name="HeadQUAL_NURSE_UNITSection" height="0.438" order="2" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="HeadQUAL_NURSE_UNITSection" left="0.271" top="1.657" width="8.501" height="0.438" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/><RPTDISPLAY/><RPTITEM index="0"><RPTFONT ver="1" name="Helvetica" size="900" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="QUAL_NURSE_UNIT" left="0.5" top="0.001" width="7.521" height="0.188" anchor="0" angle="0" flags="256" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="15395562" backmode="1"><![CDATA[QUAL_NURSE_UNIT]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="1"><RPTFONT ver="1" name="Helvetica" size="800" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblTask5" left="3.396" top="0.251" width="0.938" height="0.188" anchor="0" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Isolation Date]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="2"><RPTFONT ver="1" name="Helvetica" size="800" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblFIN" left="1.115" top="0.251" width="0.563" height="0.188" anchor="0" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[FIN]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="3"><RPTFONT ver="1" name="Helvetica" size="800" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblIsolation" left="5.959" top="0.251" width="1.313" height="0.188" anchor="0" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Isolation Type]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="4"><RPTFONT ver="1" name="Helvetica" size="800" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblTask" left="4.459" top="0.251" width="1.125" height="0.188" anchor="0" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Isolation Activity]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="5"><RPTFONT ver="1" name="Helvetica" size="800" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblPatientName" left="1.865" top="0.251" width="0.782" height="0.188" anchor="0" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Patient Name]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="6"><RPTFONT ver="1" name="Helvetica" size="800" bold="1" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblRoomBed" left="0.5" top="0.251" width="0.625" height="0.188" anchor="0" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[Rm/Bed]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTDISPLAY><![CDATA[output_rec_cnt != 0]]></RPTDISPLAY></RPTLAYOUT><RPTLAYOUT name="HeadQUAL_ROOM_BEDSection" height="0.167" order="3" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="HeadQUAL_ROOM_BEDSection" left="0.271" top="2.271" width="8.501" height="0.167" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/><RPTDISPLAY/><RPTITEM index="0"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="QUAL_PAT_NAME" left="1.865" top="0.001" width="2.001" height="0.167" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[QUAL_PAT_NAME]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="1"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="QUAL_FIN" left="1.115" top="0.001" width="0.761" height="0.167" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[QUAL_FIN]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="2"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="QUAL_ROOM_BED" left="0.5" top="0.001" width="0.521" height="0.167" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[QUAL_ROOM_BED]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTDISPLAY><![CDATA[output_rec_cnt != 0]]></RPTDISPLAY></RPTLAYOUT><RPTLAYOUT name="DetailSection" height="0.198" order="4" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="DetailSection" left="0.271" top="2.615" width="8.501" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/><RPTDISPLAY/><RPTITEM index="0"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="QUAL_ISOL_TYPE" left="5.959" top="0.001" width="2.053" height="0.198" anchor="0" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="1" backcolor="16777215" backmode="0"><![CDATA[QUAL_ISOL_TYPE]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="1"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="QUAL_ISOL_ACTIVITY" left="4.459" top="0.001" width="1.438" height="0.198" anchor="0" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="1" backcolor="16777215" backmode="0"><![CDATA[QUAL_ISOL_ACTIVITY]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="2"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="QUAL_ISOL_DATE" left="3.396" top="0.001" width="0.98" height="0.198" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[QUAL_ISOL_DATE]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTDISPLAY><![CDATA[output_rec_cnt != 0]]></RPTDISPLAY></RPTLAYOUT><RPTLAYOUT name="FootPageSection" height="0.323" order="5" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="FootPageSection" left="0.271" top="2.99" width="8.501" height="0.323" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/><RPTITEM index="0"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="txtPageNumber" left="6.469" top="0.126" width="1.667" height="0.188" anchor="0" angle="0" flags="64" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[RPT_PAGEOFPAGE]]></RPTTEXT><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="1"><RPTFONT ver="1" name="Helvetica" size="800" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTLABEL ver="1" name="lblReportName" left="0.5" top="0.126" width="2.053" height="0.188" anchor="0" angle="0" flags="4" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[cov_ic_IsolationDocumentation_lb]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTITEM index="2"><RPTLINE ver="1" name="FieldName0" left="0.49" top="0.001" width="7.511" height="0.126" anchor="0" direction="0"><![CDATA[]]></RPTLINE><RPTPEN width="0.014" color="0" style="0"/><RPTDISPLAY><![CDATA[]]></RPTDISPLAY></RPTITEM></RPTLAYOUT><RPTLAYOUT name="FootReportSection" height="0.292" order="6" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="FootReportSection" left="0.271" top="3.49" width="8.501" height="0.292" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/><RPTDISPLAY/><RPTITEM index="0"><RPTFONT ver="1" name="Helvetica" size="1200" bold="1" italic="0" underline="0" strikethrough="0" color="255"/><RPTLABEL ver="1" name="FieldName1" left="0.5" top="0.063" width="7.5" height="0.219" anchor="0" angle="0" flags="20" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"><![CDATA[No Records Qualified For Parameters Selected]]></RPTLABEL><RPTPEN width="0.014" color="0" style="0"/></RPTITEM><RPTDISPLAY><![CDATA[output_rec_cnt = 0]]></RPTDISPLAY></RPTLAYOUT><RPTPROMPTS><![CDATA[<prompt-def program = 'COV_IC_ISOLACTIVITYTYPE_LB' group = '0' auto-arrange = 'true' stream-ver = '0' export-dt-tm = '201903121153' version = '72' script-enabled = 'false' prompt-control-version = '3.000000' updt_dt_tm = '03/12/2019 11:49:01' resource-enabled = 'false',><control name = 'OUTDEV' control = '6' height = '20' width = '250' position = '0' result-type = '1' exclude = 'false',><display align = 'left',>&#038;Output to File/Printer/MINE</display,>
+<description,>Enter or select the printer or file name to send this report to.</description,>
+<default,>MINE</default,>
+<component name = 'CWizOutputDevice',><property name = 'OUTPUT-DEVICES:00',><![CDATA[HIDE-BROWSER='false' DEVICES='' DISPLAY-ALL='true' DISALLOW-FREETEXT='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ]],></property,>
+</component,>
+<component name = 'GENERAL',><property name = 'PROGRAM',><![CDATA[PROMPT-CONTROL-VERSION='3.000000' AUTO-ARRANGE='true' OWNER='' DU-BASE-HORZ='8' VERSION='72' STREAM-VER='0' REPORT-NAME='' UPDT_DT_TM='03/12/2019 11:49:01' DU-BASE-VERT='16' SCRIPT-ENABLED='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ]],></property,>
+<property name = 'PROMPT',><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='20' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='' LABEL-POS-TOP='10' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='10' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='130' TRIM='false' ]],></property,>
+</component,>
+</control,>
+<control name = 'RPT_GRID_PMPT' control = '7' height = '40' width = '250' position = '1' result-type = '3' exclude = 'false',><display align = 'left',>Report or Grid</display,>
+<description,></description,>
+<default,>0</default,>
+<component name = 'GENERAL',><property name = 'PROMPT',><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='40' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='' LABEL-POS-TOP='37' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='37' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='66' TRIM='false' ]],></property,>
+</component,>
+<component name = 'GROUPBOX',><property name = 'BUTTONS:00',><![CDATA[VALUE0='0' VALUE1='1' LABEL1='Grid' LABEL0='Report'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ]],></property,>
+<property name = 'GROUP-SETTINGS',><![CDATA[ALIGN-VERT='false' WRAP='true' DEFAULT='0'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ]],></property,>
+</component,>
+</control,>
+<control name = 'FACILITY_PMPT' control = '3' height = '100' width = '250' position = '2' result-type = '3' exclude = 'false',><display align = 'left',>Facility</display,>
+<description,></description,>
+<default,></default,>
+<component name = 'CWizDataSource',><property name = 'DATASRC:00',><![CDATA[MODIFIABLE='false' SORT='false' INC-ANY='false' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='false' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ]],></property,>
+<property name = 'SETTINGS:00',><![CDATA[DEFAULT-KEY='' QUERY-STRING='select 
+    facility_name &#061; evaluate2(
+        if (findstring(" - ", o.org_name) ,> 0) 
+            substring(1, findstring(" - ", o.org_name), o.org_name) 
+        else 
+            o.org_name 
+        endif
+    )
+    , o.organization_id
+    , l.location_cd
+    
+from
+    PRSNL_ORG_RELTN por
+    , LOCATION l
+    , ORGANIZATION o
+where
+    por.person_id &#061; reqinfo -,> updt_id
+    and por.active_ind &#061; 1
+    and l.organization_id &#061; por.organization_id
+    and l.location_type_cd &#061; 783.00 ; FACILITY
+    and o.organization_id &#061; l.organization_id
+    and o.organization_id in (
+        3144501.00, 
+        675844.00, 
+        3144505.00, 
+        3144499.00, 
+        3144502.00, 
+        3144503.00, 
+        3144504.00,
+        3234074.00,
+        3234073.00,
+        3234090.00,
+        3234048.00
+    )
+order by
+    o.org_name
+
+' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;]],></property,>
+<property name = 'SETTINGS:01',><![CDATA[&#034;0&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;103.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;FACILITY_NAME&#034; TITLE&#061;&#034;FACILITY_NAME&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;2520.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;ORGANIZATION_ID&#034; TITLE&#061;&#034;ORGANIZATION_ID&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;2&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;2&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;2040.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;LOCATION_CD&#034; TITLE&#061;&#034;LOCATION_CD&#034; &#125;'                                                 ]],></property,>
+</component,>
+<component name = 'GENERAL',><property name = 'PROMPT',><![CDATA[REQUIRED='true' CTRL-VERT-OFFSET='' BOTTOM='100' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='' LABEL-POS-TOP='84' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='84' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='47' TRIM='true' ]],></property,>
+</component,>
+</control,>
+<control name = 'NURSE_UNIT_PMPT' control = '3' height = '100' width = '250' position = '3' result-type = '3' exclude = 'false',><display align = 'left',>Nurse Unit</display,>
+<description,></description,>
+<default,></default,>
+<component name = 'CWizDataSource',><property name = 'DATASRC:00',><![CDATA[INC-ANY-DISPLAY='All (*)' MODIFIABLE='false' SORT='false' INC-ANY='true' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' INC-ANY-KEY='0.00' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='true' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ]],></property,>
+<property name = 'DEFAULT-VALUES:00',><![CDATA[MULTI-DEF-COUNT='0'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ]],></property,>
+<property name = 'SETTINGS:00',><![CDATA[DEFAULT-KEY='' QUERY-STRING='select distinct
+     nurse_unit_abbr &#061; uar_get_code_display(nu.location_cd)
+;    ,nurse_unit_name &#061; uar_get_code_description(nu.location_cd)
+    ,loc_cd &#061; nu.location_cd
+  
+from nurse_unit nu
+
+where nu.loc_facility_cd &#061; $FACILITY_PMPT
+    and nu.location_cd in (2556758443,2552503829,2552516661,2556758093,2556758459,
+2552507117,
+2556758491,
+2556758499,
+2556758507,
+2564351133,
+2564351245,
+2564350877,
+2564351079,
+2564350799,
+2564350949,
+2552516975,
+2550798939,
+2552517431,
+2552518355,
+2552518651,
+2552518871,
+2552518891,
+2552519167,
+2552519315,
+2552519611,
+2557548421,
+2557548453,
+2552520343,
+2552520299,
+2557548461,
+32012115,
+2619633665,
+2552520747,
+2561582141,
+2557548541,
+38616903,
+2557548587,
+2552521079,
+2557548603,
+2557548619,
+2557548627,
+2552520243,
+2616982307,
+2570762139,
+2570762031,
+2570761209,
+2616985973,
+2589596359,
+2570759989,
+2570760575,
+2570761687,
+2557550207,
+2557550743,
+2557]],></property,>
+<property name = 'SETTINGS:01',><![CDATA[549091,
+2557548691,
+2552503897,
+2552512729,
+2552512901,
+2557552965,
+2557552981,
+2557552253,
+2554024621,
+2619654981,
+2552513125,
+2552513193,
+2552513857,
+2557553053,
+2557553061,
+2557553077,
+2557553085,
+2564353727,
+2564353703,
+2564353693,
+2564353235,
+2564353711,
+2552503845,
+2552507525,
+2552507837,
+2552507961,
+2552508061,
+2557555795,
+2582188689,
+2557555827,
+2589736601,
+2552516785,
+2557555261,
+2557555883,
+2552508361,
+2557555119,
+2552508441,
+2557555939,
+2557555955,
+2557555987,
+2561116489,
+2557556051,
+2589739751,
+2570758773,
+2664921681,
+2570757685,
+2570757889,
+2570758511,
+2555128693,
+2552503797,
+2552504293,
+2552504537,
+2552504909,
+2552505277,
+2555130189,
+2576919807,
+2552505625,
+2555127649,
+2552505673,
+2576089705,
+2553913483,
+2579346485,
+2553912779,
+2552505741,
+2552505957,
+2629083537,
+2555127777,
+2555127817,
+2555127849,
+2555127857,
+2557662075,
+2557662009,
+2557661985,
+2557662051,
+2556748159,
+2557661913,
+2557661937,
+255]],></property,>
+<property name = 'SETTINGS:02',><![CDATA[7661961,
+2552508789,
+2552509009,
+2552509149,
+2552509417,
+2552509721,
+2552509989,
+2552510409,
+2552510813,
+2552511121,
+2552511237,
+2556761977,
+2552511369,
+2552511605,
+2556762025,
+2552511841,
+2556762033,
+2556760437,
+2556761187,
+2556762153,
+2556762225,
+2556762241,
+2556762257,
+2560501341,
+2560501447,
+2560501581,
+2560500909,
+2560500565,
+2585644277,
+2560500077,
+2560501029,
+2591612085,
+2552503877,
+2555146389,
+2555146413,
+2553913757,
+2553913493,
+2552512545,
+2555146555,
+2555146603,
+2555146635,
+2559795895,
+2559795935,
+2559795279,
+2559795647,
+2559795575,
+2559795703,
+2557553145)
+    and nu.active_status_cd &#061; 188 ;Active
+    and nu.active_ind &#061; 1
+    and nu.beg_effective_dt_tm <&#061; cnvtdatetime(curdate,curtime3)
+    and nu.end_effective_dt_tm ,> cnvtdatetime(curdate,curtime3)
+order nurse_unit_abbr
+' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;0&#]],></property,>
+<property name = 'SETTINGS:03',><![CDATA[034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;125.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;NURSE_UNIT_ABBR&#034; TITLE&#061;&#034;NURSE_UNIT_ABBR&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1380.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;LOC_CD&#034; TITLE&#061;&#034;LOC_CD&#034; &#125;'                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ]],></property,>
+</component,>
+<component name = 'GENERAL',><property name = 'PROMPT',><![CDATA[REQUIRED='true' CTRL-VERT-OFFSET='' BOTTOM='100' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='' LABEL-POS-TOP='191' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='100' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='191' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='65' TRIM='true' ]],></property,>
+</component,>
+</control,>
+</prompt-def,>
+]]></RPTPROMPTS><RPTQUERY name="Query1" layout="1"><RPTQUERYSTRING><![CDATA[SELECT
+IF ($RPT_GRID_PMPT = 1)
+	INTO $OUTDEV
+	WITH SKIPREPORT=1, NOCOUNTER, SEPARATOR=" ", FORMAT
+ELSE
+	WITH SKIPREPORT=0, SEPARATOR=" ", FORMAT
+ENDIF
+	QUAL_FACILITY = SUBSTRING(1, 30, OUTPUT->qual[D1.SEQ].facility)
+	, QUAL_NURSE_UNIT = SUBSTRING(1, 30, OUTPUT->qual[D1.SEQ].nurse_unit)
+	, QUAL_ROOM = SUBSTRING(1, 30, OUTPUT->qual[D1.SEQ].room)
+	, QUAL_BED = SUBSTRING(1, 30, OUTPUT->qual[D1.SEQ].bed)
+	, QUAL_ROOM_BED = SUBSTRING(1, 30, OUTPUT->qual[D1.SEQ].room_bed)
+	, QUAL_PAT_NAME = OUTPUT->qual[D1.SEQ].pat_name
+	, QUAL_FIN = SUBSTRING(1, 30, OUTPUT->qual[D1.SEQ].fin)
+	, QUAL_MRN = SUBSTRING(1, 30, OUTPUT->qual[D1.SEQ].mrn)
+	, QUAL_ISOL_DATE = FORMAT(OUTPUT->qual[D1.SEQ].isol_date, "MM/DD/YYYY HH:MM;;Q")
+	, QUAL_ISOL_ACTIVITY = OUTPUT->qual[D1.SEQ].isol_activity
+	, QUAL_ISOL_TYPE = OUTPUT->qual[D1.SEQ].isol_type
+	, QUAL_ENCNTR_ID = OUTPUT->qual[D1.SEQ].encntr_id
+	, OUTPUT_USERNAME = SUBSTRING(1, 30, OUTPUT->username)
+	, OUTPUT_REC_CNT = OUTPUT->rec_cnt
+
+FROM
+	(DUMMYT   D1  WITH SEQ = OUTPUT->REC_CNT)
+
+PLAN D1
+
+ORDER BY
+	QUAL_NURSE_UNIT
+	, QUAL_ROOM_BED
+	, QUAL_PAT_NAME
+	, QUAL_ISOL_DATE   DESC]]></RPTQUERYSTRING><RPTSELECTIF condition="1"><![CDATA[]]></RPTSELECTIF><RPTSELECTIF condition="0"><![CDATA[]]></RPTSELECTIF><RPTSELECTIF condition="0"><![CDATA[]]></RPTSELECTIF></RPTQUERY><RPTDRIVER name="cov_ic_IsolActivityType" params="$OUTDEV, $RPT_GRID_PMPT, $FACILITY_PMPT, $NURSE_UNIT_PMPT"/><RPTRECORD><![CDATA[record output (
+  1 username = vc   
+  1 rec_cnt = i4   
+  1 qual [*]  
+    2 facility = vc   
+    2 nurse_unit = vc   
+    2 room = vc   
+    2 bed = vc   
+    2 room_bed = vc   
+    2 pat_name = c50   
+    2 fin = vc   
+    2 mrn = vc   
+    2 isol_date = dq8   
+    2 isol_activity = c75   
+    2 isol_type = c75   
+    2 encntr_id = f8   
+) 
+]]></RPTRECORD><RPTHEADERS><RPTHEADER name="Head Report" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"><RPTSECTION name="HeadReportSection"/></RPTHEADER><RPTHEADER name="Head Page" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"><RPTSECTION name="HeadPageSection"/></RPTHEADER><RPTHEADER name="Head QUAL_NURSE_UNIT" version="1" keeptogether="1" keepgroup="1" repeat="1" forcefootpage="0"><RPTSECTION name="HeadQUAL_NURSE_UNITSection"/></RPTHEADER><RPTHEADER name="Head QUAL_ROOM_BED" version="1" keeptogether="1" keepgroup="1" repeat="1" forcefootpage="0"><RPTSECTION name="HeadQUAL_ROOM_BEDSection"/></RPTHEADER><RPTHEADER name="Detail" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"><RPTSECTION name="DetailSection"/></RPTHEADER><RPTHEADER name="Foot Page" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"><RPTSECTION name="FootPageSection"/></RPTHEADER><RPTHEADER name="Foot Report" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"><RPTSECTION name="FootReportSection"/></RPTHEADER><RPTHEADER name=""><RPTINITIALIZE name="InitializeReport"/><RPTQUERY name="Query1"/><RPTSEGMENT name="Skip Report"><![CDATA[if ( $RPT_GRID_PMPT = 1 )
+   set _rptStat = uar_rptDestroyReport(_hReport)
+   set _hReport=0
+endif]]></RPTSEGMENT><RPTFINALIZE name="FinalizeReport"/></RPTHEADER></RPTHEADERS></REPORTLAYOUT>

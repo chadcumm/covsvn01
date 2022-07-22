@@ -1,0 +1,65 @@
+<!DOCTYPE html public "-//W3C//DTD HTML 4.0//en">
+<HTML>
+<!-- ************************************************** -->
+<!-- IFRAMES -->
+<!-- ************************************************** -->
+<IFRAME
+NAME="iFrameCovForeignSystemLaunch"
+ID="iFrameCovForeignSystemLaunch"
+STYLE="position:fixed;background-color:white;top:0px;left:0px;width:100%;height:100%;"
+SCROLLING="AUTO"
+FRAMEBORDER="0"
+MARGINWIDTH="0"
+MARGINHEIGHT="0"
+SRC=""
+></IFRAME>
+<!-- **************************************** -->
+<!-- SUBMIT FORM-->
+<!-- **************************************** -->
+<!-- http://covhppmodules.covhlth.net/ColdFusionApplications/Cerner_PopulationGroupAlert/PopulationGroupNoticeAlert.cfm -->
+<!-- ?strStaffUserName=CCUMMIN4&strStaffCernerPosition=441&strPatientCMRN=21222345 -->
+<FORM
+  NAME="frmMain"
+  ID="frmMain"
+  ACTION="http://covhppmodules.covhlth.net/ColdFusionApplications/Cerner_PopulationGroupAlert/PopulationGroupNoticeAlert.cfm"
+  METHOD="POST"
+  TARGET="iFrameCovForeignSystemLaunch"
+>
+<INPUT TYPE="hidden" ID="strStaffUserName" NAME="strStaffUserName" VALUE="">
+<INPUT TYPE="hidden" ID="strPatientCMRN" NAME="strPatientCMRN" VALUE="">
+<INPUT TYPE="hidden" ID="strStaffCernerPosition" NAME="strStaffCernerPosition" VALUE="">
+</FORM>
+</HTML>
+ 
+<SCRIPT TYPE="text/javascript">
+try {
+				patobj = {};
+					patobj.patientDataSplit = "@MESSAGE:[PATIENTDATA]";
+					patobj.patientData = patobj.patientDataSplit.split("|");
+ 
+					patobj.cMRN = patobj.patientData[0];
+					patobj.username = patobj.patientData[1];
+					patobj.position = patobj.patientData[2];
+ 
+          objCTRL = document.getElementById("strStaffUserName");
+          objCTRL.value = patobj.username;
+ 
+          objCTRL = document.getElementById("strPatientCMRN");
+          objCTRL.value = patobj.cMRN;
+ 
+          objCTRL = document.getElementById("strStaffCernerPosition");
+          objCTRL.value = patobj.position;
+ 
+ 
+				//	alert ('patobj.cMRN:' + patobj.cMRN);
+				//	alert ('patobj.username:' + patobj.username);
+				//	alert ('patobj.position:' + patobj.position);
+ 
+          /* SUBMIT FORM */
+          var objCtrl = document.getElementById("frmMain");
+          objCtrl.submit();
+ 
+			}catch (err) {
+				alert('Patient Data from rule', err);
+			}
+</SCRIPT>

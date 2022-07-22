@@ -1,0 +1,182 @@
+drop program ccl_eks_loose_analysis:dba go
+create program ccl_eks_loose_analysis:dba
+
+free record t_rec
+record t_rec
+(
+	1 log_message 		= vc
+	1 retval 			= i2
+	1 continue_ind 		= i2
+	1 person_id			= f8
+	1 otg_ind			= i2
+	1 task_id			= f8
+	1 contrib_sys_cd	= f8
+)
+
+set t_rec->retval 		= -1 ;initialize to failed
+set t_rec->continue_ind	= 1
+
+set t_rec->log_message = concat(trim(cnvtstring(link_clineventid)),":")
+
+select into "nl:"
+	c.event_id
+from 
+	clinical_event c
+	,prsnl p
+plan c
+	where  c.clinical_event_id = link_clineventid
+join p
+	where  p.person_id = c.performed_prsnl_id
+detail
+	case (p.username)
+		of "CERNER":		t_rec->person_id = p.person_id
+		of "CPDISERVICE":	t_rec->person_id = p.person_id
+	endcase
+with nocounter
+
+if (t_rec->person_id > 0.0)
+	set t_rec->log_message = concat(	 
+									 t_rec->log_message
+									,"CERNER or CPDISERVICE user indicated. "
+									)
+else
+	select into "nl:"
+	from
+		 clinical_event c1
+		,clinical_event c2
+	    ,ce_blob_result cbr
+	plan c1
+		where  c1.clinical_event_id = link_clineventid
+	join c2
+		where  c2.parent_event_id	= c1.parent_event_id
+		and    c2.clinical_event_id != c1.clinical_event_id
+	join cbr 
+		where 	cbr.event_id = c2.event_id 
+		and		cbr.storage_cd = value(uar_get_code_by("DISPLAYKEY", 25, "OTG"))
+		and		cbr.valid_until_dt_tm >= cnvtdatetime(curdate,curtime3)
+	detail
+		t_rec->otg_ind = 1
+		t_rec->log_message = concat(	 
+									 t_rec->log_message
+									,"Document is a scanned document. "
+								)
+	with nocounter
+endif
+
+if ((t_rec->person_id <= 0.0) and (t_rec->otg_ind <= 0))
+	select into "nl:"
+		c.event_id
+	from 
+		clinical_event c
+	plan c
+		where  	c.clinical_event_id = link_clineventid
+		and		c.contributor_system_cd != value(uar_get_code_by("MEANING",89,"POWERCHART"))
+	detail
+			t_rec->contrib_sys_cd = c.contributor_system_cd
+			t_rec->log_message = concat(	 
+										 t_rec->log_message
+										,"Document was interfaced. "
+									)
+	with nocounter
+endif
+
+if ((t_rec->person_id <= 0.0) and (t_rec->otg_ind <= 0) and (t_rec->contrib_sys_cd <= 0.0))
+	set t_rec->retval = 0
+	set t_rec->log_message = concat(	 
+									 t_rec->log_message
+									,"Not a scanned document, CERNER or CPDI User, or FSI "
+									)
+	go to exit_script
+endif
+
+
+select into "nl:"
+	ta.task_id
+from
+	 clinical_event c
+	,task_activity ta
+	,code_value cv
+plan c
+	where 	c.clinical_event_id = link_clineventid
+join ta
+	where	ta.encntr_id 		= c.encntr_id
+	and		ta.task_status_cd 	= value(uar_get_code_by("MEANING",79,"COMPLETE"))
+join cv
+	where 	cv.code_value 		= ta.task_type_cd
+	and		cv.display	in(
+								 "HIM Analysis - IP"
+								,"HIM Analysis - DS"
+								,"HIM Analysis - OP"
+								,"HIM Analysis - Specialty Document"
+								,"HIM Document Correction"
+								,"HIM Analysis - Manager Review"
+								,"HIM Analysis - Missing Elements"
+								,"HIM Analysis - Adolescent BH"
+								,"HIM Analysis - Adult Psych"
+								,"HIM Analysis - Skilled Nursing"
+							)
+	and		cv.active_ind 		= 1
+detail
+	t_rec->task_id	 = ta.task_id
+with nocounter
+
+if (t_rec->task_id > 0.0)
+	set t_rec->retval = 100
+	set t_rec->log_message = concat(	 
+									 t_rec->log_message
+									,"Found Completed Analysis Task. "
+									)
+	go to exit_script
+endif
+
+select into "nl:"
+	ta.task_id
+from
+	 clinical_event c
+	,task_activity_history ta
+	,code_value cv
+plan c
+	where 	c.clinical_event_id = link_clineventid
+join ta
+	where	ta.encntr_id 		= c.encntr_id
+	and		ta.task_status_cd 	= value(uar_get_code_by("MEANING",79,"COMPLETE"))
+join cv
+	where 	cv.code_value 		= ta.task_type_cd
+	and		cv.display	in(
+								 "HIM Analysis - IP"
+								,"HIM Analysis - DS"
+								,"HIM Analysis - OP"
+								,"HIM Analysis - Specialty Document"
+								,"HIM Document Correction"
+								,"HIM Analysis - Manager Review"
+								,"HIM Analysis - Missing Elements"
+								,"HIM Analysis - Adolescent BH"
+								,"HIM Analysis - Adult Psych"
+								,"HIM Analysis - Skilled Nursing"
+							)
+	and		cv.active_ind 		= 1
+detail
+	t_rec->task_id	 = ta.task_id
+with nocounter
+
+if (t_rec->task_id > 0.0)
+	set t_rec->retval = 100
+	set t_rec->log_message = concat(	 
+									 t_rec->log_message
+									,"Found Completed History Analysis Task. "
+									)
+	go to exit_script
+else
+	set t_rec->retval = 100
+	set t_rec->log_message = concat(	 
+									 t_rec->log_message
+									,"No Completed Analysis Task Found. "
+									)
+endif
+
+#exit_script
+set retval 		= t_rec->retval
+set log_message	= t_rec->log_message
+
+end
+go

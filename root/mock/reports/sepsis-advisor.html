@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="X-UA-Compatible" content="IE=10" />
+    <meta name="discernadvisor" content="CCLEVENT,CCLEKSREPLYOBJECT">
+    <title>Interdisciplinary Sepsis Management Advisor</title>
+	
+    <script type="text/javascript">
+        //used to handle how requests are passed in ajax locally or in PowerChart
+        var CERN_BrowserDevInd = typeof(window.external.DiscernObjectFactory) === 'undefined';
+        
+        /* DISCLAIMER: 
+            The Sepsis Advisor can be opened from a rule and as a tab.  When opened from a rule this
+            this install file is used as the template.  If a fundamental change is made to this 'version' of
+            the advisor then it will also need to be made within the static_content template as well. */
+            
+        /* The rule that opens this file is what creates the MESSAGE and its attributes which hold our
+            patient context variables, and location from which to dynamically load our resources.  
+            The EKS_ALERT_HTML_A framework is what allows us to grab the values directly the way
+            that you see below. */
+
+        var eksParams          = {};
+
+        eksParams.rootpath     = "@MESSAGE:[ROOTPATH]";
+        eksParams.person_id    = "@MESSAGE:[PERSON_ID]";
+        eksParams.encounter_id = "@MESSAGE:[ENCOUNTER_ID]";
+        eksParams.topic_mean   = "@MESSAGE:[TOPIC_MEAN]";
+        eksParams.user_id      = "@MESSAGE:[USER_ID]";
+
+        //load css resource
+        var cssPath            = eksParams.rootpath + "css/sepsis-advisor.css";
+        var cssLink            = document.createElement('link');
+        cssLink.type           = 'text/css';
+        cssLink.rel            = 'stylesheet';
+        cssLink.href           = cssPath;
+        document.getElementsByTagName("head")[0].appendChild(cssLink);
+
+        //load javascript resource
+        var jsPath             = eksParams.rootpath + "js/sepsis-advisor.js";
+        var jsScript           = document.createElement('script');
+        jsScript.src           = jsPath;
+        document.getElementsByTagName("head")[0].appendChild(jsScript);
+		
+    </script>
+</head>
+<body>
+	<div ng-controller="lhDemographicBarDataCtrl" ng-include="template.url" class="lh-demo-bar"></div>
+	<div ng-controller="lhAdvisorTitleBarDataCtrl" ng-include="template.url" class="lh-adv-title-bar"></div>
+	<div ng-controller="lhSepsisAdvisorCtrl">
+
+        <div ng-show="loading" lh-display-text="{{i18n.LOADING_MSG}}" lh-display-position="center" lh-display-text-position="center" lh-global-loading-image></div>
+
+		<div ng-cloak ng-show="!weightFound && !loading" class='height-weight-required-message'>{{i18n.WEIGHT_REQUIRED}}<br/> {{i18n.CONTINUE_MESSAGE}}
+
+			<div class="pf-iview-header" ng-show="powerforms.length > 0">{{i18n.POWERFORM}}</div>
+            <div ng-repeat="powerform in powerforms">
+                <a class="powerform-link" href=""  ng-click="openPowerform(powerform.DCP_FORMS_REF_ID)">
+                    {{powerform.DISPLAY_NAME}}
+                </a>
+            </div>
+            
+            <div class="pf-iview-header" ng-show="iviews.length > 0">{{i18n.IVIEW}}</div>
+            <div ng-repeat="iview in iviews">
+                <a class="iview_link" href=""  ng-click="openIView(iview.BAND_NAME, iview.SEC_NAME, iview.EVENT_NAME)">
+                    {{iview.BAND_NAME}}
+                </a>
+            </div>
+
+            <button id="weight-continue-button" ng-disabled="!pfIViewClicked" ng-click="reloadAdvisor()" type='button'>{{i18n.CONTINUE_BUTTON}}</button>
+		
+		</div>
+
+		
+		<!--the rest of the advisor-->
+		<div ng-show="weightFound">
+		
+			<div ng-controller="lhAdvisorBreadcrumbCtrl" ng-include="template.url"></div>
+				
+			<div id='evaluate-patient-section' lh-global-create-section lh-collapsible="1" lh-header-mean="EVALUATE_PATIENT_RISK_LBL">
+		    	<div id="current-state-section" lh-global-create-sub-section lh-header-mean="CURRENT_STATE_LBL">
+		    		<div lh-sepsis-type-dropdown></div>
+		    		<div class='clearFix'></div>
+					
+					<div lh-global-create-component lh-ng-controller-name="lhAllergiesCtrl"></div>
+			    	<div lh-global-create-component lh-ng-controller-name="lhRecentLabsCtrl"></div>
+			    	<div lh-global-create-component lh-ng-controller-name="lhAntibioticsCtrl"></div>
+					<div class='clearFix'></div>
+			    	
+			    	<div lh-global-create-component lh-ng-controller-name="lhMicrobiologyCtrl"></div>
+			    	<div lh-global-create-component lh-ng-controller-name="lhVitalSignsCtrl"></div>
+					<div class='clearFix'></div>
+		    		<div lh-sepsis-septic-shock-checkbox></div>
+		    	</div>	
+		    	
+				<div id="infection-sources-section" lh-global-create-sub-section lh-header-mean="INFECTION_SOURCES_LBL">
+					<div lh-global-create-component lh-ng-controller-name="lhSepsisSourceCtrl"></div>
+				</div>
+				
+				<div lh-sepsis-select-rec-button></div>
+						
+		    </div>
+		    
+		    <div id='select-recommendations-section' lh-global-create-section lh-collapsible="1" lh-header-mean="SELECT_RECOMMENDATIONS_LBL">
+		    	<div id="sirs-section" lh-global-create-sub-section lh-header-mean="SIRS_SECTION_LBL">
+					<div lh-global-create-component lh-ng-controller-name="lhSepsisSirsCtrl"></div>
+				</div>
+				<div id="active-meds-section" lh-global-create-sub-section lh-header-mean="ACTIVE_MEDS_SECTION_LBL">
+					<div lh-global-create-component lh-ng-controller-name="lhSepsisActiveMedsCtrl"></div>
+				</div>
+				<div id="special-dosing-section" lh-global-create-sub-section lh-header-mean="SPECIAL_DOSING_LBL">
+					<div lh-global-create-component lh-ng-controller-name="lhSepsisDosingCtrl"></div>
+				</div>
+				<div id="antibiotics-section" lh-global-create-sub-section lh-header-mean="ANTIBIOTICS_SECTION_LBL">
+					<div lh-global-create-component lh-ng-controller-name="lhSepsisAntibioticRecsCtrl"></div>
+				</div>
+				<div id="fluids-section" lh-global-create-sub-section lh-header-mean="FLUIDS_SECTION_LBL">
+					<div lh-global-create-component lh-ng-controller-name="lhSepsisFluidsCtrl"></div>
+				</div>
+				<div id="diagnostics-section" lh-global-create-sub-section lh-header-mean="DIAGNOSTICS_SECTION_LBL">
+					<div lh-global-create-component lh-ng-controller-name="lhSepsisDiagnosticsCtrl"></div>
+				</div>
+				<div id="vasopressors-section" lh-global-create-sub-section lh-header-mean="VASOPRESSORS_SECTION_LBL">
+					<div lh-global-create-component lh-ng-controller-name="lhSepsisVasopressorsCtrl"></div>
+				</div>
+
+				<div lh-sepsis-confirm-button></div>
+		    </div>
+
+		    <div id="document-sign-section" lh-global-create-section lh-collapsible="1" lh-header-mean="DOCUMENT_SIGN_LBL">
+		    	<div lh-global-create-component lh-ng-controller-name="lhSepsisDocumentSignCtrl"></div>
+				<div lh-sepsis-sign-button></div>
+		    </div>
+	    </div>
+		<div lh-sepsis-reset-button></div>
+		<div lh-sepsis-exit-button></div>
+	</div>
+
+    <div ng-controller="lhGlobalMessagingCtrl" ng-include="template.url" class="lh-global-messaging-container"></div>
+
+    <!--JS-->
+    <script type="text/javascript">
+		
+		//attach the appropriate i18n file to the head
+        $.loadLocaleFile(eksParams.rootpath + 'js/locale/');
+
+        //wait until the i18n object is created, before initiating bootstrap
+        var checkI18n = function(){
+            if (typeof i18n === 'undefined'){
+                setTimeout(checkI18n,100);
+            } else {
+                angular.element(document).ready(function() {
+                    angular.bootstrap(document,['lhSepsisAdvisorApp']);
+                });
+            }
+        };
+
+        checkI18n();//initiates the recursive function call
+		
+    </script>
+</body>
+</html>

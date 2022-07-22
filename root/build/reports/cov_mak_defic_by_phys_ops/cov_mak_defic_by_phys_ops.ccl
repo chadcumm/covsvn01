@@ -1,0 +1,9 @@
+select * from ccl_report_audit cra where cra.object_name = "2_COV_HIM_MAK_DEFIC_BY_PHYS"
+;   202745126.00	2_COV_HIM_MAK_DEFIC_BY_PHYS	REPORT	SUCCESS	"MINE", VALUE(0), VALUE(0)	        3010000	   07/12/19
+
+;call addAttachment(value(program_log->files.file_path),t_rec->filename_no_path)
+
+
+select * from Him_Event_Allocation hea where hea.him_event_allocation_id > 0 with format(date,";;q")
+
+select * from him_Pv_Document hpd where hpd.him_pv_document_id > 0.0 with format(date,";;q")

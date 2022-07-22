@@ -1,0 +1,91 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+	Author:				Chad Cummings
+	Date Written:		03/30/2020
+	Solution:			
+	Source file name:	cov_astream_ccl_sync.prg
+	Object name:		cov_astream_ccl_sync
+	Request #:
+
+	Program purpose:
+
+	Executing from:		CCL
+
+ 	Special Notes:		Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod 	Mod Date	  Developer				      Comment
+--- 	----------	--------------------	----------------------------------
+000 	03/30/2020  Chad Cummings			Initial Release
+******************************************************************************/
+
+drop program cov_astream_ccl_sync:dba go
+create program cov_astream_ccl_sync:dba
+
+prompt 
+	"Directory" = ""
+	, "Filename" = "" 
+
+with DIRECTORY, FILENAME
+
+
+free set f_rec 
+record f_rec 
+(
+	1 filename		= vc
+	1 full_path		= vc
+	1 file_path		= vc
+	1 astream_path	= vc
+	1 astream_mv	= vc
+	1 logical		= vc
+	1 findfile_ind	= i2
+	1 dclstat		= i2
+	1 user_prompt
+	 2 direcotry	= vc
+	 2 filename		= vc
+) 
+
+set f_rec->user_prompt.direcotry = $DIRECTORY
+set f_rec->user_prompt.filename = $FILENAME
+
+set f_rec->logical = logical(cnvtupper(f_rec->user_prompt.direcotry))
+set f_rec->filename = f_rec->user_prompt.filename
+
+if (f_rec->filename = "")
+	go to exit_script
+endif
+
+if (f_rec->logical > " ")
+	set f_rec->file_path = f_rec->logical
+elseif (f_rec->user_prompt.direcotry > " ")
+	;assume user prompt is directory
+	set f_rec->file_path = f_rec->user_prompt.direcotry
+else
+	;assume cer_temp
+	set f_rec->file_path 	= build("/cerner/d_",cnvtlower(trim(curdomain)),"/temp") 
+endif
+
+set f_rec->full_path	= concat(f_rec->file_path,"/",f_rec->filename) 
+
+set f_rec->findfile_ind = findfile(f_rec->full_path,0,0) 
+
+if (f_rec->findfile_ind = 0)
+	go to exit_script
+endif
+
+set f_rec->astream_path = build("/nfs/middle_fs/to_client_site/",trim(cnvtlower(curdomain)),"/CernerCCL/") 
+set f_rec->astream_mv = build2("cp ",f_rec->full_path," ",f_rec->astream_path,f_rec->filename) 
+
+call dcl(f_rec->astream_mv, size(trim(f_rec->astream_mv)), f_rec->dclstat)  
+
+#exit_script
+call echorecord(f_rec)
+
+end
+go

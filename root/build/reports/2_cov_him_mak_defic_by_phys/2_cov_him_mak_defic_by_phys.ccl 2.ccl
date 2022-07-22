@@ -1,0 +1,14 @@
+select * from prsnl p where p.username = "PHYSHOSP" ;    4122622.00
+select * from  prsnl p where p.username = "HIMREFUSAL" ;      744120.00
+
+
+select p1.name_full_formatted,cea.request_comment,*
+from 
+	 ce_event_prsnl cea 
+	,prsnl p1
+plan cea
+	where cea.event_id = 317538938
+	and   cea.request_prsnl_id > 0.0
+join p1
+	where p1.person_id = cea.request_prsnl_id
+

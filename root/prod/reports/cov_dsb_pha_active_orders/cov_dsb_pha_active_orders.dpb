@@ -1,0 +1,154 @@
+<prompt-def program = 'COV_DSB_PHA_ACTIVE_ORDERS' group = '0' auto-arrange = 'true' stream-ver = '0' export-dt-tm = '202203090834' version = '7' script-enabled = 'true' prompt-control-version = '3.000000' updt_dt_tm = '03/02/2022 08:13:26' resource-enabled = 'false'><control name = 'OUTDEV' control = '6' height = '20' width = '250' position = '0' result-type = '1' exclude = 'false'><display align = 'top'>&#038;Output to File/Printer/MINE</display>
+<description>Enter or select the printer or file name to send this report to.</description>
+<default>MINE</default>
+<component name = 'CWizOutputDevice'><property name = 'OUTPUT-DEVICES:00'><![CDATA[HIDE-BROWSER='false' DEVICES='' DISPLAY-ALL='true' DISALLOW-FREETEXT='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROGRAM'><![CDATA[PROMPT-CONTROL-VERSION='3.000000' AUTO-ARRANGE='true' OWNER='' DU-BASE-HORZ='8' VERSION='7' STREAM-VER='0' REPORT-NAME='' UPDT_DT_TM='03/02/2022 08:13:26' DU-BASE-VERT='16' SCRIPT-ENABLED='true'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ]]></property>
+<property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='20' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='10' CTRL-WIDTH='' LABEL-POS-TOP='10' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='26' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='130' TRIM='false' ]]></property>
+</component>
+<component name = 'JAVASCRIPT'><property name = 'CODE:00'><![CDATA[var theForm = null;
+
+function onLoad() {
+
+    theForm = new DiscernForm();
+    theForm.ActiveOrd.onChange = theForm.onCurOrdChange;
+    theForm.BeginDt.enabled = false;
+    theForm.EndDt.enabled = false;
+}
+
+// Implement the handler
+DiscernForm.prototype.onCurOrdChange = function(sender) {
+
+    if(theForm.ActiveOrd.value == 1){
+        theForm.BeginDt.enabled = false;
+        theForm.EndDt.enabled = false;
+    }
+    else{
+        theForm.BeginDt.enabled = true;
+        theForm.EndDt.enabled = true;
+    }
+  
+
+   theForm.reformat();
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                       ]]></property>
+</component>
+</control>
+<control name = 'Facility' control = '3' height = '100' width = '250' position = '1' result-type = '3' exclude = 'false'><display align = 'top'>Select your &#038;Facility:</display>
+<description></description>
+<default></default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[INC-ANY-DISPLAY='Any (*)' MODIFIABLE='false' SORT='false' INC-ANY='true' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' INC-ANY-KEY='0' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='true' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ]]></property>
+<property name = 'DEFAULT-VALUES:00'><![CDATA[MULTI-DEF-COUNT='0'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='' QUERY-STRING='execute ihcc_pha_get_user_facilities' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;2040.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;LOCATION_CD&#034; TITLE&#061;&#034;LOCATION_CD&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;66.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;FACILITY&#034; TITLE&#061;&#034;FACILITY&#034; &#125;'                                                                                                                                                                                                                                                                ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='100' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='10' CTRL-WIDTH='' LABEL-POS-TOP='53' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='69' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='91' TRIM='true' ]]></property>
+</component>
+</control>
+<control name = 'ActiveOrd' control = '1' height = '18' width = '14' position = '2' result-type = '3' exclude = 'false'><display align = 'top'>Display Active Orders Only?:</display>
+<description></description>
+<default>1</default>
+<component name = 'CHECKBOX'><property name = 'CHK-SETTINGS'><![CDATA[CHECKED='1' UNCHECKED='0' INIT-STATE='true'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='18' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='10' CTRL-WIDTH='' LABEL-POS-TOP='176' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='14' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='192' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='134' TRIM='false' ]]></property>
+</component>
+</control>
+<control name = 'BeginDt' control = '5' height = '18' width = '200' position = '3' result-type = '1' exclude = 'false'><display align = 'top'>Begin Date:</display>
+<description>ONLY REQUIRED IF NOT REPORTING ON CURRENT ORDERS</description>
+<default>CURDATE</default>
+<component name = 'CWizDateTime'><property name = 'DATE-TIME-ATTR:00'><![CDATA[OUTPUT-FORMAT='DD-MMM-YYYY' ANCHOR-HOUR='' MONTH='' DATE-TODAY='true' DATE-LONG='true' DATE-OFFSET='0.000000' DATE-CAL='true' LINK-INPUT='' HOUR='' ANCHOR-YEAR='' DAY='' DATE-ENABLE='true' DATE-INVDATE='true' DATE-FMT='0' ENABLE-MASK='1' MINUTE='' AUTO-UPDATE='false' ANCHOR-MONTH='' YEAR='' ANCHOR-DAY='' DATE-SPIN='true' ANCHOR-MINUTE='' DATE-SRVTM='true'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='18' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='10' CTRL-WIDTH='' LABEL-POS-TOP='217' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='200' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='233' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='56' TRIM='false' ]]></property>
+</component>
+</control>
+<control name = 'EndDt' control = '5' height = '18' width = '200' position = '4' result-type = '1' exclude = 'false'><display align = 'top'>End Date:</display>
+<description>ONLY REQUIRED IF NOT REPORTING ON CURRENT ORDERS</description>
+<default>CURDATE</default>
+<component name = 'CWizDateTime'><property name = 'DATE-TIME-ATTR:00'><![CDATA[OUTPUT-FORMAT='DD-MMM-YYYY' ANCHOR-HOUR='' MONTH='' DATE-TODAY='true' DATE-LONG='true' DATE-OFFSET='0.000000' DATE-CAL='true' LINK-INPUT='' HOUR='' ANCHOR-YEAR='' DAY='' DATE-ENABLE='true' DATE-INVDATE='true' DATE-FMT='0' ENABLE-MASK='1' MINUTE='' AUTO-UPDATE='false' ANCHOR-MONTH='' YEAR='' ANCHOR-DAY='' DATE-SPIN='true' ANCHOR-MINUTE='' DATE-SRVTM='true'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='18' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='10' CTRL-WIDTH='' LABEL-POS-TOP='258' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='200' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='274' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='48' TRIM='false' ]]></property>
+</component>
+</control>
+<control name = 'SearchStr' control = '0' height = '18' width = '600' position = '5' result-type = '1' exclude = 'true'><display align = 'top'>Enter product Description, Brand Name, CDM, or Med Id: (Then press TAB to &#038;Search)</display>
+<description></description>
+<default></default>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='18' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='10' CTRL-WIDTH='' LABEL-POS-TOP='219' CTRL-TOP='' EXCLUDE-RUNTIME='true' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='600' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='235' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='404' TRIM='false' ]]></property>
+</component>
+<component name = 'Text Properties'><property name = 'DEFAULT-VALUE'><![CDATA[                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ]]></property>
+<property name = 'MAX-CHAR-LEN'><![CDATA[0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ]]></property>
+<property name = 'TEXT-ATTRIB:00'><![CDATA[AUTO-VAL-DELAY='0' FORMAT-CODE='0' CHAR-TYPE='any' MASK='' TX-DEFAULT='' CHAR-CASE='any' PSW='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ]]></property>
+</component>
+</control>
+<control name = 'ItemId' control = '3' height = '160' width = '600' position = '6' result-type = '3' exclude = 'false'><display align = 'top'>Select your products: (Click column header to Sort)</display>
+<description></description>
+<default></default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[MODIFIABLE='false' SORT='false' INC-ANY='false' DUAL-LIST='true' KEEP-SELECTION='false' DB-EXE='SCRIPT' LABEL-COLUMNS='true' QBE-SOURCE='' MULTI-SELECT='true' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ]]></property>
+<property name = 'DEFAULT-VALUES:00'><![CDATA[MULTI-DEF-COUNT='0'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='' QUERY-STRING='select distinct
+    mi1.item_id,
+    CDM &#061; mi5.value,
+    MedId &#061; mi3.value,
+    Description &#061; mi2.value,
+    BrandName &#061; mi4.value
+from med_identifier mi1,
+    med_def_flex mdf,
+    medication_definition md,
+    med_flex_object_idx mfoi2,
+    med_dispense mdisp,
+    med_identifier mi2,
+    med_identifier mi3,
+    med_identifier mi4,
+    med_identifier mi5
+plan mi1 where textlen(trim($SearchStr)) > 1
+    and mi1.value_key &#061; patstring(cnvtupper(build(trim($SearchStr,4), "*")))
+    and mi1.pharmacy_type_cd &#061; value(uar_get_code_by("MEANING", 4500, "INPATIENT"))
+    and mi1.med_identifier_type_cd in (value(uar_get_code_by("MEANING", 11000, "DESC")),
+        value(uar_get_code_by("MEANING", 11000, "PYXIS")),
+        value(uar_get_code_by("MEANING", 11000, "CDM")),
+        value(uar_get_code_by("MEANING", 11000, "DESC_SHORT")),
+        value(uar_get_code_by("MEANING", 11000, "BRAND_NAME")))
+    and mi1.med_prod]]></property>
+<property name = 'SETTINGS:01'><![CDATA[uct_id &#061; 0.0
+    and mi1.primary_ind &#061; 1
+    and mi1.active_ind &#061; 1
+join mdf where mdf.item_id &#061; mi1.item_id
+    and mdf.flex_type_cd &#061;  value(uar_get_code_by("MEANING", 4062, "SYSPKGTYP"))
+    and mdf.pharmacy_type_cd &#061; value(uar_get_code_by("MEANING", 4500, "INPATIENT"))
+    and mdf.active_ind &#061; 1
+join mfoi2 where mfoi2.med_def_flex_id &#061; mdf.med_def_flex_id
+    and mfoi2.flex_object_type_cd &#061; value(uar_get_code_by("MEANING", 4063, "DISPENSE"))
+    and mfoi2.active_ind &#061; 1
+join mdisp where mdisp.med_dispense_id &#061; mfoi2.parent_entity_id
+    ;and mdisp.formulary_status_cd !&#061; value(uar_get_code_by("MEANING", 4512, "TNF"))
+join md where md.item_id &#061; mi1.item_id
+    and md.med_type_flag &#061; 0
+join mi2 where mi2.item_id &#061; mi1.item_id
+    and mi2.med_identifier_type_cd &#061; value(uar_get_code_by("MEANING", 11000, "DESC"))
+    and mi2.med_product_id &#061; 0
+    and mi2.primary_ind &#061; 1
+    and mi]]></property>
+<property name = 'SETTINGS:02'><![CDATA[2.active_ind &#061; 1
+join mi3 where mi3.item_id &#061; outerjoin(mi1.item_id)
+    and mi3.med_identifier_type_cd &#061; outerjoin(value(uar_get_code_by("MEANING", 11000, "PYXIS")))
+    and mi3.med_product_id &#061; outerjoin(0)
+    and mi3.primary_ind &#061; outerjoin(1)
+    and mi3.active_ind &#061; outerjoin(1)
+join mi4 where mi4.item_id &#061; outerjoin(mi1.item_id)
+    and mi4.med_identifier_type_cd &#061; outerjoin(value(uar_get_code_by("MEANING", 11000, "BRAND_NAME")))
+    and mi4.med_product_id &#061; outerjoin(0)
+    and mi4.primary_ind &#061; outerjoin(1)
+    and mi4.active_ind &#061; outerjoin(1)  
+join mi5 where mi5.item_id &#061; outerjoin(mi1.item_id)
+    and mi5.med_identifier_type_cd &#061; outerjoin(value(uar_get_code_by("MEANING", 11000, "CDM")))
+    and mi5.med_product_id &#061; outerjoin(0)
+    and mi5.primary_ind &#061; outerjoin(1)
+    and mi5.active_ind &#061; outerjoin(1)
+order by mi2.value_key
+
+
+' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#06]]></property>
+<property name = 'SETTINGS:03'><![CDATA[1;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1400.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;ITEM_ID&#034; TITLE&#061;&#034;ITEM_ID&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;44.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;CDM&#034; TITLE&#061;&#034;CDM&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;2&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;62.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;PYXISID&#034; TITLE&#061;&#034;PYXISID&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;3&#034; VISIBLE&#061;]]></property>
+<property name = 'SETTINGS:04'><![CDATA[&#034;true&#034; COLUMN&#061;&#034;2&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;93.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;DESCRIPTION&#034; TITLE&#061;&#034;DESCRIPTION&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;4&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;3&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;89.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;BRANDNAME&#034; TITLE&#061;&#034;BRANDNAME&#034; &#125;'                                                                                                                                                                                                                                                                                                                                                                                                                                       ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='160' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='10' CTRL-WIDTH='' LABEL-POS-TOP='260' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='600' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='276' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='239' TRIM='true' ]]></property>
+</component>
+</control>
+</prompt-def>

@@ -1,0 +1,57 @@
+select 
+	d.originating_nomenclature_id
+	,d.diagnosis_id
+	,d.diagnosis_group
+	,orig_source=n1.source_string
+	,orig_source=n1.source_identifier
+	,orig_vocab=uar_get_code_display(n1.source_vocabulary_cd)
+	,n2.source_string
+	,n2.source_identifier
+	,vocab=uar_get_code_display(n2.source_vocabulary_cd)
+	,d.diagnosis_display
+	,d.diagnosis_id 
+	,d.*
+	,n1.*
+	,n2.*
+from 
+	diagnosis d
+	,nomenclature n1
+	,nomenclature n2
+	,encntr_alias ea
+plan ea
+	where ea.alias = "1901601938"
+join d
+	where d.encntr_id = ea.encntr_id
+	and   d.active_ind	= 1
+					and	  d.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+					and   d.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+					and	  d.active_status_cd	in(
+													value(uar_get_code_by("MEANING",48,"ACTIVE"))
+												)
+join n1
+	where n1.nomenclature_id = d.originating_nomenclature_id
+join n2
+	where n2.nomenclature_id = d.nomenclature_id
+with format(date,";;q"),uar_code(d) go
+
+
+select into "nl:"
+from
+	code_value_set cvs
+	,code_value cv
+plan cvs
+	where cvs.definition = "COVCUSTOM"
+join cv
+	where cv.code_set = cvs.code_set
+;	and   cv.definition = trim(cnvtlower(curprog))
+	and   cv.definition = trim(cnvtlower("pfmt_cov_dx_dup_chk"))	
+order by
+	cv.cdf_meaning
+	,cv.begin_effective_dt_tm desc
+head cv.cdf_meaning	
+	case (cv.cdf_meaning)
+		of "KEEP_IND": call echo(concat("keep ind=",cv.description))
+		of "ACTIVE_IND": call echo(concat("active ind=",cv.description))
+	endcase
+with nocounter
+go

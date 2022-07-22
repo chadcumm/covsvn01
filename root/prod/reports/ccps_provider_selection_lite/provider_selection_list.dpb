@@ -1,0 +1,360 @@
+<prompt-def program = 'PROVIDER_SELECTION_LITE' group = '0' auto-arrange = 'true' stream-ver = '0' export-dt-tm = '201206191223' version = '317' script-enabled = 'true' prompt-control-version = '3.000000' updt_dt_tm = '06/13/2012 16:16:27' resource-enabled = 'false'><control name = 'txtLastName' control = '0' height = '18' width = '200' position = '0' result-type = '1' exclude = 'false'><display align = 'top'>Last Name:</display>
+<description></description>
+<default></default>
+<component name = 'GENERAL'><property name = 'PROGRAM'><![CDATA[PROMPT-CONTROL-VERSION='3.000000' AUTO-ARRANGE='true' OWNER='' DU-BASE-HORZ='10' VERSION='317' STREAM-VER='0' REPORT-NAME='' UPDT_DT_TM='2012-06-13 16:16:27' DU-BASE-VERT='20' SCRIPT-ENABLED='true'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ]]></property>
+<property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='18' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='10' CTRL-WIDTH='200' LABEL-POS-TOP='10' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='200' LABEL-POS-HEIGHT='16' CTRL-HORZ-OFFSET='' TOP='29' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='68' TRIM='false' ]]></property>
+</component>
+<component name = 'JAVASCRIPT'><property name = 'CODE:00'><![CDATA[/*001   ML011047    Added a required prompt (txtPreventEnterKey) to prevent the enter key (13) from closing the form
+                    Removed all the nonalphanumeric characters from the last name, first name, and alias
+*/
+
+var theForm = null;
+
+function onLoad() {
+
+    theForm = new DiscernForm();
+
+    var last_name     
+    var first_name    
+    var suffix        
+    var title         
+    var alias         
+    var alias_type    
+    var view_physician
+ 
+    // insert event handlers
+    theForm.btnSearch.onClick                = onSearchClick;
+    theForm.btnClear.onClick                 = onClearClick;
+    theForm.txtLastName.onValidate           = onLastNameChange;
+    theForm.txtFirstName.onValidate          = onFirstNameChange;
+    theForm.cboSuffix.onValidate             = onSuffixChange;
+    theForm.cboTitle.onValidate              = onTitleChange;
+    theForm.txtAlias.onValidate              = onAliasChange;
+    theForm.cboAliasType.onValidate    ]]></property>
+<property name = 'CODE:01'><![CDATA[      = onAliasTypeChange;
+    theForm.chkViewPhysicianOnly.onChange    = onViewPhysicianOnlyCheck;
+    theForm.lstResults.onDblClick            = onResultsDoubleClick;
+
+    theForm.btnSearch.enabled                = false;
+    theForm.txtPreventEnterKey.visible       = false;
+}
+
+function onSearchClick(sender)
+{                    
+    getCurrentValues();
+
+    var searchMode;
+
+    if(alias_type >= 0.0 && alias > "") {
+        searchMode = 0 //search by alias
+    }
+    else {
+        searchMode = 1 //search by name
+    }
+
+    var query = "execute ccps_provider_selection_lite" 
+                    + " '" + last_name.toUpperCase()    + "'"
+                    + ",'" + first_name.toUpperCase()   + "'"
+                    + ",'" + suffix                     + "'" 
+                    + ",'" + title                      + "'"
+                    + ",'" + alias                      + "'"
+                    + ","  + alias_type
+                    + ","  + view_phys]]></property>
+<property name = 'CODE:02'><![CDATA[ician 
+                    + ","  + 50   //max
+                    + ","  + searchMode
+ 
+   // alert(query);
+    
+    theForm.lstResults.query(query);
+
+    theForm.lstResults.setFieldVisible(0, false);
+
+    var rn = theForm.lstResults.recordCount;
+
+    if(rn > 0) {
+        theForm.lstResults.selectAll(false);
+        theForm.lstResults.selectRecord(0,true);
+        theForm.lstResults.statusText = "";
+        theForm.txtPreventEnterKey.value = "Enable OK Button and Enter Key"; //allow the enter key (13) to close the form
+        }
+    else
+        {
+            theForm.lstResults.statusText = "No Matches to Display";
+        }
+}
+
+function onClearClick(sender)
+{
+    sender.statusText = "";    
+    theForm.txtLastName.value  = "";
+    theForm.txtFirstName.value = "";
+    theForm.txtAlias.value     = "";
+    theForm.txtPreventEnterKey.value = ""; //by setting this back to an empty string, it will prevent the enter key (13) from closing the form
+
+    var resu]]></property>
+<property name = 'CODE:03'><![CDATA[lts_cnt = theForm.lstResults.recordCount;
+    if(results_cnt > 0)
+        {
+        theForm.lstResults.clear();
+        }
+
+    var suffix_cnt = theForm.cboSuffix.recordCount
+    if(suffix_cnt > 0)
+        {
+        theForm.cboSuffix.updateDisplay();
+        }
+   
+    var title_cnt = theForm.cboTitle.recordCount;
+    if(title_cnt > 0)
+        {
+        theForm.cboTitle.updateDisplay();
+        }
+
+    var alias_type_cnt = theForm.cboAliasType.recordCount;
+    if(alias_type_cnt > 0)
+        {
+        theForm.cboAliasType.updateDisplay();
+        }
+ 
+    theForm.txtLastName.enabled     = true;
+    theForm.txtFirstName.enabled    = true;
+    theForm.cboSuffix.enabled       = true;
+    theForm.cboTitle.enabled        = true;
+    theForm.txtAlias.enabled        = true;
+    theForm.cboAliasType.enabled    = true;
+    
+    theForm.btnSearch.enabled       = false;
+    
+    theForm.txtLastName.focus();
+}
+
+function onLastNameChange(sender)
+{
+    if(sender.valu]]></property>
+<property name = 'CODE:04'><![CDATA[e > ""){
+        theForm.txtAlias.enabled        = false;
+        theForm.cboAliasType.enabled    = false;
+        theForm.btnSearch.enabled       = true;        
+    } 
+    else {
+        getCurrentValues();
+        if(last_name == "" && first_name == "" && suffix == "" && title == "" && alias == "" && alias_type == 0){
+            theForm.txtAlias.enabled        = true;
+            theForm.cboAliasType.enabled    = true;
+            theForm.btnSearch.enabled       = false;
+        }
+    }
+}
+
+function onFirstNameChange(sender)
+{
+    onLastNameChange(sender);
+}
+
+function onSuffixChange(sender)
+{
+    onLastNameChange(sender);
+}
+
+function onTitleChange(sender)
+{
+    onLastNameChange(sender);
+}
+
+function onAliasChange(sender)
+{
+    if(sender.value > ""){
+        theForm.txtLastName.enabled     = false;
+        theForm.txtFirstName.enabled    = false;
+        theForm.cboSuffix.enabled       = false;
+        theForm.cboTitle.enabled        = false;
+     ]]></property>
+<property name = 'CODE:05'><![CDATA[   theForm.btnSearch.enabled       = true;
+    } 
+    else {
+        getCurrentValues();
+        if(alias_type == 0) {
+            theForm.txtLastName.enabled     = true;
+            theForm.txtFirstName.enabled    = true;
+            theForm.cboSuffix.enabled       = true;
+            theForm.cboTitle.enabled        = true;
+        }
+        theForm.btnSearch.enabled           = false;
+    }
+}
+
+function onAliasTypeChange(sender)
+{
+    if(sender.value > 0){
+        theForm.txtLastName.enabled     = false;
+        theForm.txtFirstName.enabled    = false;
+        theForm.cboSuffix.enabled       = false;
+        theForm.cboTitle.enabled        = false;
+    } 
+}
+
+function onResultsDoubleClick(sender)
+{
+    if(theForm.lstResults.recordCount > 0){
+        theForm.closeForm(1);
+    }
+}
+
+
+function onViewPhysicianOnlyCheck(sender)
+{
+    getCurrentValues();
+    if(last_name != "" || first_name != "" || suffix != "" || title != "" || alias != ""){
+        onSea]]></property>
+<property name = 'CODE:06'><![CDATA[rchClick();
+    }
+}
+
+function getCurrentValues()
+{
+    last_name       = theForm.txtLastName.value.replace(/[^a-z0-9]/gi,''); //Note that the gi is necessary because it means global (not just on the first match), and case-insensitive, which is why I have a-z instead of a-zA-Z. And the ^ inside the brackets means "anything not in these brackets".
+    first_name      = theForm.txtFirstName.value.replace(/[^a-z0-9]/gi,'');
+    suffix          = theForm.cboSuffix.value;
+    title           = theForm.cboTitle.value;
+    alias           = theForm.txtAlias.value.replace(/[^a-z0-9]/gi,'');
+    alias_type      = theForm.cboAliasType.value;
+    view_physician  = theForm.chkViewPhysicianOnly.value;
+
+/*
+    alert(last_name);
+    alert(first_name);
+    alert(suffix);
+    alert(title);
+    alert(alias);
+    alert(alias_type);
+    alert(view_physician);*/
+}                                                                                                                            ]]></property>
+</component>
+<component name = 'Text Properties'><property name = 'DEFAULT-VALUE'><![CDATA[                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ]]></property>
+<property name = 'MAX-CHAR-LEN'><![CDATA[0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ]]></property>
+<property name = 'TEXT-ATTRIB:00'><![CDATA[AUTO-VAL-DELAY='0' FORMAT-CODE='0' CHAR-TYPE='any' MASK='' TX-DEFAULT='' CHAR-CASE='any' PSW='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ]]></property>
+</component>
+</control>
+<control name = 'txtFirstName' control = '0' height = '18' width = '200' position = '1' result-type = '1' exclude = 'false'><display align = 'top'>First Name:</display>
+<description></description>
+<default></default>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='18' HIDE-LABEL='false' AUTO-GROUP='true' BORDER='false' LABEL-POS-LEFT='10' LEFT='210' CTRL-WIDTH='200' LABEL-POS-TOP='29' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='200' LABEL-POS-HEIGHT='54' CTRL-HORZ-OFFSET='10' TOP='29' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='0' TRIM='false' ]]></property>
+</component>
+<component name = 'Text Properties'><property name = 'DEFAULT-VALUE'><![CDATA[                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ]]></property>
+<property name = 'MAX-CHAR-LEN'><![CDATA[0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ]]></property>
+<property name = 'TEXT-ATTRIB:00'><![CDATA[AUTO-VAL-DELAY='0' FORMAT-CODE='0' CHAR-TYPE='any' MASK='' TX-DEFAULT='' CHAR-CASE='any' PSW='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ]]></property>
+</component>
+</control>
+<control name = 'cboSuffix' control = '2' height = '25' width = '200' position = '2' result-type = '1' exclude = 'false'><display align = 'top'>Suffix:</display>
+<description></description>
+<default></default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[MODIFIABLE='false' SORT='false' INC-ANY='false' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='false' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='' QUERY-STRING='select cv.display
+from code_value cv
+where cv.code_set            &#061; 29601
+and cv.begin_effective_dt_tm <&#061; cnvtdatetime(curdate, curtime3)
+and cv.end_effective_dt_tm   > cnvtdatetime(curdate, curtime3)
+and cv.active_ind            &#061; 1
+order by cv.display
+
+
+
+
+' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1440.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;DISPLAY&#034; TITLE&#061;&#034;DISPLAY&#034; &#125;'                                                                                                                                                                                                                                                                                                                                                ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='25' HIDE-LABEL='false' AUTO-GROUP='true' BORDER='false' LABEL-POS-LEFT='10' LEFT='420' CTRL-WIDTH='200' LABEL-POS-TOP='29' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='200' LABEL-POS-HEIGHT='54' CTRL-HORZ-OFFSET='10' TOP='29' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='0' TRIM='true' ]]></property>
+</component>
+</control>
+<control name = 'btnSearch' control = '9' height = '20' width = '80' position = '3' result-type = '1' exclude = 'true'><display align = 'left'>Search</display>
+<description></description>
+<default></default>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='20' HIDE-LABEL='true' AUTO-GROUP='true' BORDER='false' LABEL-POS-LEFT='0' LEFT='630' CTRL-WIDTH='80' LABEL-POS-TOP='0' CTRL-TOP='' EXCLUDE-RUNTIME='true' CTRL-HEIGHT='20' RESIZABLE='false' RIGHT='80' LABEL-POS-HEIGHT='0' CTRL-HORZ-OFFSET='15' TOP='29' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='0' TRIM='false' ]]></property>
+</component>
+</control>
+<control name = 'cboTitle' control = '2' height = '25' width = '200' position = '4' result-type = '3' exclude = 'false'><display align = 'top'>Title:</display>
+<description></description>
+<default></default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[MODIFIABLE='false' SORT='false' INC-ANY='false' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='false' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='' QUERY-STRING='select cv.display
+from code_value cv
+where cv.code_set            &#061; 29602
+and cv.begin_effective_dt_tm <&#061; cnvtdatetime(curdate, curtime3)
+and cv.end_effective_dt_tm   > cnvtdatetime(curdate, curtime3)
+and cv.active_ind            &#061; 1
+order by cv.display
+
+' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1440.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;DISPLAY&#034; TITLE&#061;&#034;DISPLAY&#034; &#125;'                                                                                                                                                                                                                                                                                                                                                      ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='25' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='10' CTRL-WIDTH='200' LABEL-POS-TOP='61' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='200' LABEL-POS-HEIGHT='16' CTRL-HORZ-OFFSET='' TOP='80' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='29' TRIM='true' ]]></property>
+</component>
+</control>
+<control name = 'txtAlias' control = '0' height = '18' width = '200' position = '5' result-type = '1' exclude = 'false'><display align = 'top'>Alias:</display>
+<description></description>
+<default></default>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='18' HIDE-LABEL='false' AUTO-GROUP='true' BORDER='false' LABEL-POS-LEFT='10' LEFT='210' CTRL-WIDTH='200' LABEL-POS-TOP='80' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='200' LABEL-POS-HEIGHT='112' CTRL-HORZ-OFFSET='10' TOP='80' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='0' TRIM='false' ]]></property>
+</component>
+<component name = 'Text Properties'><property name = 'DEFAULT-VALUE'><![CDATA[                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ]]></property>
+<property name = 'MAX-CHAR-LEN'><![CDATA[0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ]]></property>
+<property name = 'TEXT-ATTRIB:00'><![CDATA[AUTO-VAL-DELAY='0' FORMAT-CODE='0' CHAR-TYPE='any' MASK='' TX-DEFAULT='' CHAR-CASE='any' PSW='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ]]></property>
+</component>
+</control>
+<control name = 'cboAliasType' control = '2' height = '25' width = '200' position = '6' result-type = '3' exclude = 'false'><display align = 'top'>Alias Type:</display>
+<description></description>
+<default></default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[MODIFIABLE='false' SORT='false' INC-ANY='false' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='false' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='' QUERY-STRING='select cv.display, cv.code_value
+from code_value cv
+where cv.code_set            &#061; 320
+and cv.begin_effective_dt_tm <&#061; cnvtdatetime(curdate, curtime3)
+and cv.end_effective_dt_tm   > cnvtdatetime(curdate, curtime3)
+and cv.active_ind            &#061; 1
+order by cv.display
+' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1440.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;DISPLAY&#034; TITLE&#061;&#034;DISPLAY&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1960.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;CODE_VALUE&#034; TITLE&#061;&#034;CODE_VALUE&#034; &#125;'     ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='25' HIDE-LABEL='false' AUTO-GROUP='true' BORDER='false' LABEL-POS-LEFT='10' LEFT='420' CTRL-WIDTH='200' LABEL-POS-TOP='80' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='200' LABEL-POS-HEIGHT='112' CTRL-HORZ-OFFSET='10' TOP='80' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='0' TRIM='false' ]]></property>
+</component>
+</control>
+<control name = 'btnClear' control = '9' height = '20' width = '80' position = '7' result-type = '1' exclude = 'true'><display align = 'left'>Clear</display>
+<description></description>
+<default></default>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='20' HIDE-LABEL='true' AUTO-GROUP='true' BORDER='false' LABEL-POS-LEFT='0' LEFT='630' CTRL-WIDTH='80' LABEL-POS-TOP='0' CTRL-TOP='' EXCLUDE-RUNTIME='true' CTRL-HEIGHT='20' RESIZABLE='false' RIGHT='80' LABEL-POS-HEIGHT='0' CTRL-HORZ-OFFSET='15' TOP='80' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='0' TRIM='false' ]]></property>
+</component>
+</control>
+<control name = 'chkViewPhysicianOnly' control = '1' height = '18' width = '14' position = '8' result-type = '3' exclude = 'false'><display align = 'left'>View physicians only</display>
+<description></description>
+<default>0</default>
+<component name = 'CHECKBOX'><property name = 'CHK-SETTINGS'><![CDATA[CHECKED='1' UNCHECKED='0' INIT-STATE='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='18' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='154' CTRL-WIDTH='' LABEL-POS-TOP='112' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='14' LABEL-POS-HEIGHT='16' CTRL-HORZ-OFFSET='' TOP='112' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='124' TRIM='true' ]]></property>
+</component>
+</control>
+<control name = 'lstResults' control = '3' height = '100' width = '620' position = '9' result-type = '3' exclude = 'false'><display align = 'top'></display>
+<description></description>
+<default></default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[MODIFIABLE='false' SORT='true' INC-ANY='false' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' LABEL-COLUMNS='true' QBE-SOURCE='' MULTI-SELECT='false' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='' QUERY-STRING='' QUERY-OPTIONS='1067' COLUMNS=''                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='100' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='10' CTRL-WIDTH='620' LABEL-POS-TOP='137' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='100' RESIZABLE='false' RIGHT='620' LABEL-POS-HEIGHT='0' CTRL-HORZ-OFFSET='' TOP='140' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='0' TRIM='true' ]]></property>
+</component>
+</control>
+<control name = 'txtPreventEnterKey' control = '0' height = '18' width = '250' position = '10' result-type = '1' exclude = 'false'><display align = 'left'>Prevent the Enter Key From Closing the Form when this Prompt is Empty</display>
+<description></description>
+<default></default>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='true' CTRL-VERT-OFFSET='' BOTTOM='18' HIDE-LABEL='true' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='154' CTRL-WIDTH='' LABEL-POS-TOP='247' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='16' CTRL-HORZ-OFFSET='' TOP='247' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='474' TRIM='false' ]]></property>
+</component>
+<component name = 'Text Properties'><property name = 'DEFAULT-VALUE'><![CDATA[                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ]]></property>
+<property name = 'MAX-CHAR-LEN'><![CDATA[0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ]]></property>
+<property name = 'TEXT-ATTRIB:00'><![CDATA[AUTO-VAL-DELAY='0' FORMAT-CODE='0' CHAR-TYPE='any' MASK='' TX-DEFAULT='' CHAR-CASE='any' PSW='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ]]></property>
+</component>
+</control>
+<program-info><![CDATA[{\rtf1\ansi\ansicpg1252\uc0\deff0{\fonttbl
+{\f0\fswiss\fcharset0\fprq2 Arial;}
+{\f1\froman\fcharset0\fprq2 Times;}
+{\f2\froman\fcharset0\fprq2 Times New Roman;}
+{\f3\froman\fcharset2\fprq2 Symbol;}}
+{\colortbl;\red0\green0\blue0;\red255\green255\blue255;\red255\green255\blue255;\red0\green128\blue128;}
+{\stylesheet{\s0\f0\fs24 [Normal&#093;;}{\*\cs10\additive Default Paragraph Font;}}
+{\*\generator TX_RTF32 10.1.323.501;}
+\deftab1134\trowd\trgaph80\trleft0\trpaddl0\trpaddt0\trpaddr80\trpaddb0\trpaddfl3\trpaddft3\trpaddfr3\trpaddfb3\clvertalt\clbrdrb\brdrs\brdrw10\clcbpat4\cellx2337\clvertalt\clbrdrb\brdrs\brdrw10\clcbpat4\clpadt80\clpadft3\cellx7182\clvertalt\clbrdrb\brdrs\brdrw10\clcbpat4\clpadt80\clpadft3\cellx9468\pard\intbl\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9360\tx10080\plain\f1\fs28\cell\pard\intbl\qc\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9360\tx10080\plain\f1\fs48\cf3 Discern Explorer\plain\f2\fs28\par\plain\f1\fs28\cf3 Prompt Documentation\plain\f2\fs28\cell\pard\intbl\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9360\tx10080\plain\f1\fs28\cell\intbl\row\pard\trowd\trgaph80\trleft0\trpaddl0\trpaddt0\trpaddr80\trpaddb0\trpaddfl3\trpaddft3\trpaddfr3\trpaddfb3\clvertalt\clbrdrl\brdrs\brdrw10\clbrdrt\brdrs\brdrw10\clcbpat3\cellx2337\clvertalt\clbrdrt\brdrs\brdrw10\clcbpat3\clpadt80\clpadft3\cellx7182\clvertalt\clbrdrt\brdrs\brdrw10\clbrdrr\brdrs\brdrw10\clcbpat3\clpadt80\clpadft3\cellx9468\pard\intbl\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9360\tx10080\cell\pard\intbl\qc\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9360\tx10080 \{INSERT-GROUP-NAME\}\cell\pard\intbl\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9360\tx10080\cell\intbl\row\pard\trowd\trgaph108\trleft0\trpaddl0\trpaddt0\trpaddr108\trpaddb0\trpaddfl3\trpaddft3\trpaddfr3\trpaddfb3\clvertalt\clbrdrl\brdrs\brdrw10\clbrdrb\brdrs\brdrw10\clcbpat3\cellx2337\clvertalt\clbrdrb\brdrs\brdrw10\clcbpat3\clpadt108\clpadft3\cellx7182\clvertalt\clbrdrr\brdrs\brdrw10\clbrdrb\brdrs\brdrw10\clcbpat3\clpadt108\clpadft3\cellx9468\pard\intbl\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9360\tx10080\plain\f1\fs20 Modified: %%mod-dt%%\par By: %%mod-user%%\cell\pard\intbl\qc\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9360\tx10080\cell\pard\intbl\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9360\tx10080 Printed: %%cur-dt%%\cell\intbl\row\pard\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9360\tx10080\plain\f1\fs28 Program Information For\plain\f2\fs28  :  \plain\f1\fs28\i %%prg-name%%\plain\f2\fs20\par\par\plain\f1\fs24\b Program Description\plain\f2\fs24\b :\plain\f2\fs24  \par %%description%%\par\plain\f2\fs24\i \{INSERT THE PROGRAMS PURPOSE HERE!!.\}\plain\f2\fs24\par\plain\f2\fs20 %%end-description%%\par\par\par\plain\f2\fs20\b Written By:\plain\f2\fs20  %%author%%\tab\tab\plain\f2\fs20\b Date :\plain\f2\fs20  %%create-dt%%\par\plain\f1\fs20\par\pard\tx374\tx2268 %%prompt-begin%%\par\trowd\trgaph0\trleft0\trpaddl0\trpaddt0\trpaddr0\trpaddb0\trpaddfl3\trpaddft3\trpaddfr3\trpaddfb3\clvertalt\clcbpat4\cellx1468\clvertalt\clbrdrb\brdrs\brdrw10\clcbpat4\cellx9360\pard\intbl\ri432\tx374\tx2268\plain\f1\fs20\cf3 Field #, %%ctrl-position%%\plain\f1\fs20\b\cell\pard\intbl\tx374\tx2268\plain\f1\fs20\cf3 %%ctrl-display%%\plain\f1\fs20\b\cell\intbl\row\pard\trowd\trgaph30\trleft432\trpaddl30\trpaddt0\trpaddr30\trpaddb0\trpaddfl3\trpaddft3\trpaddfr3\trpaddfb3\clvertalt\cellx2188\clvertalt\cellx9360\pard\intbl\tx374\tx2268 Short Description\plain\f1\fs20\cell : %%ctrl-status%%\cell\intbl\row\pard\trowd\trgaph30\trleft432\trpaddl30\trpaddt0\trpaddr30\trpaddb0\trpaddfl3\trpaddft3\trpaddfr3\trpaddfb3\clvertalt\cellx2188\clvertalt\cellx9360\pard\intbl\tx374\tx2268\plain\f1\fs20\b Description\plain\f1\fs20\cell : \plain\f1\fs20\i \{Insert your description here!!\}\plain\f1\fs20\cell\intbl\row\pard\trowd\trgaph30\trleft432\trpaddl30\trpaddt0\trpaddr30\trpaddb0\trpaddfl3\trpaddft3\trpaddfr3\trpaddfb3\clvertalt\cellx2188\clvertalt\cellx9360\pard\intbl\tx374\tx2268\cell\cell\intbl\row\pard\trowd\trgaph30\trleft432\trpaddl30\trpaddt0\trpaddr30\trpaddb0\trpaddfl3\trpaddft3\trpaddfr3\trpaddfb3\clvertalt\cellx2188\clvertalt\cellx9360\pard\intbl\tx374\tx2268\plain\f1\fs20\b Default\plain\f1\fs20\cell : %%ctrl-default%%\cell\intbl\row\pard\trowd\trgaph30\trleft432\trpaddl30\trpaddt0\trpaddr30\trpaddb0\trpaddfl3\trpaddft3\trpaddfr3\trpaddfb3\clvertalt\cellx2188\clvertalt\cellx9360\pard\intbl\tx374\tx2268\plain\f1\fs20\b Control Type\plain\f1\fs20\cell : %%ctrl-control%%\cell\intbl\row\pard\trowd\trgaph30\trleft432\trpaddl30\trpaddt0\trpaddr30\trpaddb0\trpaddfl3\trpaddft3\trpaddfr3\trpaddfb3\clvertalt\cellx2188\clvertalt\cellx9360\pard\intbl\tx374\tx2268\plain\f1\fs20\b Type\plain\f1\fs20\cell : %%ctrl-type%%\cell\intbl\row\pard\trowd\trgaph30\trleft432\trpaddl30\trpaddt0\trpaddr30\trpaddb0\trpaddfl3\trpaddft3\trpaddfr3\trpaddfb3\clvertalt\cellx2188\clvertalt\cellx9360\pard\intbl\tx374\tx2268\plain\f1\fs20\b Name\plain\f1\fs20\cell : %%ctrl-name%%\cell\intbl\row\pard\pard\tx374\tx2268\par %%prompt-end%%\par\par\par\trowd\trgaph30\trleft0\trpaddl30\trpaddt0\trpaddr30\trpaddb0\trpaddfl3\trpaddft3\trpaddfr3\trpaddfb3\clvertalt\clbrdrt\brdrs\brdrw10\cellx9360\pard\intbl\qc\tx374\tx2268 End of Document\cell\intbl\row\pard\pard\tx374\tx2268\par }]]></program-info>
+</prompt-def>

@@ -1,0 +1,199 @@
+<!--
+/*
+   Author:			   Geetha Paramasivam
+   Source file name:       cov_stk_statin_dschmed.html
+   Product/Rule:           STROKE
+   File purpose:           Alerts the user on close chart when Statin med not reconciled.
+   Special Notes:
+ 
+*****************************************************************************
+*                  GENERATED MODIFICATION CONTROL LOG                       *
+*****************************************************************************
+ 
+Mod Date            Engineer              Feature    Comment
+-----------------------------------------------------------------------------------------------------------------------
+ 
+ Sep 21   CR#9929 	Geetha Paramasivam   CR#8321
+ May 22   CR#12816      Geetha Paramasivam            Re-Direct providers to med rec screen instead of order screen.
+ 
+************************************************************************************************************************/
+ 
+ 
+-->
+ 
+ 
+<html>
+<head><title>Stroke Antithrombitic Alert</title>
+<meta name="discern" content="CCLLINK,CCLNEWWINDOW,CCLEVENT,MPAGES_EVENT,APPLINK" >
+<script language="javascript">
+ 
+var patientDataSplit = "@MESSAGE:[PATIENTDATA]";
+var patientData = patientDataSplit.split("|");
+var patientID = patientData[0];
+var encounterID = patientData[1];
+var patientName = patientData[2];
+var patientNurseUnit = patientData[3];
+var patientRoom = patientData[4];
+var medicalNumber = patientData[5];
+var patientAge = patientData[6]
+var patientFacility = patientData[7];
+var patientBirthDate = patientData[8];
+var currentDate = patientData[9];
+ 
+var formID = "@MESSAGE:[FORM_ID]";
+var activityID = "0";
+ 
+ 
+ 
+try {
+	patobj = {};
+		patobj.patientDataSplit = "@MESSAGE:[PATIENTDATA]";
+		patobj.patientData = patobj.patientDataSplit.split("|");
+		patobj.patientID = patobj.patientData[0];
+		patobj.encounterID = patobj.patientData[1];
+	}catch (err) {
+	alertErrorMessage('Patient info from rule', err);
+}
+ 
+ 
+ 
+function fillInPatientBanner() {
+ 
+                                if (patientName.substring(0,1) != "@"){
+                                                document.getElementById('patient').innerHTML = patientName;
+                                }
+ 
+                                if (patientAge.substring(0,1) != "@"){
+                                                document.getElementById('age').innerHTML = patientAge;
+                                }
+ 
+                                if (patientBirthDate.substring(0,1) != "@") {
+                                                document.getElementById('birthDate').innerHTML = patientBirthDate;
+                                }
+ 
+                                if (patientNurseUnit.substring(0,1) != "@") {
+                                                document.getElementById('loc').innerHTML = patientNurseUnit + " ; " + patientRoom;
+                                }
+ 
+                                if (medicalNumber.substring(0,1) != "@") {
+                                                document.getElementById('mrn').innerHTML = medicalNumber;
+                                }
+ 
+ 
+}//close fillPatientBanner
+ 
+ 
+function buildPowerformLink() {
+	var form_params = patientID + "|" + encounterID + "|" + formID + "|" + activityID + "|0";
+      MPAGES_EVENT("POWERFORM",form_params);
+	closeAlert()
+}
+ 
+ 
+ 
+ 
+function callMedsRec(){
+	var eid = patobj.encounterID;
+	var pid = patobj.patientID;
+	var recontype = 3; //Discharge
+	//alert("encntr_id = " + eid + "Patient_id = " + pid )
+ 
+	var mrObject = new Object()
+	mrObject = window.external.DiscernObjectFactory("ORDERS");
+	mrObject.PersonId = pid;
+	mrObject.EncntrId = eid;
+	mrObject.defaultVenue = 4055135.00; //inpatient
+	mrObject.reconciliationMode = recontype;
+	mrObject.LaunchOrdersMode(2, 0, 0);
+	closeAlert()
+}
+ 
+ 
+function launchOrdersWindow() {
+	var order_params = patientID+"|"+encounterID+"|"+"{ORDER|0|0|0|0|0}|0|{2|127}{3|127}|8";
+	MPAGES_EVENT("ORDERS",order_params);
+	closeAlert();
+}
+ 
+ 
+function closeAlert() {
+ 
+      javascript:CCLEVENT("EVENT_EKS_OK", "");
+ 
+}//close
+ 
+ 
+ 
+</script>
+ 
+ </head>
+ 
+<BODY style='overflow:auto;' onload="javascript:fillInPatientBanner();">
+ 
+<style>
+ 
+  p#instructions {
+    color: purple;
+    font-size: 125%;
+	}
+ 
+    li {
+	background-color: red;
+	color: black;
+	font-size: 150%;
+	list-style-type:circle;
+	}
+ 
+    #message1 {
+	  background-color: White;
+	  color: Red;
+	  text-align: center;
+	  font-size: 115%;
+	}
+ 
+</style>
+ 
+<table width='100%' height='10%' style='background-color:DodgerBlue;border-collapse:collapse;color:#FFFFFF;'>
+                <tr>
+                     <td width='43.00%'><b>NAME: </b><span id='patient'></span></td>
+                     <td width='33.00%'><b>MRN:  </b><span id='mrn'></span></td>
+                </tr>
+                <tr>
+                     <td width='33.00%'><b>LOCATION: </b><span id='loc'></span>
+                     <td width='33.00%'><b>DOB:      </b><span id='birthDate'></span></td>
+                     <td width='33.00%'><b>AGE:      </b><span id='age'></span></td>
+                </tr>
+</table>
+ 
+<div id="message1">
+ 
+<b><p id="instructions"></p><b>
+ 
+<br><br><br>
+ 
+<b><p id="AlertTbl"></p><b>
+ 
+<b><p>The patient is being tracked for Stroke Quality	Measures and a Statin has not yet been prescribed.</p>
+<b><p>Please prescribe or document a reason for not prescribing.</p>
+ 
+<br><br><br>
+ 
+<div id='AdmitI' width='50.00%' height='5.00%' style='display:inline;visibility:visible;'>
+ 
+<input type="button" id= "PowFormBut" style='left: 0%; position: relative;' value="Document Contraindication" onclick="buildPowerformLink();" />
+<input type="button" id= "MedRecBut" style='left: 05%; position: relative;' value="Address Meds on Discharge Med Rec" onclick="callMedsRec();" /> 
+ 
+<!--
+<input type="button" id= "MedRecBut" style='left: 05%; position: relative;' value="Order Meds on Discharge Med Rec" onclick="launchOrdersWindow();" />
+<input type="button" id= "MedRecBut" style='left: 10%; position: relative;' value="Address Meds on Discharge Med Rec" onclick="callMedsRec();" />
+-->
+ 
+<!-- style="background-color:White;color:Red;font-size:115%;colspan='3';" -->
+ 
+ 
+</div>
+ 
+</BODY>
+ 
+</HTML>
+ 

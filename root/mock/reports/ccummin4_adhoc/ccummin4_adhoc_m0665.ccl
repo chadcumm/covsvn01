@@ -1,0 +1,4598 @@
+select ea.alias,*
+from encntr_alias ea where ea.encntr_id =    114916394.00; 116592403.00 ;ea.alias="2014700006"
+
+select * from encounter e where e.encntr_id=     116683891.00
+
+select * from pm_transaction pt where pt.n_person_id=18804890 order by pt.activity_dt_tm desc
+with format(date,";;q"),uar_code(d)                
+
+SELECT
+	p.ABS_BIRTH_DT_TM
+	, p.ACTIVE_IND
+	, P_ACTIVE_STATUS_DISP = UAR_GET_CODE_DISPLAY(P.ACTIVE_STATUS_CD)
+	, p.ACTIVE_STATUS_DT_TM
+	, p.ACTIVE_STATUS_PRSNL_ID
+	, p.AGE_AT_DEATH
+	, p.AGE_AT_DEATH_PREC_MOD_FLAG
+	, P_AGE_AT_DEATH_UNIT_DISP = UAR_GET_CODE_DISPLAY(P.AGE_AT_DEATH_UNIT_CD)
+	, p.ARCHIVE_ENV_ID
+	, P_ARCHIVE_STATUS_DISP = UAR_GET_CODE_DISPLAY(P.ARCHIVE_STATUS_CD)
+	, p.ARCHIVE_STATUS_DT_TM
+	, P_AUTOPSY_DISP = UAR_GET_CODE_DISPLAY(P.AUTOPSY_CD)	
+	, p.BEG_EFFECTIVE_DT_TM
+	, P_BIRTH_DT_DISP = UAR_GET_CODE_DISPLAY(P.BIRTH_DT_CD)
+	, p.BIRTH_DT_TM
+	, p.BIRTH_PREC_FLAG
+	, p.BIRTH_TZ
+	, p.CAUSE_OF_DEATH
+	, P_CAUSE_OF_DEATH_DISP = UAR_GET_CODE_DISPLAY(P.CAUSE_OF_DEATH_CD)
+	, P_CITIZENSHIP_DISP = UAR_GET_CODE_DISPLAY(P.CITIZENSHIP_CD)
+	, p.CONCEPTION_DT_TM
+	, P_CONFID_LEVEL_DISP = UAR_GET_CODE_DISPLAY(P.CONFID_LEVEL_CD)
+	, P_CONTRIBUTOR_SYSTEM_DISP = UAR_GET_CODE_DISPLAY(P.CONTRIBUTOR_SYSTEM_CD)
+	, p.CREATE_DT_TM
+	, p.CREATE_PRSNL_ID
+	, P_DATA_STATUS_DISP = UAR_GET_CODE_DISPLAY(P.DATA_STATUS_CD)
+	, p.DATA_STATUS_DT_TM
+	, p.DATA_STATUS_PRSNL_ID
+	, P_DECEASED_DISP = UAR_GET_CODE_DISPLAY(P.DECEASED_CD)
+	, p.DECEASED_DT_TM
+	, p.DECEASED_DT_TM_PREC_FLAG
+	, P_DECEASED_ID_METHOD_DISP = UAR_GET_CODE_DISPLAY(P.DECEASED_ID_METHOD_CD)
+	, P_DECEASED_NOTIFY_SOURCE_DISP = UAR_GET_CODE_DISPLAY(P.DECEASED_NOTIFY_SOURCE_CD)
+	, P_DECEASED_SOURCE_DISP = UAR_GET_CODE_DISPLAY(P.DECEASED_SOURCE_CD)
+	, p.DECEASED_TZ
+	, p.EMANCIPATION_DT_TM
+	, p.END_EFFECTIVE_DT_TM
+	, P_ETHNIC_GRP_DISP = UAR_GET_CODE_DISPLAY(P.ETHNIC_GRP_CD)
+	, p.FT_ENTITY_ID
+	, p.FT_ENTITY_NAME
+	, p.INST_ID
+	, P_LANGUAGE_DISP = UAR_GET_CODE_DISPLAY(P.LANGUAGE_CD)
+	, P_LANGUAGE_DIALECT_DISP = UAR_GET_CODE_DISPLAY(P.LANGUAGE_DIALECT_CD)
+	, p.LAST_ACCESSED_DT_TM
+	, p.LAST_ENCNTR_DT_TM
+	, p.LAST_UTC_TS
+	, p.LOGICAL_DOMAIN_ID
+	, P_MARITAL_TYPE_DISP = UAR_GET_CODE_DISPLAY(P.MARITAL_TYPE_CD)
+	, p.MILITARY_BASE_LOCATION
+	, P_MILITARY_RANK_DISP = UAR_GET_CODE_DISPLAY(P.MILITARY_RANK_CD)
+	, P_MILITARY_SERVICE_DISP = UAR_GET_CODE_DISPLAY(P.MILITARY_SERVICE_CD)
+	, p.MOTHER_MAIDEN_NAME
+	, p.NAME_FIRST
+	, p.NAME_FIRST_KEY
+	, p.NAME_FIRST_KEY_A_NLS
+	, p.NAME_FIRST_KEY_NLS
+	, p.NAME_FIRST_PHONETIC
+	, p.NAME_FIRST_SYNONYM_ID
+	, p.NAME_FULL_FORMATTED
+	, p.NAME_LAST
+	, p.NAME_LAST_KEY
+	, p.NAME_LAST_KEY_A_NLS
+	, p.NAME_LAST_KEY_NLS
+	, p.NAME_LAST_PHONETIC
+	, p.NAME_MIDDLE
+	, p.NAME_MIDDLE_KEY
+	, p.NAME_MIDDLE_KEY_A_NLS
+	, p.NAME_MIDDLE_KEY_NLS
+	, p.NAME_PHONETIC
+	, P_NATIONALITY_DISP = UAR_GET_CODE_DISPLAY(P.NATIONALITY_CD)
+	, p.NEXT_RESTORE_DT_TM
+	, p.PERSON_ID
+	, P_PERSON_STATUS_DISP = UAR_GET_CODE_DISPLAY(P.PERSON_STATUS_CD)
+	, P_PERSON_TYPE_DISP = UAR_GET_CODE_DISPLAY(P.PERSON_TYPE_CD)
+	, P_PURGE_OPTION_DISP = UAR_GET_CODE_DISPLAY(P.PURGE_OPTION_CD)
+	, P_RACE_DISP = UAR_GET_CODE_DISPLAY(P.RACE_CD)
+	, P_RELIGION_DISP = UAR_GET_CODE_DISPLAY(P.RELIGION_CD)
+	, P_RESIDENT_DISP = UAR_GET_CODE_DISPLAY(P.RESIDENT_CD)
+	, p.ROWID
+	, p.SEX_AGE_CHANGE_IND
+	, P_SEX_DISP = UAR_GET_CODE_DISPLAY(P.SEX_CD)
+	, P_SPECIES_DISP = UAR_GET_CODE_DISPLAY(P.SPECIES_CD)
+	, p.TXN_ID_TEXT
+	, p.UPDT_APPLCTX
+	, p.UPDT_CNT
+	, p.UPDT_DT_TM
+	, p.UPDT_ID
+	, p.UPDT_TASK
+	, P_VET_MILITARY_STATUS_DISP = UAR_GET_CODE_DISPLAY(P.VET_MILITARY_STATUS_CD)
+	, P_VIP_DISP = UAR_GET_CODE_DISPLAY(P.VIP_CD)
+
+FROM
+	person   p
+
+where p.person_id =  18806993   
+
+
+SELECT
+	pp.ACTIVE_IND
+	, PP_ACTIVE_STATUS_DISP = UAR_GET_CODE_DISPLAY(PP.ACTIVE_STATUS_CD)
+	, pp.ACTIVE_STATUS_DT_TM
+	, pp.ACTIVE_STATUS_PRSNL_ID
+	, PP_ADOPTED_DISP = UAR_GET_CODE_DISPLAY(PP.ADOPTED_CD)
+	, PP_ADVOCATE_REQUIRED_DISP = UAR_GET_CODE_DISPLAY(PP.ADVOCATE_REQUIRED_CD)
+	, PP_BAD_DEBT_DISP = UAR_GET_CODE_DISPLAY(PP.BAD_DEBT_CD)
+	, PP_BAPTISED_DISP = UAR_GET_CODE_DISPLAY(PP.BAPTISED_CD)
+	, pp.BEG_EFFECTIVE_DT_TM
+	, pp.BIRTH_CERTIFICATE_IDENT
+	, pp.BIRTH_LENGTH
+	, PP_BIRTH_LENGTH_UNITS_DISP = UAR_GET_CODE_DISPLAY(PP.BIRTH_LENGTH_UNITS_CD)
+	, PP_BIRTH_MULTIPLE_DISP = UAR_GET_CODE_DISPLAY(PP.BIRTH_MULTIPLE_CD)
+	, pp.BIRTH_NAME
+	, pp.BIRTH_ORDER
+	, PP_BIRTH_ORDER_DISP = UAR_GET_CODE_DISPLAY(PP.BIRTH_ORDER_CD)
+	, PP_BIRTH_SEX_DISP = UAR_GET_CODE_DISPLAY(PP.BIRTH_SEX_CD)
+	, pp.BIRTH_WEIGHT
+	, PP_BIRTH_WEIGHT_UNITS_DISP = UAR_GET_CODE_DISPLAY(PP.BIRTH_WEIGHT_UNITS_CD)
+	, PP_CALLBACK_CONSENT_DISP = UAR_GET_CODE_DISPLAY(PP.CALLBACK_CONSENT_CD)
+	, PP_CHURCH_DISP = UAR_GET_CODE_DISPLAY(PP.CHURCH_CD)
+	, PP_CONTACT_FOR_RESEARCH_PERM_DISP = UAR_GET_CODE_DISPLAY(PP.CONTACT_FOR_RESEARCH_PERM_CD)
+	, PP_CONTACT_LIST_DISP = UAR_GET_CODE_DISPLAY(PP.CONTACT_LIST_CD)
+	, PP_CONTACT_METHOD_DISP = UAR_GET_CODE_DISPLAY(PP.CONTACT_METHOD_CD)
+	, pp.CONTACT_TIME
+	, PP_CONTRIBUTOR_SYSTEM_DISP = UAR_GET_CODE_DISPLAY(PP.CONTRIBUTOR_SYSTEM_CD)
+	, pp.CREDIT_HRS_TAKING
+	, pp.CUMM_LEAVE_DAYS
+	, pp.CURRENT_BALANCE
+	, pp.CURRENT_GRADE
+	, PP_CUSTODY_DISP = UAR_GET_CODE_DISPLAY(PP.CUSTODY_CD)
+	, PP_DATA_STATUS_DISP = UAR_GET_CODE_DISPLAY(PP.DATA_STATUS_CD)
+	, pp.DATA_STATUS_DT_TM
+	, pp.DATA_STATUS_PRSNL_ID
+	, pp.DEATH_CERTIFICATE_IDENT
+	, PP_DEGREE_COMPLETE_DISP = UAR_GET_CODE_DISPLAY(PP.DEGREE_COMPLETE_CD)
+	, pp.DEMOG_VERIFY_DT_TM
+	, PP_DIET_TYPE_DISP = UAR_GET_CODE_DISPLAY(PP.DIET_TYPE_CD)
+	, PP_DISEASE_ALERT_DISP = UAR_GET_CODE_DISPLAY(PP.DISEASE_ALERT_CD)
+	, pp.END_EFFECTIVE_DT_TM
+	, PP_EXT_TRANSPORT_REQUIRED_DISP = UAR_GET_CODE_DISPLAY(PP.EXT_TRANSPORT_REQUIRED_CD)
+	, pp.FAMILY_INCOME
+	, pp.FAMILY_NBR_OF_MINORS_CNT
+	, pp.FAMILY_SIZE
+	, PP_FINANCIAL_RISK_LEVEL_DISP = UAR_GET_CODE_DISPLAY(PP.FINANCIAL_RISK_LEVEL_CD)
+	, pp.FIN_STATEMENT_EXPIRE_DT_TM
+	, pp.FIN_STATEMENT_VERIFIED_DT_TM
+	, pp.GEST_AGE_AT_BIRTH
+	, PP_GEST_AGE_METHOD_DISP = UAR_GET_CODE_DISPLAY(PP.GEST_AGE_METHOD_CD)
+	, PP_HEALTH_APP_ACCESS_OFFERED_DISP = UAR_GET_CODE_DISPLAY(PP.HEALTH_APP_ACCESS_OFFERED_CD)
+	, PP_HEALTH_INFO_ACCESS_OFFERED_DISP = UAR_GET_CODE_DISPLAY(PP.HEALTH_INFO_ACCESS_OFFERED_CD)
+	, PP_HIGHEST_GRADE_COMPLETE_DISP = UAR_GET_CODE_DISPLAY(PP.HIGHEST_GRADE_COMPLETE_CD)
+	, PP_IMMUN_ON_FILE_DISP = UAR_GET_CODE_DISPLAY(PP.IMMUN_ON_FILE_CD)
+	, pp.INST_ID
+	, PP_INTERP_REQUIRED_DISP = UAR_GET_CODE_DISPLAY(PP.INTERP_REQUIRED_CD)
+	, PP_INTERP_TYPE_DISP = UAR_GET_CODE_DISPLAY(PP.INTERP_TYPE_CD)
+	, PP_IQH_PARTICIPANT_DISP = UAR_GET_CODE_DISPLAY(PP.IQH_PARTICIPANT_CD)
+	, pp.LAST_ATD_ACTIVITY_DT_TM
+	, pp.LAST_BILL_DT_TM
+	, pp.LAST_BIND_DT_TM
+	, pp.LAST_DISCHARGE_DT_TM
+	, pp.LAST_EVENT_UPDT_DT_TM
+	, pp.LAST_PAYMENT_DT_TM
+	, pp.LAST_TRAUMA_DT_TM
+	, pp.LAST_UTC_TS
+	, PP_LIVING_ARRANGEMENT_DISP = UAR_GET_CODE_DISPLAY(PP.LIVING_ARRANGEMENT_CD)
+	, PP_LIVING_DEPENDENCY_DISP = UAR_GET_CODE_DISPLAY(PP.LIVING_DEPENDENCY_CD)
+	, PP_LIVING_WILL_DISP = UAR_GET_CODE_DISPLAY(PP.LIVING_WILL_CD)
+	, PP_MICROFILM_DISP = UAR_GET_CODE_DISPLAY(PP.MICROFILM_CD)
+	, pp.MOTHER_IDENTIFIER
+	, PP_MOTHER_IDENTIFIER_DISP = UAR_GET_CODE_DISPLAY(PP.MOTHER_IDENTIFIER_CD)
+	, pp.NBR_OF_BROTHERS
+	, pp.NBR_OF_PREGNANCIES
+	, pp.NBR_OF_SISTERS
+	, PP_ORGAN_DONOR_DISP = UAR_GET_CODE_DISPLAY(PP.ORGAN_DONOR_CD)
+	, PP_PARENT_MARITAL_STATUS_DISP = UAR_GET_CODE_DISPLAY(PP.PARENT_MARITAL_STATUS_CD)
+	, pp.PERSON_ID
+	, PP_PHONE_CONTACT_TYPE_DISP = UAR_GET_CODE_DISPLAY(PP.PHONE_CONTACT_TYPE_CD)
+	, pp.PREV_CONTACT_IND
+	, PP_PRIMARY_CARE_HOME_DISP = UAR_GET_CODE_DISPLAY(PP.PRIMARY_CARE_HOME_CD)
+	, PP_PROCESS_ALERT_DISP = UAR_GET_CODE_DISPLAY(PP.PROCESS_ALERT_CD)
+	, pp.ROWID
+	, PP_SMOKES_DISP = UAR_GET_CODE_DISPLAY(PP.SMOKES_CD)
+	, pp.SOURCE_LAST_SYNC_DT_TM
+	, pp.SOURCE_SYNC_LEVEL_FLAG
+	, pp.SOURCE_VERSION_NUMBER
+	, PP_STUDENT_DISP = UAR_GET_CODE_DISPLAY(PP.STUDENT_CD)
+	, PP_TUMOR_REGISTRY_DISP = UAR_GET_CODE_DISPLAY(PP.TUMOR_REGISTRY_CD)
+	, pp.TXN_ID_TEXT
+	, pp.UPDT_APPLCTX
+	, pp.UPDT_CNT
+	, pp.UPDT_DT_TM
+	, pp.UPDT_ID
+	, pp.UPDT_TASK
+	, PP_WRITTEN_FORMAT_DISP = UAR_GET_CODE_DISPLAY(PP.WRITTEN_FORMAT_CD)
+
+FROM
+	PERSON_PATIENT   pp
+
+where pp.person_id = 18806993
+
+select * from EKS_MODULE_AUDIT ema where ema.begin_dt_tm >= cnvtdatetime("17-NOV-2019")
+order by ema.begin_dt_tm
+
+translate eks_med_micro_refhelp go
+
+SELECT DISTINCT 
+  medication = cv.display ,
+  _hidden_par =
+  ;IF ((cv.cki > " " ) ) cv.cki
+  ;ELSE 
+  cnvtstring (cv.code_value ,25 ,1 )
+  ;ENDIF
+  ,description = cv.description
+  FROM (eks_micro_med_r em ),
+   (code_value cv )
+  PLAN (em
+   WHERE (em.catalog_cd > 0 )
+   AND (em.active_ind > 0 ) )
+   JOIN (cv
+   WHERE (cv.code_value = em.catalog_cd ) )
+  ORDER BY cnvtupper (cv.display ) ,
+   cv.code_value
+  WITH nocounter
+
+
+
+SELECT e.encntr_id,e.person_id,*
+  FROM 
+  ;(encntr_encntr_reltn eer ),
+  person_person_reltn ppr,
+   (encounter e ),
+   (encntr_alias ea),
+   person p,
+   encounter e2
+  plan ea
+  	where ea.alias = "2004500020"
+  join e2
+  	where e2.encntr_id = ea.encntr_id
+  join p
+  	where p.person_id = e2.person_id
+  ;join eer	
+  ; WHERE eer.related_encntr_id = ea.encntr_id 
+  ; AND eer.encntr_reltn_type_cd = value(uar_get_code_by_cki ("CKI.CODEVALUE!723871538" ) ) 
+  join ppr
+  	where ppr.related_person_id = p.person_id
+  join e
+  	where ppr.person_id = e.person_id 
+  	
+ select * from encntr_alias ea where ea.alias = "2003100009" ;   18807719.00   116714929.00
+ 
+ select * from encntr_encntr_reltn eer where eer.encntr_id=  116700632.00
+ 
+ select * from encntr_encntr_reltn
+ 
+ select * from problem p where p.problem_id=154623017 with format(date,";;q"),uar_code(d)
+ 
+ select * from prsnl p where p.person_id = 12403172
+ 
+ select *
+from
+	orders o
+		,pathway p
+	,act_pw_comp apc
+	,encounter e
+plan o
+	where o.order_id in( 12134152097)
+
+join e
+	where e.encntr_id 				= o.originating_encntr_id
+	
+select * from pathway p where p.pathway_id=1588621967
+
+;ORIG_PCT_TEAM_ID:1491929.000000
+;ORIG_PCT_TEAM_ID:1408181.000000
+;ORIG_PCT_TEAM_ID:1408181.000000
+
+select * from prsnl p where p.person_id =   12405126
+
+select * from prsnl p where p.username = "PHYSHOSP" 
+
+update into pct_care_team pct set prsnl_id =     4122622.00 where pct.orig_pct_team_id = 1408115 go
+
+select * from pct_care_team pct where pct.orig_pct_team_id =  1491929;1408181
+
+delete from clinical_event ce where encntr_id = 116674208 and event_cd = 2570748307 go
+/*
+  116674208.00	Primary Contact	 2570748307.00
+  116674208.00	Primary Contact	 2570748307.00
+  116674208.00	Primary Contact	 2570748307.00
+  116674208.00	Primary Contact	 2570748307.00
+  116674208.00	Primary Contact	 2570748307.00
+  ORIG_PCT_TEAM_ID:1408115.000000
+*/
+
+update into dcp_shift_assignment set active_ind = 0 where encntr_id = 116674208 go
+update into dcp_shift_assignment set pct_care_team_id = 1408115 where assignment_id =     8176727.00 go
+
+select 
+dsa.encntr_id,
+not_Care_team=p1.name_full_formatted,
+pct.pct_care_team_id,
+pct.orig_pct_team_id,
+care_team=p2.name_full_formatted
+,dsa.beg_effective_dt_tm
+,dsa.end_effective_dt_tm
+,dsa.active_ind
+,pct.active_ind
+,* 
+from 
+	dcp_shift_assignment dsa 
+	,prsnl p1
+	,pct_Care_team pct
+	,prsnl p2
+plan dsa
+	where dsa.encntr_id in( 116571933.00,116674208,116714929)
+	and   dsa.active_ind = 1
+	and   dsa.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join p1
+	where p1.person_id = dsa.prsnl_id
+join pct
+	where pct.pct_care_team_id = dsa.pct_care_team_id
+join p2
+	where p2.person_id = pct.prsnl_id
+order by dsa.encntr_id,dsa.beg_effective_dt_tm
+with format(date,";;q"),uar_code(d)
+
+select
+	p.name_full_formatted
+	,p.username
+	,pct.*
+from
+	pct_care_team pct
+	,prsnl p
+plan pct
+	where pct.active_ind = 1
+	and   pct.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+	;and   pct.pct_care_team_id != pct.orig_pct_team_id
+join p
+	where p.person_id = pct.prsnl_id
+order by
+	p.name_full_formatted
+with format(date,";;q"),uar_code(d)
+
+;ORIG_PCT_TEAM_ID:1408115.000000;ORIG_PCT_TEAM_ID:1402091.000000  18807719.00   116714929.00
+update into clinical_event set person_id =18807719 ,encntr_id = 116714929 where clinical_event_id =    1586536178.00 go
+delete from clinical_Event where clinical_Event_id =     1586536178.00 go
+
+select * from person p where p.person_id = 2550450107
+select
+	 ea.alias
+	,p.person_id
+	,e.encntr_id
+	,ce.event_cd
+	,ce.event_end_dt_tm
+	,ce.result_val
+	,ce.parent_event_id
+	,ce.event_id
+	,ce.*
+from
+	 encntr_Alias ea
+	,person p
+	,encounter e
+	,clinical_event ce
+plan ea
+	where ea.alias in("1927100307");"1926902922","1819500002","2003100009")
+join e
+	where e.encntr_id = ea.encntr_id
+join p
+	where p.person_id = e.person_id
+join ce
+	where ce.person_id = e.person_id
+	and   ce.encntr_id = e.encntr_id
+	;and   ce.event_cd =  2570748307.00
+	and   ce.event_end_dt_tm >= cnvtdatetime(curdate,0)
+order by
+	ce.encntr_id,
+	ce.updt_dt_tm desc
+with format(date,";;q"),uar_code(d)
+select * from encntr_alias ea where ea.alias = "2029300018"
+select pt.updt_task,pt.task_number,* from pm_transaction pt where pt.n_encntr_id = 116738093;116737961;  116738093.00
+order by pt.activity_dt_tm
+with format(date,";;q"),uar_code(d)
+;Register Patient - Person Mgmt
+;PCP-Additional Contact Maintenance - Person Mgmt
+
+;     100000	     117038	     126087.00	27-OCT-2020 16:30:25.00	UPDT	   18815159.00	   18815159.00	  116738093.00
+;     100000	     117065	     126188.00	28-OCT-2020 14:15:29.00	UPDT	   18814678.00	   18814678.00	  116737961.00
+
+
+select * from request_processing rp where rp.format_script = "PFMT_ERELTN_IBUS"
+
+select *
+from
+	encntr_prsnl_reltn epr where epr.encntr_id=  116543673.00
+	and epr.encntr_prsnl_r_cd =           1119.00
+with format(date,";;q"),uar_code(d)
+
+select 
+	o.order_mnemonic
+	,oef.oe_format_name
+	,off.oe_field_id
+	,off.label_text
+	,od.oe_field_value
+	,od.oe_field_meaning
+	,od.oe_field_display_value
+	,od.action_sequence
+from
+	orders o
+	,order_entry_format oef
+	,oe_format_fields off
+	,order_detail od
+plan o
+	where o.order_id = 2291561275
+join od
+	where od.order_id = o.order_id
+join oef
+	where oef.oe_format_id = o.oe_format_id
+join off
+	where off.oe_field_id = od.oe_field_id
+	and   off.oe_format_id = oef.oe_format_id
+order by
+	o.order_id
+	,off.label_text
+	,od.action_sequence
+
+
+select *
+
+;"Emergent Transfusion
+
+;select * from clinical_note_template cnt where cnt.
+
+select 
+	 nt.note_type_description
+	,v.event_set_name
+	,v.event_cd
+	from note_type nt,
+		 v500_event_code v
+plan nt where nt.event_cd != 0 
+		and nt.data_status_ind >= 0
+join v where nt.event_cd = v.event_cd
+		and v.code_status_cd = value(uar_get_code_by("MEANING",48,"ACTIVE"))
+order by
+	nt.note_type_description
+with format(date,";;q"),uar_code(d)
+
+select * from clinical_event ce where ce.event_id in(1586862619)
+with format(date,";;q"),uar_code(d)
+
+
+select * from code_value cv where cv.code_value=1121
+
+update into clinical_event set task_assay_cd =  2559271643.00
+where event_id in( 1586542609.00, 1586542595.00) go
+
+;uar_get_code_by("DISPLAY",19350,"Hearing Impaired")
+select * from prsnl p where p.person_id = 16480989
+
+select ce.encntr_id,ce.event_cd,ce.task_assay_cd,
+* from clinical_Event ce where ce.encntr_id in( 111688463,116709531) ;111688463                
+and ce.event_cd in(2553021927)
+order by ce.encntr_id,
+ce.event_end_dt_tm desc
+with format(date,";;q"),uar_code(d)
+
+select pp.process_alert_cd,* from person_patient pp where pp.person_id = 18807468	
+	
+select into "nl:"
+from
+person_patient pp
+plan pp
+where pp.person_id = 18807610
+and   pp.process_alert_cd = value(uar_get_code_by("DISPLAY",19350,"Hearing Impaired"))
+and   pp.active_ind = 1
+head report
+	retval = 0
+	log_misc1 = "NOTFOUND"
+    log_message = "Hearing Impaired Process Alert not found"
+detail
+	retval = 100
+	log_misc1 = "FOUND"
+    log_message = "Hearing Impaired Process Alert is Set"
+with nocouner,nullreport go
+
+select
+uar_get_code_display(p.language_cd)
+,p.language_cd
+,count(*)
+from
+person p
+plan p
+where p.active_ind = 1
+group by
+p.language_cd
+
+
+value(uar_get_code_by("MEANING",36,"ENG"))
+
+select into "nl:"
+from person p
+plan p where p.person_id > 10
+and p.language_cd not in(value(uar_get_code_by("MEANING",36,"ENG")))
+head report
+	retval = 0
+	log_misc1 = "NOTFOUND"
+    log_message = "Hearing Impaired Process Alert not found"
+detail
+	retval = 100
+	log_misc1 = uar_get_code_display(p.language_cd)
+    log_message = concat("Language of:",trim(log_misc1))
+with nocouner,nullreport go
+
+	select * from PCT_CARE_TEAM
+	
+select 
+	p.name_full_formatted
+	,phone = format(trim(ph.phone_num),"(###) ###-####")
+	,attending=concat(trim(p.name_full_formatted), ",",format(trim(ph.phone_num),"(###)###-####"))
+from
+	encounter e
+	,encntr_prsnl_reltn epr
+	,prsnl p
+	,phone ph
+plan e
+	where e.encntr_id =   116674208.00
+join epr
+	where epr.encntr_id = e.encntr_id
+	and   epr.encntr_prsnl_r_cd = value(uar_get_code_by("MEANING",333,"ATTENDDOC"))
+	and   epr.active_ind = 1
+	and   epr.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   epr.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join p
+	where p.person_id = epr.prsnl_person_id
+join  ph 
+	where ph.parent_entity_id = p.person_id
+	and ph.parent_entity_name = "PERSON"
+	and	  ph.phone_type_cd = value(uar_get_code_by("MEANING",43,"BUSINESS"))
+	and ph.beg_effective_dt_tm <= cnvtdatetime(curdate, curtime3)
+	and ph.end_effective_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and ph.active_ind = 1
+	and ph.phone_type_cd > 0.0
+	and ph.phone_type_seq = 1
+order by
+	 e.encntr_id
+	,epr.beg_effective_dt_tm desc
+	
+with format(date,";;q"),uar_code(d)
+
+select *
+
+;"Emergent Transfusion
+
+;select * from clinical_note_template cnt where cnt.
+
+select 
+	 nt.note_type_description
+	,v.event_set_name
+	,v.event_cd
+	from note_type nt,
+		 v500_event_code v
+plan nt where nt.event_cd != 0 
+		and nt.data_status_ind >= 0
+join v where nt.event_cd = v.event_cd
+		and v.code_status_cd = value(uar_get_code_by("MEANING",48,"ACTIVE"))
+order by
+	nt.note_type_description
+with format(date,";;q"),uar_code(d)
+
+select * from clinical_event ce where ce.event_id in(1586542567,1586542569)
+with format(date,";;q"),uar_code(d)
+
+
+select * from code_value cv where cv.code_value=  1651519;
+
+update into clinical_event set task_assay_cd =  2559271643.00
+where event_id in( 1586542609.00, 1586542595.00) go
+
+;uar_get_code_by("DISPLAY",19350,"Hearing Impaired")
+
+
+select ce.encntr_id,ce.event_cd,ce.task_assay_cd,
+* from clinical_Event ce where ce.encntr_id in( 111688463,116709531) ;111688463                
+and ce.event_cd in(2553021927)
+order by ce.encntr_id,
+ce.event_end_dt_tm desc
+with format(date,";;q"),uar_code(d)
+
+select pp.process_alert_cd,* from person_patient pp where pp.person_id = 18807612
+
+select * from order_catalog_synonym oc where oc.synonym_id = 271709613
+select * from order_Catalog oc where oc.catalog_cd =   271709609.00
+
+select * from code_value cv where cv.code_set = 72 and cv.display = "Attend*"
+
+select
+	 ea.alias
+	,ce.event_end_dt_tm
+	,ce.result_val
+	,ce.event_cd
+	,ce.result_status_cd
+	,p.person_id
+	,e.encntr_id
+	,ce.event_cd
+	,ce.*
+from
+	 encntr_Alias ea
+	,person p
+	,encounter e
+	,clinical_event ce
+	,code_value cv
+plan ea
+	where ea.alias in("2301220734");"2003700043","2003700042");"1926902922","1819500002","2003100009") in("2003800023") ;
+join e
+	where e.encntr_id = ea.encntr_id
+join p
+	where p.person_id = e.person_id
+join ce
+	where ce.person_id = e.person_id
+	;and   ce.encntr_id = e.encntr_id
+join cv
+	where cv.code_value = ce.event_cd
+	and   cv.display = "COVID*"
+order by
+	ce.encntr_id,
+	ce.updt_dt_tm desc,
+	ce.event_end_dt_tm desc
+with format(date,";;q"),uar_code(d)
+
+select * from entity_lock
+where entity_name_data = "CoreEventManager"
+or entity_name = "CoreEventManager"
+order by updt_dt_tm desc
+with format (date,";;q") go
+
+delete from entity_lock
+where lock_seq_id =   61491.00 go
+
+select * from code_value cv where cv.code_set=23010
+
+select * from sch_pref s 
+
+select * from clinical_event ce where ce.event_id= 1586947860.00
+ ;ce.clinical_event_id = 1586947859
+with format(date,";;q"),uar_code(m)
+
+select ce.clinical_event_id,ce.event_cd,ce.result_val,ce.event_tag,* from clinical_event ce where ce.clinical_event_id = 1587016043
+with format(date,";;q"),uar_code(d)
+
+select
+                o.order_id
+                ,o.template_order_flag
+                ,o.template_order_id
+from ORDERS o
+where o.order_id > 0.0
+with maxrec=10,nocounter go
+
+select *
+from code_value cv
+where cv.code_value
+in(
+value(uar_get_code_by("DISPLAY",88,"Affiliated Clinic Staff - MA")),
+value(uar_get_code_by("DISPLAY",88,"Ambulatory - Care Manager")),
+value(uar_get_code_by("DISPLAY",88,"Ambulatory - Clinical Office Manager")),
+value(uar_get_code_by("DISPLAY",88,"Ambulatory - Lab/Rad Tech")),
+value(uar_get_code_by("DISPLAY",88,"Ambulatory - LPN")),
+value(uar_get_code_by("DISPLAY",88,"Ambulatory - LPN with RadNet")),
+value(uar_get_code_by("DISPLAY",88,"Ambulatory - MA Certified")),
+value(uar_get_code_by("DISPLAY",88,"Ambulatory - MA Certified with WIN32")),
+value(uar_get_code_by("DISPLAY",88,"Ambulatory - Non-Clinical Office Manager")),
+value(uar_get_code_by("DISPLAY",88,"Ambulatory - Outside Lab Assistant")),
+value(uar_get_code_by("DISPLAY",88,"Ambulatory - Referral Coordinator")),
+value(uar_get_code_by("DISPLAY",88,"Ambulatory - RN")),
+value(uar_get_code_by("DISPLAY",88,"Ambulatory - RN with RadNet")),
+value(uar_get_code_by("DISPLAY",88,"Ambulatory - Scribe")),
+value(uar_get_code_by("DISPLAY",88,"Ambulatory - MA Certified with RadNet")),
+value(uar_get_code_by("DISPLAY",88,"Ambulatory - Care Coordinator")),
+value(uar_get_code_by("DISPLAY",88,"Certified MA Oncology")),
+value(uar_get_code_by("DISPLAY",88,"Referral Coordinator"))
+)
+
+select * from code_value cv where cv.code_set = 88
+
+
+select into "nl:"
+from
+	 orders o
+	,act_pw_comp apc
+	,pathway_action pa
+	,prsnl p
+plan o
+	where o.order_id  = trigger_orderid
+join apc
+	where apc.parent_entity_id = o.order_id
+join pa	
+	where pa.pathway_id = apc.pathway_id
+	and pa.communication_type_cd > 0.0
+join p
+	where p.person_id = pa.action_prsnl_id
+	and   p.position_cd not in(
+								value(uar_get_code_by("DISPLAY",88,"Affiliated Clinic Staff - MA")),
+								value(uar_get_code_by("DISPLAY",88,"Ambulatory - Care Manager")),
+								value(uar_get_code_by("DISPLAY",88,"Ambulatory - Clinical Office Manager")),
+								value(uar_get_code_by("DISPLAY",88,"Ambulatory - Lab/Rad Tech")),
+								value(uar_get_code_by("DISPLAY",88,"Ambulatory - LPN")),
+								value(uar_get_code_by("DISPLAY",88,"Ambulatory - LPN with RadNet")),
+								value(uar_get_code_by("DISPLAY",88,"Ambulatory - MA Certified")),
+								value(uar_get_code_by("DISPLAY",88,"Ambulatory - MA Certified with WIN32")),
+								value(uar_get_code_by("DISPLAY",88,"Ambulatory - Non-Clinical Office Manager")),
+								value(uar_get_code_by("DISPLAY",88,"Ambulatory - Outside Lab Assistant")),
+								value(uar_get_code_by("DISPLAY",88,"Ambulatory - Referral Coordinator")),
+								value(uar_get_code_by("DISPLAY",88,"Ambulatory - RN")),
+								value(uar_get_code_by("DISPLAY",88,"Ambulatory - RN with RadNet")),
+								value(uar_get_code_by("DISPLAY",88,"Ambulatory - Scribe")),
+								value(uar_get_code_by("DISPLAY",88,"Ambulatory - MA Certified with RadNet")),
+								value(uar_get_code_by("DISPLAY",88,"Ambulatory - Care Coordinator")),
+								value(uar_get_code_by("DISPLAY",88,"Certified MA Oncology")),
+								value(uar_get_code_by("DISPLAY",88,"Referral Coordinator"))
+							)
+head report
+log_retval = 0
+detail
+log_retval = 100
+log_misc1 = trim(p.name_full_formatted)
+with nocounter,nullreport go
+
+select * from entity_lock 
+
+select pp.process_alert_cd,* from person_patient pp where pp.person_id in(18807759.0000000000,  18807758.0000000000)
+with format(date,";;q"),uar_code(d)
+
+select * from request_processing rp where rp.active_ind= 1
+
+select pp.person_id,
+pp.process_alert_cd,* from person_patient pp where pp.person_id in(18461965)
+and pp.active_ind = 1
+     and pp.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+     and pp.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
+order by pp.person_id
+with format(date,";;q"),uar_code(d)
+
+select 
+	uar_get_code_display(pcvr.code_value)
+	,pp.process_alert_cd
+	,pcvr.updt_dt_tm
+	,pp.*
+from
+	person_code_value_r pcvr
+	,person_patient pp 
+	,dummyt d1
+plan pp
+	where pp.person_id = 18807776.00
+join d1
+join pcvr
+	where pcvr.code_set = 19350 
+	and pcvr.person_id= pp.person_id
+	and pcvr.active_ind = 1
+order by pcvr.person_id
+with format(date,";;q"),uar_code(d),outerjoin=d1
+
+select into "nl:"
+	from
+	person_patient pp,
+	person_code_value_r pcvr
+	
+plan pp
+	where pp.person_id = trigger_personid
+	and   pp.process_alert_cd = value(uar_get_code_by("MEANING",19350,"MULTISELECT"))
+	and   pp.active_ind = 1
+join pcvr
+		where pcvr.person_id = pp.person_id
+		and   pcvr.code_set = 19350
+		and   pcvr.active_ind = 1
+		and   pcvr.code_value = value(uar_get_code_by("DISPLAY",19350,"Hearing Impaired"))
+head report
+	log_retval = 0
+	log_misc1 = "NOTFOUND"
+detail
+	log_retval = 100
+	log_misc1 = "FOUND"
+with nocounter,nullreport go
+
+
+
+select into "nl:"
+from
+person_patient pp
+plan pp
+where pp.person_id = trigger_personid
+and   pp.process_alert_cd = value(uar_get_code_by("DISPLAY",19350,"Hearing Impaired"))
+and   pp.active_ind = 1
+head report
+	log_retval = 0
+	log_misc1 = "NOTFOUND"
+    log_message = "Hearing Impaired Process Alert not found"
+detail
+	log_retval = 100
+	log_misc1 = "FOUND"
+    log_message = "Hearing Impaired Process Alert is Set"
+with nocounter,nullreport go	
+
+test_file.ps
+
+select * from task_activity ta where ta.task_id=203709283 with uar_code(d)
+
+set dclcom = build2("ps2pdf /cerner/d_m0665/ccluserdir/test_file.ps /cerner/d_m0665/ccluserdir/final_file.pdf")
+
+update into task_activity set task_status_cd = 0 where task_id =   203709283.00 go
+set dclcom = build2("gs -f /cerner/d_m0665/ccluserdir/test_file.ps -o /cerner/d_m0665/ccluserdir/final_file2.pdf") go
+set dclstat = 0 go
+call dcl(dclcom, size(trim(dclcom)), dclstat) go
+
+;1238417.00
+select count(*) from task_Activity ta where ta.task_status_cd in( 428 ,        429.00)
+and ta.task_dt_tm <= cnvtdatetime(curdate-30,0) go
+
+;1827001256
+
+select * from code_value cv where cv.code_value =                 2553141447.00
+
+select pp.process_alert_cd, * from person_patient pp where pp.person_id in(18807759,14474449                )  
+order by pp.person_id              
+with format(date,";;q"),uar_code(d)
+
+select * from person p where p.person_id in(18807759,14474449                ) 
+
+select * from person_code_value_r pcvr where pcvr.person_id  in(18807759,14474449                ) 
+order by pcvr.person_id
+
+update into person_code_value_r set person_id = 14474449 where person_code_value_R_id =          1031967736.00
+
+update into person_patient pp set pp.process_alert_cd = 0.0 where pp.person_id=14474449
+
+delete from person_patient_hist where person_patient_hist_id =          1032008277.00 go
+
+select * from person p where p.person_id = 18804890
+select into "nl:"
+	from
+	person_patient pp,
+	person_code_value_r pcvr
+	
+plan pp
+	where pp.person_id = trigger_personid
+	and   pp.process_alert_cd = value(uar_get_code_by("MEANING",19350,"MULTISELECT"))
+	and   pp.active_ind = 1
+join pcvr
+		where pcvr.person_id = pp.person_id
+		and   pcvr.code_set = 19350
+		and   pcvr.active_ind = 1
+		and   pcvr.code_value = value(uar_get_code_by("DISPLAY",19350,"Hearing Impaired"))
+head report
+	log_retval = 0
+	log_misc1 = "NOTFOUND"
+detail
+	log_retval = 100
+	log_misc1 = "FOUND"
+with nocounter,nullreport go
+
+
+
+select into "nl:"
+from
+person_patient pp
+plan pp
+where pp.person_id = trigger_personid
+and   pp.process_alert_cd = value(uar_get_code_by("DISPLAY",19350,"Hearing Impaired"))
+and   pp.active_ind = 1
+head report
+	log_retval = 0
+	log_misc1 = "NOTFOUND"
+    log_message = "Hearing Impaired Process Alert not found"
+detail
+	log_retval = 100
+	log_misc1 = "FOUND"
+    log_message = "Hearing Impaired Process Alert is Set"
+with nocounter,nullreport go	
+
+
+call echo(value(uar_get_code_by("DISPLAY",71,"Legacy Data"))) go
+
+set trace callecho go
+set trace nordbbind go
+set trace nordbplan go
+set trace nordbdebug go	
+set trace recpersist go
+free set request go
+record request
+(
+ 1 PERSON_ID_QUAL                             = I4
+ 1 PERSON_ID_NUM[10]
+   2 PERSON_ID                                = F8
+) go
+
+set request->PERSON_ID_QUAL = 1 go
+set request->person_id_num[1].person_id = 18807759 go
+execute PM_VAL_PERSON_PATIENT go
+call echorecord(reply) go
+select distinct ed.person_id
+from
+	encntr_domain ed
+	,encounter e
+plan ed
+	where ed.end_effective_dt_tm = cnvtdatetime("31-DEC-2100 00:00:00")
+	and	  ed.active_ind = 1
+	join e	
+		where e.encntr_id = ed.encntr_id
+		and   e.active_ind = 1
+		and   e.encntr_status_cd in(
+										value(uar_get_code_by("MEANING",261,"ACTIVE"))
+									)
+		and   e.encntr_type_cd not in(
+										 value(uar_get_code_by("DISPLAY",71,"Legacy Data"))
+										,value(uar_get_code_by("DISPLAY",71,"Scheduled"))
+										,value(uar_get_code_by("DISPLAY",71,"Phone Message"))
+									)
+		and	  e.disch_dt_tm = NULL
+		and   e.encntr_id not in(
+								select ce.encntr_id
+								from
+									clinical_event ce
+								where ce.encntr_id = e.encntr_id
+								and   ce.event_cd in(
+														select code_value 
+														from code_value 
+														where code_set = 72 
+														and display = "D-Primary Care Physician")
+								and   ce.valid_until_dt_tm >= cnvtdatetime(curdate,curtime3)
+							)
+order by
+	ed.beg_effective_dt_tm desc
+	,ed.person_id
+
+select 
+from
+	encntr_domain
+select * from code_value cv where cv.code_value=3142291285
+
+set reqinfo->updt_id =     4122622.00 go
+
+select p.username,p.person_id,
+* from ccl_report_audit cra,prsnl p where cra.begin_dt_tm >= cnvtdatetime(curdate,0)
+and p.username in("CCUMMIN4", "PHYSHOSP","RTHACKER","UA.RTHACKER")
+;and cra.object_name="COV_PROVIDER_HANDOFF_PRINT:DBA"
+and p.person_id = cra.updt_id
+order by cra.begin_dt_tm desc
+with format(Date,";;q"),uar_code(d)
+
+select * from prsnl p where p.username = "GPARA*"
+
+select * from request_processing rp where rp.format_script = "*ATTEND"
+
+update into request_processing set active_ind = 0 where format_script = "PFMT_COV_UPDT_ATTEND"
+
+;COV_EKS_TRIGGER_BY_FIN	"MINE", "COV_ADMISSION_ACTIVITY_1 ", "2009200045" go
+
+
+										
+										
+select * from code_value cv where cv.concept_cki = "CERNER!E8E22F29-DD0A-436B-AD3D-983DA3177775"
+
+select * from code_Value_set cvs where cvs.code_set =14003
+
+select * from request ar order by ar.request_number
+
+select * from code_value cv where cv.code_value=110505
+select * from order_entry_Fields oef where oef.oe_field_id = 110505
+select * from encntr_alias ea where ea.encntr_id=111595445
+
+select * from clinical_event ce where ce.encntr_id =   113039597.00 order by ce.updt_dt_tm desc
+with format(date,";;q"),uar_code(d)
+
+set link_clineventid =     1586623611.00 go
+
+select into "nl:"
+from
+	 clinical_event ce1
+	,clinical_event ce2
+plan ce1
+	where ce1.clinical_event_id =     link_clineventid
+join ce2
+	where ce2.event_id = ce1.event_id
+order by
+	 ce2.valid_from_dt_tm 
+	,ce2.event_id
+head report
+	log_retval = 0
+head ce2.event_id
+	if (ce2.result_status_cd = value(uar_get_code_by("MEANING",8,"ANTICIPATED")))
+		log_retval = 100
+		log_message = "First Event Status was Anticipated"
+	endif
+with nocounter go
+
+select 
+	o.order_id
+	,o.order_mnemonic
+	,o.orig_order_dt_tm
+	,oc.requisition_format_cd
+from
+	orders o
+	,order_catalog oc 
+plan o
+	where o.orig_order_dt_tm >= cnvtdatetime(curdate-2,0)
+	and   o.order_status_cd = value(uar_get_code_by("MEANING",6004,"ORDERED"))
+	and   o.activity_type_cd not in(value(uar_get_code_by("MEANING",106,"PHARMACY")))
+join oc
+	where oc.catalog_cd = o.catalog_cd
+	and   oc.requisition_format_cd > 0.0
+with format(date,";;q"),uar_code(m)
+
+select e.task_number,e.o_attend_doc_id,e.n_admit_doc_id,* from pm_transaction e 
+where e.n_person_id =        18804890.00
+;where e.o_encntr_id =    115221993.00
+order by e.activity_dt_tm desc with format(date,";;q"),uar_code(d)
+
+
+select ce.person_id,ce.encntr_id,ce.valid_from_dt_tm,ce.result_val,ce.event_id
+from clinical_event ce
+ where ce.person_id = 18804890.00
+    and	  ce.valid_from_dt_tm <= cnvtdatetime(curdate,curtime3)
+    and   ce.result_status_cd in(
+                                      value(uar_get_code_by("MEANING",8,"AUTH"))
+                                     ,value(uar_get_code_by("MEANING",8,"MODIFIED"))
+                                     ,value(uar_get_code_by("MEANING",8,"ALTERED"))
+                                )
+    and   ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+    and   ce.event_tag        != "Date\Time Correction"
+    and   ce.result_val        >  " "
+    and   ce.event_cd 			in(	select 
+    								cv1.code_value
+    								from code_value cv1 where cv1.code_set = 72
+								    and   cv1.display in(
+								                            "D-Primary Care Physician"
+								                        )
+								    and   cv1.active_ind = 1) 
+order by
+	 ce.valid_from_dt_tm desc
+	,ce.person_id
+with format(date,";;q"),uar_code(d),format, separator = " "
+select * from order_entry_Fields oef where oef.oe_field_id = 18804888
+
+
+select into "nl:"
+from
+	 person_prsnl_reltn ppr
+	,prsnl p1
+plan ppr
+	where 	ppr.person_id = trigger_personid
+	and		ppr.person_prsnl_r_cd = value(uar_get_code_by("MEANING",331,"PCP"))
+	and   	ppr.active_ind = 1
+	and   	ppr.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   	ppr.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join p1
+	where 	p1.person_id = ppr.prsnl_person_id
+order by
+	 ppr.person_id
+	,ppr.beg_effective_dt_tm desc
+head report
+	log_retval = 0
+head ppr.person_id
+	if (ppr.prsnl_person_id > 0.0)
+		log_misc1 = concat(trim(p1.name_full_formatted))
+	else
+		log_misc1 = concat(trim(ppr.ft_prsnl_name))
+	endif
+	log_misc1 = concat(trim(p1.name_full_formatted))
+	log_retval = 100
+foot report
+	call echo(log_misc1)
+	call echo(log_retval)
+with nocounter, nullreport go
+
+
+select *
+from code_value o
+plan o
+	where o.description in(
+	"*Behavioral*"
+	
+	)
+and o.code_set = 220
+and o.cdf_meaning = "FACILITY"
+
+
+
+select o.org_name,o.organization_id
+from 
+	 location l 
+	,organization o
+where l.location_type_cd = value(uar_get_code_by("MEANING",222,"FACILITY"))
+and o.organization_id = l.organization_id
+order by
+	o.org_name
+	
+	
+	
+	
+select distinct ed.person_id
+from
+	encntr_domain ed
+	,encounter e
+plan ed
+	where ed.end_effective_dt_tm = cnvtdatetime("31-DEC-2100 00:00:00")
+	and   ed.encntr_id not in(
+								select ce.encntr_id
+								from
+									clinical_event ce
+								where ce.encntr_id = ed.encntr_id
+								and   ce.event_cd =  3142291285.00
+								and   ce.valid_until_dt_tm >= cnvtdatetime(curdate,curtime3)
+							)
+	and	  ed.active_ind = 1
+	join e	
+		where e.encntr_id = ed.encntr_id
+		/*and   e.encntr_type_class_cd not in(
+												value(uar_get_code_by("MEANING",69,"OUTPATIENT"))
+											)
+		*/
+		and   e.active_ind = 1
+		and   e.encntr_status_cd in(
+										value(uar_get_code_by("MEANING",261,"ACTIVE"))
+									)	
+		;and   e.reg_dt_tm >= cnvtdatetime(curdate-14,0)
+order by
+	ed.beg_effective_dt_tm desc
+	,ed.person_id	
+
+
+select into "nl:"
+from encntr_alias ea
+plan ea
+	where ea.encntr_id = trigger_encntrid
+	and   ea.active_ind = 1
+	and   ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+order by
+	 ea.beg_effective_dt_tm desc
+	,ea.encntr_id
+head ea.encntr_id
+	log_misc1 = trim(cnvtalias(ea.alias,ea.alias_pool_cd))
+with nocounter go
+
+
+select * from orders o where o.order_id=2161747679
+select * 
+from
+	task_activity ta 
+where ta.task_id = 1596308449
+with format(date,";;q"),uar_code(d)
+
+select 
+	p.name_full_formatted
+	,e.loc_facility_cd
+	,e.encntr_type_cd
+	,e.reg_dt_tm
+	,o.order_mnemonic
+	,o.orig_order_dt_tm 
+	,o.order_id
+from 
+	orders o
+	,encounter e
+	,person p
+plan o 
+	where o.order_id=2158592521
+join e
+	where e.encntr_id = o.originating_encntr_id
+join p
+	where p.person_id = e.person_id
+with format(date,";;q"),uar_code(d)
+
+select oc.catalog_cd,oc.activity_type_cd,oc.activity_subtype_cd,
+* from order_catalog oc where oc.catalog_cd =  2556628945.00
+with format(date,";;q"),uar_code(d)
+	
+select * from order_catalog oc where oc.description = "SARS-CoV-2 RNA Qual RT-PCR"
+
+select
+	*
+from
+	 order_catalog oc
+	,orders o
+	,order_detail od
+	,encounter e
+	,person p
+plan oc
+	where oc.description 	= "SARS-CoV-2 RNA Qual RT-PCR"
+	and   oc.active_ind 	= 1
+join o
+	where o.catalog_cd 		= oc.catalog_cd
+	and   o.active_ind 		= 1
+join od
+	where o.order_id			= o.order_id
+	and   o.activity_type_cd	= value(uar_get_code_by("MEANING",6003,"ORDER"))
+join e
+	where e.encntr_id		= o.encntr_id
+join p
+	where p.person_id		= e.person_id
+	
+	
+select 
+	oa.needs_verify_ind,
+	oa.action_type_cd,
+	oa.action_dt_tm,
+	oa.order_locn_cd,
+	*
+from
+	order_action oa
+plan oa
+	where oa.order_id=2145859317
+with format(date,";;q"),uar_code(d)
+
+
+select 
+	 oc.catalog_cd
+	,oc.description
+	,* 
+from 
+	order_catalog oc 
+plan oc
+	where oc.description = "Consult to Patricia Neal Rehab"
+	and   oc.active_ind = 1
+go
+
+
+select 
+	 rp.request_number
+	,rp.sequence
+	,rp.format_script
+	,rp.service
+from 
+	request_processing rp 
+plan rp
+	where rp.request_number = 3091000
+	and rp.active_ind = 1
+order by
+	 rp.request_number
+	,rp.sequence
+with format(date,";;q"),uar_code(d)
+go
+
+
+select *
+from 
+	clinical_Event ce
+plan ce
+	where ce.person_id =    18804728.00
+order by
+	ce.updt_dt_tm desc
+with format(date,";;q"),uar_code(d)
+
+select
+	 ce.event_id
+	,ce.valid_from_dt_tm
+	,ce.event_end_dt_tm
+	,ce.event_cd
+	,ce.result_val
+	,ce.updt_dt_tm
+	,ce.entry_mode_cd
+	,ce.source_cd
+	,ce.clinsig_updt_dt_tm
+from
+	clinical_event ce
+plan ce
+	where ce.event_id in(1586706059,1586706169)
+with format(date,";;q"),uar_code(d)
+go
+
+
+
+select
+               coltolabdiff = datetimediff(ce.in_lab_dt_tm,ce.drawn_dt_tm,3)
+from
+               um_charge_event_st ce
+               ,dummyt dt
+plan ce where ce.encntr_id = trigger_encntrid
+               and ce.order_id = trigger_orderid
+join dt where datetimediff(ce.in_lab_dt_tm,ce.drawn_dt_tm,3) >= 2
+head report
+	log_retval = 0
+detail
+  log_misc1 = cnvtstring(coltolabdiff)
+  log_retval = 100
+with nocounter, nullreport go
+
+select * from um_charge_event_st ce where ce.order_id = 2171533761
+
+free set log_retval go
+free set log_misc1 go
+free set log_message go
+free set trigger_encntrid go
+free set trigger_orderid go
+
+declare log_retval = i2 with noconstant(-1),public go
+declare log_misc1 = vc with noconstant(" "),public go
+declare log_message = vc with noconstant(" "),public go
+
+declare trigger_encntrid = f8 with noconstant(0.0), public go
+declare trigger_orderid = f8 with noconstant(0.0), public go
+
+set trigger_encntrid = 110353221 go
+set trigger_orderid = 2171533761  go
+
+SELECT
+	coltolabdiff = datetimediff(ce.in_lab_dt_tm,ce.drawn_dt_tm,3)
+FROM
+               um_charge_event_st ce
+               ,dummyt dt
+PLAN ce WHERE ce.encntr_id = trigger_encntrid                      
+               AND ce.order_id = trigger_orderid                 
+JOIN dt WHERE datetimediff(ce.in_lab_dt_tm,ce.drawn_dt_tm,3) >= 0
+HEAD REPORT
+    log_retval = 0
+    log_misc1 = concat(trim(cnvtstring(trigger_encntrid)),":",trim(cnvtstring(trigger_orderid)))
+    log_misc1 = concat(  trim(log_misc1),":"
+    					,"in_lab_dt_tm="
+    					,trim(format(ce.in_lab_dt_tm,";;q"))
+    					,";drawn_dt_tm="
+    					,trim(format(ce.drawn_dt_tm,";;q")))
+DETAIL	
+  log_misc1 = concat(log_misc1,":",trim(cnvtstring(coltolabdiff)))
+  log_retval = 100
+WITH nocounter, nullreport go
+call echo(build("log_retval=",log_retval)) go
+call echo(build("log_misc1=",log_misc1)) go	
+call echo(build("log_message=",log_message)) go		
+
+
+select * from code_value cv where cv.display_key = "FAMILY*" order by cv.code_set
+/*
+COV_ATTEND_INIT                          TABLE          ENCNTR_DOMAIN                                                               
+COV_ED_LOC_WO_TRACKING                   TABLE          ENCNTR_DOMAIN                                                               
+COV_FLU_VAC_ACTIVE_PATIENT_AUD           TABLE          ENCNTR_DOMAIN                                                               
+COV_IC_CDIFFDOCUMENTION                  TABLE          ENCNTR_DOMAIN                                                               
+COV_OPS_PLANNED_ORDERS                   TABLE          ENCNTR_DOMAIN                                                               
+COV_PCP_INIT                             TABLE          ENCNTR_DOMAIN                                                               
+COV_PH_DNRPATIENTS                       TABLE          ENCNTR_DOMAIN                                                               
+COV_RT_O2_RPT                            TABLE          ENCNTR_DOMAIN   
+*/
+
+
+select * from encntr_alias ea where ea.alias = "1819500002"
+
+
+select
+	ce.encntr_id
+	,ce.event_cd
+	,ce.result_val
+	,ce.*
+from
+	clinical_event ce where ce.encntr_id in(  110485346.00,  116674208.00)
+order by
+	ce.updt_dt_tm desc
+with format(date,";;q"),uar_code(d)
+
+select * from eks_module m where m.module_name = "NDSC*"
+select * from eks_modulestorage m where m.module_name = "NDSC_SCRATCHPAD_WORKFLOW"
+
+delete from eks_modulestorage m where m.module_name = "NDSC_SCRATCHPAD_WORKFLOW" go
+delete from eks_module m where m.module_name = "NDSC_SCRATCHPAD_WORKFLOW" go
+
+select	 
+	e.module_name,
+	e.version,
+	e.active_flag,
+	e.eks_release,
+	e.maint_date,
+	e.updt_dt_tm "mm/dd/yyyy  hh:mm;;d",
+	e.maint_dur_begin_dt_tm "mm/dd/yyyy;;d",
+	e.maint_dur_end_dt_tm "mm/dd/yyyy;;d",
+	e.maint_filename,
+	e.maint_institution,
+	e.maint_author,
+	e.maint_specialist,
+	e.maint_title,
+	e.maint_validation,
+	e.maint_version,
+	e.know_priority "###",
+	e.know_type,
+	e.know_urgency,
+	line1 = fillstring(124,'='),
+	expr1 = format(curdate,'mm/dd/yy;;d'),
+	line2 = fillstring(124,'_')
+
+from	eks_module  e
+
+where e.active_flag = "A"
+and   e.maint_validation = "PRODUCTION"
+
+order	e.module_name,
+	e.active_flag,
+	e.version desc
+
+select * from entity_lock el where el.entity_name_data = "CoreEventManager"
+
+
+select * from entity_lock
+
+where entity_name_data = "CoreEventManager"
+
+or entity_name = "CoreEventManager"
+
+order by updt_dt_tm desc
+
+with format (date,";;q") go
+
+
+select * from encounter e where e.encntr_id = 0
+
+update into code_value set description = definition,definition="cov_upd_allergy_reaction" where cdf_meaning = "ALLERGY_KEY"
+and definition != "cov_upd_allergy_reaction" and code_set = 100498 go
+ 
+select cv1.display,cv2.display,cve2.field_value
+from
+      code_value cv1
+     ,code_value_extension cve1
+     ,code_value_extension cve2
+     ,code_value_group cvg
+     ,code_value cv2
+plan cv1
+	where cv1.code_set 				= 100498
+	and   cv1.definition 			= "cov_upd_allergy_reaction"
+	and   cv1.active_ind 			= 1
+	and   cv1.begin_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   cv1.end_effective_dt_tm 	>= cnvtdatetime(curdate,curtime3)
+	and   cv1.cdf_meaning			in(
+										 "ALLERGY_KEY"
+									   )
+join cve1
+	where cve1.code_value			= cv1.code_value
+	and   cve1.field_name			= "VOCABULARY"
+join cve2
+	where cve2.code_value			= cv1.code_value
+	and   cve2.field_name			= "CATEGORY"
+join cvg
+	where cvg.parent_code_value		= cv1.code_value
+join cv2
+	where cv2.code_value			= cvg.child_code_value
+	and   cv2.active_ind 			= 1
+	and   cv2.begin_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   cv2.end_effective_dt_tm 	>= cnvtdatetime(curdate,curtime3)
+order by
+	 cv1.code_value
+	,cv2.code_value
+	
+set dclcom = build2("df -h >fs3.out") go
+set dclstat = 0 go
+call dcl(dclcom, size(trim(dclcom)), dclstat) go
+
+select * from encntr_alias ea where ea.encntr_id=116726003
+
+select * from nomenclature n where n.nomenclature_id = 57824527
+
+select 
+	 n.nomenclature_id
+	,n.source_identifier
+	,n.source_string
+from
+	 nomenclature n
+	,code_value cv1
+plan cv1
+	where cv1.code_set = 400
+	and   cv1.display = "Allergy"
+	and   cv1.active_ind = 1
+join n
+	where n.source_vocabulary_cd = cv1.code_value
+	and   n.source_identifier = "50509064"	
+	
+	
+	
+	
+select 
+	oa.order_id
+	,oa.action_type_cd
+	,oa.action_dt_tm
+	,oa.communication_type_cd
+	,*
+from
+	order_action oa
+plan oa 
+	where oa.order_id = 2165737489	
+with nocounter,uar_code(d),format(date,";;q")
+
+
+select * from code_value cv where cv.code_value = 3346954
+select * from clinical_Event ce where ce.event_cd =     3346954.00
+ and ce.performed_dt_tm >= cnvtdatetime(curdate,0)
+ 
+/*
+DRUG
+ENVIRONMENT
+FOOD
+OTHER
+
+*/ 
+ 
+ select a.substance_ftdesc,
+ 		a.substance_nom_id,
+ 		a.updt_dt_tm,
+ 		* 
+ from allergy a, nomenclature n
+ plan a 
+ 	where a.allergy_id = 19850223.0000000000
+ join n
+ 	where n.nomenclature_id = a.substance_nom_id
+ with format(date,";;q"),uar_code(d)
+ 
+ 
+select 
+	 cv.code_value
+	,cv.code_set
+	,cv.display
+from
+	code_value cv
+plan cv
+	where cv.code_set = 72
+	and   cv.active_ind = 1
+	and   cnvtdatetime(curdate,curtime3) between cv.begin_effective_dt_tm and cv.end_effective_dt_tm
+	and   cv.display = "Temperature*"
+order by
+	cv.display
+	
+	
+select ea.alias,* from 
+orders o,encntr_alias ea where o.order_id = 2204063545
+and ea.encntr_id = o.originating_encntr_id
+
+select * from order_Catalog oc where oc.catalog_type_cd =        2517.00
+
+select * from encntr_alias ea where ea.alias = "2301666430"
+select ce.source_cd,ce.contributor_system_cd,
+* from clinical_Event ce where ce.event_id = 1586820193 order by ce.event_end_dt_tm desc
+with nocounter,format(date,";;q"),uar_code(D)
+
+select * from ce_event_note cen where cen.event_id =  1586809109.00
+with nocounter,format(date,";;q"),uar_code(D)with nocounter,format(date,";;q"),uar_code(D)
+
+
+select * from passive_alert go
+
+
+
+select * from LONG_BLOB_REFERENCE
+
+
+select 
+uar_get_code_display(pm.o_loc_room_cd),
+uar_get_code_display(pm.o_loc_bed_cd),
+uar_get_code_display(pm.n_loc_room_cd),
+uar_get_code_display(pm.n_loc_room_cd),* from pm_transaction pm where pm.transaction_id = 111708
+
+select de.gmlos,n.*
+ from drg d
+,drg_extension de
+,nomenclature n
+;,drg_encntr_extension dee 
+where d.encntr_id = 114916394
+and cnvtdatetime(sysdate) between d.beg_effective_dt_tm and d.end_effective_dt_tm
+and d.active_ind = 1 
+and n.nomenclature_id = d.nomenclature_id
+;and cnvtdatetime(sysdate) between n.beg_effective_dt_tm and n.end_effective_dt_tm
+and n.active_ind = 1
+and de.source_identifier = n.source_identifier
+and n.source_vocabulary_cd = d.source_vocabulary_cd
+and cnvtdatetime(sysdate) between de.beg_effective_dt_tm and de.end_effective_dt_tm
+and de.source_vocabulary_cd =           4326105.00
+and de.active_ind = 1
+with nocounter,format(date,";;q"),uar_code(D)
+;and dee.encntr_id = d.encntr_id
+
+select de.gmlos,* from DRG_EXTENSION de where cnvtdatetime(sysdate) between de.beg_effective_dt_tm and de.end_effective_dt_tm
+and de.active_ind = 1
+
+select * from drg_specialty ds where ds.active_ind = 1
+select * from nomenclature n where n.nomenclature_id =     10774115.00
+with nocounter,format(date,";;q"),uar_code(D)
+
+select   oef.oe_format_name
+		,action = uar_get_code_display(oef.action_type_cd)
+		,oef2.description
+		,oef2.oe_field_id
+		,oef2.oe_field_meaning_id
+		,oef2.codeset
+		,off.label_text
+		,off.*	
+from 
+	 order_entry_format oef
+	,oe_format_fields off
+	,order_entry_fields oef2
+plan oef
+	where oef.oe_format_name = "Lab - Quest Coronavirus"
+	and   oef.action_type_cd = value(uar_get_code_by("MEANING",6003,"ORDER"))
+join off
+	where off.oe_format_id = oef.oe_format_id
+join oef2
+	where oef2.oe_field_id = off.oe_field_id
+	
+	and   oef2.description in(
+									 "First Test"
+									,"Employed in Healthcare"
+									,"Symptomatic"
+									,"Hospitalized"
+									,"ICU"
+									,"Congregate care setting"
+									,"Pregnant - Lab"
+								)
+
+select *
+from dm_info di
+plan di
+where di.info_domain = "INS"
+and di.info_name = "MP_BASE_GROUP"
+with nocounter	
+
+select
+
+d.info_char
+
+from dm_info d
+
+where d.info_domain = "INS"
+
+and d.info_name = "CONTENT_SERVICE_URL"
+
+
+select * from eks_notifications en where en.active_ind = 1
+order by en.updt_dt_tm desc
+
+
+select 
+	 en.*
+	,enpr.*
+	,enbr.*
+from 
+	 eks_notify_persn_r enpr
+	,eks_notifications en
+	,eks_notification_blob_r enbr
+	,prsnl p
+plan p
+	where p.username = "CCUMMIN4"	
+join enpr
+	where enpr.person_id = p.person_id
+join en
+	where en.notification_id = enpr.notification_id
+join enbr
+	where enbr.notification_id = en.notification_id
+order by en.updt_dt_tm desc
+with nocounter,format(date,";;q"),uar_code(D)
+
+select * from eks_notify_loc_r enlr where enlr.notification_id
+
+select * from dcp_forms_ref dfr where dfr.dcp_forms_ref_id=168008465.00
+and dfr.active_ind = 1
+
+select 
+	 p.name_full_formatted
+	,fin=cnvtalias(ea.alias,ea.alias_pool_cd)
+	,crr.report_request_id
+	,crr.request_dt_tm
+from
+	 cr_report_request crr
+	,person p
+	,encounter e
+	,encntr_alias ea
+plan crr
+	where crr.request_dt_tm < cnvtdatetime(curdate-120,curtime3)
+join p
+	where p.person_id = crr.person_id
+join e
+	where e.encntr_id = crr.encntr_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.active_ind = 1
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+	and   ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+order by
+	 p.name_full_formatted
+	,ea.alias
+	,crr.request_dt_tm
+with nocounter,format(date,";;q"),uar_code(D),time=240
+
+select 
+	 der.entity1_name
+	,der.entity1_display
+	,uar_get_code_display(der.entity1_id)
+	,der.entity2_name
+	,der.entity2_display
+	,uar_get_code_display(der.entity2_id)
+	,der.active_ind
+	,der.begin_effective_dt_tm
+	,der.end_effective_dt_tm
+	,der.updt_dt_tm
+	,p.name_full_formatted
+	,p.username
+from 
+	 dcp_entity_reltn der 
+	,prsnl p
+plan der
+	where der.entity_reltn_mean = "TASK/LOC"
+join p
+	where p.person_id = der.updt_id
+order by
+	 der.updt_dt_tm desc
+	,der.entity1_id
+	,der.begin_effective_dt_tm
+	,der.end_effective_dt_tm
+with format(date,";;q"),uar_code(d)
+
+select * from ce_date_result cdr where cdr.event_id = 0.0;1586868428
+
+select * from task_activity ta where ta.order_id = 2244062229
+
+
+
+select select ce.parent_event_id,ce.event_id, *
+ from clinical_event ce where ce.order_id =  2239607861.00
+with format(date,";;q"),uar_code(d)
+
+select ce.order_id,
+ce.parent_event_id,ce.event_id, * from clinical_Event ce where ce.event_id=1586859620
+with format(date,";;q"),uar_code(d)
+
+
+select
+*
+from
+	orders o
+	,order_catalog oc
+plan oc
+	where oc.description = "COVID 19 POC Lab 87635"
+	and   o.catalog_cd = oc.catalog_cd
+	
+	
+	
+select * from cqm_fsieso_que cfq where cfq.create_dt_tm >= cnvtdatetime("04-AUG-2020 17:12:00")
+with format(date,";;q"),uar_code(d)
+
+
+
+insert into order_ops o set o.order_id = 2245841525,      o.ops_flag = 2       with nocounter go
+
+select 
+	cv.code_value
+	,cv.display
+	,cv.code_value
+	,cve.field_name
+	,cve.field_value
+from
+	code_value cv
+	,code_value_extension cve
+plan cv
+	where cv.code_set = 100498
+	and   cv.active_ind = 1
+	and   cv.cdf_meaning = "ALLERGY_KEY"
+join cve
+	where cve.code_value = cv.code_value	
+	and   cve.field_name = "CATEGORY"
+	and   cve.field_value = "env*"
+	
+	
+select 
+	cv.code_value
+	,cv.display
+	,cv.code_value
+from
+	code_value cv
+plan cv
+	where cv.code_set = 100522
+	and   cv.active_ind = 1
+	;and   cv.cdf_meaning = "ALLERGY_FT"
+	
+
+select * from orders o where o.order_id = 2245841525 go
+select * from order_catalog oc where oc.catalog_cd =  3154049185.00
+select * f
+
+
+
+
+select distinct
+	 ea.alias
+	,hp.plan_name
+	,epr.priority_seq
+	,location=uar_get_code_display(e.loc_facility_cd)
+	,encntr_type=uar_get_code_display(e.encntr_type_cd)
+	,reg_dt_tm=format(e.reg_dt_tm, "mm-dd-yyyy;;d")
+from 
+	 encntr_plan_reltn epr
+	,health_plan hp
+	,encounter e
+	,person p
+	,encntr_alias ea
+plan epr
+	where epr.active_ind = 1
+	and   cnvtdatetime(curdate,curtime3) between epr.beg_effective_dt_tm and epr.end_effective_dt_tm
+join hp
+	where hp.health_plan_id = epr.health_plan_id
+join e
+	where e.encntr_id = epr.encntr_id
+	and   e.reg_dt_tm >= cnvtdatetime(datetimefind(cnvtdatetime(curdate,curtime3), 'Y', 'B', 'B'))
+join p
+	where p.person_id = e.person_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.active_ind = 1
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+	and   ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+order by
+	 ea.alias
+	,epr.priority_seq
+with format(date,";;q"),uar_code(d),nocounter
+;RT		      12613.00	COLLPRI	     311045.00
+;RT - Routine		      12583.00	REPPRI	       1757.00
+
+select od.oe_field_meaning_id,* from order_detail od where od.order_id = 2248833349
+
+select * from passive_alert_position go
+select * from passive_alert pa where pa.active_ind=1
+select * from passive_alert_action paa where paa.passive_alert_id =         34308.00
+
+select * from dcp_forms_Ref r where r.description = "Adult*" and r.active_ind = 1
+
+select * from order_catalog_synonym ocs where ocs.synonym_id = 3152285679
+select * from order_entry_Format oef where oef.oe_format_id= 3152195129.00
+
+select * from oen_personality op order by op.name
+select distinct op.* from oen_personality per, oen_procinfo op
+where per.interfaceid = op.interfaceid ; and op.proc_name = "eRx*"
+and op.service = "Inbound" order by op.proc_name
+with format(date,";;q"),uar_code(d),nocounter
+
+
+select * from prsnl_org_reltn por, organization o, prsnl p where o.org_name = "Ambulatory Reference Lab"
+and o.organization_id = por.organization_id and p.person_id = por.person_id
+and p.username = "CCUMMIN4"
+
+
+
+SELECT DISTINCT
+    f.description
+    ,*
+    , F.DCP_FORM_INSTANCE_ID
+
+FROM
+    DCP_FORMS_REF   F
+
+plan f where f.active_ind = 1
+
+ORDER BY
+    f.description
+    
+    
+    select * from code_value cv where cv.code_value=311045
+    select * from code_Value_Set cvs where cvs.code_set=       2054
+    
+    
+select sr=uar_get_code_display(apr.service_resource_cd),
+apr.service_resource_cd,apr.*
+    from
+     
+      profile_task_r ptr,
+      assay_processing_r apr,
+      discrete_task_assay dta
+
+
+ 
+plan ptr
+  where ptr.catalog_cd = 2553764709; 2553754475;3154049185
+    and ptr.active_ind = 1
+join dta
+  where dta.task_assay_cd = ptr.task_assay_cd
+    and dta.active_ind = 1
+join apr
+  where apr.task_assay_cd = ptr.task_assay_cd
+    ;and apr.service_resource_cd = reply->instr_list[d1.seq].service_resource_cd
+    and apr.active_ind = 1
+   order by sr
+with format(date,";;q"),uar_code(d),nocounter
+
+select av.SERVICE_RESOURCE_CD, av.TASK_ASSAY_CD, apr.task_assay_cd, av.ACTIVE_IND,
+
+            apr.ACTIVE_IND, cv1.display, cv2.display
+
+from auto_verify av, assay_processing_r apr, code_value cv1, code_value cv2
+
+plan av where av.active_ind=1
+
+join apr where av.SERVICE_RESOURCE_CD = apr.SERVICE_RESOURCE_CD
+
+                   and av.task_assay_cd = apr.task_assay_cd and apr.active_ind=0
+
+join cv1 where av.SERVICE_RESOURCE_CD = cv1.code_value
+
+join cv2 where av.TASK_ASSAY_CD=cv2.code_value go
+
+Select * from reference_range_factor where reference_range_factor_id = 0 go
+
+Select uar_get_code_display(o.catalog_cd),
+o.orderable_type_flag,
+o.bill_only_ind,
+o.resource_route_lvl,
+o.updt_dt_tm,
+o.updt_id
+from order_catalog o,
+code_value cv
+plan o where o.catalog_type_cd = (select cv.code_value
+from code_value cv
+where cv.code_set = 6000
+and cv.cdf_meaning = 'GENERAL LAB'
+and cv.active_ind = 1)
+and o.activity_type_cd = (select cv.code_value
+from code_value cv
+where cv.code_set = 106
+and cv.cdf_meaning = 'GLB'
+and cv.active_ind = 1)
+and o.orderable_type_flag in (0,1,5,10)
+and o.bill_only_ind in (0,null)
+and o.active_ind = 1
+and o.catalog_cd > 0
+and o.complete_upon_order_ind != 1
+and (o.resource_route_lvl < 2
+or o.resource_route_lvl = null)
+AND NOT EXISTS( select orl.catalog_cd
+from orc_resource_list orl,code_value cv
+where orl.catalog_cd = o.catalog_cd
+and orl.active_ind = 1
+and cv.code_value = orl.service_resource_cd
+and cv.active_ind = 1)
+join cv where cv.code_value = o.catalog_cd and cv.description not in("ZZ*", "zz*")
+with nocounter, time = 30 go
+
+select * from code_value cv where cv.code_value = 2554104883
+select * from order_catalog_synonym ocs where ocs.synonym_id = 2570676447
+
+select
+	r.result_status_cd
+	,pr.perform_dt_tm
+	,pr.service_resource_cd
+	,pr.reference_range_factor_id
+	,o.order_id
+	,pr.*
+	,r.*
+from
+	perform_result pr
+	,result r
+	,reference_range_factor rrf
+	,orders o
+plan r
+	where r.person_id = 14420456
+join pr
+	where r.result_id = pr.result_id
+join rrf
+	where rrf.reference_range_factor_id = pr.reference_range_factor_id
+join o
+	where o.order_id = r.order_id
+order by
+	pr.updt_dt_tm desc
+with format(date,";;q"),uar_code(d),nocounter
+
+select * from order_Catalog oc where oc.description="Sodium Chloride 3%"
+;    2778727.00
+
+SELECT DISTINCT
+Catalog_Disp=D.ENTITY1_DISPLAY
+,Catalog_cd= D.ENTITY1_ID
+, Body_Site=D.ENTITY2_DISPLAY
+, Code_Value=D.ENTITY2_ID
+, D.ENTITY_RELTN_MEAN
+
+FROM
+DCP_ENTITY_RELTN   D
+, order_catalog   oc
+
+plan oc
+where oc.catalog_type_cd=2513
+and oc.active_ind=1
+join d
+where d.entity1_id= oc.catalog_cd
+and d.entity_reltn_mean="ORC/54";
+and d.active_ind=1
+
+ORDER BY
+Catalog_Disp
+, Body_Site
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 60
+
+SELECT DISTINCT
+Catalog_Disp=D.ENTITY1_DISPLAY
+,Catalog_cd= D.ENTITY1_ID
+, Body_Site=D.ENTITY2_DISPLAY
+, Code_Value=D.ENTITY2_ID
+, D.ENTITY_RELTN_MEAN
+,d.*
+
+FROM
+DCP_ENTITY_RELTN   D
+, order_catalog   oc
+
+plan oc
+where oc.catalog_type_cd=        2516.00
+and oc.catalog_cd=    2778727.00
+and oc.active_ind=1
+join d
+where d.entity1_id= oc.catalog_cd
+;and d.entity_reltn_mean="ORC/54";
+and d.active_ind=1
+
+ORDER BY
+Catalog_Disp
+, Body_Site
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 60
+
+
+
+
+select 
+	 category=cve2.field_value
+	,vocabulary=cve1.field_value
+	,allergy=cv1.display
+	,nomenclature=cv1.description
+	,freetext=cv2.display
+from
+      code_value cv1
+     ,code_value_extension cve1
+     ,code_value_extension cve2
+     ,code_value_group cvg
+     ,code_value cv2
+plan cv1
+	where cv1.code_set 				= 100498
+	;and   cv1.definition 			= trim(cnvtlower(t_rec->curprog)) 
+	and   cv1.active_ind 			= 1
+	and   cv1.begin_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   cv1.end_effective_dt_tm 	>= cnvtdatetime(curdate,curtime3)
+	and   cv1.cdf_meaning			in(
+										 "ALLERGY_KEY"
+									   )
+join cve1
+	where cve1.code_value			= cv1.code_value
+	and   cve1.field_name			in(
+										"VOCABULARY"
+										)
+join cve2
+	where cve2.code_value			= cv1.code_value
+	and   cve2.field_name			in(
+										"CATEGORY"
+										)
+join cvg
+	where cvg.parent_code_value		= cv1.code_value
+join cv2
+	where cv2.code_value			= cvg.child_code_value
+	and   cv2.active_ind 			= 1
+	and   cv2.begin_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   cv2.end_effective_dt_tm 	>= cnvtdatetime(curdate,curtime3)
+order by
+	 cv1.code_value
+	,cv2.code_value
+	,cve1.field_name
+	
+	
+select od.review_type_flag,od.reviewed_status_flag,* from
+order_review od where od.order_id in( 2270478537, 2188436645) and od.review_type_flag=3
+with format(date,";;q"),uar_code(d),nocounter
+
+
+select od.needs_verify_ind,* from
+order_action od where od.order_id in( 2270478537, 2188436645); 2270478537; 2188436645
+with format(date,";;q"),uar_code(d),nocounter
+
+SELECT 
+TASK_ASSAY = UAR_GET_CODE_DISPLAY (R.TASK_ASSAY_CD )
+, dm.task_assay_cd
+
+FROM
+perform_result   p
+, RESULT   R
+, (left JOIN data_map dm ON (
+        dm.task_assay_cd = r.task_assay_cd
+         and dm.data_map_type_flag       =  0
+         and dm.active_ind               =  1
+         and exists
+             (select 1 from perform_result  pr2
+             where pr2.result_id        =  r.result_id
+             and pr2.result_status_cd    =  r.result_status_cd
+             and ((dm.service_resource_cd=  0)
+             or (dm.service_resource_cd  =  pr2.service_resource_cd)))))
+
+PLAN P WHERE P.PERFORM_DT_TM BETWEEN CNVTDATETIME (curdate,0 ) AND CNVTDATETIME (curdate,curtime3 )
+join R WHERE P.RESULT_ID = R.RESULT_ID 
+join dm
+
+WITH MAXREC = 1000, nocounter,format, separator=" ", time = 30 go
+
+select * from encntr_alias ea where ea.encntr_id=116734873                
+
+
+select 
+	location=build(
+					uar_get_code_display(e.loc_nurse_unit_cd),":",
+					uar_get_code_display(e.loc_room_cd),"-",
+					uar_get_code_display(e.loc_bed_cd)
+				)
+	,ea.alias
+	,p.name_full_formatted
+	,oc.description
+	,o.orig_order_dt_tm
+	,o.order_id
+	,ol.resource_route_level_flag
+	,accession=cnvtacc(a.accession)
+	,status=uar_get_code_display(o.order_status_cd)
+	,oc.catalog_cd
+	,oef2.description
+	,od.oe_field_display_value
+	,ce.result_val
+	,ce.result_status_cd
+	,ce.event_cd
+	,r.result_id
+	,r.result_status_cd
+	,r.task_assay_cd
+from
+	 orders o
+	,order_catalog oc
+	,encounter e
+	,person p
+	,encntr_alias ea
+	,order_detail od
+	,order_entry_fields oef2
+	,clinical_event ce
+	,result r
+	,perform_result pr
+	,accession_order_r aor
+	,accession a
+	,order_laboratory ol
+	,(dummyt d1)
+plan oc
+	where 
+		  oc.description = "COVID*"
+		  ;oc.description = "COVID19 MPL Reference Lab"
+	and   oc.active_ind = 1
+join o
+	where o.catalog_cd = oc.catalog_cd
+	and   o.orig_order_dt_tm >= cnvtdatetime("23-SEP-2020 14:45:00")
+	and   o.order_status_cd in(
+									value(uar_get_code_by("MEANING",6004,"COMPLETED"))
+									,value(uar_get_code_by("MEANING",6004,"ORDERED"))
+								)
+join p
+	where p.person_id = o.person_id
+join e
+	where e.encntr_id = o.encntr_id
+join ol
+	where ol.order_id = o.order_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.active_ind = 1
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+	and   ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join od
+	where od.order_id = o.order_id
+	join oef2
+		where oef2.oe_field_id = od.oe_field_id
+		and   oef2.description in(
+										 "First Test"
+										,"Employed in Healthcare"
+										,"Symptomatic"
+										,"Hospitalized"
+										,"ICU"
+										,"Congregate care setting"
+										,"Pregnant"
+										,"Pregnant - Lab"
+										,"Date of Onset"
+									)
+join d1
+join aor
+	where aor.order_id = o.order_id
+join a
+	where a.accession_id = aor.accession_id
+join ce
+	where ce.order_id = o.order_id
+	and   ce.event_cd =  3358526621.00
+	and   ce.valid_from_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and	  ce.result_status_cd in(
+									  value(uar_get_code_by("MEANING",8,"AUTH"))
+									 ,value(uar_get_code_by("MEANING",8,"MODIFIED"))
+									 ,value(uar_get_code_by("MEANING",8,"ALTERED"))
+								)
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   ce.event_tag        != "Date\Time Correction"
+	and   ce.result_val        >  " "
+join r
+	where r.order_id = ce.order_id
+join pr
+	where pr.result_id = r.result_id
+order by
+	o.orig_order_dt_tm desc
+with format(date,";;q"),uar_code(d),nocounter,outerjoin=d1
+
+
+
+select 
+	ptr1.catalog_cd,
+	apr1.service_resource_cd,
+	ptr1.task_assay_cd
+	,apr1.*
+from
+	 profile_task_r ptr1
+    ,discrete_task_assay dta1
+    ,assay_processing_r apr1
+    ,code_value cv
+plan ptr1
+	where 	ptr1.catalog_cd in( 3153419621); 3153419621.00);, 3153008683.00)
+join dta1 
+	where 	dta1.task_assay_cd = ptr1.task_assay_cd
+	and 	dta1.active_ind = 1
+join apr1
+	where apr1.task_assay_cd = ptr1.task_assay_cd
+join cv
+		where cv.code_value = apr1.service_resource_cd
+		and cv.display = "*MPL*"
+with format(date,";;q"),uar_code(d),nocounter
+
+
+select * from code_value cv where cv.code_value=2553169205
+select * from pathway_catalog pc where pc.pathway_catalog_id in(2558798469.0, 
+													     2558798631.0,
+													     2558798415.0,
+													     2558798679.0,
+													     2558798795.0,
+														     2561184837.0,
+													     2558798597.0,
+													     2558798667.0,
+													     2558798569.0,2820556661.0,
+													     2553747679.0,
+													     2568230873.0,
+													     2555179805.0,
+													     2554397267.0,
+													     2560332675.0,
+													     2561190045.0,
+													     2565585273.0,
+													     2558634049.0,
+													     2940692147.0,
+													     2558686633.0,
+													     273404169.0,
+													     2559383093.0,
+													     273404717.0,
+													     2556773247.0,
+													     2558686481.0,
+													     2555877831.0,
+													     2560265057.0,
+													     2821412237.0,
+													     2553244943.0,
+													     2553244975.0,
+													     2553244983.0,
+													     2553638867.0,
+													     2553638879.0,
+													     2553769851.0,
+													     2553770069.0,
+													     2553770853.0,
+													     2650563271.0,
+													     2553770131.0,
+													     2553770897.0,
+													     2553772343.0,
+													     2553772487.0,
+													     2553773337.0,
+													     3070365919.0,
+													     2553772685.0,
+													     2553773107.0,
+													     2553773209.0
+		)
+		
+		
+select 
+        ap.application_number, 
+        position=uar_get_code_display(ap.position_cd), 
+        nvp.pvc_name, 
+        nvp.pvc_value 
+from 
+        app_prefs ap, 
+        name_value_prefs nvp 
+plan nvp where nvp.pvc_name = "PRINT_REQUISITIONS" ; or any preference's PVC name
+join ap where ap.app_prefs_id = nvp.parent_entity_id 
+;removed for global preferences and ap.position_cd > 0 
+order by ap.application_number, position
+
+select * from code_value cv where cv.code_value=680281
+
+select * from prsnl p where p.username = "NURSERN"
+
+;
+
+select 
+	p.username
+	,enpr.read_ind
+	,en.*
+	,lb.*
+from 
+	 EKS_NOTIFICATIONS en 
+	,EKS_NOTIFY_PERSN_R enpr
+	,EKS_NOTIFICATION_BLOB_R enbr
+	,long_blob lb
+	,prsnl p
+plan en
+	;where en.updt_dt_tm >= cnvtdatetime(curdate,0)
+join enpr
+	where enpr.notification_id = en.notification_id
+join enbr
+	where enbr.notification_id = en.notification_id
+join lb
+	where lb.long_blob_id = enbr.long_blob_id
+join p
+	where p.person_id = enpr.person_id
+	and   p.username = "NURSERN"
+order by
+	en.begin_active_dt_tm desc
+with format(date,";;q"),uar_code(d),nocounter
+
+select pm.activity_dt_tm,pm.transaction,pm.updt_task,pm.updt_applctx,*from pm_transaction pm where pm.n_person_id = 18815000
+order by
+	pm.activity_dt_tm
+with format(date,";;q"),uar_code(d),nocounter
+
+select 
+	p1.name_full_formatted,ppr.beg_effective_dt_tm,ppr.end_effective_dt_tm,ppr.active_ind
+from
+	 person_prsnl_reltn ppr
+	,prsnl p1
+plan ppr
+	where 	ppr.person_id = 18815000
+	and		ppr.person_prsnl_r_cd = value(uar_get_code_by("MEANING",331,"PCP"))
+	;and   	ppr.active_ind = 1
+	;and   	ppr.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	;and   	ppr.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join p1
+	where 	p1.person_id = ppr.prsnl_person_id
+order by
+	 ppr.person_id
+	,ppr.beg_effective_dt_tm desc
+with format(date,";;q"),uar_code(d),nocounter
+
+
+Select count(distinct oef.OE_FIELD_ID)
+from
+OE_FORMAT_FIELDS off,
+ORDER_ENTRY_FIELDS oef,
+ORDER_ENTRY_FIELDS oef2,
+ORDER_ENTRY_FORMAT oe,
+OE_FORMAT_FIELDS off2
+Plan off where off.ACTION_TYPE_CD in (select code_value
+           from code_value where code_set = 6003
+           and CDF_MEANING = "ORDER")
+Join oef where off.OE_Field_ID = oef.OE_Field_ID
+    and oef.prompt_entity_id !=0
+join oef2 where oef2.prompt_entity_id = oef.prompt_entity_id
+    and oef2.oe_field_id != oef.oe_field_id
+join off2 where off.oe_format_id = off2.oe_format_id
+    and oef2.oe_field_id = off2.oe_field_id
+join oe where off.oe_format_id = oe.oe_format_id
+    and exists (select 'x'
+        from order_catalog_synonym ocs
+        where oe.oe_format_id = ocs.oe_format_id
+        and ocs.active_ind = 1
+        and rownum <= 1) go
+
+select * from prsnl p where p.person_id =    12696114.00
+
+Select distinct
+OE.OE_FORMAT_NAME,
+PROMPT_DTA = cv.display,
+FIELD_ID1=oef.OE_FIELD_ID,
+FIELD_NAME=off.label_text,
+FIELD_DESCRIPTION=oef.DESCRIPTION,
+FIELD_UPDT_ID = oef.updt_id,
+FIELD_UPDT_DT_TM = oef.updt_dt_tm,
+FIELD_ID2=oef2.OE_FIELD_ID,
+FIELD_NAME2=off2.label_text,
+FIELD_DESCRIPTION2=oef2.description,
+FIELD2_UPDT_ID = oef2.updt_id,
+FIELD2_UPDT_DT_TM = oef2.updt_dt_tm
+from
+OE_FORMAT_FIELDS off,
+ORDER_ENTRY_FIELDS oef,
+ORDER_ENTRY_FIELDS oef2,
+ORDER_ENTRY_FORMAT oe,
+OE_FORMAT_FIELDS off2,
+code_value cv
+Plan off where off.ACTION_TYPE_CD in (select code_value
+    from code_value where code_set = 6003
+    and CDF_MEANING = "ORDER")
+Join oef where off.OE_Field_ID = oef.OE_Field_ID
+    and oef.prompt_entity_id !=0
+join oef2 where oef2.prompt_entity_id = oef.prompt_entity_id
+    and oef2.oe_field_id != oef.oe_field_id
+join off2 where off.oe_format_id = off2.oe_format_id
+    and oef2.oe_field_id = off2.oe_field_id
+join oe where off.oe_format_id = oe.oe_format_id
+    and exists (select 'x'
+        from order_catalog_synonym ocs
+        where oe.oe_format_id = ocs.oe_format_id
+        and ocs.active_ind = 1
+        and rownum <= 1)
+join cv where cv.code_value = oef.prompt_entity_id
+order by oef.PROMPT_ENTITY_ID
+with format(date, ";;q") go
+
+
+select * from prop_result pr where pr.order_id = 2294810403
+with format(date, ";;q"),uar_code(d)
+
+select * from prop_order pr where pr.order_id = 2294810403
+with format(date, ";;q"),uar_code(d)
+
+
+
+
+select * from accession_order_r aor where aor.order_id = 2408999129
+;    8703052.00	 2293287031.00	000012020300000025
+
+select pr.nomenclature_id,pr.result_display_value,pr.result_dt_tm_value,
+pr.result_personnel_id,
+* from prop_result pr where pr.order_id = 2294810725
+with format(date, ";;q"),uar_code(d)
+
+select * from result r where r.order_id = 2294810605
+
+select pr.oe_field_id,pr.oe_field_value,pr.oe_field_display_value, * from order_detail pr where pr.order_id = 2293291215
+with format(date, ";;q"),uar_code(d)
+
+select * from prop_order pr where pr.prop_id = 2294810725
+select * from prop_order pr where pr.order_id = 2294810725
+with format(date, ";;q"),uar_code(d)
+
+
+select * from code_value cv where cv.code_set = 72 and cv.display = "Era*"
+
+select ce.event_cd,ce.result_val,*
+	
+from 
+	clinical_Event ce 
+plan ce
+	where ce.event_cd in(
+							 value(uar_get_code_by("DISPLAY",72,"Serve US Military"))
+							,value(uar_get_code_by("DISPLAY",72,"Branch of US Military"))
+							,value(uar_get_code_by("DISPLAY",72,"Era Served US Military"))
+							
+							)
+	and   ce.valid_from_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and	  ce.result_status_cd in(
+									  value(uar_get_code_by("MEANING",8,"AUTH"))
+									 ,value(uar_get_code_by("MEANING",8,"MODIFIED"))
+									 ,value(uar_get_code_by("MEANING",8,"ALTERED"))
+								)
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   ce.event_tag        != "Date\Time Correction"
+	and   ce.result_val        >  " "
+with format(date, ";;q"),uar_code(d)
+
+
+
+select *
+	from
+		 order_entry_format oef
+		,oe_format_fields off
+		,order_entry_fields oef2
+	plan oef
+		where oef.oe_format_name = "Lab - Quest Coronavirus"
+		and   oef.action_type_cd = value(uar_get_code_by("MEANING",6003,"ORDER"))
+	join off
+		where off.oe_format_id = oef.oe_format_id
+	join oef2
+		where oef2.oe_field_id = off.oe_field_id
+ 
+		and   oef2.description in(
+										 "First Test"
+										,"Employed in Healthcare"
+										,"Symptomatic"
+										,"Hospitalized"
+										,"ICU"
+										,"Congregate care setting"
+										,"Pregnant"
+										,"Pregnant - Lab"
+										,"Date of Onset"
+									)
+									
+select * from orders o where o.order_id=3517915355
+
+
+select * from clinical_Event where event_id in( 1586957162.00
+, 1586955915.00
+ ,1586954899.00)
+ 
+ update into clinical_event set valid_until_dt_tm = cnvtdatetime(curdate,curtime3) where event_id in ( 1586957162.00
+, 1586955915.00
+ ,1586954899.00) and valid_until_dt_tm >= cnvtdatetime(curdate,curtime3) go
+
+
+
+
+select 
+	ce.person_id
+	,count(ce.encntr_id)
+from
+	clinical_event ce
+	,code_value cv
+plan cv
+	where cv.code_set = 72
+	and cv.display = "D-Primary Care Physician"
+join ce	
+	where ce.event_cd = cv.code_value
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate,curtime3)
+group by
+	ce.person_id
+	
+	
+	select 
+	 ea.alias
+	,p.name_full_formatted
+	,location=uar_get_code_display(e.loc_facility_cd)
+	,ce.event_cd
+	,ce.encntr_id
+	,ce.event_end_dt_tm
+	,ce.event_id
+	,ce.result_val
+	,pcp_reltn=p1.name_full_formatted
+	,missmatch=if (trim(p1.name_full_formatted) != trim(ce.result_val)) "REVIEW" endif
+from
+	 code_value cv1
+	,clinical_event ce
+	,encntr_alias ea
+	,encounter e
+	,person p
+	,person_prsnl_reltn ppr
+	,prsnl p1
+plan cv1
+	where cv1.code_set = 72
+	and   cv1.display in(
+							"D-Primary Care Physician"
+						)
+	and   cv1.active_ind = 1
+join ce
+	where ce.event_cd = cv1.code_value
+	and   ce.valid_from_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and	  ce.result_status_cd in(
+									  value(uar_get_code_by("MEANING",8,"AUTH"))
+									 ,value(uar_get_code_by("MEANING",8,"MODIFIED"))
+									 ,value(uar_get_code_by("MEANING",8,"ALTERED"))
+								)
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   ce.event_tag        != "Date\Time Correction"
+	and   ce.result_val        >  " "
+join p
+	where p.person_id = ce.person_id
+join e
+	where e.encntr_id = ce.encntr_id
+	and e.person_id =    18807600.00        
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.active_ind = 1
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+	and   ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join ppr
+	where 	ppr.person_id = p.person_id
+	and		ppr.person_prsnl_r_cd = value(uar_get_code_by("MEANING",331,"PCP"))
+	and   	ppr.active_ind = 1
+	and   	ppr.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   	ppr.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join p1
+	where 	p1.person_id = ppr.prsnl_person_id
+order by
+	 missmatch desc
+	,ce.event_end_dt_tm desc
+with format(date,";;q"),uar_code(d)
+
+
+select * from nomenclature n where n.nomenclature_id != 0;= 292428329 
+and n.principle_type_cd =           1247.00
+and n.source_vocabulary_cd =              1220.00
+and n.source_string = "Unknown"
+and n.active_ind = 1
+with format(date,";;q"),uar_code(d)
+
+;MP_PHYS_HAND_PRINT_DRIVER	REPORT	SUCCESS	^MINE^,16908168.0,                0, 0, -1, ^^,1
+
+
+
+select * from application_ini ai where ai.person_id = 16908168
+order by ai.updt_dt_tm desc
+
+select distinct
+ ce.event_cd
+ ,ce.encntr_id
+ ,ce_sum_admin = sum(cnvtreal(ce.result_val)) over (partition by ce.event_cd, ce.encntr_id)
+from
+ clinical_event ce
+ ,orders o
+plan ce 
+	where ce.event_cd = value(uar_get_code_by("DISPLAYKEY",72,"ZIPRASIDONE"))
+	and ce.verified_dt_tm between cnvtlookbehind("24,H") and cnvtdatetime(curdate, curtime3)
+join o 
+ 	where o.encntr_id = ce.encntr_id
+	and o.order_id = ce.order_id
+	and o.simplified_display_line = "*IM*"
+order by 
+	ce_sum_admin
+
+select 
+	o.order_mnemonic
+	,o.status_dt_tm
+	,o.order_id
+from
+	orders o
+plan o
+	where o.order_id = 2312176983
+with nocounter,format(date,";;q"),uar_code(d)
+	
+select
+	 ea.alias
+	,p.name_full_formatted 
+	,e.encntr_class_cd
+	,e.inpatient_admit_dt_tm
+	,e.updt_dt_tm
+	,e.person_id
+	,e.encntr_id
+from
+	encounter e
+	,encntr_alias ea
+	,person p
+plan e
+	where e.encntr_id = 116739198
+join p
+	where p.person_id = e.person_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.active_ind = 1
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+	and   cnvtdatetime(curdate,curtime3) between ea.beg_effective_dt_tm and ea.end_effective_dt_tm
+with nocounter,format(date,";;q"),uar_code(d)
+
+
+select 
+	 elh.encntr_type_cd
+	,elh.encntr_type_class_cd
+	,elh.activity_dt_tm
+	,elh.encntr_id
+from
+	encntr_loc_hist elh
+plan elh
+	where elh.encntr_id = 116739198
+order by
+	elh.activity_dt_tm desc
+with nocounter,format(date,";;q"),uar_code(d)
+
+select
+	 pt.activity_dt_tm
+	,pt.o_encntr_class_cd
+	,pt.n_encntr_class_cd
+	,pt.o_encntr_type_class_cd
+	,pt.n_encntr_type_class_cd
+	,pt.transaction
+	,pt.n_encntr_id
+from
+	pm_transaction pt
+plan pt
+	where pt.n_encntr_id = 116739018
+order by
+	pt.activity_dt_tm desc
+with nocounter,format(date,";;q"),uar_code(d)
+
+
+select
+	 cv1.display
+	,cv1.cdf_meaning
+	,cv2.display
+	
+from
+	 code_value cv1
+	,code_value cv2
+	,code_value_group cvg
+plan cv1
+	where cv1.code_set = 69
+	and   cv1.active_ind = 1
+join cvg
+	where cvg.parent_code_value = cv1.code_value
+join cv2
+	where cv2.code_value = cvg.child_code_value
+order by
+	 cv1.display
+	,cv2.display
+	
+select * from dcp_patient_list dpl where dpl.patient_list_id = 5072441
+	select * from code_value_set cs where cs.code_set = 88
+SELECT * FROM CODE_value cv where cv.code_value in(2958523,88,674232)
+
+;       1079.00	        319	MRN	MRN
+;    2958523.00	        200	CODESTATUS	Resuscitation Status/Medical Interventio
+		 detail_prefs@prod2 dp
+		,name_value_prefs@prod2 nvp
+		,dcp_patient_list@prod2 pl
+		,prsnl@prod2 p
+		,dcp_pl_argument@prod2 dpa
+		,code_value@prod2 cv1
+	plan dp
+		 where dp.prsnl_id > 0.0
+		/*where dp.prsnl_id in(     9277981.00  ;"MLAWSON","Lawson, Mark Jonathan"
+								 ,9392064.00  ; "MTIISLAR "Tiislar, Milvi Katrin
+								 ,    9902480.00 ; CCUMMINGS2
+						    ) */
+		and dp.view_name = "PATLISTVIEW"
+		and dp.view_seq > 0
+	join nvp
+		where nvp.parent_entity_id = dp.detail_prefs_id
+		and   nvp.parent_entity_name = "DETAIL_PREFS"
+		and   cnvtupper(nvp.pvc_name) = "PATIENTLISTID"
+	join pl
+		where pl.patient_list_id = cnvtreal(nvp.pvc_value)
+		
+
+select 
+	dpl.name
+from 
+	 dcp_pl_argument dpa 
+	,dcp_patient_list dpl
+plan dpa
+	where dpa.parent_entity_id = 4122622	
+	;and   dpa.parent_entity_name = "PRSNL"	
+join dpl
+	where dpl.patient_list_id = dpa.patient_list_id
+
+select * from dcp_pl_argument dpa where dpa.patient_list_id=     3530801.00
+
+select 
+*
+from
+	 detail_prefs dp
+	,dcp_patient_list dpl
+	,name_value_prefs nvp
+plan dpl
+	where dpl.owner_prsnl_id = 16908168
+join nvp
+	where cnvtreal(nvp.pvc_value) = dpl.patient_list_id
+	and   nvp.parent_entity_name = "DETAIL_PREFS"
+	and   cnvtupper(nvp.pvc_name) = "PATIENTLISTID"
+join dp
+	where dp.detail_prefs_id = nvp.parent_entity_id
+	and dp.view_name = "PATLISTVIEW"
+	and dp.view_seq > 0
+	and dp.prsnl_id = dpl.owner_prsnl_id
+	
+	
+select distinct
+	 facility=uar_get_code_display(pct.facility_cd)
+	,service=uar_get_code_display(pct.pct_med_service_cd)
+	,pct.pct_care_team_id
+from
+	PCT_CARE_TEAM pct
+	,location f
+plan pct
+	where pct.prsnl_id = 4122622
+	and   pct.active_ind = 1
+	and   pct.facility_cd > 0.0
+	and   pct.pct_med_service_cd > 0.0
+	and   cnvtdatetime(sysdate) between pct.begin_effective_dt_tm and pct.end_effective_dt_tm
+	;and   pct.orig_pct_team_id = pct.pct_care_team_id
+join f
+	where f.location_cd = pct.facility_cd
+	and   f.active_ind = 1
+order by
+	 facility
+	,service
+with nocounter,uar_code(d),format(date,"DD-MMM-YYYY HH:MM:SS;;D")
+
+select pct.pct_team_cd,
+	*
+from 
+	PCT_CARE_TEAM pct
+plan pct where pct.pct_care_team_id = 1374851
+
+select
+	medServDisp = cnvtupper(substring(1,40,uar_get_code_display(pct.pct_med_service_cd)))
+			,teamDisp = cnvtupper(substring(1,40,uar_get_code_display(pct.pct_team_cd)))
+			,facility = uar_get_code_display(pct.facility_cd)
+			,unique_pct_id = build(pct.facility_cd, "_",pct.pct_med_service_cd, "_", pct.pct_team_cd)
+			,*
+			from PCT_CARE_TEAM   PCT
+			where pct.logical_domain_id = 0.0
+			;and pct.pct_med_service_cd = 0.0
+			;and pct.pct_team_cd = 0.0
+			;and pct.prsnl_id = 4122622
+			and pct.pct_care_team_id in(1503797,1348221)
+			;and pct.orig_pct_team_id = pct.pct_care_team_id
+			and pct.active_ind = 1
+			;and (pct.facility_cd = 0.0 or pct.facility_cd = 0.0)
+			;and cnvtdatetime(curdate,curtime3) between pct.begin_effective_dt_tm and pct.end_effective_dt_tm
+			order by medServDisp, teamDisp, unique_pct_id, pct.prsnl_id
+			
+			
+select p.username,* from prsnl p where p.username in( "PHYSHOSP","RTHACKER","UA.RTHACKER","CCUMMIN4")		
+;CCUMMIN4	   16908168.00
+;PHYSHOSP	    4122622.00
+;RTHACKER	   12297980.00
+;UA.RTHACKER	   16442891.00
+
+
+select *
+from 
+	 app_prefs a
+	,name_value_prefs n
+plan a 
+	where a.prsnl_id = 12297980
+	and a.application_number in(3202020,             600005)
+	join n where n.parent_entity_id = a.app_prefs_id
+		and n.parent_entity_name = "APP_PREFS"
+		and n.pvc_name = "MP_PHYS_HANDOFF_CTLISTS"
+
+
+
+
+
+if (curqual > 0)
+	select from dummyt d head report "Ran Successfully" with nocounter
+else
+	select from dummyt d head report "No Resuls Found" with nocounter
+endif
+
+
+
+
+select
+	 facility=uar_get_code_display(e.loc_facility_cd)
+	,fin=cnvtalias(ea.alias,ea.alias_pool_cd)
+	,patient=p.name_full_formatted
+	,document=uar_get_code_display(ce.event_cd)
+	,document_date=format(ce.event_end_dt_tm,"dd-mmm-yyyy hh:mm;;d")
+	,status=uar_get_code_display(ce.result_status_cd)
+	,performed_dt_tm = format(ce.performed_dt_tm,"dd-mmm-yyyy hh:mm;;d")
+	,performed_prsnl = p1.name_full_formatted
+	,performed_position = uar_get_code_display(p1.position_cd)
+	,verified_dt_tm = format(ce.verified_dt_tm,"dd-mmm-yyyy hh:mm;;d")
+	,verified_prsnl = p2.name_full_formatted
+	,verified_position = uar_get_code_display(p2.position_cd)
+	,ce.person_id
+	,ce.encntr_id
+	,ce.event_id
+from
+	 clinical_event ce
+	,code_value cv
+	,encounter e
+	,person p
+	,encntr_alias ea
+	,prsnl p1
+	,prsnl p2
+plan cv
+	where cv.code_set = 72
+	and   cv.display = "Malnutrition Note"
+	and   cv.active_ind = 1
+join ce
+	where ce.event_cd = cv.code_value
+	and   ce.valid_from_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and	  ce.result_status_cd not in(
+									  value(uar_get_code_by("MEANING",8,"INERROR"))
+								)
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   ce.event_tag        != "Date\Time Correction"
+	and   ce.event_end_dt_tm >= cnvtdatetime("12-AUG-2020 00:00:00")
+	and   ce.view_level = 1
+join e
+	where e.encntr_id = ce.encntr_id
+join p
+	where p.person_id = e.person_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.active_ind = 1
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+	and   ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join p1
+	where p1.person_id = ce.performed_prsnl_id
+join p2
+	where p2.person_id = ce.verified_prsnl_id
+with format(date,";;q"),uar_code(d)
+
+select
+	cv.*
+from
+	code_value cv
+	,code_value_set cvs
+plan cvs
+	where cvs.definition = "COVCUSTOM"
+join cv
+	where cv.code_set = cvs.code_set
+order by 
+	cv.updt_dt_tm desc
+	
+select * from eks_event ee
+
+	
+select *
+from 
+	 eks_notifications en 
+	,eks_notify_persn_r enpr
+	,prsnl p
+	,eks_notification_blob_r enbr
+	,long_blob lb
+plan en
+join enpr
+	where enpr.notification_id = en.notification_id
+join p
+	where p.person_id = enpr.person_id
+	and   p.person_id = reqinfo->updt_id
+join enbr
+	where enbr.notification_id = en.notification_id
+join lb
+	where lb.long_blob_id = enbr.long_blob_id
+order by
+	en.notification_id
+	
+	
+select * from clinical_event ce where ce.event_id=1587013281
+
+
+select * from order_notification oo where oo.order_id =   2333802003
+
+select * from problem p where p.updt_dt_tm >= cnvtdatetime(curdate,0)
+with uar_code(d,1), format (date,"mm/dd/yyyy hh:mm;;q")
+
+select distinct p1.name_full_formatted,n.source_identifier,n.source_string,p.updt_dt_tm,p.classification_cd
+,p.problem_id,p1.person_id,p.*
+from 
+	 problem p
+	,nomenclature n
+	,person p1
+plan p
+	;where 	p.updt_dt_tm >= cnvtdatetime(curdate-10,0) 
+	where 	p.active_ind = 1
+	
+	;and 	p.updt_id = 1 
+	and     p.confirmation_status_cd = value(uar_get_code_by("MEANING",12031,"CONFIRMED"))
+	and     p.classification_cd = value(uar_get_code_by("DISPLAY",12033,"Lab Confirmed"));
+									;value(uar_get_code_by("MEANING",12033,"PATSTATED"))
+	;and     p.updt_task =     3055000
+	;and     p.person_id =    18806950.00
+join n
+	where 	n.nomenclature_id = p.nomenclature_id
+	and 	n.nomenclature_id !=      8789191.00
+	and     n.source_identifier in(	"202940017",
+									"2771092016",
+									"3897180018",
+									"3083600011",
+									"3873507016",
+									"2158600017",
+									"2470393015",
+									"3286559017",
+									"11203012",
+									;"1494811646", ;covid
+									"10871012",
+									"3873501015",
+									"713743")
+join p1
+	where p1.person_id = p.person_id
+order by 
+	 p.updt_dt_tm desc
+	,p.problem_id
+with uar_code(d,1), format (date,"mm/dd/yyyy hh:mm;;q")
+
+update into problem p set p.classification_cd = value(uar_get_code_by("DISPLAY",12033,"Lab Confirmed")) where p.problem_id in(
+     154637167.00
+,  154637159.00
+) go
+
+
+select * from TL_TAB_CONTENT
+
+select 
+	vp.position_cd
+	,tc.tab_name
+	,te.description
+	,vp.view_name
+	,vp.view_seq
+	,te.updt_dt_tm
+	,*
+from 
+	 tl_eligible_task_code te 
+	,tl_tab_content tc
+	,view_prefs vp
+plan te
+	where te.description = "Respiratory Assess/TX Monitor Charges"
+join tc
+	where tc.tl_tab_id = te.tl_tab_id
+join vp
+	where vp.view_prefs_id = tc.view_prefs_sp_id	
+order by vp.position_cd,vp.view_seq,tc.tab_name,te.description
+with uar_code(d,1), format (date,"mm/dd/yyyy hh:mm;;q")
+
+
+select distinct tc.task_type_cd, tc.description, cv.display
+from tl_eligible_task_code tc, code_value cv
+where tc.task_type_cd > 0
+and cv.code_value = tc.task_type_cd
+and cv.display != tc.description
+order tc.description
+go
+
+
+select o.orig_ord_as_flag, * from orders o where o.order_id in(2098032893,2353580217)
+with uar_code(d,1), format (date,"mm/dd/yyyy hh:mm;;q")
+
+select 
+	oef.description,od.*
+from 
+	 orders o
+	,order_detail od
+	,order_entry_fields oef
+plan o
+	where o.order_id = 2356265829                                
+join od
+	where od.order_id = o.order_id
+join oef
+	where oef.oe_field_id = od.oe_field_id
+	;and   oef.description in ("Provider","Comment Text 1")
+	
+	
+	select * from person_prsnl_reltn ppr where ppr.person_prsnl_reltn_id = 1032749742
+	
+	
+	select d.originating_nomenclature_id,d.nomenclature_id,d.diagnosis_display,n1.source_identifier,n2.source_identifier,
+	* from diagnosis d,nomenclature n1, nomenclature n2 where d.encntr_id =   116739039.00 and d.diagnosis_id =  3158167925.00
+	and n1.nomenclature_id = d.originating_nomenclature_id and n2.nomenclature_id = d.nomenclature_id
+	
+	
+	select ce.result_val,ce.event_tag,ce.event_title_text,
+	 * from clinical_event ce where ce.encntr_id = 116739169 order by ce.updt_dt_tm desc
+	 
+	 select p.name_full_formatted,
+	 * from code_value cv,prsnl p where cv.code_set = 71 and p.person_id = cv.updt_id
+	 with uar_code(d,1), format (date,"mm/dd/yyyy hh:mm:ss;;q")
+	 
+select * from orders o where o.order_id=2360898889 
+
+select * from clinical_Event c where c.encntr_id=  116740305.00 ;c.order_id = 2360898889
+
+
+
+select * from code_value cv where cv.code_value=2630036
+
+
+
+select ce.result_val, * from clinical_event ce where ce.order_id = 2361477059 with uar_code(d,1)
+
+
+select into "nl:"
+from
+	clinical_event ce
+	,orders o
+plan ce
+	where ce.encntr_id =   116723319.00
+	and   ce.person_id = 18807920.00
+	and   ce.event_cd = value(uar_get_code_by("DISPLAY",72,"magnesium sulfate"))
+join o
+	where o.order_id = ce.order_id
+	and   o.order_status_cd	in(
+									 value(uar_get_code_by("MEANING",6004,"COMPLETED"))
+									,value(uar_get_code_by("MEANING",6004,"ORDERED"))
+								)
+order by
+	 ce.event_end_dt_tm
+	,ce.event_cd
+head report
+	log_retval = 0
+	minutes_diff = 0
+	log_misc = "Query Executed Without Results"
+head ce.event_cd
+	minutes_diff = datetimediff(ce.event_end_dt_tm,cnvtdatetime(curdate,curtime3),4)
+	if (minutes_diff > 1440)
+		log_retval = 100
+	endif
+	log_misc = build("First administration ",trim(cnvtstring(minutes_diff))," minutes ago")
+foot report
+	stat = 0
+with nocounter,nullreport
+go
+
+
+select 
+from
+	 orders o
+	,act_pw_comp apc
+	,pathway_action pa
+	,code_value cv
+	,code_value_extension cve
+plan o          
+	where o.order_id = trigger_orderid
+join apc
+	where apc.parent_entity_id = o.order_id
+join pa	
+	where pa.pathway_id = apc.pathway_id
+	and	  pa.communication_type_cd > 0.0
+join cv
+	where cv.code_value = pa.communication_type_cd
+join cve
+	where cve.code_value = cv.code_value
+	and   cve.field_name = "skip_cosign_ind"
+	and   cve.field_value = "0"
+head report
+log_retval = 0
+detail
+if (pa.communication_type_cd != o.latest_communication_type_cd)
+log_retval = 100
+log_misc1 = concat(trim(cnvtstring(pa.communication_type_cd,25,1)),char(6),trim(uar_get_code_display(pa.communication_type_cd)))
+endif
+with nocounter,nullreport go
+
+
+
+select ce.event_end_dt_tm,ce.result_val,* from
+ clinical_event ce 
+ where ce.event_cd = value(uar_get_code_by("DISPLAY", 72, "D-Sepsis Infection Source"))
+ ;and ce.event_end_dt_tm >= cnvtdatetime(curdate-60,0)
+ order by ce.event_end_dt_tm desc
+ with nocounter,nullreport,uar_code(d),format(date,";;q") go
+ 
+ select * from code_value cv where cv.code_set = 72 and cv.display_key = "*WASTE*"
+ 
+ 
+ select 
+ 	 ce.result_val
+ 	,ce.event_end_dt_tm
+ from
+ 	 code_value cv
+ 	,clinical_event ce
+ plan cv
+ 	where cv.display in( "PCA Wasted Amount"
+						 ,"Ctrl Sub Drip Wasted Amount"
+						 ,"Epidural Wasted Amount"
+				       )
+ join ce
+ 	where ce.event_cd = cv.code_value
+ 	and cnvtdatetime(curdate,curtime3) between ce.valid_from_dt_tm and ce.valid_until_dt_tm
+ 	and	  ce.result_status_cd in(
+									  value(uar_get_code_by("MEANING",8,"AUTH"))
+									 ,value(uar_get_code_by("MEANING",8,"MODIFIED"))
+									 ,value(uar_get_code_by("MEANING",8,"ALTERED"))
+								)
+	and   ce.event_tag        != "Date\Time Correction"
+ with nocounter,nullreport,uar_code(d),format(date,";;q")
+
+
+select * from name_value_prefs nvp where nvp.pvc_name = "*DOCLIST-CUSTOMVIEW*"
+
+select * from CQM_FSIESO_QUE cfq where cfq.queue_id = 1316326250
+select * from cqm_oeninterface_que coq where coq.queue_id = 1316326250
+
+select
+               date_time = FORMAT(tq.create_dt_tm,"MM/DD/YYYY hh:mm;;d")
+               ,tq.queue_id
+               ,tq.*
+from
+               CQM_FSIESO_QUE tq
+where
+;              tq.class = "ORM_BATCH" AND
+;              tq.type = "DISCONTINUE" AND
+               tq.queue_id = 1316326250 ;and
+;              tq.queue_id = 707083972 ;AND
+;              tq.create_dt_tm between CNVTDATETIME("03-MAR-2021 09:16") and CNVTDATETIME("03-MAR-2021 09:20")
+
+select * from code_value cv where cv.code_value =                   3443.00
+;       3443.00	      13016	ORD CAT	ORD CAT	ORDCAT
+
+select * from code_value cv where cv.display = "CT * Pelvis*"
+select * from order_catalog oc where oc.catalog_cd = 2552745797
+;CT Enterography Pelvis w/ Contrast
+select 
+	bim.key6,oc.primary_mnemonic,oc.catalog_cd
+from
+	 code_value cv1
+	,order_catalog oc
+	,bill_item bi
+	,bill_item_modifier bim
+	,(dummyt d1)
+plan oc
+	where oc.catalog_cd > 0
+	and oc.catalog_type_cd =         2517.00
+join bi
+	where bi.ext_parent_reference_id = oc.catalog_cd
+	and   bi.ext_parent_contributor_cd = value(uar_get_code_by("MEANING",13016,"ORD CAT"))
+join bim
+	where bim.bill_item_id = bi.bill_item_id
+join d1
+join cv1
+	where cv1.code_value = bim.key1_id
+	and   cv1.code_set = 14002 
+	and cv1.display = "AUC Required For NDSC"
+order by
+	oc.primary_mnemonic
+ go
+	;https://connect.cerner.com/thread/315718
+	
+	    1587065782.00 ;creatinine
+    1587077879.00 ;weight
+	    1587077893.00; height
+	       16279202.00;person
+	    116145838 ;encntr
+
+select ce.event_cd,ce.event_end_dt_tm, * from clinical_event ce where ce.encntr_id = 116145838 
+order by ce.updt_dt_tm desc               
+with nocounter,nullreport,uar_code(d),format(date,";;q")
+
+select cv.code_value,cv.concept_cki,cv.cki,cv.display from clinical_event ce, code_value cv
+plan ce where ce.clinical_event_id in(1587065782.00,1587077893.00,1587077879.00)
+join cv
+	where cv.code_value = ce.event_cd
+	
+	
+	SELECT *
+  FROM (code_value cv )
+  WHERE (cv.code_set = 72 )
+  AND (
+  			(cv.concept_cki IN("CERNER!E9A8D345-C87A-4034-938A-BA2349967398"))
+  			or 
+  			(cv.cki = "CKI.EC!9516")
+  		)
+  AND (cv.active_ind = 1 )
+  
+  
+  select 
+	 oc.catalog_cd
+	,oc.primary_mnemonic
+	,oc.catalog_type_cd
+	,oc.activity_type_cd
+	,oc.activity_subtype_cd
+	,ocs.synonym_id
+	,ocs.mnemonic
+	,ofr.facility_cd
+	,ofr.synonym_id
+from
+	 order_catalog oc
+	,order_catalog_synonym ocs
+	,ocs_facility_r ofr
+plan oc
+	where oc.primary_mnemonic = "Example_Order"
+join ocs
+	where ocs.catalog_cd = oc.catalog_cd
+join ofr
+	where ofr.synonym_id = ocs.synonym_id
+with format(date,";;q"),uar_code(d)
+
+
+select into "nl:"
+from prsnl p where p.person_id = reqinfo->updt_id 
+and p.physician_ind = 0
+head report
+log_retval = 0
+detail
+log_retval = 100
+with nocounter,nullreport go
+
+
+
+select * from pm_transaction pt where pt.n_encntr_id=116741993 
+with format(date,";;q"),uar_code(d,1)
+
+
+select 
+DISTINCT 
+	brk1 = concat(format(cnvtdatetime(e.begin_dt_tm),"@MEDIUMDATETIME"),
+		" ",build(floor(e.rec_id))," ",
+		FORMAT(E.MODULE_NAME,"##############################;R")),
+	em.template_num,
+	e.begin_dt_tm ";;q",
+	e.end_dt_tm ";;q",
+	e.*,
+	E.ACTION_RETURN,
+	E.BEGIN_DT_TM,
+	E.CONCLUDE,
+	E.LOGIC_RETURN,
+	e.module_name,
+	module_name_short = substring(1,30,E.MODULE_NAME),
+	E.REC_id,
+	e.server_class,
+	e.server_instance,
+	e.server_number,
+	EM.MODULE_NAME,
+	tname = EM.TEMPLATE_NAME,
+	EM.TEMPLATE_TYPE,
+	ed.*,  ;needed, because task_assay_cd may or may not be present and already getting most of the ed fields anyway
+	request_number = e.request_number, ;pmw
+	e_begin_dt_tm = cnvtreal(e.begin_dt_tm),
+	e_end_dt_tm = cnvtreal(e.end_dt_tm),
+	EXPR3 = datetimediff(e.end_dt_tm,e.begin_dt_tm) * 86400.00  ;elapsed time in second
+	
+	,begin_dt_tm = e.begin_dt_tm
+	,name = decode(p.seq,substring(1,30,p.name_full_formatted),"                              ")
+	,_person_id = decode(p.seq,p.person_id,0.0)
+	,accession = decode(a.seq,a.accession,fillstring(20," "))
+FROM
+		
+
+		EKS_MODULE_AUDIT  E,
+		EKS_MODULE_AUDIT_TEMP  EM,
+		EKS_MODULE_AUDIT_DET ED,
+		PERSON P,
+		ACCESSION A
+	PLAN E  WHERE
+		e.begin_dt_tm between
+		;cnvtdatetime(cnvtdate2(startdate,"YYYYMMDD"),cnvtmin(cnvtint(starttime))*60*100)
+		cnvtdatetime("17-MAR-2021 00:00:00")
+		;and cnvtdatetime(cnvtdate2(enddate,"YYYYMMDD"),cnvtmin(cnvtint(endtime))*60*100)
+		and cnvtdatetime("18-MAR-2021 00:00:00")
+		and E.MODULE_NAME in("COV_ADMISSION_ACTIVITY_1")
+	join em where e.module_name = em.module_name
+	join ed where outerjoin(e.rec_id) = ed.module_audit_id
+		and outerjoin(em.template_num) = ed.template_number
+		and ed.encntr_id = 116741993
+	join a where outerjoin(ed.accession_id) = a.accession_id
+	join p where outerjoin(ed.person_id) = p.person_id	
+	
+ORDER
+	cnvtdatetime(E.BEGIN_DT_TM)  DESC,
+	;brk1 desc,
+	E.MODULE_NAME 
+	;EM.TEMPLATE_NUM
+	
+	with format(date,";;q"),uar_code(d,1)
+	
+select * from entity_lock el where el.entity_name_data="EKSEncntrLock" 
+order by el.lock_dt_tm desc with format(date,";;q"),uar_code(d,1)
+
+select ea.alias,e.person_id,
+e.encntr_id,el.entity_name,el.entity_name_data,* from entity_lock el ,encntr_alias ea,person p
+,encounter e
+;where el.lock_type=1
+where el.entity_name_data="EKSEncntrLock"
+and ea.encntr_id = el.entity_id and ea.encntr_alias_type_cd = 1077
+and p.person_id = e.person_id and e.encntr_id = ea.encntr_id
+;WHERE EL.lock_dt_tm >= cnvtdatetime(curdate,0)
+with format(date,";;q"),uar_code(d,1)
+
+/*
+2108200002
+2108200003
+2108200005
+2108100007
+2108100008
+2108200008
+*/
+
+select * from passive_alert pa
+select * from passive_alert_action paa
+select * from passive_alert_position pap
+
+
+select * from code_value cv where cv.cki = "*AdministeredImmunizations*"
+
+
+select o.order_mnemonic,
+o.order_id,o.orig_ord_as_flag,o.orig_order_dt_tm,cx.field_value
+from
+orders o,
+encntr_alias ea,
+code_value_extension cx 
+
+plan ea
+	where ea.alias = "2301225744"
+join o
+	where o.encntr_id = ea.encntr_id
+join cx
+	where cx.code_value = o.catalog_cd
+	and cx.field_name = "IMMUNIZATIONIND"
+order by o.orig_order_dt_tm desc
+with format(date,";;q"),uar_code(d,1)
+
+
+select * from ORDER_COMPLIANCE oc where oc.encntr_id in(select
+encntr_id from encntr_alias where alias = "2107600004")
+with format(date,";;q"),uar_code(d,1)
+
+select into "nl:"
+from
+	order_compliance oc 
+plan oc
+	where oc.encntr_id =  116741954.00
+	and   oc.encntr_compliance_status_flag = 0
+head report
+	log_retval=0
+detail
+	log_retval=100
+with nocounter,nullreport go
+
+
+select o.updt_id,o.updt_task,* from orders o where o.order_id=2395534779
+with format(date,";;q"),uar_code(d,1)
+
+
+select * from code_value cv where cv.display = "Phone*"
+
+select * from accession_order_r aor where aor.order_id =     2396658461
+
+select 
+	
+from
+	 accession_order_r aor
+	,accession a
+	,orders o
+plan a
+	where a.accession = "00099CT20210000075"
+join aor
+	where aor.accession_id = a.accession_id
+join o
+	where o.order_id = aor.order_id
+
+
+
+
+select * from code_value cv where cv.display = "Abnormal Labs"
+
+
+select o.latest_communication_type_cd,o.* from
+orders o where o.order_id=2398891953
+with format(date,";;q"),uar_code(d,1)
+
+
+select 
+	 e.loc_facility_cd
+	,e.loc_nurse_unit_cd
+	,e.med_service_cd
+	,e.reg_dt_tm
+	,e.disch_dt_tm
+	,o.order_mnemonic
+	,o.orig_order_dt_tm
+	,o.order_status_cd
+from 
+	 encounter e
+	,orders o
+	,encntr_alias ea
+	,person p
+plan e
+	where e.med_service_cd = 28488134
+	where e.encntr_id = ce.encntr_id
+join p
+	where p.person_id = e.person_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.active_ind = 1
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+	and   cnvtdatetime(curdate,curtime3) between ea.beg_effective_dt_tm and ea.end_effective_dt_tm
+join o
+	where o.encntr_id = e.encntr_id
+	and   o.catalog_type_cd =        2513.00	;Laboratory
+	and   o.orig_order_dt_tm >= cnvtdatetime(curdate-30,0)
+order by
+	ea.alias
+	,o.orig_order_dt_tm
+with format(date,";;q"),uar_code(d,1)
+
+
+select pp.person_id from person_patient pp where pp.interp_required_cd > 0.0
+
+select count(*) from person_patient 
+
+
+select into "nl:"
+from
+	person_patient pp
+plan pp
+	where pp.person_id =    14404750.00
+head report
+	log_misc1 = "NOT FOUND"
+detail
+	log_misc1 = cnvtupper(uar_get_code_display(pp.interp_required_cd))
+with format(date,";;q"),uar_code(d,1),nullreport go
+
+select * from order_catalog oc where oc.primary_mnemonic = "XR Ribs*"
+with format(date,";;q"),uar_code(d,m,1),nullreport go
+
+
+Select into "nl:"
+From
+	encounter e,
+	encntr_alias ea
+plan e
+	where e.encntr_id = @ENCOUNTERID:1
+join ea
+	where e.encntr_id = ea.encntr_id
+detail    
+	log_misc1 = format(e.arrive_dt_tm, "DD-MMM-YYYY HH:MM:SS")
+with nocounter,maxrec = 1
+go	
+
+
+select * from
+encntr_alias ea where ea.alias = "1918700560"
+
+select ce.event_end_dt_tm,ce.order_id,ce.* from clinical_event ce where ce.encntr_id =       115467354.00
+order by
+ce.updt_dt_tm desc
+with format(date,";;q"),uar_code(d,m,1),nullreport go
+
+
+select into "nl:"
+from clinical_event ce
+plan ce where ce.clinical_event_id = @CLINICALEVENTID:
+detail    
+	log_misc1 = format(e.arrive_dt_tm, "DD-MMM-YYYY HH:MM:SS")
+with nocounter,maxrec = 1
+go
+
+
+select * from code_value cv where cv.display in("Interpretation Type","Interpreter Services for:") ;   42963519.00	         72
+	; 3159219855.00	         72
+
+
+
+select * from task_activity ta where ta.encntr_id =116742299
+
+select * from encntr_alias ea where ea.encntr_id = 116741993
+
+select * from code_value cv where cv.code_value in(2820596,2678, 1396 )
+
+)
+
+select * from prsnl_group_pool pg where pg.active_ind = 1
+select * from prsnl_group pg where pg.active_ind = 1
+select * from prsnl_group pg where pg.prsnl_group_id = 28488134
+
+
+select
+                o.order_id
+                
+                , scheduled_ind = if (sea.sch_attach_id > 0.0) 1 else 0 endif
+                                
+                , cancel_reason = if (od.oe_field_meaning_id > 0.0 and od2.oe_field_meaning_id > 0.0)
+                                                concat(trim(od.oe_field_display_value), ": ", trim(od2.oe_field_display_value))
+                                elseif (od.oe_field_meaning_id > 0.0)
+                                                trim(od.oe_field_display_value)
+                                else
+                                                "No cancel reason given"
+                                endif
+                                
+                , comment = replace(replace(trim(od3.oe_field_display_value), char(10), ""), char(13), "")
+               ; ,se.*
+from
+                ORDERS o
+                                
+                , (left join ORDER_DETAIL od on od.order_id = o.order_id
+                                and od.oe_field_meaning_id in (1105.00)) ; cancel reason
+                                
+                , (left join ORDER_DETAIL od2 on od2.order_id = o.order_id
+                                and od2.oe_field_meaning_id in (147.00)) ; replace reason
+                                
+                , (left join ORDER_DETAIL od3 on od3.order_id = o.order_id
+                                and od3.oe_field_meaning_id in (1103.00)) ; comment
+                
+                , (left join SCH_EVENT_ATTACH sea on sea.order_id = o.order_id
+                                and sea.sch_event_id > 0.0
+                                and sea.attach_type_cd = 10473.00 ; order
+                                and sea.active_ind = 1)
+               ; , (left join SCH_ENTRY se on se.sch_event_id = sea.sch_event_id)
+                
+where
+                o.order_id in (2404187297)
+
+
+select o.originating_encntr_id,od.* from orders o,order_detail od where o.order_id=2404187297
+and od.order_id = o.order_id
+
+
+select
+                o.order_id
+                
+                , scheduled_ind = if (sea.sch_attach_id > 0.0) 1 else 0 endif
+
+                , cancel_reason = trim(sed.oe_field_display_value)
+                
+                , comment1 = replace(replace(trim(sed2.oe_field_display_value), char(10), ""), char(13), "")
+                                
+                , comment2 = replace(replace(trim(lt.long_text), char(10), ""), char(13), "")
+                ,sea.*
+                ,sed.*
+from
+                ORDERS o
+                
+                , (left join SCH_EVENT_ATTACH sea on sea.order_id = o.order_id
+                                and sea.sch_event_id > 0.0
+                                and sea.attach_type_cd = 10473.00 ; order
+                                and sea.active_ind = 1)
+                                
+                , (left join SCH_EVENT_DETAIL sed on sed.sch_event_id = sea.sch_event_id
+                                and sed.oe_field_meaning_id in (1105.00) ; cancel reason
+                                and sed.active_ind = 1)
+                                
+                , (left join SCH_EVENT_DETAIL sed2 on sed2.sch_event_id = sea.sch_event_id
+                                and sed2.oe_field_meaning_id in (2085.00) ; comment
+                                and sed2.active_ind = 1)
+                                
+                , (left join SCH_EVENT_COMM sec on sec.sch_event_id = sea.sch_event_id
+                                and sec.active_ind = 1)
+                                
+                , (left join LONG_TEXT lt on lt.long_text_id = sec.text_id)
+                
+where
+                o.order_id = 2411906501                
+
+
+
+select 
+o.org_name,o.organization_id
+from
+organization o
+plan o
+	where cnvtupper(o.org_name) in("CARDIOLOGY ASSOCIATES OF EAST TENNESSEE-Park West",
+"CARDIOLOGY ASSOCIATES OF EAST TENNESSEE-ATHENS",
+"CARDIOLOGY ASSOCIATES OF EAST TENNESSEE-DECATUR",
+"CARDIOLOGY ASSOCIATES OF EAST TENNESSEE-ONEIDA",
+"CARDIOLOGY ASSOCIATES OF EAST TENNESSEE-LOUDOUN",
+"CARDIOLOGY ASSOCIATES OF EAST TENNESSEE-TVAR",
+"CENTERS FOR REPRODUCTIVE MEDICINE & PELVIC PAIN",
+"CLAIBORNE PRIMARY CARE",
+"CLINTON FAMILY PHYSICIANS",
+"COVENANT HEALTH PHYSICAL MEDICINE AND REHABILITATION ASSOCIATES",
+"COVENANT NEUROHOSPITALISTS",
+"CONVENIENT CARE- DOWNTOWN",
+"CROSSVILLE MEDICAL GROUP ",
+"CROSSVILLE MEDICAL GROUP-WALK IN ",
+"CROSSVILLE MEDICAL GROUP-FAIRFIELD GLADES",
+"CROSSVILLE MEDICAL GROUP-OB",
+"CUMBERLAND DIABETES Center",
+"CUMBERLAND NEUROSURGERY AND SPINE CENTER",
+"CUMBERLAND NEUROLOGY GROUP",
+"CUMBERLAND ORTHOPEDICS",
+"CUMBERLAND SPECIALTY GROUP, LLC-SUITE 350",
+"CUMBERLAND SPECIALTY GROUP, LLC-SUITE 310",
+"EAST TENNESSEE CARDIOVASCULAR SURGERY GROUP",
+"EAST TENNESSEE CARDIOVASCULAR SURGERY GROUP-OAK RIDGE",
+"EAST TENNESSEE CARDIOVASCULAR SURGERY GROUP-FSR",
+"EAST TENNESSEE ORTHOPEDICS AND SPORTS",
+"EAST TENNESSEE UROLOGY ",
+"FAMILYCARE SPECIALISTS ",
+"FAMILYCARE SPECIALISTS-Building 2 ",
+"FAMILY CLINIC OF OAK RIDGE",
+"FORT LOUDOUN PRIMARY CARE ",
+"FORT SANDERS NEUROSURGERY AND SPINE ",
+"FORT SANDERS NEUROSURGERY AND SPINE-Morristown",
+"FORT SANDERS REGIONAL WEIGHT MANAGEMENT AND NUTRITION CENTER",
+"GREAT SMOKIES FAMILY MEDICINE",
+"HAMBLEN PRIMARY CARE",
+"HAMBLEN UROLOGY CLINIC  ",
+"HAMBLEN UROLOGY CLINIC -TAZEWELL",
+"HEALTH WORKS",
+"HOOKMAN CARDIOLOGY-MCNEELEY",
+"HOOKMAN CARDIOLOGY-CLAIBORNE",
+"HOOKMAN CARDIOLOGY-NORTH KNOXVILLE",
+"INTERNAL MEDICINE ASSOCIATES",
+"INTERNAL MEDICINE WEST",
+"JTV WELLNESS CENTER-ON SITE CLINIC",
+"KINGSTON FAMILY PRACTICE",
+"KNOXVILLE DIGESTIVE DISEASE CONSULTANTS",
+"KNOXVILLE HEART CENTER",
+"KNOXVILLE HEART GROUP ",
+"KNOXVILLE HEART GROUP-SEVIERVILLE",
+"KNOXVILLE HEART GROUP-MORRISTOWN",
+"KNOXVILLE HEART GROUP-SEYMOUR",
+"KNOXVILLE HEART GROUP-JEFFERSON CITY",
+"KNOXVILLE HEART GROUP-HARROGATE",
+"KNOXVILLE HEART GROUP-TAZEWELL",
+"KNOXVILLE INFECTIOUS DISEASE CONSULTANTS",
+"KNOXVILLE NEUROLOGY SPECIALIST",
+"LAKEWAY ORTHOPAEDIC CLINIC",
+"LECONTE CARDIOLOGY ASSOCIATES",
+"LECONTE PULMONARY & CRITICAL CARE MEDICINE",
+"LECONTE SURGICAL ASSOCIATES",
+"LENOIR MEDICAL CLINIC",
+"McNEELEY FAMILY PHYSICIANS",
+"MEDICAL ASSOCIATES OF CARTER",
+"MORRISTOWN FAMILY MEDICINE",
+"MOUNTAIN VIEW FAMILY MEDICINE",
+"MOUNTAIN VIEW FAMILY MEDICINE-PIGEON FORGE",
+"NEW HORIZON MEDICAL ASSOCIATES",
+"OAK RIDGE GASTROENTEROLOGY ASSOCIATES",
+"OAK RIDGE SURGEONS",
+"OLIVER SPRINGS FAMILY PHYSICIANS",
+"PARKWAY CARDIOLOGY ASSOCIATES",
+"PARKWAY CARDIOLOGY ASSOCIATES-ROANE",
+"PINNACLE NEUROLOGY ",
+"PROMPT FAMILY CARE SOUTH",
+"ROANE COUNTY FAMILY PRACTICE",
+"ROANE PULMONARY PRACTICE",
+"ROANE SURGICAL GROUP",
+"SEVIER COUNTY WELLNESS CLINIC",
+"SMOKY MOUNTAIN ORTHOPEDIC",
+"SOUTHERN MEDICAL GROUP ",
+"SOUTHERN MEDICAL GROUP-SOUTH",
+"SURGICAL ASSOCIATES OF EAST TENNESSEE ",
+" TEDDER MIRIAM B, MD",
+"TN BRAIN AND SPINE ",
+"TN BRAIN AND SPINE-ALCOA",
+"TN BRAIN AND SPINE-SEVIERVILLE",
+"TN BRAIN AND SPINE-PARK WEST",
+"TOPSIDE PHYSICIANS",
+"UROLOGY SPECIALISTS OF EAST TENNESSEE ",
+"UROLOGY SPECIALISTS OF EAST TENNESSEE-ALCOA",
+"WEST LAKE SURGICAL ASSOCIATES")
+
+select * from organization o where o.active_ind = 1
+
+
+select * from DD_REF_TEMPLATE ;          25047976.00	   17033866.00	History and Physical
+
+select * from code_value cv where cv.code_set = 72 and cv.display = "History*" ;    3713594.00	         72		History and Physical
+
+
+select * from nomenclature n where n.nomenclature_id=13326163
+
+
+
+Select * from clinical_note_template go
+
+select oa.order_conversation_id,* from order_action oa where oa.order_id in(2411815283                ,2411815343                )
+
+
+select 
+*
+from
+	order_catalog oc
+plan oc
+	where oc.catalog_cd = 2552745427
+	
+	
+select * from orders o where o.order_id=2411815345  
+
+select distinct ema.module_name from eks_module_audit_det emad,EKS_MODULE_AUDIT ema where emad.encntr_id =   116743260.00
+and emad.module_audit_id = ema.rec_id and emad.order_id = 2411815345
+order by ema.module_name
+
+
+select * from eks_dlg_event ede where ede.trigger_order_id = 2403037703  
+
+select o.originating_encntr_id,* from orders o where o.order_id = 2403037703                                                                  
+
+select * from encntr_alias ea where ea.encntr_id = 116734487       
+
+
+select * from encntr_alias ea where ea.alias = "2032900003"
+
+select o.order_mnemonic,* from task_activity ta,orders o where ta.encntr_id =   116739157.00
+and o.order_id = ta.order_id and ta.order_id !=  2412494023.00
+order by ta.task_dt_tm desc
+with nocounter,uar_code(d,1),format(date,";;q")
+
+
+select distinct e.person_id,e.encntr_status_cd,ed.end_effective_dt_tm,e.disch_dt_tm
+from
+	encntr_domain ed
+	,encounter e
+	,pat_ed_document ped
+	,pat_ed_doc_followup pedf
+plan ed
+	where ed.end_effective_dt_tm <= cnvtdatetime("31-DEC-2100 00:00:00")
+	and	  ed.active_ind = 1
+join e
+	where e.encntr_id = ed.encntr_id
+	and   e.active_ind = 1
+	and   e.encntr_status_cd not in(
+										value(uar_get_code_by("MEANING",261,"ACTIVE"))
+									)
+	and   e.encntr_type_cd in(
+										 value(uar_get_code_by("DISPLAY",71,"Inpatient"))
+										,value(uar_get_code_by("DISPLAY",71,"Observation"))
+									)
+	;and	  e.disch_dt_tm = NULL
+join ped
+	where ped.encntr_id = e.encntr_id
+	and   ped.active_ind = 1
+join pedf
+	where pedf.pat_ed_doc_id = ped.pat_ed_document_id
+	and   pedf.active_ind = 1
+order by
+	ed.end_effective_dt_tm
+with uar_code(d,1),format(date,";;q")
+
+select * from encntr_alias ea where ea.alias = "1919700054"
+
+select
+ ce.event_cd,ce.event_end_dt_tm,ce.valid_until_dt_tm,ce.result_status_cd,ce.result_val,*
+from
+clinical_Event ce 
+plan ce
+	where ce.encntr_id in( 116742253.00)
+order by
+	ce.event_end_dt_tm desc
+with uar_code(d),format(date,";;q")
+
+
+update into code_value set cki = "CKI.SMARTTEMP!WH_Newborn_Immunizations_Medications_3161714745.000000" where code_value = 
+3161714745 go
+
+
+
+
+select ea.alias,e.disch_disposition_cd,e.encntr_type_cd,e.encntr_status_cd,* from 
+encounter e,encntr_alias ea where e.disch_dt_tm >= cnvtdatetime(curdate-1,0)
+and ea.encntr_id = e.encntr_id and ea.encntr_alias_type_cd = 1077
+with format(date,";;q"),uar_code(d,1)
+
+
+
+,(left join PAT_ED_DOCUMENT ped on ped.encntr_id = e.encntr_id)
+ 
+	,(left join PAT_ED_DOC_FOLLOWUP pedf on pedf.pat_ed_doc_id = ped.pat_ed_document_id
+		;and operator(pedf.quick_pick_cd, OPR_QPK_VAR, $QUICKPICK_PMPT)
+		and pedf.active_ind = 1)
+		
+		
+select count(*) from orders o where o.order_status_cd = 
+
+select * from discrete_task_assay dta where dta.event_cd = value(uar_get_code_by("DISPLAY",72,"Heart Rate Monitored"))
+
+select p.username,* from prsnl p where p.username = "*FISCH*"
+
+
+select 
+	facility=uar_get_code_display(e.loc_facility_cd)
+	,ea.alias,
+	o.order_id,bim.key6,oc.primary_mnemonic,oc.catalog_cd
+from
+	 code_value cv1
+	,order_catalog oc
+	,bill_item bi
+	,bill_item_modifier bim
+	,(dummyt d1)
+	,orders o
+	,encntr_alias ea
+	,encounter e
+plan o
+	where o.orig_order_dt_tm >= cnvtdatetime(curdate,0)
+join e
+	where e.encntr_id = o.originating_encntr_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.encntr_alias_type_cd =1077
+join oc
+	where oc.catalog_cd = o.catalog_cd
+	and oc.catalog_type_cd =         2517.00
+join bi
+	where bi.ext_parent_reference_id = oc.catalog_cd
+	and   bi.ext_parent_contributor_cd = value(uar_get_code_by("MEANING",13016,"ORD CAT"))
+join bim
+	where bim.bill_item_id = bi.bill_item_id
+join d1
+join cv1
+	where cv1.code_value = bim.key1_id
+	and   cv1.code_set = 14002 
+	and cv1.display = "AUC Required For NDSC"
+order by
+	oc.primary_mnemonic
+
+select * from order_action oa where oa.order_id = 2420621065 
+
+select o.order_id,o.order_mnemonic,* from order_action oa,orders o where oa.order_conversation_id =            2420621077.00
+and o.order_id = oa.order_id	
+	
+
+select * from code_value_set cvs where cvs.display = "info_sub_type_cd"
+select * from person p where p.name_last_key = "ZZZTEST" AND P.name_first_key = "MELODY"
+select pi.person_info_id,lt.long_text,* from person_info pi,long_text lt where pi.person_id in(   18815915.00
+,   18814739.00
+,   18807898.00
+,   18814854.00
+,   18809105.00)
+and lt.long_text_id = pi.long_text_id
+with uar_code(d),format(date,";;q")
+
+select * from long_text lt where lt.long_text_id =   736423421.00
+
+select *
+from
+	code_value cv
+	,code_value_set cvs
+plan cvs
+	where cvs.display =  "info_sub_type_cd"
+join cv
+	where cv.code_set = cvs.code_set
+	;and   cv.active_ind = 1
+	and   cv.display in(
+							"Primary POA First Name"
+							,"Primary POA Last Name"
+							,"Primary POA Phone"
+							,"Primary Legal Guardian First Name"
+							,"Primary Legal Guardian Last Name"
+							,"Primary Legal Guardian Phone"
+							,"Primary Conservator First Name"
+							,"Primary Conservator Last Name"
+							,"Primary Conservator Phone"
+							,"Secondary POA First Name"
+							,"Secondary POA Last Name"
+							,"Secondary POA Phone"
+							,"Secondary Legal Guardian First Name"
+							,"Secondary Legal Guardian Last Name"
+							,"Secondary Legal Guardian Phone"
+							,"Secondary Conservator First Name"
+							,"Secondary Conservator Last Name"
+							,"Secondary Conservator Phone"
+						)
+/*
+"POA First Name"
+"POA Last Name"
+"POA Phone Number"
+"Legal Guardian First Name"
+"Legal Guardian Last Name"
+"Legal Guardian Phone Number"
+"Conservator First Name"
+"Conservator Last Name"
+"Conservator Phone Number"
+*/
+select * from person p where p.name_last_key = "WEEK"
+select oa.updt_task,* from order_action oa where oa.order_id = 2420624817
+with uar_code(d),format(date,";;q")
+select * from code_value cv where cv.code_value=4149712
+select * from code_value cv where cv.code_set =              43
+;POWEROFATTORNERY
+;CONSERVATOR
+;GUARDIAN
+
+select *
+from
+	code_value cv
+plan cv
+	where cv.code_set = 4003145
+	and   cv.active_ind = 1
+	and   cv.display_key in(
+							 "POWEROFATTORNERYPRIMARY"
+							,"CONSERVATORPRIMARY"
+							,"GUARDIANPRIMARY"
+							,"POWEROFATTORNERYSECONDARY"
+							,"CONSERVATORSECONDARY"
+							,"GUARDIANSECONDARY"
+						)
+						
+select * from pm_transaction pt where ;pt.n_encntr_id = 116741467
+pt.n_person_id =    18814854.00
+order by pt.activity_dt_tm desc
+with uar_code(d),format(date,";;q")
+
+
+select * from prsnl_group_reltn where 
+
+
+select * from pm_transaction pt where ;pt.n_encntr_id = 116741467
+pt.transaction = "A08"
+and pt.activity_dt_tm >= cnvtdatetime(curdate,0)
+order by pt.activity_dt_tm desc
+with uar_code(d),format(date,";;q")
+
+  select n.source_string,a.active_ind,a.active_status_cd, * from allergy a,nomenclature n where a.person_id =   15498713.00;15560029        ;  15560029
+  and n.nomenclature_id = a.substance_nom_id 
+  and cnvtdatetime(curdate,curtime3) between
+  a.beg_effective_dt_tm and a.end_effective_dt_tm
+  with format(date,"dd-mmm-yyyy hh:mm:ss;;q"),uar_code(d)
+  
+  select ea.alias,n.source_string,a.reaction_class_cd,a.reaction_status_cd,
+  *
+  from allergy a,nomenclature n,encntr_alias ea where a.active_status_cd = 188.00 and a.active_ind = 0
+  
+  and a.updt_dt_tm >= cnvtdatetime("01-JAN-2019 00:00:00")
+  and n.nomenclature_id = a.substance_nom_id 
+  and cnvtdatetime(curdate,curtime3) between
+  a.beg_effective_dt_tm and a.end_effective_dt_tm
+  and ea.encntr_id = a.encntr_id and ea.encntr_alias_type_cd = 1077
+  with format(date,"dd-mmm-yyyy hh:mm:ss;;q"),uar_code(d,1)
+  
+  
+  select cv.description,cv.display,* from fill_print_ord_hx fpoh,code_value cv where fpoh.order_id = 2423776893
+  and cv.code_value = fpoh.output_format_cd
+  order by fpoh.dispense_dt_tm desc
+  with format(date,"dd-mmm-yyyy hh:mm:ss;;q"),uar_code(d,1)
+  
+select * from TASK_ACTIVITY_ASSIGNMENT taa where taa.assign_prsnl_group_id in(
+	select pg.prsnl_group_id from prsnl_group pg where pg.prsnl_group_name in("*Orders and Documents*")
+)
+
+select * from order_notification o where o.to_prsnl_group_id in(
+select pg.prsnl_group_id from prsnl_group pg where pg.prsnl_group_name in("*Orders and Documents*")
+)
+
+select * from encounter e where e.encntr_id =   116725994.00
+select * from encntr_Alias ea where ea.alias = "2009200043"
+
+select sa.sch_event_id,sa.sch_state_cd,
+* from sch_appt sa where sa.person_id =    18807999.00
+with format(date,"dd-mmm-yyyy hh:mm:ss;;q"),uar_code(d,1)
+
+select * from nomenclature n where n.concept_cki = "SNOMED!129839007"
+
+
+
+
+select cmr.admin_route_cd,cmr.admin_dosage,cmr.dosage_unit_cd,
+mae.event_cd,mae.result_status_cd,* from clinical_event mae,ce_med_result cmr where mae.event_id in(1587189177,1587169520)
+and cmr.event_id = outerjoin(mae.event_id)
+with format(date,"dd-mmm-yyyy hh:mm:ss;;q"),uar_code(d,1)
+
+
+select * from organization o where o.active_ind = 1 order by o.org_name 
+with format(date,"dd-mmm-yyyy hh:mm:ss;;q"),uar_code(d,1)
+
+
+
+select
+                o.order_id
+                , scheduled_ind = if (sea.sch_attach_id > 0.0) 1 else 0 endif
+                , cancel_reason = trim(sed.oe_field_display_value)
+                , comment1 = replace(replace(trim(sed2.oe_field_display_value), char(10), ""), char(13), "")
+                , comment2 = replace(replace(trim(lt.long_text), char(10), ""), char(13), "")
+                ,se.encntr_id
+                ,sa.encntr_id
+                ,sea.*
+                
+from
+                ORDERS o
+                
+                , (left join SCH_EVENT_ATTACH sea on sea.order_id = o.order_id
+                                and sea.sch_event_id > 0.0
+                                and sea.attach_type_cd = 10473.00 ; order
+                                and sea.active_ind = 1)
+                                
+                , (left join SCH_APPT sa on sa.sch_event_id = sea.sch_event_id
+                                and sa.role_meaning = "PATIENT"
+                                and sa.active_ind = 1)
+                                
+                , (left join SCH_EVENT_ACTION seva on seva.sch_event_id = sea.sch_event_id
+                                and seva.schedule_id = sa.schedule_id
+                              ;  and seva.sch_action_cd = 4518.00 ; cancel
+                                and seva.active_ind = 1)
+                                
+                , (left join SCH_EVENT_DETAIL sed on sed.sch_event_id = sea.sch_event_id
+                               ; and sed.oe_field_meaning_id in (1105.00) ; cancel reason
+                                and sed.active_ind = 1)
+                                
+                , (left join SCH_EVENT_DETAIL sed2 on sed2.sch_event_id = sea.sch_event_id
+                                ;and sed2.oe_field_meaning_id in (2085.00) ; comment
+                                and sed2.active_ind = 1)
+                                
+                , (left join SCH_EVENT_COMM sec on sec.sch_event_id = sea.sch_event_id
+                                and sec.sch_action_id = seva.sch_action_id
+                                and sec.active_ind = 1)
+                                
+                , (left join LONG_TEXT lt on lt.long_text_id = sec.text_id)
+                
+                , (left join SCH_ENTRY se on se.sch_event_id = sea.sch_event_id)
+                
+where
+	o.order_id = 2412973983                           
+	
+	select o.originating_encntr_id,* from orders o where o.order_id in (2432731371,2432731411                )
+	select * from encntr_alias ea where ea.encntr_id = 2432731371                
+	select ea.loc_facility_cd,* from encounter ea where ea.encntr_id = 116743478
+	with uar_code(d,1)
+	select * from application a where a.application_number=       650001
+		select o.order_app_nbr,* from order_action o where o.order_id in (2432731371,2432731411                )
+		order by o.order_id,o.action_sequence
+		
+		
+;1 - sys_runccl	cov_amb_disch_appt_stat_ops		No	Yes	sys_runccl	4,903					
+
+
+select * from orders o where o.order_id = 2312689923
+
+select * from person_info pi where pi.person_id = 18819486
+with format(date,"dd-mmm-yyyy hh:mm:ss;;q"),uar_code(d)
+
+select oef.description,od.*
+from
+	orders o
+	,order_detail od
+	,order_entry_fields oef
+plan o
+	where o.order_id = 2437183963
+join od
+	where od.order_id = o.order_id
+join oef
+	where oef.oe_field_id = od.oe_field_id
+order by
+	o.order_id
+	,od.oe_field_id
+	,od.detail_sequence desc
+with nocounter
+
+select * from code_value cv where cv.code_value = 3542962
+    ;  20701		Follow-up in Emergency Department
+;      27980	5TO7DAYS
+
+
+select * from orders o where o.order_id = 2440502505   
+
+
+select em.module_name,em.maint_validation,last_updated_by=p.name_full_formatted,em.maint_date,em.version
+from eks_module em,
+prsnl p where em.updt_dt_tm >= cnvtdatetime("14-SEP-2020 00:00:00") and p.person_id = em.updt_id
+ and em.active_flag = "A" order by em.module_name
+ with format(date,"dd-mmm-yyyy"),uar_code(d)
+ 
+ 
+ select * from task_activity ta where ta.task_id = 1685665649
+ with format(date,"dd-mmm-yyyy"),uar_code(d)
+ 
+ 
+  select dh.waste_flag,dh2.waste_flag,dh.order_id,dh.dispense_dt_tm,dh2.dispense_dt_tm,dh.updt_dt_tm,cem.*,
+ * from dispense_hx dh,dispense_hx dh2,clinical_event ce,ce_med_result cem where dh.order_id = 2444794391
+ 
+ and dh.disp_event_type_cd =  2553048181.00 and dh2.dispense_hx_id = dh.waste_dispense_hx_id
+ and ce.order_id = dh.order_id and cem.event_id = ce.event_id
+ order by dh.updt_dt_tm desc
+ with format(date,"dd-mmm-yyyy hh:mm:ss;;q"),uar_code(d)
+ 
+ select * from dispense_hx dh where dh.dispense_hx_id=         77605076.00
+ with format(date,"dd-mmm-yyyy"),uar_code(d)
+ 
+ 
+ select * from person_alias pa where pa.alias = "614258"
+	and pa.active_ind = 1 and sysdate between pa.beg_effective_dt_tm and pa.end_effective_dt_tm 
+ 
+ select * from encounter e where e.person_id =    16124018.00
+ 
+ 
+ 
+ call uar_send_mail (NullTerm("chad.cummings@covhlth.com"),
+                                NullTerm("Incomplete Exam Alert"),
+                                NullTerm("Accession"),
+                                NullTerm("eCare@covhlth.net"),
+                                1,
+                                "IPM.Note")
+
+
+
+select 
+	 ea.alias
+	,e.loc_facility_cd
+	,e.loc_nurse_unit_cd
+	,p.name_full_formatted
+	,e.reg_dt_tm
+	,e.encntr_type_cd
+	,e.encntr_status_cd
+	,e.disch_dt_tm
+	,e.encntr_id
+from
+	 encounter e
+	,person p
+	,encntr_alias ea
+plan e
+	where e.loc_facility_cd in(2553765603)
+	and   e.encntr_status_cd in(value(uar_get_code_by("MEANING",261,"ACTIVE")))
+	and   e.active_ind = 1
+join p
+	where p.person_id = e.person_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.active_ind = 1
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+	and   cnvtdatetime(curdate,curtime3) between ea.beg_effective_dt_tm and ea.end_effective_dt_tm
+order by
+	 e.loc_facility_cd
+	,p.name_full_formatted
+with format(date,"dd-mmm-yyyy hh:mm:ss;;q"),uar_code(d)
+
+
+
+update into encntr_domain set end_effective_dt_tm = cnvtdatetime(curdate,curtime3),
+updt_id = 999
+where encntr_id in(
+select e.encntr_id 
+from
+encounter e 
+where e.loc_facility_cd in(2553765611)
+	and   e.encntr_status_cd in(value(uar_get_code_by("MEANING",261,"ACTIVE")))
+	and   e.active_ind = 1
+) go
+
+update into encounter set encntr_status_cd = 856.00, disch_dt_tm = cnvtdatetime(curdate,curtime3),
+updt_id = 999
+where encntr_id in(
+select e.encntr_id 
+from
+encounter e 
+where e.loc_facility_cd in(2553765611)
+	and   e.encntr_status_cd in(value(uar_get_code_by("MEANING",261,"ACTIVE")))
+	and   e.active_ind = 1
+) go
+
+update into encntr_alias set active_ind = 0,end_effective_dt_tm = cnvtdatetime(curdate,curtime3)
+where encntr_alias_id =       858273315.00 go
+
+select 
+	   ea.encntr_alias_id
+	  ,ea.alias
+	  ,ea.active_ind
+	  ,p.name_full_formatted
+	  ,e.loc_nurse_unit_cd
+	  ,e.reg_dt_tm
+	  ,e.disch_dt_tm
+from 
+	 encntr_alias ea 
+	,person p
+	,encounter e
+plan ea
+	where ea.alias = "2126500001"
+join e
+	where e.encntr_id = ea.encntr_id
+join p
+	where p.person_id = e.person_id
+with format(date,"dd-mmm-yyyy hh:mm:ss;;q"),uar_code(d,1)
+
+
+update into encntr_domain ed set active_ind = 1 where ed.updt_id = 999 go
+
+
+
+select * from encntr_alias ea where ea.alias = "2126300152"
+select o.order_mnemonic,ta.task_status_cd,ta.location_cd,* from task_activity ta, orders o where ta.encntr_id =   125379954.00
+and o.order_id = ta.order_id
+with format(date,"dd-mmm-yyyy hh:mm:ss;;q"),uar_code(d,1)
+
+
+ 
+select 
+	 o.org_name
+	,ps.practice_site_display
+	,p.name_full_formatted
+	,r.medical_service_cd
+	,r.create_dt_tm
+	,p2.name_full_formatted
+	,o2.org_name
+	,ps2.practice_site_display
+	,r.referral_priority_cd
+	,r.referral_status_cd
+	,r.referral_substatus_cd
+	,*
+from 
+	referral r
+	,prsnl p
+	,prsnl p2
+	,organization o
+	,organization o2
+	,practice_site ps
+	,practice_site ps2
+where r.referral_id in(11538,
+12723,
+14563)
+and p.person_id = outerjoin(r.refer_from_provider_id)
+and o.organization_id = outerjoin(r.refer_from_organization_id)
+and ps.practice_site_id = outerjoin(r.refer_from_practice_site_id)
+and p2.person_id = outerjoin(r.refer_to_provider_id)
+and o2.organization_id = outerjoin(r.refer_to_organization_id)
+and ps2.practice_site_id = outerjoin(r.refer_to_practice_site_id)
+;and r.referral_status_cd in(value(uar_get_code_by("MEANING",4002978,"COMPLETED")))
+
+with nocounter,uar_code(d,1),format(date,";;q")
+ 
+select r.create_dt_tm, r.referral_id,* from referral r where r.create_dt_tm <= cnvtdatetime(curdate - 180,0)
+and r.referral_status_cd in(value(uar_get_code_by("MEANING",4002978,"COMPLETED")))
+and r.active_ind = 1
+order by
+ r.create_dt_tm 
+
+
+;      12741.00
+
+;sch_utl_system_pref "PVDRWARNIND", "663838,12741" go
+select * from order_entry_fields oef where oef.description = "Primary*"
+
+
+select 
+	e.person_id,e.encntr_id
+from
+	encounter e
+	,encntr_alias ea
+plan ea
+	where ea.alias = "2117700152"
+join e
+	where e.encntr_id = ea.encntr_id
+
+select
+	 o.order_id
+	,md.*
+	,op.*
+from
+	orders o
+	,order_product op
+	,med_dispense md
+plan o
+	where o.order_id = 4608417763
+join op
+	where op.order_id = o.order_id
+join md
+	where md.item_id = op.item_id
+with nocounter,uar_code(d,1),format(date,";;q")
+
+select 
+	 wa.wl_activity_id
+	,lt.long_text
+from
+	wl_activity wa
+	,wl_activity_detail wad
+	,long_text lt
+plan wa
+	where wa.person_id =    15723076.00
+join wad
+	where wad.wl_activity_id = wa.wl_activity_id
+join lt
+	where lt.long_text_id = wad.parent_entity_id
+with nocounter,uar_code(d,1),format(date,";;q")
+
+
+select
+	 wa.wl_activity_id 
+	 ,ce.event_cd
+	 ,ce.result_val
+from
+	wl_activity wa
+	,wl_activity_detail wad
+	,clinical_event ce
+plan wa
+	where wa.person_id =    15723076.00
+join wad
+	where wad.wl_activity_id = wa.wl_activity_id
+join ce
+	where ce.parent_event_id = wad.parent_entity_id
+with nocounter,uar_code(d,1),format(date,";;q")
+
+select 
+	ce.event_cd
+	,ce.event_tag
+	,ceb.*
+from
+	clinical_Event ce 
+	,ce_blob ceb
+plan ce
+	where ce.event_id = 3653758876
+join ceb
+	where ceb.event_id = ce.event_id
+with nocounter,uar_code(d,1),format(date,";;q")
+
+
+
+select * from order_detail od where od.order_id = 4609744569.0
+
+SELECT * FROM CODE_VALUE_SET   C
+WHERE C.ACTIVE_IND_DUP_IND = 0
+AND C.ALIAS_DUP_IND = 0
+AND C.CDF_MEANING_DUP_IND = 0
+AND C.DEFINITION_DUP_IND = 0
+AND C.DISPLAY_DUP_IND = 0
+AND C.DISPLAY_KEY_DUP_IND = 0 order by c.code_set
+
+SELECT * FROM SI_XDOC_METADATA SI WITH MAXREC = 20, TIME=60
+
+
+
+select * from order_detail od where od.order_id =   4619036461.00
+
+select * from code_value cv where cv.code_value=2518
+
+select * from long_text lt where lt.long_text_id = 2922968111
+
+select o.synonym_id,* from orders o where o.order_id = 4619060621
+
+
+
+select
+	 cv.display
+	,*
+from
+	clinical_event ce
+	,code_value cv
+plan cv
+	where cv.code_set = 72
+	and   cv.display = "CDI*"
+join ce
+	where ce.event_cd = cv.code_value
+	and   ce.view_level = 1
+	and	  ce.result_status_cd in(
+									  value(uar_get_code_by("MEANING",8,"AUTH"))
+									 ,value(uar_get_code_by("MEANING",8,"MODIFIED"))
+									 ,value(uar_get_code_by("MEANING",8,"ALTERED"))
+								)
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   ce.event_tag        != "Date\Time Correction"
+	
+	
+select * from code_value cv where cv.code_set = 72 and cv.display_key="PHARMACYWASTE"
+
+
+
+
+select 
+    p.username
+    ,sl.sch_lock_id
+    ,se.appt_synonym_free
+    ,sl.granted_dt_tm ";;q"
+from 
+     sch_lock sl
+    ,prsnl p
+    ,sch_event se
+plan sl
+    where sl.sch_lock_id > 0.0
+join p
+    where p.person_id = sl.granted_prsnl_id
+join se
+    where se.sch_event_id = sl.parent_id
+    
+    
+    
+    
+select 
+    p.username
+    ,el.lock_seq_id
+    ,el.lock_dt_tm ";;q"
+    ,el.expire_dt_tm ";;q"
+    ,el.entity_name
+    ,el.locking_application_name
+    ,el.entity_id
+    ,p1.name_full_formatted
+    
+from 
+    entity_lock el
+    ,prsnl p
+    ,person p1
+plan el
+    where el.entity_name != "LOCK KEY"
+    and   el.lock_seq_id > 0.0
+    ;and   el.lock_dt_tm <= cnvtdatetime(curdate,curtime3)
+    ;and   el.expire_dt_tm >= cnvtdatetime(curdate,curtime3)
+join p
+    where p.person_id = el.lock_prsnl_id
+join p1
+    where p1.person_id = outerjoin(el.entity_id)
+order by
+    p1.name_full_formatted
+    
+    
+    
+select distinct
+     p.username
+    ,prsnl_name = p.name_full_formatted
+    ,patient_name = p2.name_full_formatted
+    ,sl.sch_lock_id
+    ,se.appt_synonym_free
+    ,sl.granted_dt_tm "yyyy-mm-dd hh:mm:ss;;q"
+    ,sa.*
+from 
+     sch_lock sl
+    ,prsnl p
+    ,sch_event se
+    ,person p2
+    ,sch_appt sa
+plan sl
+    where sl.sch_lock_id > 0.0
+join p
+    where p.person_id = sl.granted_prsnl_id
+join se
+    where se.sch_event_id = sl.parent_id
+join sa
+	where sa.sch_event_id = se.sch_event_id
+	and   sa.role_meaning = "PATIENT"
+join p2
+	where p2.person_id = sa.person_id
+
+
+
+
+
+SELECT 
+    facility = UAR_GET_CODE_DISPLAY(l.location_cd),
+    l.location_cd,
+    l.organization_id
+
+FROM location l
+WHERE l.location_type_cd = 783.00
+AND l.location_cd IN (   21250403.00,
+ 2552503613.00,
+ 2552503635.00,
+ 2552503649.00,
+ 2552503653.00,
+ 2552503657.00,
+ 2552503639.00,
+ 2552503645.00,
+   29797179.00,
+ 2553765531.00,
+ 2553765627
+ ,2553765707
+ ,2553765371,
+ 2553765579.00,
+2553765571
+)
+AND l.active_ind = 1
+
+ORDER BY facility
+
+
+
+select 
+	cv2.display
+	,pi.value_cd
+	,pi.*
+from 
+	person_info pi
+	,code_value cv1
+	,code_value cv2
+plan cv1
+	where cv1.code_set = 356
+	and   cv1.display = "Code Green Value"
+join pi
+	where pi.info_sub_type_cd = cv1.code_value
+	and   pi.info_type_cd =        1170.00
+	and   pi.value_cd > 0.0
+	and   pi.beg_effective_dt_tm >= cnvtdatetime(curdate-14,0)
+join cv2
+	where cv2.code_value = pi.value_cd
+ with uar_code(d,m),format(date,";;q")
+ 
+ 
+ select hea.beg_effective_dt_tm, * from him_event_allocation hea where hea.event_id in(
+select event_id from clinical_event where person_id = 14883395 )
+ with uar_code(d,1),format(date,";;q")
+
+
+
+
+
+
+
+ SELECT hp.*
+   FROM (him_system_params hp )
+   WHERE (hp.him_system_params_id > 0 )
+   AND (hp.active_ind = 1 )
+   
+   
+   select * from code_value cv where cv.code_set = 72 and cv.display_key = "PHARMACYWASTE"
+   
+   
+   
+   select * from dispense_hx dh where dh.waste_dispense_hx_id= 80586234.0000000000
+   select * from dispense_hx dh where dh.dispense_hx_id= 80586237.0000000000
+   
+   select 
+   	o.*
+   from
+   	 orders o
+   	,dispense_hx dh
+   plan dh
+   	where dh.waste_dispense_hx_id = 80586234
+   join o
+   	where o.order_id = dh.order_id
+   	
+   	update into orders set orig_order_dt_Tm = cnvtdatetime("09-DEC-2021 04:00:00"),
+   	status_dt_tm = cnvtdatetime("09-DEC-2021 04:00:00"),
+   	active_status_dt_tm = cnvtdatetime("09-DEC-2021 04:00:00"),
+   	clin_relevant_updt_dt_tm = cnvtdatetime("09-DEC-2021 04:00:00"),
+   	updt_dt_tm = cnvtdatetime("09-DEC-2021 04:00:00"),
+   	current_start_Dt_Tm = cnvtdatetime("09-DEC-2021 04:00:00") where order_id = 4644266483 go
+   	
+   	update into order_detail set  oe_field_display_value = "12/09/21 4:00:00 EST",
+   		oe_field_dt_tm_value = cnvtdatetime("09-DEC-2021 04:00:00")
+   	where oe_field_id =       12620.00 and order_id = 4644266701 go
+   	
+   	select * from orders o where o.order_id = 4644266701 with format(date,";;q")
+   	
+   	;4644266483
+   	
+   	select od.oe_field_dt_tm_value,od.oe_field_display_value,od.*
+   	, * from orders o,order_Detail od where o.order_id = 4644266701 and od.order_id = o.order_id
+   	
+   	
+   	update into order_detail set  oe_field_display_value = "12/09/21 4:00:00 EST",
+   		oe_field_dt_tm_value = cnvtdatetime("09-DEC-2021 04:00:00")
+   	where oe_field_id =       12620.00 and order_id = 4644266701 go
+   	
+   	
+   	update into clinical_Event set event_end_dt_Tm = cnvtdatetime("09-DEC-2021 06:30:00") where event_id = 3654010828 go
+   	
+   	
+   	
+   	select * from dprotect d where d.user_name = "CCUMMIN4" order by d.datestamp desc
+   	
+   	
+   	select ema.maint_dur_begin_dt_tm,* from eks_module ema where ema.module_name = "COV_OC_TEST_ALERT"
+   	with uar_code(d,1),format(date,";;q")
+   	
+   	update into eks_module set 
+   	maint_dur_begin_dt_tm = cnvtdatetime("15-DEC-2021 10:35:00") where module_name = "COV_OC_TEST_ALERT"

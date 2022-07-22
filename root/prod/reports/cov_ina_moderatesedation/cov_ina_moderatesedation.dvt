@@ -1,0 +1,48 @@
+<REPORTLAYOUT name="cov_ina_ModerateSedation" group="0" orientation="0" outputtype="0" printhead="0" intermecprinthead="0" unittype="0" pageheight="11" pagewidth="8.5" leftmargin="0.5" rightmargin="0.5" topmargin="0.5" bottommargin="0.5" destination="0" severity="1" i18nenabledliterals="0" htmltable="0" locked="0" subreport="0" version="9" timestamp="43385.4118171296" xmlversion="6" programhasprompts="1" executingprogram="" tableview="0" tableborderwidth="0.014" tablebordercolor="0" tablecolumndefault="1" tablebackcolor="16777215" tablebackmode="0" fileversion="2017.11.1.81"><RPTDESCRIPTION><![CDATA[]]></RPTDESCRIPTION><RPTSPOOLWITHOPTIONS><![CDATA[deleted,DIO=value(_DIOTYPE)]]></RPTSPOOLWITHOPTIONS><RPTLAYOUT name="DetailSection" height="1" order="0" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="DetailSection" left="0.271" top="0.448" width="8.501" height="1" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/></RPTLAYOUT><RPTQUERY name="Query1" layout="1"><RPTQUERYSTRING><![CDATA[SELECT
+	LIST_FACILITY = ORD->list[D1.SEQ].facility
+	, LIST_NURSE_UNIT = ORD->list[D1.SEQ].nurse_unit
+	, LIST_BED = ORD->list[D1.SEQ].bed
+	, LIST_PAT_NAME = ORD->list[D1.SEQ].pat_name
+	, LIST_FIN = ORD->list[D1.SEQ].fin
+	, LIST_MRN = ORD->list[D1.SEQ].mrn
+	, LIST_ORDER_NAME = ORD->list[D1.SEQ].order_name
+	, LIST_ORDER_DATE = ORD->list[D1.SEQ].order_date
+	, LIST_PERFORM_DATE = ORD->list[D1.SEQ].perform_date
+	, LIST_NURSE = ORD->list[D1.SEQ].nurse
+	, LIST_ENCNTR_TYPE = ORD->list[D1.SEQ].encntr_type
+	, ORD_USERNAME = ORD->username
+	, ORD_STARTDATE = ORD->startdate
+	, ORD_ENDDATE = ORD->enddate
+	, ORD_TOTAL_CNT = ORD->total_cnt
+
+FROM
+	(DUMMYT   D1  WITH SEQ = VALUE(SIZE(ORD->list, 5)))
+
+PLAN D1
+
+ORDER BY
+	LIST_FACILITY
+	, LIST_NURSE_UNIT
+	, LIST_BED
+	, LIST_PAT_NAME
+	, LIST_ENCNTR_TYPE
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT]]></RPTQUERYSTRING><RPTSELECTIF condition="1"><![CDATA[]]></RPTSELECTIF><RPTSELECTIF condition="0"><![CDATA[]]></RPTSELECTIF><RPTSELECTIF condition="0"><![CDATA[]]></RPTSELECTIF></RPTQUERY><RPTDRIVER name="cov_ina_moderatesedation" params="$OUTDEV, $facility_list, $ENCNTR_TYPE_PMPT, $START_DATETIME_PMPT"/><RPTRECORD><![CDATA[record ord (
+  1 username = vc   
+  1 startdate = c50   
+  1 enddate = c50   
+  1 total_cnt = i4   
+  1 list [*]  
+    2 facility = c30   
+    2 nurse_unit = c30   
+    2 bed = vc   
+    2 pat_name = c35   
+    2 fin = vc   
+    2 mrn = vc   
+    2 order_name = c50   
+    2 order_date = dq8   
+    2 perform_date = dq8   
+    2 nurse = vc   
+    2 encntr_type = c30   
+) 
+]]></RPTRECORD><RPTHEADERS><RPTHEADER name="Detail" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"><RPTSECTION name="DetailSection"/></RPTHEADER></RPTHEADERS></REPORTLAYOUT>

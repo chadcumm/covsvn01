@@ -1,0 +1,3 @@
+select ce.valid_from_dt_tm,ce.resource_cd,* from clinical_Event ce where ce.event_id=1134167246 
+with format(date,";;q")
+

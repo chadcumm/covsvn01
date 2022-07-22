@@ -1,0 +1,43 @@
+ SELECT 
+    e.encntr_id ,
+    ce.clinical_event_id ,
+    ce.event_cd ,
+    event_disp = uar_get_code_display (ce.event_cd ) ,
+    ce.valid_from_dt_tm ";;f" ,
+    ce.valid_until_dt_tm ";;f" ,
+    ce.clinsig_updt_dt_tm ";;f"
+    FROM 
+     encounter e ,
+     clinical_event ce ,
+     him_event_extension hee 
+   plan e
+     where e.encntr_id =   118982467.00
+   JOIN ce
+     WHERE ce.encntr_id = e.encntr_id 
+     AND ce.person_id = e.person_id 
+     AND ce.valid_until_dt_tm > cnvtdatetime (sysdate ) 
+     ;002 AND (ce.result_status_cd = unauth_cd )
+     AND (ce.result_status_cd in(         33.00)) ;002
+     ;AND ce.parent_event_id + 0 = ce.event_id 
+     AND NOT EXISTS (
+     SELECT
+      cep.ce_event_prsnl_id
+      FROM ce_event_prsnl cep 
+      WHERE cep.event_id = ce.event_id 
+      AND cep.valid_until_dt_tm > cnvtdatetime (sysdate ) 
+      AND ((cep.action_type_cd + 0 ) =         107.00 )
+     AND ((cep.action_status_cd + 0 ) =         657.00 )
+     )
+    
+     JOIN hee
+     WHERE hee.event_cd = outerjoin(ce.event_cd )
+   ;  AND ((hee.organization_id  = e.organization_id )  OR (hee.organization_id  = 0 ))
+    /*
+     AND NOT EXISTS 
+     (SELECT
+      oer.organization_id
+      FROM org_event_set_reltn oer 
+      WHERE oer.organization_id = e.organization_id 
+      AND oer.active_ind = 1 )
+     */
+    ORDER BY e.encntr_id

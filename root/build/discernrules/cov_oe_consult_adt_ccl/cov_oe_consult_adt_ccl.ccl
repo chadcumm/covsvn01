@@ -1,0 +1,42 @@
+select od.*
+from orders o,order_detail od where o.order_id =  405246591                              
+and o.order_id = od.order_id and od.oe_field_dt_tm_value is not null
+
+
+select e.inpatient_admit_dt_tm,e.reg_dt_tm
+from encounter e
+plan e
+	where e.encntr_id=110458995 and e.inpatient_admit_dt_tm is not null
+	with format(date,";;q")
+	
+	
+	
+free record test_r go
+record test_r
+(
+1 qual[3]
+ 2 empty = dq8
+ 2 full = dq8
+) go
+
+set test_r->qual[1].full = cnvtdatetime(curdate,curtime3) go
+set test_r->qual[1].empty = cnvtdatetime(curdate,curtime3) go
+set test_r->qual[2].full = cnvtdatetime(curdate,curtime3) go
+set test_r->qual[3].full = cnvtdatetime(curdate,curtime3) go
+set test_r->qual[3].empty = cnvtdatetime(curdate,curtime3) go
+
+call echorecord(test_r) go
+select 
+	 test_r->qual[d.seq].full
+	 , test_r->qual[d.seq].empty
+from 
+(dummyt d with seq = 3)
+plan d
+where test_r->qual[d.seq].empty > 0.0 go
+
+
+call echo(cnvtreal(test_r->qual[1].full)) go
+call echo(cnvtreal(test_r->qual[2].empty)) go
+
+
+select * from pm_transaction pt where pt.n_encntr_id = 110458995 with format(date,";;q")

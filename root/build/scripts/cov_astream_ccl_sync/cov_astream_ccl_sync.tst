@@ -1,0 +1,1 @@
+transate mmf_get_person_thumbnail go

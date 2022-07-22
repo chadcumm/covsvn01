@@ -1,0 +1,279 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+	Author:				   Chad Cummings
+	Date Written:		   03/01/2019
+	Solution:			   
+	Source file name:	   cov_eks_trigger_updt_attend.prg
+	Object name:		   cov_eks_trigger_updt_attend
+	Request #:
+
+	Program purpose:
+
+	Executing from:		CCL
+
+ 	Special Notes:		Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod 	Mod Date	  Developer				      Comment
+--- 	----------	--------------------	--------------------------------------
+001 	03/01/2019  Chad Cummings
+******************************************************************************/
+
+drop program cov_eks_trigger_updt_attend:dba go
+create program cov_eks_trigger_updt_attend:dba
+
+prompt 
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to. 
+
+with OUTDEV
+
+
+call echo(build("loading script: ",curprog))
+set nologvar = 0	;do not create log = 1		, create log = 0
+set noaudvar = 1	;do not create audit = 1	, create audit = 0
+%i ccluserdir:cov_custom_ccl_common.inc
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom Section  ************************************"))
+
+if (not(validate(reply,0)))
+record  reply
+(
+	1 text = vc
+	1 status_data
+	 2 status = c1
+	 2 subeventstatus[1]
+	  3 operationname = c15
+	  3 operationstatus = c1
+	  3 targetobjectname = c15
+	  3 targetobjectvalue = c100
+)
+endif
+
+if (program_log->run_from_ops = 1)
+	set reply->status_data.status = "F"
+	set reply->status_data.subeventstatus[1].operationname		= "STARTUP"
+	set reply->status_data.subeventstatus[1].operationstatus	= "F"
+	set reply->status_data.subeventstatus[1].targetobjectname	= ""
+	set reply->status_data.subeventstatus[1].targetobjectvalue	= "Script Started and Ended"
+endif
+
+call set_codevalues(null)
+call check_ops(null)
+
+call addEmailLog("chad.cummings@covhlth.com")
+
+free record t_rec
+record t_rec
+(
+    1 patient
+	 2 encntr_id = f8
+	 2 person_id = f8
+	1 retval = i2
+	1 log_message =  vc
+	1 log_misc1 = vc
+	1 return_value = vc
+	1 cnt = i2
+	1 start_dt_tm = dq8
+	1 audit_mode = i2
+	1 trigger = vc
+	1 ce_id = f8
+	1 e_id = f8
+	1 fin = vc
+	1 qual[*]
+	 2 encntr_id  = f8
+) 
+record EKSOPSRequest (
+   1 expert_trigger	= vc
+   1 qual[*]
+	2 person_id	= f8
+	2 sex_cd	= f8
+	2 birth_dt_tm	= dq8
+	2 encntr_id	= f8
+	2 accession_id	= f8
+	2 order_id	= f8
+	2 data[*]
+	     3 vc_var		= vc
+	     3 double_var	= f8
+	     3 long_var		= i4
+	     3 short_var	= i2
+)
+
+%i cclsource:eks_rprq3091001.inc
+
+set t_rec->trigger 							= "COV_EE_UPDT_ATTEND"
+set t_rec->retval							= -1
+set t_rec->return_value						= "FAILED"
+set t_rec->patient.encntr_id 				= link_encntrid
+set t_rec->patient.person_id				= link_personid
+set t_rec->e_id 							= t_rec->patient.encntr_id
+
+if (t_rec->patient.encntr_id <= 0.0)
+	set t_rec->log_message = concat("link_encntrid not found")
+	go to exit_script
+endif
+
+if (t_rec->patient.person_id <= 0.0)
+	set t_rec->log_message = concat("link_personid not found")
+	go to exit_script
+endif
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Finding Encounter **********************************"))
+
+select into "nl:"
+	facility=uar_get_code_display(e.loc_facility_cd)
+from
+	 encounter e
+	,person p
+plan e
+	where e.encntr_id = t_rec->patient.encntr_id
+join p
+	where p.person_id = e.person_id
+order by
+	 e.encntr_id
+	,e.beg_effective_dt_tm desc
+head report
+	cnt = 0
+head e.encntr_id
+	cnt = cnt +1
+	if(mod(cnt,100) = 1)
+		stat = alterlist(t_rec->qual, cnt +99)
+	endif
+	call writeLog(build2("->Adding encounter=",trim(cnvtstring(e.encntr_id))))
+	t_rec->qual[cnt].encntr_id = e.encntr_id
+foot report
+	 stat = alterlist(t_rec->qual, cnt)
+	 t_rec->cnt = cnt
+	 call writeLog(build2("-->Total to process:",trim(cnvtstring(t_rec->cnt))))
+with nocounter
+
+set t_rec->return_value = "FALSE"
+
+call writeLog(build2("* END   Finding Encounter **********************************"))
+call writeLog(build2("************************************************************"))
+
+if (t_rec->cnt = 0)
+	if (program_log->run_from_ops = 1)
+		set reply->status_data.status = "Z"
+		set reply->status_data.subeventstatus[1].operationname		= "ENCNTR"
+		set reply->status_data.subeventstatus[1].operationstatus	= "Z"
+		set reply->status_data.subeventstatus[1].targetobjectname	= "ENCOUNTER"
+		set reply->status_data.subeventstatus[1].targetobjectvalue	= "No Encounters qualified"
+	endif
+	go to exit_script
+endif
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Sending Documents to EKS ***************************"))
+
+/*
+Use the following commands to create and call the sub-routine that sends
+the data in the EKSOPSRequest to the Expert Servers.
+*/
+ 
+%i cclsource:eks_run3091001.inc
+
+call writeLog(build2("Starting EKSOPSRequest calls:",trim(cnvtstring(t_rec->cnt))))
+for (i = 1 to t_rec->cnt)
+	call writeLog(build2("-->Looking at Item:",trim(cnvtstring(i))))
+	call writeLog(build2("-->Setting Expert Trigger to ",t_rec->trigger))
+	set stat = initrec(EKSOPSRequest)
+	select into "NL:"
+		e.encntr_id,
+		e.person_id,
+		e.reg_dt_tm,
+		p.birth_dt_tm,
+		p.sex_cd
+	from
+		person p,
+		encounter e
+	plan e
+		where e.encntr_id = t_rec->qual[i].encntr_id
+	join p where p.person_id= e.person_id
+	head report
+		cnt = 0
+		EKSOPSRequest->expert_trigger = t_rec->trigger
+	detail
+		cnt = cnt +1
+		stat = alterlist(EKSOPSRequest->qual, cnt)
+		EKSOPSRequest->qual[cnt].person_id = p.person_id
+		EKSOPSRequest->qual[cnt].sex_cd  = p.sex_cd
+		EKSOPSRequest->qual[cnt].birth_dt_tm  = p.birth_dt_tm
+		EKSOPSRequest->qual[cnt].encntr_id  = e.encntr_id
+		call writeLog(build2("---->EKSOPSRequest->qual[",trim(cnvtstring(cnt)),"].person_id=",
+			trim(cnvtstring(EKSOPSRequest->qual[cnt].person_id))))
+		call writeLog(build2("---->EKSOPSRequest->qual[",trim(cnvtstring(cnt)),"].encntr_id=",
+			trim(cnvtstring(EKSOPSRequest->qual[cnt].encntr_id))))
+	with nocounter
+	set dparam = 0
+	if (t_rec->audit_mode != 1)
+		call writeLog(build2("------>CALLING srvRequest"))
+		call srvRequest(dparam)
+		call pause(3)
+	else
+		call writeLog(build2("------>AUDIT MODE, Not calling srvRequest"))
+	endif
+endfor
+
+call writeLog(build2("* END   Sending Documents to EKS ***************************"))
+call writeLog(build2("************************************************************"))
+
+if (program_log->run_from_ops = 1)
+	set reply->status_data.status = "S"
+	set reply->status_data.subeventstatus[1].operationname		= "ENCNTR"
+	set reply->status_data.subeventstatus[1].operationstatus	= "S"
+	set reply->status_data.subeventstatus[1].targetobjectname	= "ENCOUNTER"
+	set reply->status_data.subeventstatus[1].targetobjectvalue	= "Encounters Sent"
+endif
+	
+call writeLog(build2("* END   Custom Section  ************************************"))
+call writeLog(build2("************************************************************"))
+
+;call writeLog(build2("************************************************************"))
+;call writeLog(build2("* START Sending Documents to EKS ***************************"))
+;call writeLog(build2("* END   Sending Documents to EKS ***************************"))
+;call writeLog(build2("************************************************************"))
+
+
+set t_rec->return_value = "TRUE"
+
+#exit_script
+if (trim(cnvtupper(t_rec->return_value)) = "TRUE")
+	set t_rec->retval = 100
+	set t_rec->log_misc1 = ""
+elseif (trim(cnvtupper(t_rec->return_value)) = "FALSE")
+	set t_rec->retval = 0
+else
+	set t_rec->retval = 0
+endif
+
+set t_rec->log_message = concat(
+										trim(t_rec->log_message),";",
+										trim(cnvtupper(t_rec->return_value)),":",
+										trim(cnvtstring(t_rec->patient.person_id)),"|",
+										trim(cnvtstring(t_rec->patient.encntr_id)),"|"
+									)
+call echorecord(t_rec)
+
+set retval									= t_rec->retval
+set log_message 							= t_rec->log_message
+set log_misc1 								= t_rec->log_misc1
+
+;execute ccl_readfile $OUTDEV, program_log->files.filename_log,0,11,8.5
+
+
+call exitScript(null)
+call echorecord(EKSOPSRequest)
+call echorecord(t_rec)
+call echorecord(code_values)
+;call echorecord(program_log)
+
+
+end
+go

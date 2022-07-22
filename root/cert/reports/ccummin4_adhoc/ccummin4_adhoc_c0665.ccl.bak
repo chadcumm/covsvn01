@@ -1,0 +1,324 @@
+select ce.event_cd,ce.result_status_cd,ce.event_end_dt_tm,n.source_string,
+ce.result_val,* 
+from 
+	clinical_event ce
+	,ce_coded_result cr
+	,nomenclature n
+plan ce
+	where ce.encntr_id = 113916031                
+	;and   ce.event_cd =  20597757.00 
+join cr
+	where cr.event_id = ce.event_id
+join n	
+	where n.nomenclature_id = cr.nomenclature_id
+order by
+	ce.event_end_dt_tm desc               
+with format(date,";;q"),uar_code(d)
+
+
+/*
+Blood transfusion
+, Chorioamnionitis diagnosed by Physician/CNM
+, Failed induction
+, Hemorrhage balloon placed
+, Maternal Risk Factors for Chorioamnionitis
+, Placental abruption
+, Postpartum hemorrhage
+, Preeclampsia\
+, Pregnancy induced hypertension
+, Prolapsed...
+*/
+
+select distinct 
+	br.category_name 
+from
+br_datamart_category br
+plan br
+;	where br.category_name in ("ADULT MEDICINE AMB Workflow")
+order by
+	br.category_name
+	
+select * from code_value cv where cv.code_value=2553048181
+
+;390051
+
+select dh.waste_dispense_hx_id,dh.dispense_dt_tm,dh.charge_dt_tm,
+* from dispense_hx dh where dh.disp_event_type_cd =  value(uar_get_code_by("MEANING",4032,"WASTECHARGE"))
+with format(date,";;q"),uar_code(d)
+
+
+
+select dh.waste_dispense_hx_id,dh.order_id,
+* from dispense_hx dh where dh.dispense_hx_id = 18811258
+with format(date,";;q"),uar_code(d)
+
+
+
+select * from encntr_alias ea where ea.encntr_id =113916096
+
+select	 
+	e.module_name,
+	e.version,
+	e.active_flag,
+	e.eks_release,
+	e.maint_date,
+	e.updt_dt_tm "mm/dd/yyyy  hh:mm;;d",
+	e.maint_dur_begin_dt_tm "mm/dd/yyyy;;d",
+	e.maint_dur_end_dt_tm "mm/dd/yyyy;;d",
+	e.maint_filename,
+	e.maint_institution,
+	e.maint_author,
+	e.maint_specialist,
+	e.maint_title,
+	e.maint_validation,
+	e.maint_version,
+	e.know_priority "###",
+	e.know_type,
+	e.know_urgency,
+	line1 = fillstring(124,'='),
+	expr1 = format(curdate,'mm/dd/yy;;d'),
+	line2 = fillstring(124,'_')
+
+from	eks_module  e
+
+where e.active_flag = "A"
+and   e.maint_validation = "PRODUCTION"
+
+order	e.module_name,
+	e.active_flag,
+	e.version desc
+
+
+update into clinical_event set verified_dt_tm = cnvtdatetime("24-JUN-2021 10:44:56.00"),
+performed_dt_tm = cnvtdatetime("24-JUN-2021 10:44:56.00")
+where clinical_Event_id in(    2672845652.00,    2672845650.00) go
+
+update into ce_event_prsnl set action_dt_tm =cnvtdatetime("23-JUN-2021 10:44:56.00")
+where event_id in( 2672845653.00, 2672845651.00)
+
+select * from ce_event_prsnl cep where cep.event_id in( 2672845653.00, 2672845651.00)
+with nocounter,uar_code(d),format(date,";;q")
+
+select ce.parent_event_id,ce.event_end_dt_tm,ce.event_cd,ce.valid_from_dt_tm,ce.verified_dt_tm,ce.performed_dt_tm,ce.event_id,* from clinical_event ce where ce.encntr_id in(
+select encntr_id from encntr_alias where alias = "1812900022")
+and ce.event_cd =  3155230697.00
+with nocounter,uar_code(d),format(date,";;q")
+
+
+select * from dm_info d where d.info_domain = "COV_PHA_OPS" with nocounter,uar_code(d),format(date,";;q")
+update into dm_info set info_date = cnvtdatetime(curdate,0) where info_name = "COV_PHA_ADD_WASTE_DOC:start_dt_tm"
+
+
+select cv.display,p.name_full_formatted,sr.description
+from 
+	code_value cv
+	,prsnl p
+	,sch_resource sr
+plan cv 
+	where cv.code_set = 88
+	and   cv.active_ind = 1
+	and   cv.display in("Physician - Oncology",
+						"Physician - Gynecology/Oncology",
+						"Nurse Practitioner - Oncology")
+join p
+	where p.position_cd = cv.code_value
+join sr
+	where sr.person_id = p.person_id
+	
+
+
+select *
+from
+	code_value cv
+plan cv
+	where cv.code_set = 4003145
+	and   cv.active_ind = 1
+	and   cv.display_key in(
+							
+							"POWEROFATTORNEYPRIMARY"
+							,"CONSERVATORPRIMARY"
+							,"GUARDIANPRIMARY"
+							,"POWEROFATTORNEYSECONDARY"
+							,"CONSERVATORSECONDARY"
+							,"GUARDIANSECONDARY"
+						)
+						
+order by
+	cv.display
+
+select cv.code_value,cv.display
+from
+	code_value cv
+	,code_value_set cvs
+plan cvs
+	where cvs.display =  "info_sub_type_cd"
+join cv
+	where cv.code_set = cvs.code_set
+	and   cv.active_ind = 1
+	
+	and   cv.display in(
+							 "Primary POA First Name"
+							,"Primary POA Last Name"
+							,"Primary POA Phone"
+							,"Primary Legal Guardian First Name"
+							,"Primary Legal Guardian Last Name"
+							,"Primary Legal Guardian Phone"
+							,"Primary Conservator First Name"
+							,"Primary Conservator Last Name"
+							,"Primary Conservator Phone"
+							,"Secondary POA First Name"
+							,"Secondary POA Last Name"
+							,"Secondary POA Phone"
+							,"Secondary Legal Guardian First Name"
+							,"Secondary Legal Guardian Last Name"
+							,"Secondary Legal Guardian Phone"
+							,"Secondary Conservator First Name"
+							,"Secondary Conservator Last Name"
+							,"Secondary Conservator Phone"
+							,"Code Green Value"
+						)
+	
+order by
+	 cv.display 
+	,cv.code_value
+	
+	
+	
+
+
+select into "nl:"
+	cv2.display
+	,cv1.display
+	,p.name_full_formatted
+	,pi.value_cd
+	,pi.*
+from 
+	 person_info pi
+	,code_value cv1
+	,code_value cv2
+	,person p
+plan pi
+	where pi.person_id in (19908850,19908849)
+	and   cnvtdatetime(curdate,curtime3) between pi.beg_effective_dt_tm and pi.end_effective_dt_tm
+	and   pi.active_ind = 1
+join p
+	where p.person_id = pi.person_id
+join cv1
+	where cv1.code_value = pi.info_sub_type_cd
+	and   cv1.display = "Code Green Value"
+join cv2
+	where cv2.code_value = outerjoin(pi.value_cd)
+/*head report
+	log_retval = 100
+detail
+	log_misc1 = cv2.display
+*/
+with nocounter,nullreport
+
+select p.person_id,p.name_full_formatted,*
+from person p
+where p.name_first_key in("CODEGREEN","GREENVISITOR")
+and p.name_last_key in("TEST")
+
+;   19908849.00	TEST, CODEGREEN      ;2123900001
+;   19908850.00	TEST, GREENVISITOR 		;2123900002
+
+
+select a.log_grouping_cd,exception_group_name=a.logical_group_desc
+
+,code_value=b.item_cd,code_value_display=uar_get_code_display(b.item_cd)
+
+,item_code_set=uar_get_code_set(b.item_cd),b.exception_entity_name,*
+
+from logical_grouping a,log_group_entry b
+
+where a.logical_group_desc like "Discern*"
+
+and a.log_grouping_cd = b.log_grouping_cd
+
+order by a.log_grouping_cd,code_value_display
+
+SELECT
+	*
+FROM
+	PRIV_LOC_RELTN PL
+	, PRIVILEGE P
+	, PRIVILEGE_EXCEPTION PE
+PLAN PL WHERE PL.POSITION_CD > 0 AND PL.PERSON_ID = 0 AND PL.LOCATION_CD = 0
+JOIN P WHERE PL.PRIV_LOC_RELTN_ID = P.PRIV_LOC_RELTN_ID
+JOIN PE WHERE P.PRIVILEGE_ID = PE.PRIVILEGE_ID
+
+select * from privilege_exception_def
+
+select * from code_value cv where cv.display = "
+
+select
+distinct 
+ POSITION = uar_get_code_display(plr.position_cd),
+
+PRIVILEGE = uar_get_code_display(p.privilege_cd),
+
+VALUE = uar_get_code_display(p.priv_value_cd),
+
+EXCEPTION = uar_get_code_display(pe.exception_id),
+
+pe.exception_entity_name,
+
+*
+
+from privilege p,
+priv_loc_reltn plr,
+privilege_exception pe
+;logical_grouping a
+plan p
+	where p.privilege_cd =        2620.00
+join plr
+	where plr.position_cd =      637053.00
+	and plr.priv_loc_reltn_id = p.priv_loc_reltn_id
+join pe
+	where pe.privilege_id = outerjoin(p.privilege_id)
+order by POSITION, PRIVILEGE, EXCEPTION
+
+
+
+select 
+	p.name_full_formatted,cv2.display
+from 
+	person_info pi
+	,person p
+	,code_value cv1
+	,code_value cv2
+plan pi
+	where pi.person_id > 0.0
+	and   cnvtdatetime(curdate,curtime3) between pi.beg_effective_dt_tm and pi.end_effective_dt_tm
+join p
+	where p.person_id = pi.person_id
+join cv1
+	where cv1.code_value = pi.info_sub_type_cd
+	and   cv1.display = "Code Green Value"
+join cv2
+	where cv2.code_value = pi.value_cd
+with nocounter,nullreport go
+
+
+select * from passive_alert pa where pa.person_id = 19908849                        
+
+
+select * from entity_lock el
+
+
+select 
+	p.username
+	,sl.sch_lock_id
+	,se.appt_synonym_free
+	,sl.*
+from 
+	 sch_lock sl
+	,prsnl p
+	,sch_event se
+plan sl
+	where sl.sch_lock_id > 0.0
+join p
+	where p.person_id = sl.granted_prsnl_id
+join se
+	where se.sch_event_id = sl.parent_id

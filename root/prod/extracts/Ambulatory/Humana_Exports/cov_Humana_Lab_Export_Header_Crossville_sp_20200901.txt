@@ -1,0 +1,23 @@
+CREATE PROCEDURE cov_Humana_Lab_Export_Header_Crossville_sp      
+----------------------------------------------------------------------------------------------------------                            
+---                            
+--- Name: cov_Humana_Lab_Export_Header_Crossville_sp                         
+---                            
+--- Customer: Covenant                            
+--- Created by: Dawn Greer, DBA                            
+--- Date: 7/15/2018          
+---                            
+--- Purpose: To pull Lab export header data to send to Humana.                            
+---                            
+--- Database Server: NGSQLR05, CMGREPORTDB1                                      
+--- Databases Used: NGPROD, Cov_NextGen_Integration                          
+--- File Share for Export: \\ngfs01\nextgenroot\Humana_Extracts                          
+---                          
+--- Modifications:                          
+---   4/4/2017 - DG - Moved from NGSQL02DB to NGSQLR05 and changed the Database from NGPROD to NGPROD_Snapshot          
+---   2/20/2018 - DG - Changed name to Cov_Humana_Lab_Export_Header_sp       
+---  7/15/2018 - DG - Setup for Crossville            
+-----------------------------------------------------------------------------------------------------------               
+AS            
+--- Humana Lab Data Header Query         
+SELECT '01' AS RECORD_TYPE_H, 'COVENANT' AS VENDOR_NAME, REPLACE(CONVERT(DATE, GETDATE(), 112),'-','') AS CREATION_DATE 

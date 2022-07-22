@@ -1,0 +1,200 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+  Author:             Chad Cummings
+  Date Written:       03/01/2019
+  Solution:           
+  Source file name:   cov_eks_auc_validation.prg
+  Object name:        cov_eks_auc_validation
+  Request #:
+
+  Program purpose:
+
+  Executing from:     CCL
+
+  Special Notes:      Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod   Mod Date    Developer              Comment
+---   ----------  --------------------  --------------------------------------
+001   03/01/2019  Chad Cummings			initial build
+******************************************************************************/
+drop program cov_eks_custom_active_ind:dba go
+create program cov_eks_custom_active_ind:dba
+
+set retval = -1
+
+free record t_rec
+record t_rec
+(
+	1 patient
+	 2 encntr_id = f8
+	 2 person_id = f8
+	1 link_template_id = f8
+	1 orders[*]
+	 2 spindex = i2
+	 2 catalog_cd = f8
+	 2 auc_response = vc
+	1 spindex[*]
+	 2 valid_id = i2
+	 2 spindex = i2
+	 2 misc = vc
+	1 retval = i2
+	1 log_message =  vc
+	1 log_misc1 = vc
+	1 return_value = vc
+)
+
+set t_rec->retval							= -1
+set t_rec->return_value						= "FAILED"
+set t_rec->patient.encntr_id 				= link_encntrid
+set t_rec->patient.person_id				= link_personid
+set t_rec->link_template_id					= link_template
+
+declare i = i2 with noconstant(0)
+declare j = i2 with noconstant(0)
+declare k = i2 with noconstant(0)
+
+if (t_rec->patient.encntr_id <= 0.0)
+	set t_rec->log_message = concat("link_encntrid not found")
+	go to exit_script
+endif
+
+if (t_rec->patient.person_id <= 0.0)
+	set t_rec->log_message = concat("link_personid not found")
+	go to exit_script
+endif
+
+/* Use if parameters are needed
+if(size(trim(reflect(parameter(1,0))),1) > 0)
+  set t_rec->log_message = value(parameter(1,0))
+endif */
+
+/*
+record eksdata(
+1 tqual[4] ;data, evoke, logic and action
+2 temptype = c10
+2 qual[*]
+3 accession_id = f8
+3 order_id = f8
+3 encntr_id = f8
+3 person_id = f8
+3 task_assay_cd = f8
+3 clinical_event_id = f8
+3 logging = vc
+3 template_name = c30
+3 cnt = i4
+3 data[*]
+4 misc = vc
+)
+*/
+
+set t_rec->return_value = "FALSE"
+
+for (i = 1 to size(request->orderlist,5))
+	set stat = alterlist(t_rec->orders,i)
+	set t_rec->orders[i].spindex = i
+	set t_rec->orders[i].catalog_cd = request->orderlist[i].catalog_code
+endfor
+
+
+select 
+	bim.key6
+from
+	 code_value cv1
+	,order_catalog oc
+	,bill_item bi
+	,bill_item_modifier bim
+	,(dummyt d1 with seq=size(t_rec->orders,5))
+
+plan d1
+join oc
+	where oc.catalog_cd = t_rec->orders[d1.seq].catalog_cd
+join bi
+	where bi.ext_parent_reference_id = oc.catalog_cd
+	and   bi.ext_parent_contributor_cd = value(uar_get_code_by("MEANING",13016,"ORD CAT"))
+join bim
+	where bim.bill_item_id = bi.bill_item_id
+	and   cnvtdatetime(curdate,curtime3) between bim.beg_effective_dt_tm and bim.end_effective_dt_tm
+join cv1
+	where cv1.code_value = bim.key1_id
+	and   cv1.code_set = 14002 
+	and cv1.display = "AUC Required For NDSC"
+detail
+	t_rec->orders[d1.seq].auc_response = trim(cnvtupper(bim.key6))
+	;if (trim(cnvtupper(bim.key6)) = "YES")
+	;	t_rec->return_value = "TRUE"
+	;endif
+with nocounter
+
+
+for (j = 1 to size(eksdata->tqual[3]->qual[t_rec->link_template_id].data,5))
+	if (j > 1) ;skip first entry "MISC":"<SPINDEX>"
+		set k = (k + 1)
+		set stat = alterlist(t_rec->spindex,k)
+		set t_rec->spindex[k].misc = eksdata->tqual[3]->qual[t_rec->link_template_id].data[j].misc
+		set t_rec->spindex[k].spindex = cnvtint(t_rec->spindex[k].misc)
+		
+		for (i = 1 to size(t_rec->orders,5))
+			if (t_rec->spindex[k].spindex = t_rec->orders[i].spindex)
+				if (t_rec->orders[i].auc_response = "YES")
+					set t_rec->spindex[k].valid_id = 1
+				endif
+			endif
+		endfor
+	endif
+endfor
+
+set stat = alterlist(eksdata->tqual[3]->qual[t_rec->link_template_id].data,1)
+set eksdata->tqual[3]->qual[t_rec->link_template_id].data[1].misc = "<SPINDEX>"
+
+set k = 1
+set i = 0
+
+for (i = 1 to size(t_rec->spindex,5))
+	if (t_rec->spindex[i].valid_id = 1)
+		set k = (k + 1)
+		set stat = alterlist(eksdata->tqual[3]->qual[t_rec->link_template_id].data,k)
+		set eksdata->tqual[3]->qual[t_rec->link_template_id].data[k].misc = t_rec->spindex[i].misc
+		set t_rec->return_value = "TRUE"
+	endif
+endfor
+
+set eksdata->tqual[3]->qual[t_rec->link_template_id].cnt = (k - 1)
+
+;set t_rec->return_value = "TRUE"
+
+#exit_script
+
+if (trim(cnvtupper(t_rec->return_value)) = "TRUE")
+	set t_rec->retval = 100
+	set t_rec->log_misc1 = ""
+elseif (trim(cnvtupper(t_rec->return_value)) = "FALSE")
+	set t_rec->retval = 0
+else
+	set t_rec->retval = 0
+endif
+
+set t_rec->log_message = concat(
+										trim(t_rec->log_message),";",
+										trim(cnvtupper(t_rec->return_value)),":",
+										trim(cnvtstring(t_rec->patient.person_id)),"|",
+										trim(cnvtstring(t_rec->patient.encntr_id)),"|",
+										trim(cnvtstring(size(t_rec->orders,5))),"|"
+									)
+
+set t_rec->log_message = cnvtrectojson(t_rec)
+
+call echorecord(t_rec)
+
+set retval									= t_rec->retval
+set log_message 							= t_rec->log_message
+set log_misc1 								= t_rec->log_misc1
+
+end 
+go

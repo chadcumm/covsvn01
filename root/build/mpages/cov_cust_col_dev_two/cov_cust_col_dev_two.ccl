@@ -1,0 +1,41 @@
+select 
+	o.*
+from
+	 orders o
+	,clinical_event ce
+	,(dummyt d1)
+plan o
+	where o.person_id in(
+							select ed.person_id
+							from encntr_domain ed
+							where ed.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
+							and ed.active_ind = 1
+							and ed.beg_effective_dt_tm >= cnvtdatetime(curdate-10,0)
+						)
+	and   o.catalog_type_cd in(value(uar_get_code_by("MEANING",6000,"RADIOLOGY")))
+	and   o.dept_status_cd in(
+								 value(uar_get_code_by("MEANING",14281,"COMPLETED"))
+								,value(uar_get_code_by("MEANING",14281,"RADCOMPLETED")))
+join d1
+join ce
+	where ce.order_id = o.order_id
+	and   ce.valid_from_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   ce.event_class_cd in(value(uar_get_code_by("MEANING", 53, "DOC")))
+	and	  ce.result_status_cd in(
+									  value(uar_get_code_by("MEANING",8,"AUTH"))
+									 ,value(uar_get_code_by("MEANING",8,"MODIFIED"))
+									 ,value(uar_get_code_by("MEANING",8,"ALTERED"))
+								)
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   ce.event_tag        != "Date\Time Correction"
+with format(date,";;q"),uar_code(d),outerjoin=d1
+
+
+
+select *
+from
+	person_prsnl_activity ppa
+plan ppa
+	where ppa.prsnl_id in(select person_id from prsnl where username = "CCUMMIN4")
+order by ppa.ppa_last_dt_tm desc
+with format(date,";;q"),uar_code(d)

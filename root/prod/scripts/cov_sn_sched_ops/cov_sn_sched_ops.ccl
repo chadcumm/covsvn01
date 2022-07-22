@@ -1,0 +1,27 @@
+SELECT DISTINCT
+    ORG.ORGANIZATION_ID
+    , ORG.ORG_NAME
+	, uar_get_code_Display(sr.service_resource_cd)
+	,sr.service_resource_cd
+FROM
+   ; PRSNL   PR
+   ; , PRSNL_ORG_RELTN   PO
+     ORGANIZATION   ORG
+    , LOCATION   L
+    , SERVICE_RESOURCE   SR
+
+plan ORG WHERE ORG.ORGANIZATION_ID > 0
+    AND ORG.ORG_NAME_KEY != "COVENANT*"
+JOIN l WHERE org.organization_id = l.organization_id
+    AND L.ACTIVE_IND = 1
+    and L.LOCATION_TYPE_CD+0 = 817.00    ;SURGERY
+JOIN SR WHERE SR.LOCATION_CD=L.LOCATION_CD
+    and SR.ACTIVE_IND=1
+
+ORDER BY
+    ORG.ORG_NAME
+
+
+
+
+select * from device d where d.description = "*PRN13364"

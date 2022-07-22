@@ -1,0 +1,344 @@
+SELECT
+	 oros.final_dt_tm
+	,oros.dictate_dt_tm
+	,oros.start_dt_tm
+	,ord.start_dt_tm
+	,oros.exam_complete_dt_tm
+	,ord.complete_dt_tm
+	,o.order_id
+	,oros.sched_dt_tm
+	,rr.rad_report_id
+	,p1.name_full_formatted
+	,p2.name_full_formatted
+	,uar_get_code_display(oros.section_cd)
+	,uar_geT_code_display(oros.subsection_cd)
+	,rep.exam_relation_cd
+	,uar_get_code_display(rep.action_type_cd)
+	,oros.*
+FROM
+	omf_radmgmt_order_st   oros
+	, person   p
+	, encounter   e
+	, order_radiology   ord
+	, orders   o
+	, rad_report rr
+	, rad_report_prsnl rrp
+	, prsnl p1
+	, rad_exam re
+	, rad_exam_prsnl rep
+	, prsnl p2
+
+plan oros
+	where oros.updt_dt_tm >= cnvtdatetime(curdate-1,0)
+join o
+	where	o.order_id 			= oros.order_id
+join p
+	where	p.person_id 		= o.person_id
+join e
+	where	e.encntr_id			= o.encntr_id
+join ord
+	where	ord.order_id 		= o.order_id
+join rr
+	where rr.order_id 			= ord.order_id
+join rrp
+	where rrp.rad_report_id		= rr.rad_report_id
+	and   rrp.prsnl_relation_flag = 2
+join p1
+	where p1.person_id			= rrp.report_prsnl_id
+join re
+	where re.order_id			= o.order_id
+join rep
+	where rep.rad_exam_id		= re.rad_exam_id
+join p2
+	where p2.person_id			= rep.exam_prsnl_id
+order by
+	oros.final_dt_tm desc
+with format(date,";;q"),uar_code(d)
+
+
+
+
+ SELECT  
+ ACT_ACTION_DESC.DISPLAY
+ ,*
+FROM
+  ORDERS,
+  SCH_EVENT_ACTION,
+  CODE_VALUE  ACT_ACTION_DESC,
+  SCH_EVENT  APPT_SCH_EVENT,
+  SCH_EVENT_ATTACH  APPT_SCH_EVENT_ATTACH
+WHERE
+  ( APPT_SCH_EVENT.ACTIVE_IND=1  )
+  AND  ( SCH_EVENT_ACTION.SCH_EVENT_ID=APPT_SCH_EVENT.SCH_EVENT_ID  )
+  AND  ( ACT_ACTION_DESC.CODE_VALUE=SCH_EVENT_ACTION.SCH_ACTION_CD  )
+  AND  ( SCH_EVENT_ACTION.ACTIVE_IND=1  )
+  AND  ( ACT_ACTION_DESC.ACTIVE_IND= 1  )
+  AND  ( APPT_SCH_EVENT.SCH_EVENT_ID = APPT_SCH_EVENT_ATTACH.SCH_EVENT_ID   )
+  AND  ( APPT_SCH_EVENT_ATTACH.ORDER_ID=ORDERS.ORDER_ID  )
+  AND  ( ORDERS.ACTIVE_IND=1  )
+  AND  ( APPT_SCH_EVENT_ATTACH.ACTIVE_IND= 1   )
+  AND  
+  (orders.activity_type_cd = 711
+   AND
+  ACT_ACTION_DESC.DISPLAY  =  'Check In'
+   AND
+   SCH_EVENT_ACTION.ACTION_DT_TM  Is Not Null )
+   
+   
+   
+SELECT
+  ACCESSION.ACCESSION,
+  pi_from_gmt(CE_EVENT_PRSNL.ACTION_DT_TM,( pi_time_zone(1,@Variable('BOUSER')) )),
+  PERSON.NAME_FULL_FORMATTED,
+  EDW_GET_RESOURCE_GROUP_TEXT(RAD_EXAM.SERVICE_RESOURCE_CD,2, 'DESC')
+,
+  EDW_GET_RESOURCE_GROUP_TEXT(RAD_EXAM.SERVICE_RESOURCE_CD,3, 'DESC')
+,
+  pi_from_gmt(ORDER_RADIOLOGY.START_DT_TM,( pi_time_zone(1,@Variable('BOUSER')) )),
+  pi_from_gmt(ORDER_RADIOLOGY.COMPLETE_DT_TM,( pi_time_zone(1,@Variable('BOUSER')) )),
+  CV_FACILITY.description,
+  ORDERS.ORDER_ID,
+  ORDER_CATALOG.PRIMARY_MNEMONIC,
+  ENCNTR_ALIAS.ALIAS
+FROM
+  ACCESSION,
+  CE_EVENT_PRSNL,
+  PERSON,
+  RAD_EXAM,
+  ORDER_RADIOLOGY,
+  CODE_VALUE  CV_FACILITY,
+  ORDERS,
+  ORDER_CATALOG,
+  ENCNTR_ALIAS,
+  CODE_VALUE  CV_ENCNTR_ALIAS_TYPE,
+  CODE_VALUE  CV_ORD_STATUS,
+  CODE_VALUE  CV_ENCOUTER_TYPE,
+  CLINICAL_EVENT,
+  ENCOUNTER,
+  ACCESSION_ORDER_R
+WHERE
+  ( PERSON.PERSON_ID=ENCOUNTER.PERSON_ID  )
+  AND  ( ENCOUNTER.ACTIVE_IND= 1  )
+  AND  ( PERSON.ACTIVE_IND= 1  )
+  AND  ( ENCNTR_ALIAS.ENCNTR_ID=ENCOUNTER.ENCNTR_ID
+AND ENCNTR_ALIAS.ACTIVE_IND = 1
+
+
+  )
+  AND  ( CV_ENCNTR_ALIAS_TYPE.CODE_VALUE=ENCNTR_ALIAS.ENCNTR_ALIAS_TYPE_CD  )
+  AND  ( CV_ENCNTR_ALIAS_TYPE.ACTIVE_IND= 1  )
+  AND  ( ENCOUNTER.ENCNTR_TYPE_CD=CV_ENCOUTER_TYPE.CODE_VALUE  )
+  AND  ( CV_ENCOUTER_TYPE.ACTIVE_IND= 1  )
+  AND  ( CV_ENCOUTER_TYPE.CODE_SET= 71  )
+  AND  ( ENCOUNTER.ENCNTR_ID=ORDERS.ENCNTR_ID and ENCOUNTER.PERSON_ID=ORDERS.PERSON_ID  )
+  AND  ( ORDERS.ACTIVE_IND=1  )
+  AND  ( ACCESSION_ORDER_R.ORDER_ID=ORDERS.ORDER_ID  )
+  AND  ( ACCESSION.ACCESSION_ID=ACCESSION_ORDER_R.ACCESSION_ID  )
+  AND  ( ORDERS.ORDER_STATUS_CD=CV_ORD_STATUS.CODE_VALUE  )
+  AND  ( CV_ORD_STATUS.CODE_SET=6004 AND CV_ORD_STATUS.ACTIVE_IND =1  )
+  AND  ( ORDERS.CATALOG_CD=ORDER_CATALOG.CATALOG_CD  )
+  AND  ( ORDERS.CATALOG_TYPE_CD=ORDER_CATALOG.CATALOG_TYPE_CD  )
+  AND  ( ORDERS.ORDER_ID=ORDER_RADIOLOGY.ORDER_ID  )
+  AND  ( ORDER_RADIOLOGY.ORDER_ID=RAD_EXAM.ORDER_ID  )
+  AND  ( ENCOUNTER.LOC_FACILITY_CD=CV_FACILITY.CODE_VALUE  )
+  AND  ( CV_FACILITY.ACTIVE_IND= 1  )
+  AND  ( CLINICAL_EVENT.ENCNTR_ID=ENCOUNTER.ENCNTR_ID and CLINICAL_EVENT.PERSON_ID=ENCOUNTER.PERSON_ID  )
+  AND  ( CLINICAL_EVENT.EVENT_ID=CE_EVENT_PRSNL.EVENT_ID  )
+  AND  ( CV_ENCNTR_ALIAS_TYPE.CODE_SET = 319 
+and CV_ENCNTR_ALIAS_TYPE.CDF_MEANING = 'FIN NBR'
+and ENCNTR_ALIAS.end_effective_dt_tm> SYSDATE
+and ENCNTR_ALIAS.active_ind=1  )
+  AND  
+  (
+   CV_ORD_STATUS.DISPLAY  =  'Completed'
+  AND  (ORDERS.product_id>=0
+)
+   AND
+   pi_get_cv_display(ORDERS.CATALOG_TYPE_CD)  =  'Radiology'
+   AND
+   CV_ENCOUTER_TYPE.DISPLAY  =  @prompt('Select Outpatient Encounter Type:','A','Encounter\Encounter Type',Mono,Free,Persistent,,User:1)
+   AND
+   CV_FACILITY.description  IN  @prompt('Select Facility:','A','Location\Person Location Description - Facility (Curr)',Multi,Free,Persistent,,User:0)
+   AND
+   ORDER_RADIOLOGY.START_DT_TM  Is Not Null  
+   AND
+   ORDER_RADIOLOGY.COMPLETE_DT_TM  Is Not Null  
+   AND
+
+
+SELECT
+  ORDER_CATALOG.PRIMARY_MNEMONIC,
+  pi_get_cv_display(RAD_EXAM.SERVICE_RESOURCE_CD),
+  to_date(to_char(pi_from_gmt(ORDERS.ORIG_ORDER_DT_TM,( pi_time_zone(1,@Variable('BOUSER')) )),'dd/mm/yyyy'),'dd/mm/yyyy')
+
+,
+  pi_from_gmt(ORDERS.ORIG_ORDER_DT_TM,( pi_time_zone(1,@Variable('BOUSER')) )),
+  ORDERS.ORDER_ID,
+  CV_FACILITY.DISPLAY,
+  CE_PRSNL.NAME_FULL_FORMATTED,
+  pi_from_gmt(ORDER_RADIOLOGY.COMPLETE_DT_TM,( pi_time_zone(1,@Variable('BOUSER')) )),
+  EDW_GET_RESOURCE_GROUP_TEXT(RAD_EXAM.SERVICE_RESOURCE_CD,3, 'DESC')
+
+FROM
+  ORDER_CATALOG,
+  RAD_EXAM,
+  ORDERS,
+  ENCOUNTER,
+  CODE_VALUE  CV_FACILITY,
+  PRSNL  CE_PRSNL,
+  ORDER_RADIOLOGY,
+  CODE_VALUE  CV_RESULT_STATUS,
+  CLINICAL_EVENT,
+  PERSON  CE_PERSON
+WHERE
+  ( ENCOUNTER.ACTIVE_IND= 1  )
+  AND  ( ENCOUNTER.ENCNTR_ID=ORDERS.ENCNTR_ID and ENCOUNTER.PERSON_ID=ORDERS.PERSON_ID  )
+  AND  ( ORDERS.ACTIVE_IND=1  )
+  AND  ( ORDERS.CATALOG_CD=ORDER_CATALOG.CATALOG_CD  )
+  AND  ( ORDERS.CATALOG_TYPE_CD=ORDER_CATALOG.CATALOG_TYPE_CD  )
+  AND  ( ORDERS.ORDER_ID=ORDER_RADIOLOGY.ORDER_ID  )
+  AND  ( ORDER_RADIOLOGY.ORDER_ID=RAD_EXAM.ORDER_ID  )
+  AND  ( ENCOUNTER.LOC_FACILITY_CD=CV_FACILITY.CODE_VALUE  )
+  AND  ( CV_FACILITY.ACTIVE_IND= 1  )
+  AND  ( CLINICAL_EVENT.ENCNTR_ID=ENCOUNTER.ENCNTR_ID and CLINICAL_EVENT.PERSON_ID=ENCOUNTER.PERSON_ID  )
+  AND  ( CLINICAL_EVENT.RESULT_STATUS_CD=CV_RESULT_STATUS.CODE_VALUE  )
+  AND  ( CV_RESULT_STATUS.ACTIVE_IND=1 AND CV_RESULT_STATUS.CODE_SET = 8  )
+  AND  ( CLINICAL_EVENT.PERFORMED_PRSNL_ID=CE_PERSON.PERSON_ID  )
+  AND  ( CE_PERSON.ACTIVE_IND=1  )
+  AND  ( CE_PERSON.PERSON_ID=CE_PRSNL.PERSON_ID  )
+  AND  ( CE_PRSNL.ACTIVE_IND=1  )
+  AND  
+  (
+   pi_get_cv_display(ORDERS.CATALOG_TYPE_CD)  =  'Radiology'
+   AND
+   CV_FACILITY.description  IN  @prompt('Select Facility(s):','A','Location\Person Location Description - Facility (Curr)',Multi,Free,Persistent,,User:0)
+   AND
+ 
+   AND
+   CV_RESULT_STATUS.DISPLAY  IN  ( 'Auth (Verified)','Modified'  )
+   AND
+   CLINICAL_EVENT.VALID_UNTIL_DT_TM  >  '21-12-2100 00:00:00'
+   AND
+   ( CLINICAL_EVENT.ORDER_ID = ORDERS.ORDER_ID  )
+
+SELECT  /*+ ALL_ROWS */
+  ORDERS.ORDER_ID,
+  CV_FACILITY.description,
+  pi_from_gmt(ORDERS.ORIG_ORDER_DT_TM,( pi_time_zone(1,@Variable('BOUSER')) )),
+  DISCRETE_TASK_ASSAY_RAD.DESCRIPTION,
+  pi_get_cv_display(ORDER_CATALOG.ACTIVITY_SUBTYPE_CD),
+  CV_MEDICAL_SERVICE.DISPLAY,
+  CV_ENCOUTER_TYPE.DISPLAY,
+  EDW_GET_RESOURCE_GROUP_TEXT(RAD_EXAM.SERVICE_RESOURCE_CD,3, 'DESC')
+,
+  EDW_GET_RESOURCE_GROUP_TEXT(RAD_EXAM.SERVICE_RESOURCE_CD,2, 'DESC')
+,
+  CLINICAL_EVENT.ACCESSION_NBR,
+  PRSNL_ORDER_ACTION.NAME_FULL_FORMATTED,
+  PERSON.NAME_FULL_FORMATTED,
+  ENCNTR_ALIAS.ALIAS,
+  ORDER_CATALOG.PRIMARY_MNEMONIC,
+  CV_ORD_STATUS.DISPLAY,
+  CE_PRSNL.NAME_FULL_FORMATTED,
+  pi_get_pers_full(RAD_REPORT_PRSNL.report_prsnl_id),
+  pi_from_gmt(ORDER_RADIOLOGY.COMPLETE_DT_TM,( pi_time_zone(1,@Variable('BOUSER')) )),
+  pi_from_gmt(RAD_REPORT.FINAL_DT_TM,( pi_time_zone(1,@Variable('BOUSER')) ))
+FROM
+  ORDERS,
+  CODE_VALUE  CV_FACILITY,
+  DISCRETE_TASK_ASSAY  DISCRETE_TASK_ASSAY_RAD,
+  ORDER_CATALOG,
+  CODE_VALUE  CV_MEDICAL_SERVICE,
+  CODE_VALUE  CV_ENCOUTER_TYPE,
+  RAD_EXAM,
+  CLINICAL_EVENT,
+  PRSNL  PRSNL_ORDER_ACTION,
+  PERSON,
+  ENCNTR_ALIAS,
+  CODE_VALUE  CV_ENCNTR_ALIAS_TYPE,
+  CODE_VALUE  CV_ORD_STATUS,
+  PRSNL  CE_PRSNL,
+  RAD_REPORT_PRSNL,
+  ORDER_RADIOLOGY,
+  RAD_REPORT,
+  CODE_VALUE  CV_CAT_TYPE_ORD,
+  ENCOUNTER,
+  ORDER_ACTION  ORDER_ACTION_ALL_GENERIC,
+  PERSON  CE_PERSON
+WHERE
+  ( PERSON.PERSON_ID=ENCOUNTER.PERSON_ID  )
+  AND  ( ENCOUNTER.ACTIVE_IND= 1  )
+  AND  ( PERSON.ACTIVE_IND= 1  )
+  AND  ( ENCNTR_ALIAS.ENCNTR_ID=ENCOUNTER.ENCNTR_ID
+AND ENCNTR_ALIAS.ACTIVE_IND = 1
+AND ENCNTR_ALIAS.END_EFFECTIVE_DT_TM>PI_TO_GMT(sysdate, PI_TIME_ZONE(1,@variable('BOUSER')))
+AND ENCOUNTER.ACTIVE_IND = 1
+
+
+
+  )
+  AND  ( CV_ENCNTR_ALIAS_TYPE.CODE_VALUE=ENCNTR_ALIAS.ENCNTR_ALIAS_TYPE_CD  )
+  AND  ( CV_ENCNTR_ALIAS_TYPE.ACTIVE_IND= 1  )
+  AND  ( ENCOUNTER.ENCNTR_TYPE_CD=CV_ENCOUTER_TYPE.CODE_VALUE  )
+  AND  ( CV_ENCOUTER_TYPE.ACTIVE_IND= 1  )
+  AND  ( ENCOUNTER.MED_SERVICE_CD=CV_MEDICAL_SERVICE.CODE_VALUE  )
+  AND  ( ENCOUNTER.ENCNTR_ID=ORDERS.ENCNTR_ID and ENCOUNTER.PERSON_ID=ORDERS.PERSON_ID  )
+  AND  ( ORDERS.ACTIVE_IND=1  )
+  AND  ( ORDERS.ORDER_STATUS_CD=CV_ORD_STATUS.CODE_VALUE  )
+  AND  ( CV_ORD_STATUS.CODE_SET=6004 AND CV_ORD_STATUS.ACTIVE_IND =1  )
+  AND  ( ORDERS.CATALOG_CD=ORDER_CATALOG.CATALOG_CD  )
+  AND  ( ORDERS.CATALOG_TYPE_CD=ORDER_CATALOG.CATALOG_TYPE_CD  )
+  AND  ( ORDERS.ORDER_ID=ORDER_ACTION_ALL_GENERIC.ORDER_ID  )
+  AND  ( ORDER_ACTION_ALL_GENERIC.ORDER_PROVIDER_ID=PRSNL_ORDER_ACTION.PERSON_ID  )
+  AND  ( ORDERS.ORDER_ID=ORDER_RADIOLOGY.ORDER_ID  )
+  AND  ( ORDER_RADIOLOGY.ORDER_ID=RAD_REPORT.ORDER_ID  )
+  AND  ( RAD_REPORT.RAD_REPORT_ID=RAD_REPORT_PRSNL.RAD_REPORT_ID  )
+  AND  ( ORDER_RADIOLOGY.ORDER_ID=RAD_EXAM.ORDER_ID  )
+  AND  ( RAD_EXAM.TASK_ASSAY_CD=DISCRETE_TASK_ASSAY_RAD.TASK_ASSAY_CD AND DISCRETE_TASK_ASSAY_RAD.ACTIVE_IND=1  )
+  AND  ( ORDERS.CATALOG_TYPE_CD=CV_CAT_TYPE_ORD.CODE_VALUE  )
+  AND  ( ENCOUNTER.LOC_FACILITY_CD=CV_FACILITY.CODE_VALUE  )
+  AND  ( CLINICAL_EVENT.ENCNTR_ID=ENCOUNTER.ENCNTR_ID and CLINICAL_EVENT.PERSON_ID=ENCOUNTER.PERSON_ID  )
+  AND  ( CLINICAL_EVENT.PERFORMED_PRSNL_ID=CE_PERSON.PERSON_ID  )
+  AND  ( CE_PERSON.PERSON_ID=CE_PRSNL.PERSON_ID  )
+  AND  ( CV_ENCNTR_ALIAS_TYPE.CODE_SET = 319 
+and CV_ENCNTR_ALIAS_TYPE.CDF_MEANING = 'FIN NBR'
+and ENCNTR_ALIAS.end_effective_dt_tm> SYSDATE
+and ENCNTR_ALIAS.active_ind=1  )
+  AND  ( ORDERS.product_id>=0
+  )
+  AND  
+  (
+   CV_CAT_TYPE_ORD.DISPLAY  =  'Radiology'
+   AND
+   CV_FACILITY.description  IN  @prompt('Select Facility(s):','A','Location\Person Location Description - Facility (Curr)',Multi,Free,Persistent,,User:0,optional)
+   AND
+   ( ( ORDER_RADIOLOGY.COMPLETE_DT_TM )+0 
+   
+   
+   
+ select uar_get_code_display(rep.exam_relation_cd)
+ from rad_exam_prsnl rep
+ 
+ 
+ select 
+ 	p.name_full_formatted
+ 	,o.order_mnemonic
+ 	,ord.order_physician_id
+ 	,oros.request_dt_tm ";;q"
+ 	,oros.*
+ from 
+ omf_radmgmt_order_st oros 
+	, person   p
+	, encounter   e
+	, order_radiology   ord
+	, orders   o
+plan oros
+	where oros.updt_dt_tm >= cnvtdatetime(curdate,0)
+join o
+	where	o.order_id 			= oros.order_id
+join p
+	where	p.person_id 		= o.person_id
+join e
+	where	e.encntr_id			= o.encntr_id
+join ord
+	where	ord.order_id 		= o.order_id

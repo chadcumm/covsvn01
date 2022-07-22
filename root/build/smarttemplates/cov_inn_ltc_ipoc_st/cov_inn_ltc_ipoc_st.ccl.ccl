@@ -1,0 +1,15 @@
+SELECT INTO "nl:"
+   FROM (code_value cv )
+   WHERE (cv.code_set = 30183 )
+   AND (cv.cdf_meaning = "IPOC" )
+   HEAD REPORT
+    ipoc_cnt = 0
+   DETAIL
+    ipoc_cnt = (ipoc_cnt + 1 ) ,
+    stat = alterlist (ipoc_doc->ipoc_qual ,ipoc_cnt ) ,
+    ipoc_doc->ipoc_qual[ipoc_cnt ].ipoc_cd = cv.code_value
+   FOOT REPORT
+    ipoc_doc->ipoc_doc_cnt = ipoc_cnt ,
+    stat = alterlist (ipoc_doc->ipoc_qual ,ipoc_cnt )
+   WITH nocounter
+  ;end select

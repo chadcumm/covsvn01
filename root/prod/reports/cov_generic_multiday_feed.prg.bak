@@ -1,0 +1,239 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+	Author:			Geetha Paramasivam
+	Date Written:		Aug 2021
+	Solution:			Quality
+	Source file name:	      cov_generic_multiday_feed.prg
+	Object name:		cov_generic_multiday_feed
+	Request#:			AdHoc
+	Program purpose:	      Data back load - multiday look up
+	Executing from:
+ 	Special Notes:
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+Mod Date	Developer			Comment
+----------	--------------------	------------------------------------------
+ 
+******************************************************************************/
+ 
+drop program cov_generic_multiday_feed:dba go
+create program cov_generic_multiday_feed:dba
+ 
+prompt
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "Task Start Date/Time" = "SYSDATE"
+	, "Task End Date/Time" = "SYSDATE"
+ 
+with OUTDEV, start_datetime, end_datetime
+ 
+ 
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+ 
+;Date setup - Runs for the previous day.
+declare start_date = f8
+declare end_date   = f8
+ 
+set start_date = cnvtlookbehind("1,D")
+set start_date = datetimefind(start_date,"D","B","B")
+set end_date   = cnvtlookahead("1,D",start_date)
+set end_date   = cnvtlookbehind("1,SEC", end_date)
+ 
+/**************************************************************
+; DVDev DECLARED RECORD STRUCTURES
+**************************************************************/
+ 
+RECORD facility(
+	1 rec_cnt =	i4
+	1 flist[*]
+		2 facility_cd   =	f8
+		2 facility_desc =	vc
+)
+ 
+ /*
+Record dt(
+	1 min_date = dq8
+	1 max_date = dq8
+	1 days_between = i4
+	1 list[*]
+		2 rs_start_dt = dq8
+		2 rs_end_dt = dq8
+)
+ 
+;**************************************************************
+; DVDev Start Coding
+;***************************************************************
+ 
+;Get days between prompt dates
+ 
+select into $outdev
+from dummyt d
+ 
+Head report
+ 
+ dt->min_date = cnvtdatetime($start_datetime)
+ dt->max_date = cnvtdatetime($end_datetime)
+ dt->days_between = datetimecmp(dt->max_date, cnvtdatetime($start_datetime)) + 1
+ 
+Detail
+	call alterlist(dt->list, dt->days_between)
+	dcnt = 1, cnt = 1
+	dt->list[dcnt].rs_start_dt = cnvtdatetime($start_datetime)
+	e_dt = cnvtlookahead("1,D", cnvtdatetime($start_datetime))
+	dt->list[dcnt].rs_end_dt = cnvtlookbehind("1,SEC", e_dt)
+	dcnt += 1
+	while(dcnt <= dt->days_between)
+		dt->list[dcnt].rs_start_dt = datetimeadd(cnvtdatetime(dt->list[dcnt-1].rs_start_dt), 1)
+		dt->list[dcnt].rs_end_dt = datetimeadd(dt->list[dcnt-1].rs_end_dt, 1)
+		dcnt += 1
+		cnt += 1
+	endwhile
+ 
+with nocounter
+ 
+call echorecord(dt) */
+ 
+ 
+;----------------------------------------------------------------------------------------------
+;Get acute facilities
+ 
+select into $outdev
+  facility_name = uar_get_displaykey(l.location_cd), l.location_cd
+ 
+from location l
+where l.location_type_cd = 783.00
+and l.active_ind = 1
+and l.location_cd in(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00,2552503649.00)
+ 
+order by facility_name
+ 
+Head report
+	cnt = 0
+Detail
+	cnt = cnt + 1
+	if (mod(cnt,10) = 1 or cnt = 1)
+ 		stat = alterlist(facility->flist, cnt + 9)
+ 	endif
+ 
+	facility->flist[cnt].facility_cd	= l.location_cd
+	facility->flist[cnt].facility_desc	= facility_name
+	facility->rec_cnt		      	= cnt
+ 
+Foot report
+	stat = alterlist(facility->flist, cnt)
+ 
+With nocounter
+ 
+;----------------------------------------------------------------------------------------------
+ 
+ 
+;Everyday live as of 8/06/21 (including 08/06 data)
+;EXECUTE cov_phq_chg_mrsa_feed "mine", start_date, end_date,
+;	value(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00,2552503649.00), 0
+ 
+;set up for data back load (need to load 07/21 - 08/05 - documented on 8/16)
+;EXECUTE cov_phq_mrsa_hist_load "mine", "01-JUL-2021 00:00:00", "20-JUL-2021 23:59:00",
+;	value(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00,2552503649.00), 0
+ 
+ 
+ 
+;Back load - Patients admitted between 1/1 to 8/16 - only 8/6 to 8/16 data
+EXECUTE cov_mrsa_feed_actpat_load  "mine", cnvtdatetime("06-AUG-2021 00:00:00"), cnvtdatetime("16-AUG-2021 23:59:59"),
+	value(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00,2552503649.00), 0
+ 
+ 
+;Back load - Patients admitted between 1/1 to 8/4 but not discharged until 8/5
+;EXECUTE cov_mrsa_feed_actpat_load  "mine", cnvtdatetime("01-JUN-2021 00:00:00"), cnvtdatetime("05-AUG-2021 23:59:59"),
+;	value(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00,2552503649.00), 0
+ 
+
+;Back load - only on discharged date (8/17)
+;EXECUTE cov_phq_chg_mrsa_dish "mine", cnvtdatetime($start_datetime), cnvtdatetime($end_datetime),
+;	value(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00,2552503649.00), 0
+
+ 
+ 
+;"08-AUG-2021 00:00:00", "08-AUG-2021 23:59:59",
+ 
+;EXECUTE cov_phq_chg_mrsa_dish "mine", start_date, end_date, value(2552503635.00), 0
+ 
+;EXECUTE cov_phq_chg_mrsa_dish "mine", "16-AUG-2021 00:00:00", "16-AUG-2021 23:59:59", value(2552503635), 0
+ 
+ 
+ 
+/*
+;Loop through multiple days
+For(cnt = 1 to dt->days_between)
+ 
+set start_dt = format(dt->list[cnt].rs_start_dt, 'mm/dd/yyyy hh:mm:ss ;;q')
+set  end_dt = format(dt->list[cnt].rs_end_dt, 'mm/dd/yyyy hh:mm:ss ;;q')
+ 
+call echo(start_dt)
+ 
+ 
+EXECUTE cov_phq_chg_mrsa_dish "mine", start_dt, end_dt, value(2552503635.00), 0
+	value(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00,2552503649.00), 0
+ 
+Endfor */
+ 
+ 
+ 
+/*
+;Loop through all facilities.
+For(fcnt = 1 to facility->rec_cnt )
+ 
+  	;everyday
+ 	;EXECUTE cov_phq_sepsis_dream "mine", start_date, end_date, facility->flist[fcnt].facility_cd, 0
+ 
+ 	;Backload
+	;EXECUTE cov_phq_sepsis_dream "mine", 0, "27-FEB-2019 00:00:00", "28-FEB-2019 23:59:00", facility->flist[fcnt].facility_cd
+ 
+ 	;One Facility
+ 	;EXECUTE cov_phq_sepsis_dream "mine", "01-FEB-2019 00:00:00", "01-FEB-2019 23:59:00", 2552503649.00, 0 ;RMC
+ 
+Endfor */
+ 
+ 
+ 
+/*
+SELECT into $outdev
+	DT_MIN_DATE = DT->min_date ';;q'
+	, DT_MAX_DATE = DT->max_date ';;q'
+	, DT_DAYS_BETWEEN = DT->days_between
+	, LIST_RS_START_DT = DT->list[D1.SEQ].rs_start_dt ';;q'
+	, LIST_RS_END_DT = DT->list[D1.SEQ].rs_end_dt ';;q'
+ 
+FROM
+	(DUMMYT   D1  WITH SEQ = SIZE(DT->list, 5))
+ 
+PLAN D1
+ 
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT
+*/
+ 
+ 
+ 
+end
+go
+ 
+ 
+/*
+ 
+ 2552503635.00	Fort Loudoun Medical Center	FLMC
+   21250403.00	Fort Sanders Regional Medical Center	FSR
+ 2552503653.00	LeConte Medical Center	LCMC
+ 2552503639.00	Morristown-Hamblen Hospital Association	MHHS
+ 2552503613.00	Methodist Medical Center	MMC
+ 2553765579.00	Peninsula Behavioral Health - Div of Parkwest Medical Center	PBHPENINSULA
+ 2552503645.00	Parkwest Medical Center	PW
+ 2552503649.00	Roane Medical Center	RMC
+ 
+ */
+ 

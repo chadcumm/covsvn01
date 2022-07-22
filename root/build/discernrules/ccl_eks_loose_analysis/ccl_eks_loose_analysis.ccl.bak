@@ -1,0 +1,104 @@
+select * from prsnl p where p.person_id = 739923
+
+select * from code_value cv
+where cv.code_value in (
+2561484387.00,
+ 2561484651.00,
+       2684.00,
+       2653.00,
+ 2580675811.00,
+   29893907.00,
+ 2552495215.00,
+       2685.00,
+ 2561485101.00,
+    3192563.00,
+   26191177.00,419,469) go
+   
+   
+"HIM Analysis - IP"
+"HIM Analysis - DS"
+"HIM Analysis - OP"
+"HIM Analysis - Specialty Document"
+"HIM Document Correction"
+"HIM Analysis - Manager Review"
+"HIM Analysis - Missing Elements"
+"HIM Analysis - Adolescent BH"
+"HIM Analysis - Adult Psych"
+"HIM Analysis - Skilled Nursing"
+
+
+select * from clinical_event ce where ce.encntr_id = 113437814 order by ce.event_end_dt_tm desc
+
+;Query 1
+select into "nl:"
+	c.event_id,p.username
+from 
+	clinical_event c
+	,prsnl p
+plan c
+	where  c.clinical_event_id in(     836882377.00
+,     836882375.00
+ ,    836882373.00
+  ,   836882371.00)
+
+join p
+	where  p.person_id = c.performed_prsnl_id
+	
+;query 2
+select uar_get_code_display(cbr.storage_cd)
+	from
+		 clinical_event c
+	    ,ce_blob_result cbr
+	plan c
+		where  c.clinical_event_id  in(     836882377.00
+,     836882375.00
+ ,    836882373.00
+  ,   836882371.00)
+	join cbr 
+		where 	cbr.event_id = c.event_id 
+		and		cbr.storage_cd = value(uar_get_code_by("DISPLAYKEY", 25, "OTG"))
+		and		cbr.valid_until_dt_tm >= cnvtdatetime(curdate,curtime3)
+
+;query 3
+select 
+		c.event_id,uar_get_code_display(c.contributor_system_cd)
+	from 
+		clinical_event c
+	plan c
+		where  	c.clinical_event_id  in(     836882377.00
+,     836882375.00
+ ,    836882373.00
+  ,   836882371.00)
+		and		c.contributor_system_cd != value(uar_get_code_by("MEANING",89,"POWERCHART"))
+
+;query 4
+select 
+	ta.task_id,uar_get_code_display(ta.task_status_cd),uar_get_code_display(ta.task_type_cd)
+from
+	 clinical_event c
+	;,task_activity ta
+	,task_activity_history ta
+	,code_value cv
+plan c
+	where 	c.clinical_event_id in(     836882377.00
+,     836882375.00
+ ,    836882373.00
+  ,   836882371.00)
+join ta
+	where	ta.encntr_id 		= c.encntr_id
+	and		ta.task_status_cd 	= value(uar_get_code_by("MEANING",79,"COMPLETE"))
+join cv
+	where 	cv.code_value 		= ta.task_type_cd
+	and		cv.display	in(
+								 "HIM Analysis - IP"
+								,"HIM Analysis - DS"
+								,"HIM Analysis - OP"
+								,"HIM Analysis - Specialty Document"
+								,"HIM Document Correction"
+								,"HIM Analysis - Manager Review"
+								,"HIM Analysis - Missing Elements"
+								,"HIM Analysis - Adolescent BH"
+								,"HIM Analysis - Adult Psych"
+								,"HIM Analysis - Skilled Nursing"
+							)
+	and		cv.active_ind 		= 1

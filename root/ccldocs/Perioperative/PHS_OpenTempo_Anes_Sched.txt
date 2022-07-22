@@ -1,0 +1,28 @@
+SELECT	
+	appt.appt_id [Case ID],
+	Convert(varchar,appt.start_datetime,103) [Date],
+	res.name Room,
+	Convert(char(5),resbooking.start_datetime,108) [Scheduled Start],
+	Convert(char(5),resbooking.stop_datetime,108) [Scheduled Stop],
+	res_pract.name Consultant,
+	service.name [Procedure Type],
+	probooking.act_name [Notes],
+	CAST(REPLACE(CAST(appt.long_comment as varchar(4000)),'"','''''') as Text) [Custom1]
+
+FROM   (((((dbo.appt INNER JOIN dbo.probooking ON appt.appt_id=probooking.appt_id) 
+INNER JOIN dbo.resbooking ON appt.appt_id=resbooking.appt_id) 
+INNER JOIN dbo.res ON resbooking.res_id=res.res_id) 
+INNER JOIN dbo.pro ON probooking.pro_id=pro.pro_id) 
+LEFT OUTER JOIN dbo.res res_pract ON probooking.prim_pract_id=res_pract.res_id) 
+LEFT OUTER JOIN dbo.service ON pro.service_id=service.service_id
+
+WHERE  res.restype_id = 2 
+AND appt.start_datetime > CAST(getdate() as DATE)
+AND appt.start_datetime < CAST(getdate()+8 as DATE)
+AND res.resunit_id in (65,109)
+
+
+csv_dest:
+PHS_OpenTempo_Anes_Sched.csv
+"Case ID","Date","Room","Scheduled Start","Scheduled Stop","Consultant","Procedure Type","Notes","Custom1"
+

@@ -1,0 +1,31 @@
+drop program cov_IT_Disable_Ops_Jobs:dba go
+create program cov_IT_Disable_Ops_Jobs:dba
+/********************************************************************
+   Program: cov_IT_Disable_Ops_Jobs
+   Folder: CUST_SCRIPT
+   Owner: Covenant
+   Author: Dawn Greer, DBA
+   Created Date: 9/12/2019
+ 
+   Original CR: XXXX
+ 
+   Purpose: Create a script to disable ALL Ops Jobs except for the one
+   created so that Donna and Josh can run it in the nonprod environements
+   as needed.  This script will not change anything in PROD (P0665)
+   if accidently ran in that environment.
+ 
+   Schedule: Ran manually as needed
+   Ops Job: Cov IT Disable Ops Jobs
+ 
+Modifications:
+ 
+**********************************************************************/
+UPDATE INTO OPS_TASK OT SET OT.AUTOSTART_IND = 0, OT.ENABLE_IND = 0,
+OT.UPDT_APPLCTX = 0, OT.UPDT_CNT=OT.UPDT_CNT + 1,
+OT.UPDT_ID = 17496723.00, OT.UPDT_DT_TM = CNVTDATETIME(CURDATE,CURTIME3)
+WHERE OT.OPS_TASK_ID != 14187384.00  /*Cov IT Disable Ops Job*/
+AND CURDOMAIN != 'P0665'   /* Don't run it in PROD (P0665) */
+WITH MAXCOMMIT = 1000
+COMMIT
+END
+GO 

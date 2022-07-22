@@ -1,0 +1,638 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Todd A. Blanchard
+	Date Written:		03/25/2022
+	Solution:			Revenue Cycle - Scheduling Management
+	Source file name:	cov_sm_Provider_Audit.prg
+	Object name:		cov_sm_Provider_Audit
+	Request #:			11992
+ 
+	Program purpose:	Lists providers with orders and appointments, as well as
+						those that are designated as PCPs for patients.
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:		Prompts change the where statement to filter by:
+							- 0: Orders/Appointments
+							- 1: PCP Relationships
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+ 	Mod Date	Developer				Comment
+ 	----------	--------------------	--------------------------------------
+001	04/26/2022	Todd A. Blanchard		Increased timeout value.
+002	05/18/2022	Todd A. Blanchard		Adjusted logic for accuracy and added
+										department status data.
+ 	
+******************************************************************************/
+ 
+drop program cov_sm_Provider_Audit:DBA go
+create program cov_sm_Provider_Audit:DBA
+ 
+prompt 
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "Report Type" = 0
+	, "Provider" = 0 
+
+with OUTDEV, report_type, provider_id
+ 
+ 
+/**************************************************************
+; DVDev DECLARED SUBROUTINES
+**************************************************************/
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+
+declare fin_var						= f8 with constant(uar_get_code_by("DISPLAYKEY", 319, "FINNBR"))
+declare stardocnum_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 263, "STARDOCTORNUMBER"))
+declare orgdoc_var					= f8 with constant(uar_get_code_by("DISPLAYKEY", 320, "ORGANIZATIONDOCTOR"))
+declare pcp_var						= f8 with constant(uar_get_code_by("DISPLAYKEY", 331, "PRIMARYCAREPHYSICIAN"))
+
+declare canceluponreview_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "CANCELUPONREVIEW"))
+declare cardiacdiag_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "CARDIACDIAGNOSTICS"))
+declare cheyenneopclinic_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "CHEYENNEOUTPATIENTCLINIC"))
+declare diagcenterop_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "DIAGNOSTICCENTEROUTPATIENT"))
+declare multidayopdiag_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "MULTIDAYOPDIAGNOSTIC"))
+declare outpatient_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "OUTPATIENT"))
+declare prereg_var					= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "PREREG"))
+declare recurring_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "RECURRING"))
+declare scheduled_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "SCHEDULED"))
+
+declare ctoutsideimages_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 200, "CTOUTSIDEIMAGES"))
+declare mgoutsideimages_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 200, "MGOUTSIDEIMAGES"))
+declare mrioutsideimages_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 200, "MRIOUTSIDEIMAGES"))
+declare nmoutsideimages_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 200, "NMOUTSIDEIMAGES"))
+declare petoutsideimages_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 200, "PETOUTSIDEIMAGES"))
+declare usoutsideimages_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 200, "USOUTSIDEIMAGES"))
+declare xroutsideimages_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 200, "XROUTSIDEIMAGES"))
+
+declare admittransferdschg_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 6000, "ADMITTRANSFERDISCHARGE"))
+declare ambulatorypoc_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 6000, "AMBULATORYPOC"))
+declare ambulatoryprocs_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 6000, "AMBULATORYPROCEDURES"))
+declare consults_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 6000, "CONSULTS"))
+declare dialysis_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 6000, "DIALYSIS"))
+declare discernruleorder_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 6000, "DISCERNRULEORDER"))
+declare evalmanagement_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 6000, "EVALUATIONANDMANAGEMENT"))
+declare laboratory_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 6000, "LABORATORY"))
+declare nutritionservices_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 6000, "NUTRITIONSERVICES"))
+declare patientcare_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 6000, "PATIENTCARE"))
+declare pharmacy_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 6000, "PHARMACY"))
+declare referral_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 6000, "REFERRAL"))
+declare scheduling_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 6000, "SCHEDULING"))
+declare surgery_var					= f8 with constant(uar_get_code_by("DISPLAYKEY", 6000, "SURGERY"))
+
+declare order_var					= f8 with constant(uar_get_code_by("DISPLAYKEY", 6003, "ORDER"))
+declare future_var					= f8 with constant(uar_get_code_by("DISPLAYKEY", 6004, "FUTURE"))
+declare ordered_var					= f8 with constant(uar_get_code_by("DISPLAYKEY", 6004, "ORDERED"))
+declare rescheduled_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 14233, "RESCHEDULED"))
+declare checkedin_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 14233, "CHECKEDIN"))
+declare dept_ordered_var			= f8 with constant(uar_get_code_by("MEANING", 14281, "ORDERED")) ;002
+declare dept_radordered_var			= f8 with constant(uar_get_code_by("MEANING", 14281, "RADORDERED")) ;002
+declare dept_cvscheduled_var		= f8 with constant(uar_get_code_by("MEANING", 14281, "CVSCHEDULED")) ;002
+declare dept_labscheduled_var		= f8 with constant(uar_get_code_by("MEANING", 14281, "LABSCHEDULED")) ;002
+declare attachtype_order_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 16110, "ORDER"))
+
+declare schedauthnbr_var			= f8 with constant(124.00)
+
+declare op_provider_var				= vc with noconstant("")
+declare num							= i4 with noconstant(0)
+declare numx						= i4 with noconstant(0)
+ 
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+
+free record ordappt_data
+record ordappt_data (
+	1 cnt							= i4
+	1 list[*]
+		2 prsnl_person_id			= f8
+		2 ordering_physician		= c100
+		2 physician_number			= c20
+		2 practice_site				= c100
+		
+		2 patient_id				= f8
+		2 patient_name				= c100
+		2 dob						= dq8
+		
+		2 encntr_id					= f8
+		2 fin						= c20
+		2 encntr_type				= c40
+		2 encntr_status				= c40
+		2 reg_dt_tm					= dq8
+		2 disch_dt_tm				= dq8
+		2 org_name					= c100
+		
+		2 order_id					= f8
+		2 order_received			= dq8
+		2 order_name				= c100
+		2 order_status				= c40
+		2 dept_status				= c40 ;002
+		
+		2 appt_status				= c40
+		2 appt_date					= dq8
+		2 appt_location				= c100
+		
+		2 final_result_date			= dq8
+		2 auth						= c40
+)
+
+free record pcp_data
+record pcp_data (
+	1 cnt						= i4
+	1 list[*]
+		2 prsnl_person_id		= f8
+		2 pcp_name				= c100
+		2 physician_number		= c20
+		2 practice_site			= c100
+		
+		2 person_prsnl_r		= c40
+		
+		2 pcnt					= i4
+		2 patient[*]
+			3 patient_id		= f8
+			3 patient_name		= c100
+			3 dob				= dq8
+)
+
+
+/**************************************************************/
+; select order/appointment data
+if ($report_type = 0)
+	; order
+	select into "NL:"
+	from
+		ORDERS o
+	 
+		, (left join ORDER_DETAIL od on od.order_id = o.order_id
+			and od.oe_field_meaning_id = schedauthnbr_var)
+			
+		; first order action
+		, (inner join ORDER_ACTION oa on oa.order_id = o.order_id
+			and oa.action_type_cd = order_var
+			and oa.action_dt_tm <= cnvtdatetime(curdate, curtime)
+			and oa.action_sequence = 1)
+	 
+	 	; ordering physician
+		, (inner join PRSNL per_oa on per_oa.person_id = oa.order_provider_id
+			and per_oa.person_id = $provider_id
+			and per_oa.active_ind = 1)
+			
+		, (left join PRSNL_ALIAS pera_oa on pera_oa.person_id = per_oa.person_id
+			and pera_oa.prsnl_alias_type_cd = orgdoc_var
+			and pera_oa.alias_pool_cd = stardocnum_var
+			and pera_oa.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
+			and pera_oa.active_ind = 1)
+ 
+		, (left join PRSNL_RELTN pr on pr.person_id = per_oa.person_id
+			and pr.parent_entity_name = "PRACTICE_SITE"
+			and pr.active_ind = 1)
+	 
+		, (left join PRACTICE_SITE ps on ps.practice_site_id = pr.parent_entity_id)
+	 
+		, (left join ORGANIZATION org_ps on org_ps.organization_id = ps.organization_id)
+		
+		; last order action
+		, (inner join ORDER_ACTION oa_last on oa_last.order_id = o.order_id	
+			and	oa_last.order_status_cd > 0.0
+			and oa_last.order_status_cd in (future_var, ordered_var)
+			and oa_last.action_dt_tm <= cnvtdatetime(curdate, curtime)			
+			and oa_last.action_sequence = (
+				select max(oa2.action_sequence)
+				from ORDER_ACTION oa2
+				where
+					oa2.order_id = oa_last.order_id
+				group by
+					oa2.order_id
+			))
+	
+		, (left join RAD_REPORT rr on rr.order_id = o.order_id)
+	 
+	 	; patient
+		, (inner join PERSON p on p.person_id = o.person_id
+			and p.active_ind = 1)
+	 
+	 	; encounter
+		, (left join ENCOUNTER e on e.encntr_id = o.encntr_id
+			;002
+;			and e.encntr_type_cd in (
+;				cardiacdiag_var,
+;				cheyenneopclinic_var,
+;				diagcenterop_var,
+;				multidayopdiag_var,
+;				outpatient_var,
+;				prereg_var,
+;				recurring_var,
+;				scheduled_var
+;			)
+			and e.active_ind = 1)
+	 
+		, (left join ENCNTR_ALIAS eaf on eaf.encntr_id = e.encntr_id
+			and eaf.encntr_alias_type_cd = fin_var
+			and eaf.active_ind = 1)
+	 
+		; encounter location
+		, (left join LOCATION l on l.location_cd = e.loc_facility_cd)
+	 
+	 	; encounter organization
+		, (left join ORGANIZATION org on org.organization_id = l.organization_id
+			and org.active_ind = 1)
+	 
+	where
+		o.order_id > 0.0
+		and o.catalog_type_cd not in (
+			admittransferdschg_var,
+			ambulatorypoc_var,
+			ambulatoryprocs_var,
+			consults_var,
+			dialysis_var,
+			discernruleorder_var,
+			evalmanagement_var,
+			laboratory_var,
+			nutritionservices_var,
+			patientcare_var,
+			pharmacy_var,
+			referral_var,
+			scheduling_var,
+			surgery_var
+		)
+		and o.catalog_cd not in (
+			ctoutsideimages_var,
+			mgoutsideimages_var,
+			mrioutsideimages_var,
+			nmoutsideimages_var,
+			petoutsideimages_var,
+			usoutsideimages_var,
+			xroutsideimages_var
+		)
+		and o.template_order_id = 0.0
+		and o.orig_order_dt_tm <= cnvtdatetime(curdate, curtime)
+		;002
+		and o.dept_status_cd in (
+			dept_ordered_var,
+			dept_radordered_var,
+			dept_cvscheduled_var,
+			dept_labscheduled_var
+		)
+		and o.active_ind = 1	
+	
+	order by
+		per_oa.person_id
+		, o.order_id
+ 
+	; populate ordappt_data record structure
+	head report
+		cnt = 0
+	
+	detail
+		cnt = cnt + 1
+	 
+		call alterlist(ordappt_data->list, cnt)
+		
+		ordappt_data->cnt								= cnt
+		ordappt_data->list[cnt].prsnl_person_id			= per_oa.person_id
+		ordappt_data->list[cnt].ordering_physician		= per_oa.name_full_formatted
+		ordappt_data->list[cnt].physician_number		= pera_oa.alias
+		ordappt_data->list[cnt].practice_site			= org_ps.org_name	
+			 
+		ordappt_data->list[cnt].patient_id				= p.person_id
+		ordappt_data->list[cnt].patient_name			= p.name_full_formatted
+		ordappt_data->list[cnt].dob						= cnvtdatetimeutc(datetimezone(p.birth_dt_tm, p.birth_tz), 1)
+		
+		ordappt_data->list[cnt].encntr_id				= e.encntr_id
+		ordappt_data->list[cnt].fin						= eaf.alias
+		ordappt_data->list[cnt].encntr_type				= uar_get_code_display(e.encntr_type_cd)
+		ordappt_data->list[cnt].encntr_status			= uar_get_code_display(e.encntr_status_cd)
+		ordappt_data->list[cnt].reg_dt_tm				= e.reg_dt_tm
+		ordappt_data->list[cnt].disch_dt_tm				= e.disch_dt_tm
+		ordappt_data->list[cnt].org_name				= org.org_name
+		
+		ordappt_data->list[cnt].order_id				= o.order_id
+		ordappt_data->list[cnt].order_received			= o.orig_order_dt_tm
+		ordappt_data->list[cnt].order_name				= o.order_mnemonic
+		ordappt_data->list[cnt].order_status			= uar_get_code_display(o.order_status_cd)
+		ordappt_data->list[cnt].dept_status				= uar_get_code_display(o.dept_status_cd) ;002
+		
+		ordappt_data->list[cnt].final_result_date		= rr.final_dt_tm
+		
+		ordappt_data->list[cnt].auth 					= replace(replace(od.oe_field_display_value, char(10), ""), char(13), "")
+	
+	with nocounter, time = 300 ;001
+	
+	
+	; appointment
+	select into "NL:"
+	from
+		SCH_EVENT_ATTACH sea
+	 
+		, (inner join SCH_EVENT sev on sev.sch_event_id = sea.sch_event_id
+			and sev.version_dt_tm > cnvtdatetime(curdate, curtime)
+			and sev.active_ind = 1)
+			
+;		, (inner join SCH_ENTRY sen on sen.sch_event_id = sev.sch_event_id
+;			and sen.earliest_dt_tm >= cnvtdatetime(curdate, curtime))
+	 
+		, (inner join SCH_APPT sa on sa.sch_event_id = sev.sch_event_id
+			and sa.role_meaning = "PATIENT"
+			and sa.beg_dt_tm >= cnvtdatetime(curdate, curtime)
+			and sa.sch_state_cd not in (rescheduled_var, checkedin_var)
+			and sa.version_dt_tm > cnvtdatetime(curdate, curtime)
+			and sa.active_ind = 1)
+			
+		, (inner join SCH_EVENT_ACTION seact on seact.sch_event_id = sev.sch_event_id
+			and seact.schedule_id = sa.schedule_id
+			and seact.action_meaning != "VIEW"
+			and seact.action_dt_tm = (
+				select max(seact2.action_dt_tm)
+				from SCH_EVENT_ACTION seact2
+				where
+					seact2.sch_event_id = seact.sch_event_id
+					and seact2.schedule_id = seact.schedule_id
+					and seact2.action_meaning != "VIEW"
+					and seact2.active_ind = 1
+				group by
+					seact2.sch_event_id
+					, seact2.schedule_id
+			)
+			and seact.active_ind = 1)
+	 
+		; appointment location
+		, (inner join LOCATION l on l.location_cd = sa.appt_location_cd)
+	 
+	 	; appointment organization
+		, (inner join ORGANIZATION org on org.organization_id = l.organization_id
+			and org.active_ind = 1)
+	 
+	 	; encounter
+		, (left join ENCOUNTER e on e.encntr_id = sa.encntr_id
+;			and e.encntr_type_cd in (			
+;				cardiacdiag_var,
+;				cheyenneopclinic_var,
+;				diagcenterop_var,
+;				multidayopdiag_var,
+;				outpatient_var,
+;				prereg_var,
+;				recurring_var,
+;				scheduled_var
+;			)
+			and e.active_ind = 1)
+	 
+		, (left join ENCNTR_ALIAS eaf on eaf.encntr_id = e.encntr_id
+			and eaf.encntr_alias_type_cd = fin_var
+			and eaf.active_ind = 1)
+	 
+		; encounter location
+		, (left join LOCATION l2 on l2.location_cd = e.loc_facility_cd)
+	 
+	 	; encounter organization
+		, (left join ORGANIZATION org2 on org2.organization_id = l2.organization_id
+			and org2.active_ind = 1)
+		
+	where
+		expand(num, 1, ordappt_data->cnt, sea.order_id, ordappt_data->list[num].order_id)
+		and sea.attach_type_cd = attachtype_order_var
+		and sea.version_dt_tm > cnvtdatetime(curdate, curtime)
+		and sea.active_ind = 1
+		
+	order by
+		sea.order_id
+ 
+	; populate ordappt_data record structure
+	head sea.order_id
+		idx = 0
+		
+		idx = locateval(numx, 1, ordappt_data->cnt, sea.order_id, ordappt_data->list[numx].order_id)
+		
+		if (idx > 0)
+			ordappt_data->list[idx].appt_status				= sa.state_meaning
+			ordappt_data->list[idx].appt_date				= sa.beg_dt_tm
+			ordappt_data->list[idx].appt_location			= uar_get_code_display(l.location_cd)
+			
+			if (ordappt_data->list[idx].encntr_id = 0.0)
+				ordappt_data->list[idx].encntr_id			= e.encntr_id
+				ordappt_data->list[idx].fin					= eaf.alias
+				ordappt_data->list[idx].encntr_type			= uar_get_code_display(e.encntr_type_cd)
+				ordappt_data->list[idx].encntr_status		= uar_get_code_display(e.encntr_status_cd)
+				ordappt_data->list[idx].reg_dt_tm			= e.reg_dt_tm
+				ordappt_data->list[idx].disch_dt_tm			= e.disch_dt_tm
+				ordappt_data->list[idx].org_name			= org2.org_name
+			endif
+		endif
+		
+	with nocounter, time = 300 ;001
+	
+	
+	; health plan
+	select into "NL:"
+	from
+		ENCNTR_PLAN_RELTN epr
+	 
+		, (inner join ENCNTR_PLAN_AUTH_R epar on epar.encntr_plan_reltn_id = epr.encntr_plan_reltn_id
+			and epar.active_ind = 1)
+	 
+		, (inner join AUTHORIZATION au on au.authorization_id = epar.authorization_id
+			and au.active_ind = 1)
+		
+	where
+		expand(num, 1, ordappt_data->cnt, epr.encntr_id, ordappt_data->list[num].encntr_id)
+		and epr.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
+		and epr.priority_seq = 1
+		and epr.active_ind = 1
+		
+	order by
+		epr.encntr_id
+ 
+	; populate ordappt_data record structure
+	head epr.encntr_id
+		idx = 0
+		
+		idx = locateval(numx, 1, ordappt_data->cnt, epr.encntr_id, ordappt_data->list[numx].encntr_id)
+		
+		if (idx > 0)
+			if (trim(ordappt_data->list[idx].auth, 3) = "")
+				ordappt_data->list[idx].auth = replace(replace(au.auth_nbr, char(10), ""), char(13), "")
+			endif
+		endif
+	
+	with nocounter, time = 300 ;001
+	
+	call echorecord(ordappt_data)
+endif
+
+
+/**************************************************************/
+; select pcp data
+if ($report_type = 1)
+	select into "NL:"
+	from
+		PERSON_PRSNL_RELTN ppr
+		
+		, (inner join PRSNL per on per.person_id = ppr.prsnl_person_id
+			and per.person_id = $provider_id
+			and per.active_ind = 1)
+		
+		, (left join PRSNL_ALIAS pera on pera.person_id = per.person_id
+			and pera.prsnl_alias_type_cd = orgdoc_var
+			and pera.alias_pool_cd = stardocnum_var
+			and pera.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
+			and pera.active_ind = 1)
+ 
+		, (left join PRSNL_RELTN pr on pr.person_id = per.person_id
+			and pr.parent_entity_name = "PRACTICE_SITE"
+			and pr.active_ind = 1)
+	 
+		, (left join PRACTICE_SITE ps on ps.practice_site_id = pr.parent_entity_id)
+	 
+		, (left join ORGANIZATION org on org.organization_id = ps.organization_id)
+		
+		, (inner join PERSON p on p.person_id = ppr.person_id
+			and p.active_ind = 1)
+			
+	where
+		ppr.person_prsnl_r_cd = pcp_var
+		and ppr.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
+		and ppr.active_ind = 1
+			
+	order by
+		per.name_full_formatted
+		, per.person_id
+		, p.name_full_formatted
+		, p.person_id
+ 
+	; populate pcp_data record structure
+	head report
+		cnt = 0
+	
+	; provider
+	head per.person_id
+		pcnt = 0
+		
+		cnt = cnt + 1
+	 
+		call alterlist(pcp_data->list, cnt)
+		
+		pcp_data->cnt								= cnt
+		pcp_data->list[cnt].prsnl_person_id			= per.person_id
+		pcp_data->list[cnt].pcp_name				= per.name_full_formatted
+		pcp_data->list[cnt].physician_number		= pera.alias
+		pcp_data->list[cnt].practice_site			= org.org_name
+		pcp_data->list[cnt].person_prsnl_r			= uar_get_code_display(ppr.person_prsnl_r_cd)
+	
+	; patient
+	head p.person_id
+		pcnt = pcnt + 1
+	 
+		call alterlist(pcp_data->list[cnt].patient, pcnt)
+		
+		pcp_data->list[cnt].pcnt							= pcnt
+		pcp_data->list[cnt].patient[pcnt].patient_id		= p.person_id
+		pcp_data->list[cnt].patient[pcnt].patient_name		= p.name_full_formatted
+		pcp_data->list[cnt].patient[pcnt].dob				= cnvtdatetimeutc(datetimezone(p.birth_dt_tm, p.birth_tz), 1)
+		
+	with nocounter, time = 300 ;001
+	
+	call echorecord(pcp_data)
+endif
+
+
+/**************************************************************/
+; select data
+;
+; order/appointment
+if ($report_type = 0)
+	select distinct into value($OUTDEV)
+		ordering_physician		= trim(ordappt_data->list[d1.seq].ordering_physician, 3)
+		, physician_number		= trim(ordappt_data->list[d1.seq].physician_number, 3)
+		, practice_site			= trim(ordappt_data->list[d1.seq].practice_site, 3)
+		
+		, patient_name			= trim(ordappt_data->list[d1.seq].patient_name, 3)
+		, dob					= format(ordappt_data->list[d1.seq].dob, "mm/dd/yyyy;;d")
+		, fin					= trim(ordappt_data->list[d1.seq].fin, 3)
+		, encntr_type			= trim(ordappt_data->list[d1.seq].encntr_type, 3)
+		, encntr_status			= trim(ordappt_data->list[d1.seq].encntr_status, 3)
+		, reg_date				= format(ordappt_data->list[d1.seq].reg_dt_tm, "mm/dd/yyyy;;d")
+		, disch_date			= format(ordappt_data->list[d1.seq].disch_dt_tm, "mm/dd/yyyy;;d")
+		, org_name				= trim(ordappt_data->list[d1.seq].org_name, 3)
+	
+		, order_id				= ordappt_data->list[d1.seq].order_id
+		, order_received		= format(ordappt_data->list[d1.seq].order_received, "mm/dd/yyyy hh:mm;;q")
+		, order_name			= trim(ordappt_data->list[d1.seq].order_name, 3)
+		, order_status			= trim(ordappt_data->list[d1.seq].order_status, 3)
+		, dept_status			= trim(ordappt_data->list[d1.seq].dept_status, 3) ;002
+	
+		, appt_status			= trim(ordappt_data->list[d1.seq].appt_status, 3)
+		, appt_date				= format(ordappt_data->list[d1.seq].appt_date, "mm/dd/yyyy hh:mm;;q")
+		, appt_location			= trim(ordappt_data->list[d1.seq].appt_location, 3)
+	
+		, auth					= trim(ordappt_data->list[d1.seq].auth, 3)
+	
+		, final_result_date		= if (ordappt_data->list[d1.seq].final_result_date > 0)
+								  	format(ordappt_data->list[d1.seq].final_result_date, "mm/dd/yyyy hh:mm;;q")
+								  else
+								  	""
+								  endif
+		
+	from
+		(dummyt d1 with seq = value(ordappt_data->cnt))
+	 
+	plan d1
+	 
+	order by
+		ordering_physician
+		, physician_number
+		, patient_name
+		, ordappt_data->list[d1.seq].patient_id
+;		, fin
+		, ordappt_data->list[d1.seq].appt_date
+	
+	with nocounter, outerjoin = d1, format, separator = " ", time = 300 ;001
+endif
+
+
+; pcp
+if ($report_type = 1)
+	select into value($OUTDEV)
+		primary_care_physician		= trim(pcp_data->list[d1.seq].pcp_name, 3), 
+		physician_number			= trim(pcp_data->list[d1.seq].physician_number, 3), 
+		practice_site				= trim(pcp_data->list[d1.seq].practice_site, 3), 
+		
+		patient_name				= trim(pcp_data->list[d1.seq].patient[d2.seq].patient_name, 3), 
+		dob							= format(pcp_data->list[d1.seq].patient[d2.seq].dob, "mm/dd/yyyy;;d")
+		
+	from 
+		(dummyt d1 with seq = value(pcp_data->cnt))
+		, (dummyt d2)
+		
+	plan d1
+	where 
+		maxrec(d2, pcp_data->list[d1.seq].pcnt)
+	
+	join d2
+	
+	order by
+		primary_care_physician
+		, physician_number
+		, patient_name
+		, pcp_data->list[d1.seq].patient[d2.seq].patient_id
+		
+	with nocounter, outerjoin = d1, format, separator = " ", time = 300 ;001
+endif
+ 
+ 
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+ 
+#exitscript
+ 
+end
+go
+ 

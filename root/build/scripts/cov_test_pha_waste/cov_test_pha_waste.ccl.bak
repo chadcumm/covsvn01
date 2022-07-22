@@ -1,0 +1,56 @@
+
+
+
+select 
+	 facility=uar_get_code_display(e.loc_facility_cd)
+	,unit=uar_get_code_display(e.loc_nurse_unit_cd)
+	,fin=cnvtalias(ea.alias,ea.alias_pool_cd)
+	,patient=p.name_full_formatted
+	,o.order_mnemonic
+	,dh.dispense_hx_id
+from
+	 dispense_hx dh
+	,encounter e
+	,person p
+	,encntr_alias ea
+	,orders o
+	,dummyt d1
+plan dh
+	where dh.charge_dt_tm >= cnvtdatetime(curdate-7,0)
+	and   dh.disp_event_type_cd = value(uar_get_code_by("MEANING",4032,"WASTECHARGE"))
+join d1
+join o
+	where o.order_id = dh.order_id
+join e
+	where e.encntr_id = o.encntr_id
+join p
+	where p.person_id = e.person_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.active_ind = 1
+	and   ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+order by
+	 facility
+	,unit
+	,patient
+with nocounter,outerjoin=d1
+
+
+
+
+
+select * from charge_event_mod ce where ce.charge_event_id = 2961219357
+
+select * from code_value cv where cv.code_value = 2553048181
+; 2553048181.00	       4032	WASTECHARGE	Waste Charge
+
+
+select * from dispense_hx d where d.dispense_dt_tm >= cnvtdatetime(curdate-7,0) 
+and d.disp_event_type_cd = 2553048181
+
+
+select * from rx_admin_prod_dispense_hx rapdh where rapdh.
+
+select * from rx_admin_dispense_hx radh where radh.dispense_hx_id = 34427794

@@ -1,0 +1,66 @@
+drop program cov_malnutrition_audit go
+create program cov_malnutrition_audit 
+
+prompt 
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to. 
+
+with OUTDEV
+
+
+select into $OUTDEV
+	 facility=uar_get_code_display(e.loc_facility_cd)
+	,fin=cnvtalias(ea.alias,ea.alias_pool_cd)
+	,patient=p.name_full_formatted
+	,document=uar_get_code_display(ce.event_cd)
+	,document_date=format(ce.event_end_dt_tm,"dd-mmm-yyyy hh:mm;;d")
+	,status=uar_get_code_display(ce.result_status_cd)
+	,performed_dt_tm = format(ce.performed_dt_tm,"dd-mmm-yyyy hh:mm;;d")
+	,performed_prsnl = p1.name_full_formatted
+	,performed_position = uar_get_code_display(p1.position_cd)
+	,verified_dt_tm = format(ce.verified_dt_tm,"dd-mmm-yyyy hh:mm;;d")
+	,verified_prsnl = p2.name_full_formatted
+	,verified_position = uar_get_code_display(p2.position_cd)
+	,ce.person_id
+	,ce.encntr_id
+	,ce.event_id
+from
+	 clinical_event ce
+	,code_value cv 
+	,encounter e
+	,person p
+	,encntr_alias ea
+	,prsnl p1
+	,prsnl p2
+plan cv	
+	where cv.code_set = 72
+	and   cv.display = "Malnutrition Note"
+	and   cv.active_ind = 1
+join ce
+	where ce.event_cd = cv.code_value
+	and   ce.valid_from_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and	  ce.result_status_cd not in(
+									  value(uar_get_code_by("MEANING",8,"INERROR"))
+								)
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   ce.event_tag        != "Date\Time Correction"
+	and   ce.event_end_dt_tm >= cnvtdatetime("12-AUG-2020 00:00:00")
+	and   ce.view_level = 1
+join e
+	where e.encntr_id = ce.encntr_id
+join p
+	where p.person_id = e.person_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.active_ind = 1
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+	and   ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join p1
+	where p1.person_id = ce.performed_prsnl_id
+join p2
+	where p2.person_id = ce.verified_prsnl_id
+with format(date,";;q"),uar_code(d),seperator= " ",format
+
+
+end 
+go

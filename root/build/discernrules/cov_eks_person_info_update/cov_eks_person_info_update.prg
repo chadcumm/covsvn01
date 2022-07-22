@@ -1,0 +1,769 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+  Author:             Chad Cummings
+  Date Written:       03/01/2019
+  Solution:           
+  Source file name:   cov_eks_person_info_update.prg
+  Object name:        cov_eks_person_info_update
+  Request #:
+
+  Program purpose:
+
+  Executing from:     CCL
+
+  Special Notes:      Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod   Mod Date    Developer              Comment
+---   ----------  --------------------  --------------------------------------
+001   03/01/2019  Chad Cummings			initial build
+******************************************************************************/
+drop program cov_eks_person_info_update:dba go
+create program cov_eks_person_info_update:dba
+
+set retval = -1
+
+free record t_rec
+record t_rec
+(
+	1 log_file = vc
+	1 patient
+		 2 encntr_id = f8
+		 2 person_id = f8
+		 2 user_defined_cnt = i2
+		 2 user_defined_qual[*]
+		  3 info_sub_type_cd = f8
+		  3 long_text_id = f8
+		  3 long_text = vc
+	1 user_defined_cd = f8
+	1 user_defined
+		2 poa_first_name_cd = f8
+		2 poa_last_name_cd = f8
+		2 poa_phone_number_cd = f8
+		2 legal_guardian_first_name_cd = f8
+		2 legal_guardian_last_name_cd = f8
+		2 legal_guardian_phone_number_cd = f8
+		2 conservator_first_name_cd = f8
+		2 conservator_last_name_cd = f8
+		2 conservator_phone_number_cd = f8
+		2 sec_poa_first_name_cd = f8
+		2 sec_poa_last_name_cd = f8
+		2 sec_poa_phone_number_cd = f8
+		2 sec_legal_guardian_first_name_cd = f8
+		2 sec_legal_guardian_last_name_cd = f8
+		2 sec_legal_guardian_phone_number_cd = f8
+		2 sec_conservator_first_name_cd = f8
+		2 sec_conservator_last_name_cd = f8
+		2 sec_conservator_phone_number_cd = f8
+	1 relationships
+	 2 poa_cd = f8
+	 2 guardian_cd = f8
+	 2 conservator_cd = f8
+	 2 sec_poa_cd = f8
+	 2 sec_guardian_cd = f8
+	 2 sec_conservator_cd = f8
+	1 phone
+	 2 home_cd = f8
+	 2 mobile_cd = f8
+	1 poa_ind = i2
+	1 legal_guardian_ind = i2
+	1 conservator_ind = i2
+	1 sec_poa_ind = i2
+	1 sec_legal_guardian_ind = i2
+	1 sec_conservator_ind = i2
+	1 poa_first_name_vc = vc
+	1 poa_last_name_vc = vc
+	1 poa_phone_number_vc = vc
+	1 legal_guardian_first_name_vc = vc
+	1 legal_guardian_last_name_vc = vc
+	1 legal_guardian_phone_number_vc = vc
+	1 conservator_first_name_vc = vc
+	1 conservator_last_name_vc = vc
+	1 conservator_phone_number_vc = vc
+	1 sec_poa_first_name_vc = vc
+	1 sec_poa_last_name_vc = vc
+	1 sec_poa_phone_number_vc = vc
+	1 sec_legal_guardian_first_name_vc = vc
+	1 sec_legal_guardian_last_name_vc = vc
+	1 sec_legal_guardian_phone_number_vc = vc
+	1 sec_conservator_first_name_vc = vc
+	1 sec_conservator_last_name_vc = vc
+	1 sec_conservator_phone_number_vc = vc
+	1 add_requestin_cnt = i2
+	1 add_requestin_qual[*]
+	 2 value = vc
+	1 updt_requestin_cnt = i2
+	1 updt_requestin_qual[*]
+	 2 value = vc
+	1 update_template = vc
+	1 continue_process_ind = i2
+	1 retval = i2
+	1 log_message =  vc
+	1 log_misc1 = vc
+	1 return_value = vc
+)
+
+set t_rec->retval							= -1
+set t_rec->return_value						= "FAILED"
+set t_rec->patient.encntr_id 				= link_encntrid
+set t_rec->patient.person_id				= link_personid
+
+declare i = i2 with noconstant(0), protect
+declare ii = i2 with noconstant(0), protect
+declare j = i2 with noconstant(0), protect
+declare k = i2 with noconstant(0), protect
+declare update_ind = i2 with noconstant(0), protect
+
+if (t_rec->patient.encntr_id <= 0.0)
+	set t_rec->log_message = concat("link_encntrid not found")
+	;go to exit_script
+endif
+
+if (t_rec->patient.person_id <= 0.0)
+	set t_rec->log_message = concat("link_personid not found")
+	;go to exit_script
+endif
+
+/* Use if parameters are needed
+if(size(trim(reflect(parameter(1,0))),1) > 0)
+  set t_rec->log_message = value(parameter(1,0))
+endif */
+
+set t_rec->return_value = "FALSE"
+
+set t_rec->user_defined_cd = uar_get_code_by("MEANING",355,"USERDEFINED")
+set t_rec->phone.home_cd = uar_get_code_by("MEANING",43,"HOME")
+set t_rec->phone.mobile_cd = uar_get_code_by("MEANING",43,"MOBILE")
+
+set t_rec->update_template = build2(
+										^{                                          ^,
+										^   "PATIENTS":{                            ^,
+										^      "QUAL":[                             ^,
+										^         {                                 ^,
+										^            "PERSON_ID":@PERSONID,         ^,
+										^            "ENCNTR_ID":@ENCNTRID,         ^,
+										^            "ASSIGNMENT_ID":@ASSIGNMENTID,	^,
+										^            "ORIG_PCT_TEAM_ID":0,			^,
+										^            "ACTIVE_IND":1,                ^,
+										^            "BEGIN_EFFECTIVE_ISO":"",      ^,
+										^            "END_EFFECTIVE_ISO":""         ^,
+										^         }                                 ^,
+										^      ]                                    ^,
+										^   }                                       ^,
+										^}                                          ^
+									)
+select into "nl:"
+from
+	code_value cv
+	,code_value_set cvs
+plan cvs
+	where cvs.display =  "info_sub_type_cd"
+join cv
+	where cv.code_set = cvs.code_set
+	and   cv.active_ind = 1
+	and   cv.display in(
+							 "Primary POA First Name"
+							,"Primary POA Last Name"
+							,"Primary POA Phone"
+							,"Primary Legal Guardian First Name"
+							,"Primary Legal Guardian Last Name"
+							,"Primary Legal Guardian Phone"
+							,"Primary Conservator First Name"
+							,"Primary Conservator Last Name"
+							,"Primary Conservator Phone"
+							,"Secondary POA First Name"
+							,"Secondary POA Last Name"
+							,"Secondary POA Phone"
+							,"Secondary Legal Guardian First Name"
+							,"Secondary Legal Guardian Last Name"
+							,"Secondary Legal Guardian Phone"
+							,"Secondary Conservator First Name"
+							,"Secondary Conservator Last Name"
+							,"Secondary Conservator Phone"
+						)
+order by
+	 cv.display 
+	,cv.code_value
+head report
+	cnt = 0
+head cv.code_value
+	case (cv.display)
+		of "Primary POA First Name": t_rec->user_defined.poa_first_name_cd = cv.code_value
+		of "Primary POA Last Name": t_rec->user_defined.poa_last_name_cd = cv.code_value
+		of "Primary POA Phone": t_rec->user_defined.poa_phone_number_cd = cv.code_value
+		of "Primary Legal Guardian First Name": t_rec->user_defined.legal_guardian_first_name_cd = cv.code_value
+		of "Primary Legal Guardian Last Name": t_rec->user_defined.legal_guardian_last_name_cd = cv.code_value
+		of "Primary Legal Guardian Phone": t_rec->user_defined.legal_guardian_phone_number_cd = cv.code_value
+		of "Primary Conservator First Name": t_rec->user_defined.conservator_first_name_cd = cv.code_value
+		of "Primary Conservator Last Name": t_rec->user_defined.conservator_last_name_cd = cv.code_value
+		of "Primary Conservator Phone": t_rec->user_defined.conservator_phone_number_cd = cv.code_value
+		of "Secondary POA First Name": t_rec->user_defined.sec_poa_first_name_cd = cv.code_value
+		of "Secondary POA Last Name": t_rec->user_defined.sec_poa_last_name_cd = cv.code_value
+		of "Secondary POA Phone": t_rec->user_defined.sec_poa_phone_number_cd = cv.code_value
+		of "Secondary Legal Guardian First Name": t_rec->user_defined.sec_legal_guardian_first_name_cd = cv.code_value
+		of "Secondary Legal Guardian Last Name": t_rec->user_defined.sec_legal_guardian_last_name_cd = cv.code_value
+		of "Secondary Legal Guardian Phone": t_rec->user_defined.sec_legal_guardian_phone_number_cd = cv.code_value
+		of "Secondary Conservator First Name": t_rec->user_defined.sec_conservator_first_name_cd = cv.code_value
+		of "Secondary Conservator Last Name": t_rec->user_defined.sec_conservator_last_name_cd = cv.code_value
+		of "Secondary Conservator Phone": t_rec->user_defined.sec_conservator_phone_number_cd = cv.code_value
+	endcase
+with nocounter
+
+select into "nl:"
+from
+	code_value cv
+plan cv
+	where cv.code_set = 4003145
+	and   cv.active_ind = 1
+	and   cv.display_key in(
+							"POWEROFATTORNEYPRIMARY"
+							,"CONSERVATORPRIMARY"
+							,"GUARDIANPRIMARY"
+							,"POWEROFATTORNEYSECONDARY"
+							,"CONSERVATORSECONDARY"
+							,"GUARDIANSECONDARY"
+						)
+order by
+	cv.code_value
+head report
+	cnt = 0
+head cv.code_value
+	case (cv.display_key)
+		of "POWEROFATTORNEYPRIMARY":			t_rec->relationships.poa_cd = cv.code_value
+		of "CONSERVATORPRIMARY":				t_rec->relationships.conservator_cd = cv.code_value
+		of "GUARDIANPRIMARY":					t_rec->relationships.guardian_cd = cv.code_value
+		of "POWEROFATTORNEYSECONDARY":			t_rec->relationships.sec_poa_cd = cv.code_value
+		of "CONSERVATORSECONDARY":				t_rec->relationships.sec_conservator_cd = cv.code_value
+		of "GUARDIANSECONDARY":					t_rec->relationships.sec_guardian_cd = cv.code_value
+	endcase
+with nocounter
+
+select into "nl:"
+from
+	person_info pi
+plan pi
+	where pi.person_id = t_rec->patient.person_id
+	and   pi.active_ind = 1
+	and   cnvtdatetime(curdate,curtime3) between pi.beg_effective_dt_tm and pi.end_effective_dt_tm
+	and   pi.info_type_cd = t_rec->user_defined_cd
+order by
+	 pi.person_id
+	,pi.info_sub_type_cd
+	,pi.beg_effective_dt_tm desc
+head report
+	cnt = 0
+	macro (add_person_info_id)
+		cnt = (cnt + 1)
+		stat = alterlist(t_rec->patient.user_defined_qual,cnt)
+		t_rec->patient.user_defined_qual[cnt].info_sub_type_cd = pi.info_sub_type_cd
+		t_rec->patient.user_defined_qual[cnt].long_text_id = pi.long_text_id
+	endmacro
+head pi.person_id
+	cnt = 0
+head pi.info_sub_type_cd
+	case(pi.info_sub_type_cd)
+		of t_rec->user_defined.conservator_first_name_cd: 		add_person_info_id
+		of t_rec->user_defined.conservator_last_name_cd: 		add_person_info_id
+		of t_rec->user_defined.conservator_phone_number_cd: 	add_person_info_id
+		of t_rec->user_defined.legal_guardian_first_name_cd: 	add_person_info_id
+		of t_rec->user_defined.legal_guardian_last_name_cd: 	add_person_info_id
+		of t_rec->user_defined.legal_guardian_phone_number_cd: 	add_person_info_id
+		of t_rec->user_defined.poa_first_name_cd: 				add_person_info_id
+		of t_rec->user_defined.poa_last_name_cd: 				add_person_info_id
+		of t_rec->user_defined.poa_phone_number_cd: 			add_person_info_id
+		of t_rec->user_defined.sec_conservator_first_name_cd: 		add_person_info_id
+		of t_rec->user_defined.sec_conservator_last_name_cd: 		add_person_info_id
+		of t_rec->user_defined.sec_conservator_phone_number_cd: 	add_person_info_id
+		of t_rec->user_defined.sec_legal_guardian_first_name_cd: 	add_person_info_id
+		of t_rec->user_defined.sec_legal_guardian_last_name_cd: 	add_person_info_id
+		of t_rec->user_defined.sec_legal_guardian_phone_number_cd: 	add_person_info_id
+		of t_rec->user_defined.sec_poa_first_name_cd: 				add_person_info_id
+		of t_rec->user_defined.sec_poa_last_name_cd: 				add_person_info_id
+		of t_rec->user_defined.sec_poa_phone_number_cd: 			add_person_info_id
+	endcase
+foot report
+	t_rec->patient.user_defined_cnt = cnt
+with nocounter
+
+select into "nl:"
+from 
+	 (dummyt d1 with seq=t_rec->patient.user_defined_cnt)
+	,long_text lt
+plan d1
+	where t_rec->patient.user_defined_qual[d1.seq].long_text_id > 0.0
+join lt
+	where lt.long_text_id = t_rec->patient.user_defined_qual[d1.seq].long_text_id
+	and   lt.active_ind = 1
+order by
+	lt.long_text_id
+head report
+	cnt = 0
+head lt.long_text_id
+	t_rec->patient.user_defined_qual[d1.seq].long_text = lt.long_text
+foot report
+	cnt = 0
+with nocounter
+
+for (i=1 to t_rec->patient.user_defined_cnt)
+	case (t_rec->patient.user_defined_qual[i].info_sub_type_cd)
+		of t_rec->user_defined.poa_first_name_cd: 
+			set t_rec->poa_first_name_vc = t_rec->patient.user_defined_qual[i].long_text
+		of t_rec->user_defined.poa_last_name_cd: 
+			set t_rec->poa_last_name_vc = t_rec->patient.user_defined_qual[i].long_text
+		of t_rec->user_defined.poa_phone_number_cd: 
+			set t_rec->poa_phone_number_vc = t_rec->patient.user_defined_qual[i].long_text
+		of t_rec->user_defined.legal_guardian_first_name_cd: 
+			set t_rec->legal_guardian_first_name_vc = t_rec->patient.user_defined_qual[i].long_text
+		of t_rec->user_defined.legal_guardian_last_name_cd: 
+			set t_rec->legal_guardian_last_name_vc = t_rec->patient.user_defined_qual[i].long_text
+		of t_rec->user_defined.legal_guardian_phone_number_cd: 
+			set t_rec->legal_guardian_phone_number_vc = t_rec->patient.user_defined_qual[i].long_text
+		of t_rec->user_defined.conservator_first_name_cd: 
+			set t_rec->conservator_first_name_vc = t_rec->patient.user_defined_qual[i].long_text
+		of t_rec->user_defined.conservator_last_name_cd: 
+			set t_rec->conservator_last_name_vc = t_rec->patient.user_defined_qual[i].long_text
+		of t_rec->user_defined.conservator_phone_number_cd: 
+			set t_rec->conservator_phone_number_vc = t_rec->patient.user_defined_qual[i].long_text	
+		of t_rec->user_defined.sec_poa_first_name_cd: 
+			set t_rec->sec_poa_first_name_vc = t_rec->patient.user_defined_qual[i].long_text
+		of t_rec->user_defined.sec_poa_last_name_cd: 
+			set t_rec->sec_poa_last_name_vc = t_rec->patient.user_defined_qual[i].long_text
+		of t_rec->user_defined.sec_poa_phone_number_cd: 
+			set t_rec->sec_poa_phone_number_vc = t_rec->patient.user_defined_qual[i].long_text
+		of t_rec->user_defined.sec_legal_guardian_first_name_cd: 
+			set t_rec->sec_legal_guardian_first_name_vc = t_rec->patient.user_defined_qual[i].long_text
+		of t_rec->user_defined.sec_legal_guardian_last_name_cd: 
+			set t_rec->sec_legal_guardian_last_name_vc = t_rec->patient.user_defined_qual[i].long_text
+		of t_rec->user_defined.sec_legal_guardian_phone_number_cd: 
+			set t_rec->sec_legal_guardian_phone_number_vc = t_rec->patient.user_defined_qual[i].long_text
+		of t_rec->user_defined.sec_conservator_first_name_cd: 
+			set t_rec->sec_conservator_first_name_vc = t_rec->patient.user_defined_qual[i].long_text
+		of t_rec->user_defined.sec_conservator_last_name_cd: 
+			set t_rec->sec_conservator_last_name_vc = t_rec->patient.user_defined_qual[i].long_text
+		of t_rec->user_defined.sec_conservator_phone_number_cd: 
+			set t_rec->sec_conservator_phone_number_vc = t_rec->patient.user_defined_qual[i].long_text	
+	endcase
+endfor
+
+if (
+			(t_rec->conservator_first_name_vc > " ")
+		and	(t_rec->conservator_last_name_vc > " ")
+		and (t_rec->conservator_phone_number_vc > " ")
+		)	
+	set t_rec->conservator_ind = 1
+endif
+
+if (
+			(t_rec->legal_guardian_first_name_vc > " ")
+		and	(t_rec->legal_guardian_last_name_vc > " ")
+		and (t_rec->legal_guardian_phone_number_vc > " ")
+		)	
+	set t_rec->legal_guardian_ind = 1
+endif
+
+if (
+			(t_rec->poa_first_name_vc > " ")
+		and	(t_rec->poa_last_name_vc > " ")
+		and (t_rec->poa_phone_number_vc > " ")
+		)	
+	set t_rec->poa_ind = 1
+endif
+
+if (
+			(t_rec->sec_conservator_first_name_vc > " ")
+		and	(t_rec->sec_conservator_last_name_vc > " ")
+		and (t_rec->sec_conservator_phone_number_vc > " ")
+		)	
+	set t_rec->sec_conservator_ind = 1
+endif
+
+if (
+			(t_rec->sec_legal_guardian_first_name_vc > " ")
+		and	(t_rec->sec_legal_guardian_last_name_vc > " ")
+		and (t_rec->sec_legal_guardian_phone_number_vc > " ")
+		)	
+	set t_rec->sec_legal_guardian_ind = 1
+endif
+
+if (
+			(t_rec->sec_poa_first_name_vc > " ")
+		and	(t_rec->sec_poa_last_name_vc > " ")
+		and (t_rec->sec_poa_phone_number_vc > " ")
+		)	
+	set t_rec->sec_poa_ind = 1
+endif
+
+
+
+
+
+if ((t_rec->poa_ind = 1) or (t_rec->legal_guardian_ind = 1) or (t_rec->conservator_ind = 1))
+	set t_rec->continue_process_ind = (t_rec->continue_process_ind + 1)
+endif
+
+if ((t_rec->sec_poa_ind = 1) or (t_rec->sec_legal_guardian_ind = 1) or (t_rec->sec_conservator_ind = 1))
+	set t_rec->continue_process_ind = (t_rec->continue_process_ind + 1)
+endif
+
+if (t_rec->continue_process_ind <= 0)
+	go to exit_script
+endif
+
+set trace recpersist
+free record patient_careteam
+execute mp_get_care_team_assign ^MINE^,value(t_rec->patient.person_id),value(t_rec->patient.encntr_id),0.0,0.0,1,0,0,0,0.0
+set stat = copyrec(patientcareteamreply,patient_careteam,1)
+set trace norecpersist
+
+for (ii=1 to size(patient_careteam->nonprovider_lifetime_reltn,5))
+	call echo(build2("Checking reltn_type_cd=",
+		trim(uar_get_code_display(patient_careteam->nonprovider_lifetime_reltn[ii].reltn_type_cd))))
+	if (patient_careteam->nonprovider_lifetime_reltn[ii].reltn_type_cd = t_rec->relationships.guardian_cd)
+		if (	(patient_careteam->nonprovider_lifetime_reltn[ii].name_first = t_rec->legal_guardian_first_name_vc)
+		 and 	(patient_careteam->nonprovider_lifetime_reltn[ii].name_last = t_rec->legal_guardian_last_name_vc)
+		 and 	(patient_careteam->nonprovider_lifetime_reltn[ii].phones[1].phone_num = cnvtalphanum(t_rec->legal_guardian_phone_number_vc))
+		   )
+		 	set t_rec->legal_guardian_ind = 0
+		endif
+	elseif (patient_careteam->nonprovider_lifetime_reltn[ii].reltn_type_cd = t_rec->relationships.poa_cd)
+		if (	(patient_careteam->nonprovider_lifetime_reltn[ii].name_first = t_rec->poa_first_name_vc)
+		 and 	(patient_careteam->nonprovider_lifetime_reltn[ii].name_last = t_rec->poa_last_name_vc)
+		 and 	(patient_careteam->nonprovider_lifetime_reltn[ii].phones[1].phone_num = cnvtalphanum(t_rec->poa_phone_number_vc))
+		   )
+		 	set t_rec->poa_ind = 0
+		endif
+	elseif (patient_careteam->nonprovider_lifetime_reltn[ii].reltn_type_cd = t_rec->relationships.conservator_cd)
+		if (	(patient_careteam->nonprovider_lifetime_reltn[ii].name_first = t_rec->conservator_first_name_vc)
+		 and 	(patient_careteam->nonprovider_lifetime_reltn[ii].name_last = t_rec->conservator_last_name_vc)
+		 and 	(patient_careteam->nonprovider_lifetime_reltn[ii].phones[1].phone_num = cnvtalphanum(t_rec->conservator_phone_number_vc))
+		   )
+		 	set t_rec->conservator_ind = 0
+		endif
+	elseif (patient_careteam->nonprovider_lifetime_reltn[ii].reltn_type_cd = t_rec->relationships.sec_guardian_cd)
+		if (	(patient_careteam->nonprovider_lifetime_reltn[ii].name_first = t_rec->sec_legal_guardian_first_name_vc)
+		 and 	(patient_careteam->nonprovider_lifetime_reltn[ii].name_last = t_rec->sec_legal_guardian_last_name_vc)
+		 and 	(patient_careteam->nonprovider_lifetime_reltn[ii].phones[1].phone_num 
+		 																	= cnvtalphanum(t_rec->sec_legal_guardian_phone_number_vc))
+		   )
+		 	set t_rec->sec_legal_guardian_ind = 0
+		endif
+	elseif (patient_careteam->nonprovider_lifetime_reltn[ii].reltn_type_cd = t_rec->relationships.sec_poa_cd)
+		if (	(patient_careteam->nonprovider_lifetime_reltn[ii].name_first = t_rec->sec_poa_first_name_vc)
+		 and 	(patient_careteam->nonprovider_lifetime_reltn[ii].name_last = t_rec->sec_poa_last_name_vc)
+		 and 	(patient_careteam->nonprovider_lifetime_reltn[ii].phones[1].phone_num = cnvtalphanum(t_rec->sec_poa_phone_number_vc))
+		   )
+		 	set t_rec->sec_poa_ind = 0
+		endif
+	elseif (patient_careteam->nonprovider_lifetime_reltn[ii].reltn_type_cd = t_rec->relationships.sec_conservator_cd)
+		if (	(patient_careteam->nonprovider_lifetime_reltn[ii].name_first = t_rec->sec_conservator_first_name_vc)
+		 and 	(patient_careteam->nonprovider_lifetime_reltn[ii].name_last = t_rec->sec_conservator_last_name_vc)
+		 and 	(patient_careteam->nonprovider_lifetime_reltn[ii].phones[1].phone_num 
+		 																	= cnvtalphanum(t_rec->sec_conservator_phone_number_vc))
+		   )
+		 	set t_rec->sec_conservator_ind = 0
+		endif
+	endif
+endfor
+
+for (ii=1 to size(patient_careteam->nonprovider_lifetime_reltn,5))
+ if (
+ 				((patient_careteam->nonprovider_lifetime_reltn[ii].reltn_type_cd = t_rec->relationships.conservator_cd)
+ 		and 	(t_rec->conservator_ind = 1))
+ 	or 
+ 				((patient_careteam->nonprovider_lifetime_reltn[ii].reltn_type_cd = t_rec->relationships.guardian_cd)
+ 		and 	(t_rec->legal_guardian_ind = 1))
+ 	or 
+ 				((patient_careteam->nonprovider_lifetime_reltn[ii].reltn_type_cd = t_rec->relationships.poa_cd)
+ 		and 	(t_rec->poa_ind = 1))
+ 	or 
+ 				((patient_careteam->nonprovider_lifetime_reltn[ii].reltn_type_cd = t_rec->relationships.sec_conservator_cd)
+ 		and 	(t_rec->sec_conservator_ind = 1))
+ 	or 
+ 				((patient_careteam->nonprovider_lifetime_reltn[ii].reltn_type_cd = t_rec->relationships.sec_guardian_cd)
+ 		and 	(t_rec->sec_legal_guardian_ind = 1))
+ 	or 
+ 				((patient_careteam->nonprovider_lifetime_reltn[ii].reltn_type_cd = t_rec->relationships.sec_poa_cd)
+ 		and 	(t_rec->sec_poa_ind = 1))
+ 	)
+ 
+	set t_rec->updt_requestin_cnt = (t_rec->updt_requestin_cnt + 1)
+	set stat = alterlist(t_rec->updt_requestin_qual,t_rec->updt_requestin_cnt)
+	set t_rec->updt_requestin_qual[t_rec->updt_requestin_cnt].value = t_rec->update_template
+	
+	set t_rec->updt_requestin_qual[t_rec->updt_requestin_cnt].value = replace(
+			t_rec->updt_requestin_qual[t_rec->updt_requestin_cnt].value,"@PERSONID",trim(cnvtstring(t_rec->patient.person_id)))
+	set t_rec->updt_requestin_qual[t_rec->updt_requestin_cnt].value = replace(
+			t_rec->updt_requestin_qual[t_rec->updt_requestin_cnt].value,"@ENCNTRID",trim(cnvtstring(t_rec->patient.encntr_id)))
+	set t_rec->updt_requestin_qual[t_rec->updt_requestin_cnt].value = replace(
+			t_rec->updt_requestin_qual[t_rec->updt_requestin_cnt].value,"@ASSIGNMENTID",
+			trim(cnvtstring(patient_careteam->nonprovider_lifetime_reltn[ii].dcp_shift_assign_id)))
+	;remove existing relationships
+	execute mp_upd_care_team_assignment ^MINE^,value(t_rec->updt_requestin_qual[t_rec->updt_requestin_cnt].value),0
+	commit
+ endif 
+endfor
+
+
+if (t_rec->legal_guardian_ind = 1)
+	set t_rec->add_requestin_cnt = (t_rec->add_requestin_cnt + 1)
+	set stat = alterlist(t_rec->add_requestin_qual,t_rec->add_requestin_cnt)
+	set t_rec->add_requestin_qual[t_rec->add_requestin_cnt].value = build2(
+		^{                                                      ^,
+		^   "REQUESTIN":{                                       ^,
+		^      "PERSON_ID":^,trim(cnvtstring(t_rec->patient.person_id)),^,        ^,
+		^      "ENCNTR_ID":^,trim(cnvtstring(t_rec->patient.encntr_id)),^,        ^,
+		^      "USER_ID":1,		                                ^,
+		^      "NEW_PERSONS":[                                  ^,
+		^         {                                             ^,
+		^            "CREATE_PRSNL_IND":0,                      ^,
+		^            "CARE_TEAM_ASSIGNMENT":1,                  ^,
+		^            "FIRST_NAME":"^,t_rec->legal_guardian_first_name_vc,^",^,
+		^            "LAST_NAME":"^,t_rec->legal_guardian_last_name_vc,^",^,
+		^            "MIDDLE_NAME":"",   	                    ^,
+		^            "RELATIONSHIP_TO_PATIENT_CD":^,trim(cnvtstring(t_rec->relationships.guardian_cd)),^,^,
+		^            "PHONES_LIST":[                            ^,
+		^               {                                       ^,
+		^                  "TYPE":^,trim(cnvtstring(t_rec->phone.mobile_cd)),^,     ^,
+		^                  "PHONE_NUMBER":"^,t_rec->legal_guardian_phone_number_vc,^"^,
+		^               }                                       ^,
+		^            ]                                          ^,
+		^         }                                             ^,
+		^      ]                                                ^,
+		^   }                                                   ^,
+		^}                                                      ^
+															)
+endif
+
+if (t_rec->poa_ind = 1)
+	set t_rec->add_requestin_cnt = (t_rec->add_requestin_cnt + 1)
+	set stat = alterlist(t_rec->add_requestin_qual,t_rec->add_requestin_cnt)
+	set t_rec->add_requestin_qual[t_rec->add_requestin_cnt].value = build2(
+		^{                                                      ^,
+		^   "REQUESTIN":{                                       ^,
+		^      "PERSON_ID":^,trim(cnvtstring(t_rec->patient.person_id)),^,        ^,
+		^      "ENCNTR_ID":^,trim(cnvtstring(t_rec->patient.encntr_id)),^,        ^,
+		^      "USER_ID":1,		                                ^,
+		^      "NEW_PERSONS":[                                  ^,
+		^         {                                             ^,
+		^            "CREATE_PRSNL_IND":0,                      ^,
+		^            "CARE_TEAM_ASSIGNMENT":1,                  ^,
+		^            "FIRST_NAME":"^,t_rec->poa_first_name_vc,^",^,
+		^            "LAST_NAME":"^,t_rec->poa_last_name_vc,^",^,
+		^            "MIDDLE_NAME":"",   	                    ^,
+		^            "RELATIONSHIP_TO_PATIENT_CD":^,trim(cnvtstring(t_rec->relationships.poa_cd)),^,^,
+		^            "PHONES_LIST":[                            ^,
+		^               {                                       ^,
+		^                  "TYPE":^,trim(cnvtstring(t_rec->phone.mobile_cd)),^,     ^,
+		^                  "PHONE_NUMBER":"^,t_rec->poa_phone_number_vc,^"^,
+		^               }                                       ^,
+		^            ]                                          ^,
+		^         }                                             ^,
+		^      ]                                                ^,
+		^   }                                                   ^,
+		^}                                                      ^
+															)
+endif
+
+if (t_rec->conservator_ind = 1)
+	set t_rec->add_requestin_cnt = (t_rec->add_requestin_cnt + 1)
+	set stat = alterlist(t_rec->add_requestin_qual,t_rec->add_requestin_cnt)
+	set t_rec->add_requestin_qual[t_rec->add_requestin_cnt].value = build2(
+		^{                                                      ^,
+		^   "REQUESTIN":{                                       ^,
+		^      "PERSON_ID":^,trim(cnvtstring(t_rec->patient.person_id)),^,        ^,
+		^      "ENCNTR_ID":^,trim(cnvtstring(t_rec->patient.encntr_id)),^,        ^,
+		^      "USER_ID":1,		                                ^,
+		^      "NEW_PERSONS":[                                  ^,
+		^         {                                             ^,
+		^            "CREATE_PRSNL_IND":0,                      ^,
+		^            "CARE_TEAM_ASSIGNMENT":1,                  ^,
+		^            "FIRST_NAME":"^,t_rec->conservator_first_name_vc,^",^,
+		^            "LAST_NAME":"^,t_rec->conservator_last_name_vc,^",^,
+		^            "MIDDLE_NAME":"",   	                    ^,
+		^            "RELATIONSHIP_TO_PATIENT_CD":^,trim(cnvtstring(t_rec->relationships.conservator_cd)),^,^,
+		^            "PHONES_LIST":[                            ^,
+		^               {                                       ^,
+		^                  "TYPE":^,trim(cnvtstring(t_rec->phone.mobile_cd)),^,     ^,
+		^                  "PHONE_NUMBER":"^,t_rec->conservator_phone_number_vc,^"^,
+		^               }                                       ^,
+		^            ]                                          ^,
+		^         }                                             ^,
+		^      ]                                                ^,
+		^   }                                                   ^,
+		^}                                                      ^
+															)
+endif
+
+if (t_rec->sec_legal_guardian_ind = 1)
+	set t_rec->add_requestin_cnt = (t_rec->add_requestin_cnt + 1)
+	set stat = alterlist(t_rec->add_requestin_qual,t_rec->add_requestin_cnt)
+	set t_rec->add_requestin_qual[t_rec->add_requestin_cnt].value = build2(
+		^{                                                      ^,
+		^   "REQUESTIN":{                                       ^,
+		^      "PERSON_ID":^,trim(cnvtstring(t_rec->patient.person_id)),^,        ^,
+		^      "ENCNTR_ID":^,trim(cnvtstring(t_rec->patient.encntr_id)),^,        ^,
+		^      "USER_ID":1,		                                ^,
+		^      "NEW_PERSONS":[                                  ^,
+		^         {                                             ^,
+		^            "CREATE_PRSNL_IND":0,                      ^,
+		^            "CARE_TEAM_ASSIGNMENT":1,                  ^,
+		^            "FIRST_NAME":"^,t_rec->sec_legal_guardian_first_name_vc,^",^,
+		^            "LAST_NAME":"^,t_rec->sec_legal_guardian_last_name_vc,^",^,
+		^            "MIDDLE_NAME":"",   	                    ^,
+		^            "RELATIONSHIP_TO_PATIENT_CD":^,trim(cnvtstring(t_rec->relationships.sec_guardian_cd)),^,^,
+		^            "PHONES_LIST":[                            ^,
+		^               {                                       ^,
+		^                  "TYPE":^,trim(cnvtstring(t_rec->phone.mobile_cd)),^,     ^,
+		^                  "PHONE_NUMBER":"^,t_rec->sec_legal_guardian_phone_number_vc,^"^,
+		^               }                                       ^,
+		^            ]                                          ^,
+		^         }                                             ^,
+		^      ]                                                ^,
+		^   }                                                   ^,
+		^}                                                      ^
+															)
+endif
+
+if (t_rec->sec_poa_ind = 1)
+	set t_rec->add_requestin_cnt = (t_rec->add_requestin_cnt + 1)
+	set stat = alterlist(t_rec->add_requestin_qual,t_rec->add_requestin_cnt)
+	set t_rec->add_requestin_qual[t_rec->add_requestin_cnt].value = build2(
+		^{                                                      ^,
+		^   "REQUESTIN":{                                       ^,
+		^      "PERSON_ID":^,trim(cnvtstring(t_rec->patient.person_id)),^,        ^,
+		^      "ENCNTR_ID":^,trim(cnvtstring(t_rec->patient.encntr_id)),^,        ^,
+		^      "USER_ID":1,		                                ^,
+		^      "NEW_PERSONS":[                                  ^,
+		^         {                                             ^,
+		^            "CREATE_PRSNL_IND":0,                      ^,
+		^            "CARE_TEAM_ASSIGNMENT":1,                  ^,
+		^            "FIRST_NAME":"^,t_rec->sec_poa_first_name_vc,^",^,
+		^            "LAST_NAME":"^,t_rec->sec_poa_last_name_vc,^",^,
+		^            "MIDDLE_NAME":"",   	                    ^,
+		^            "RELATIONSHIP_TO_PATIENT_CD":^,trim(cnvtstring(t_rec->relationships.sec_poa_cd)),^,^,
+		^            "PHONES_LIST":[                            ^,
+		^               {                                       ^,
+		^                  "TYPE":^,trim(cnvtstring(t_rec->phone.mobile_cd)),^,     ^,
+		^                  "PHONE_NUMBER":"^,t_rec->sec_poa_phone_number_vc,^"^,
+		^               }                                       ^,
+		^            ]                                          ^,
+		^         }                                             ^,
+		^      ]                                                ^,
+		^   }                                                   ^,
+		^}                                                      ^
+															)
+endif
+
+if (t_rec->sec_conservator_ind = 1)
+	set t_rec->add_requestin_cnt = (t_rec->add_requestin_cnt + 1)
+	set stat = alterlist(t_rec->add_requestin_qual,t_rec->add_requestin_cnt)
+	set t_rec->add_requestin_qual[t_rec->add_requestin_cnt].value = build2(
+		^{                                                      ^,
+		^   "REQUESTIN":{                                       ^,
+		^      "PERSON_ID":^,trim(cnvtstring(t_rec->patient.person_id)),^,        ^,
+		^      "ENCNTR_ID":^,trim(cnvtstring(t_rec->patient.encntr_id)),^,        ^,
+		^      "USER_ID":1,		                                ^,
+		^      "NEW_PERSONS":[                                  ^,
+		^         {                                             ^,
+		^            "CREATE_PRSNL_IND":0,                      ^,
+		^            "CARE_TEAM_ASSIGNMENT":1,                  ^,
+		^            "FIRST_NAME":"^,t_rec->sec_conservator_first_name_vc,^",^,
+		^            "LAST_NAME":"^,t_rec->sec_conservator_last_name_vc,^",^,
+		^            "MIDDLE_NAME":"",   	                    ^,
+		^            "RELATIONSHIP_TO_PATIENT_CD":^,trim(cnvtstring(t_rec->relationships.sec_conservator_cd)),^,^,
+		^            "PHONES_LIST":[                            ^,
+		^               {                                       ^,
+		^                  "TYPE":^,trim(cnvtstring(t_rec->phone.mobile_cd)),^,     ^,
+		^                  "PHONE_NUMBER":"^,t_rec->sec_conservator_phone_number_vc,^"^,
+		^               }                                       ^,
+		^            ]                                          ^,
+		^         }                                             ^,
+		^      ]                                                ^,
+		^   }                                                   ^,
+		^}                                                      ^
+															)
+endif
+/*
+set t_rec->requestin_cnt = 2
+set stat = alterlist(t_rec->requestin_qual,t_rec->requestin_cnt)
+set t_rec->requestin_qual[t_rec->requestin_cnt].value = build2(
+		^{                                                      ^,
+		^   "REQUESTIN":{                                       ^,
+		^      "PERSON_ID":^,t_rec->patient.person_id,^,        ^,
+		^      "ENCNTR_ID":^,t_rec->patient.encntr_id,^,        ^,
+		^      "USER_ID":1,		                                ^,
+		^      "NEW_PERSONS":[                                  ^,
+		^         {                                             ^,
+		^            "CREATE_PRSNL_IND":0,                      ^,
+		^            "CARE_TEAM_ASSIGNMENT":1,                  ^,
+		^            "FIRST_NAME":"Chad1",                       ^,
+		^            "LAST_NAME":"One1",                         ^,
+		^            "MIDDLE_NAME":"Test1",                      ^,
+		^            "RELATIONSHIP_TO_PATIENT_CD":2550450063,	^,
+		^            "PHONES_LIST":[                            ^,
+		^               {                                       ^,
+		^                  "TYPE":4149712,                      ^,
+		^                  "PHONE_NUMBER":"7877777777"          ^,
+		^               }                                       ^,
+		^            ]                                          ^,
+		^         }                                             ^,
+		^      ]                                                ^,
+		^   }                                                   ^,
+		^}                                                      ^
+															)
+*/
+
+for (i=1 to t_rec->add_requestin_cnt)
+	call echo(t_rec->add_requestin_qual[i].value) 
+	execute mp_add_freetext_person ^MINE^,value(t_rec->add_requestin_qual[i].value),1
+	commit 
+endfor
+
+set t_rec->return_value = "TRUE"
+
+#exit_script
+
+if (trim(cnvtupper(t_rec->return_value)) = "TRUE")
+	set t_rec->retval = 100
+	set t_rec->log_misc1 = ""
+elseif (trim(cnvtupper(t_rec->return_value)) = "FALSE")
+	set t_rec->retval = 0
+else
+	set t_rec->retval = 0
+endif
+
+set t_rec->log_message = concat(
+										trim(t_rec->log_message),";",
+										trim(cnvtupper(t_rec->return_value)),":",
+										trim(cnvtstring(t_rec->patient.person_id)),"|",
+										trim(cnvtstring(t_rec->patient.encntr_id)),"|"
+									)
+set t_rec->log_message = cnvtrectojson(t_rec)
+
+call echorecord(t_rec)
+call echorecord(patient_careteam)
+
+set retval									= t_rec->retval
+set log_message 							= t_rec->log_message
+set log_misc1 								= t_rec->log_misc1
+
+set t_rec->log_file	= concat(
+									 trim(cnvtlower(curprog))
+									,^_^
+									,trim(format(cnvtdatetime(curdate,curtime3),"yyyy_mm_dd_hhmmss;;q"))
+									,^.dat^)
+									
+;call echojson(t_rec,concat(^cclscratch:^,t_rec->log_file),1)
+;call echojson(patient_careteam,concat(^cclscratch:^,t_rec->log_file),1)
+;execute cov_astream_file_transfer ^cclscratch:^,value(t_rec->log_file),^CernerCCL^,^MV^
+
+free record t_rec
+free record patient_careteam
+end 
+go

@@ -1,0 +1,286 @@
+
+
+
+SELECT
+   SR.SERVICE_RESOURCE_CD
+, SR_SERVICE_RESOURCE_DISP = UAR_GET_CODE_DISPLAY(SR.SERVICE_RESOURCE_CD)
+ 
+FROM
+    PRSNL   PR
+    , PRSNL_ORG_RELTN   PO
+    , ORGANIZATION   ORG
+    , LOCATION   L
+    , SERVICE_RESOURCE   SR
+    , CODE_VALUE   CV1
+ 
+PLAN  PR WHERE PR.username = "CCUMMIN4"
+    and pr.active_ind = 1
+JOIN PO WHERE PR.PERSON_ID=PO.PERSON_ID
+    AND PO.END_EFFECTIVE_DT_TM > SYSDATE
+    AND PO.ACTIVE_IND = 1
+ 
+JOIN ORG WHERE ORG.ORGANIZATION_ID = PO.ORGANIZATION_ID
+JOIN l WHERE org.organization_id = l.organization_id
+    and L.ORGANIZATION_ID=po.organization_id
+    AND L.ACTIVE_IND = 1
+    and L.LOCATION_TYPE_CD+0 = 817.00    ;SURGERY
+JOIN SR WHERE SR.LOCATION_CD=L.LOCATION_CD
+    and SR.ACTIVE_IND=1
+JOIN cv1 WHERE CV1.CODE_VALUE=SR.SERVICE_RESOURCE_CD
+and CV1.DISPLAY_KEY!="*PAT*"
+ 
+ORDER BY
+    SR_SERVICE_RESOURCE_DISP
+ 
+
+ 
+ 
+ 
+SELECT distinct into "MINE"
+	sc.sch_event_id
+	,Surg_Date=CNVTDATETIME ( CNVTDATE ( format(sc.sched_start_dt_tm,"mmddyyyy;;d"), "mmddyyyy" ), 0 )
+	;Format(sc.sched_start_dt_tm,"MM/dd/yyyy")
+	,Surg_DtTm=	sc.sched_start_dt_tm
+	,uar_get_code_display(se.sch_state_cd)
+	,dur = sc.sched_dur ";L"
+	,sc.sched_surg_area_cd
+	, SURG_AREA = substring(1,20,UAR_GET_CODE_DISPLAY(SC.SCHED_SURG_AREA_CD))
+	, SCHED_OP = UAR_GET_CODE_DISPLAY(SC.SCHED_OP_LOC_CD)
+	,sl=SC.SCHED_OP_LOC_CD
+	, SCHED_PAT_TYPE = TRIM(UAR_GET_CODE_DISPLAY(SC.SCHED_PAT_TYPE_CD))
+	, sc.sched_type_cd
+	, Priority = UAR_GET_CODE_DISPLAY(SC.SCHED_TYPE_CD)
+	, CASE_NUMBER=TRIM(sc.surg_case_nbr_formatted)
+	, Patient = p.name_full_formatted
+	, gender = substring (1 ,10 ,uar_get_code_display (p.sex_cd ) )
+	, age = CNVTAGE(P.BIRTH_DT_TM, sc.sched_start_dt_tm,0)
+	, DOB=p.birth_dt_tm "mm/dd/yyyy"
+	, sc.encntr_id
+	,eloc = substring (1 ,10 ,uar_get_code_display (e.loc_nurse_unit_cd ) )
+  	,enctype = substring (1 ,7 ,uar_get_code_display (e.encntr_type_cd ) )
+  	,facility = substring (1 ,55 ,uar_get_code_description (e.loc_facility_cd ) )
+  	,room = substring (1 ,4 ,uar_get_code_display (e.loc_room_cd ) )
+  	,bed = substring (1 ,4 ,uar_get_code_display (e.loc_bed_cd ) )
+  	,IP_ROOM=evaluate2(
+  		if(trim(substring (1 ,4 ,uar_get_code_display (e.loc_room_cd ) ))="")
+  			" "
+  		else
+  			if (trim(substring (1 ,4 ,uar_get_code_display (e.loc_bed_cd ) ))="")
+  				concat("Room: ",trim(substring (1 ,4 ,uar_get_code_display (e.loc_room_cd ) )))
+  			else
+  				concat("Room: ",trim(substring (1 ,4 ,uar_get_code_display (e.loc_bed_cd ) )),"-",
+  				trim(substring (1 ,4 ,uar_get_code_display (e.loc_room_cd ) )))
+  			endif
+  		endif)
+  	,fin = ea.alias
+  	,mrn = ea1.alias
+  	,status = substring (1 ,15 ,uar_get_code_display (e.encntr_status_cd ) )
+	,Primary_Surgeon=evaluate2(
+		if (sc.surgeon_prsnl_id=0)
+			pr.name_full_formatted
+		else
+			sed16.oe_field_display_value
+		endif)
+	, Procedure=trim(uar_get_code_description(scp.sched_surg_proc_cd),3)
+	, scp.sched_primary_surgeon_id
+	, Surgeon=spr.name_full_formatted
+	, surgeon2 = trim(sed17.oe_field_display_value,3)
+	, proc_seq=scp.sched_seq_num
+	, proc_text = TRIM(replace (scp.proc_text ,concat (char (13 ) ,char (10 ) ) ,"; " ),3 )
+	, anes_type = uar_get_code_display (scp.sched_anesth_type_cd )
+	, surgcomment = TRIM(replace (l.long_text ,concat (char (13 ) ,char (10 ) ) ,"; " ),3 )
+	,cl=textlen(TRIM(replace (l.long_text ,concat (char (13 ) ,char (10 ) ) ,"; " ),3 ))
+	, SC.create_dt_tm "@SHORTDATETIME"
+	,P_TEXT_LEN=SUM(TEXTLEN(TRIM(scpX.proc_text ,3 )))
+    ,P_CNT=COUNT(SCPX.order_id)
+    , Inpatient_Proc = uar_get_code_display(scp.sched_ud1_cd)
+    , MODIFIER=scp.modifier
+;	, phone = ph.phone_num
+  	,alt_phone = ph2.phone_num
+  	,phone_type2 = uar_get_code_display (ph2.phone_type_cd )
+  	,ph2.updt_dt_tm
+  	,anes_type = uar_get_code_display (scp.sched_anesth_type_cd )
+ 
+ 
+FROM
+	surgical_case   sc
+	, prsnl   pr
+	, Person p
+	,encounter e
+    ,encntr_alias ea
+    ,encntr_alias ea1
+    ,sch_event_attach sea
+    ,sch_event se
+    ,surg_case_procedure scp
+    ,sch_event_patient sep
+    ,prsnl spr
+    ,sch_event_detail sed16
+    ,sch_event_detail sed17
+ 
+    ,sch_event_comm sec
+    ,long_text l
+	, DUMMYT   DSPC
+	, sch_event_attach seaX
+	, surg_case_procedure scpX
+ 
+	,phone ph
+    ,phone ph2
+ 
+ 
+plan sc ;where sc.sched_surg_area_cd=$Surg_Area
+where sc.active_ind=1
+and sc.cancel_dt_tm=null
+and ((sc.sched_start_dt_tm between
+	CNVTDATETIME ( CNVTDATE ( "09182018" , "mmddyyyy" ), 0 )
+	AND
+	CNVTDATETIME ( CNVTDATE ( "09192018" , "mmddyyyy" ), 2359 ) )
+	)
+ 
+join pr where pr.person_id=sc.surgeon_prsnl_id
+ 
+join p where p.person_id=sc.person_id
+JOIN e WHERE e.encntr_id = sc.encntr_id
+	AND e.beg_effective_dt_tm <= cnvtdatetime (curdate ,curtime)
+	AND e.end_effective_dt_tm >= cnvtdatetime (curdate ,curtime )
+	AND e.active_ind = 1
+JOIN ea WHERE ea.encntr_id = outerjoin (sc.encntr_id )
+	AND ea.encntr_alias_type_cd = outerjoin (1077 )
+	AND ea.beg_effective_dt_tm <= outerjoin (cnvtdatetime (curdate ,curtime ))
+   	AND ea.end_effective_dt_tm >= outerjoin (cnvtdatetime (curdate ,curtime ))
+   	AND ea.active_ind  = outerjoin (1 )
+JOIN ea1 WHERE ea1.encntr_id = sc.encntr_id
+	AND ea1.encntr_alias_type_cd =        1079.00
+	AND ea1.beg_effective_dt_tm <= cnvtdatetime (curdate ,curtime )
+	AND ea1.end_effective_dt_tm >= cnvtdatetime (curdate ,curtime )
+	AND ea1.active_ind = 1
+JOIN sea WHERE sea.sch_event_id = sc.sch_event_id
+	AND sea.state_meaning = "ACTIVE"
+	AND sea.version_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00.00" )
+	AND sea.active_ind = 1
+	AND sea.order_status_cd != 2542.00
+JOIN se WHERE se.sch_event_id = sc.sch_event_id
+	 ;AND NOT se.sch_state_cd IN (canceled_var,deleted_var,unschedulable_var,pending_var )
+	 AND se.version_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00.00" )
+	 AND se.active_ind = 1
+JOIN scp WHERE scp.order_id=sea.order_id
+JOIN sep WHERE sep.sch_event_id = se.sch_event_id
+	AND sep.version_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00.00" )
+	AND sep.active_ind = 1
+	
+	
+join spr where spr.person_id=scp.sched_primary_surgeon_id
+JOIN sed16 WHERE se.sch_event_id = sed16.sch_event_id
+	AND sed16.oe_field_meaning = "SURGEON1"
+	AND sed16.version_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00.00" )
+	AND sed16.active_ind = 1
+JOIN sed17 WHERE sed17.sch_event_id = outerjoin (se.sch_event_id )
+	AND sed17.oe_field_meaning =   outerjoin ("SURGEON2" )
+	AND sed17.version_dt_tm = outerjoin (cnvtdatetime ("31-DEC-2100 00:00:00.00" ) )
+	AND sed17.active_ind = outerjoin (1 )
+
+
+join sec WHERE sec.sch_event_id = outerjoin (se.sch_event_id )
+	AND sec.sub_text_meaning = outerjoin ("SURGPUBLIC" )
+	AND sec.version_dt_tm = outerjoin (cnvtdatetime ("31-DEC-2100 00:00:00.00" ))
+    AND sec.active_ind = outerjoin (1 )
+JOIN l WHERE l.long_text_id = outerjoin (sec.text_id )
+
+
+JOIN ph WHERE ph.parent_entity_name = outerjoin ("PERSON" )
+ 	AND ph.parent_entity_id = outerjoin (sep.person_id )
+ 	AND ph.phone_type_cd = outerjoin (170 )
+ 	AND ph.phone_type_seq = outerjoin (1 )
+ 	AND ph.beg_effective_dt_tm <= outerjoin (cnvtdatetime (curdate ,curtime ) )
+  	AND ph.end_effective_dt_tm >= outerjoin (cnvtdatetime (curdate ,curtime ) )
+  	AND ph.active_ind = outerjoin (1)
+JOIN ph2 WHERE ph2.parent_entity_name = outerjoin ("PERSON" )
+    AND ph2.parent_entity_id = outerjoin (ph.parent_entity_id )
+    AND ph2.phone_num_key != outerjoin (ph.phone_num_key )
+    AND ph2.beg_effective_dt_tm <= outerjoin (cnvtdatetime (curdate ,curtime ) )
+    AND ph2.end_effective_dt_tm >= outerjoin (cnvtdatetime (curdate ,curtime ) )
+    AND ph2.active_ind =outerjoin (1 )
+JOIN DSPC
+join seaX where seax.sch_event_id=sc.sch_event_id
+	AND seaX.state_meaning = "ACTIVE"
+	AND seaX.version_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00.00" )
+	AND seaX.active_ind = 1
+	AND seaX.order_status_cd != 2542.00
+ 
+JOIN scpX WHERE ScpX.order_id=seaX.order_id
+	and textlen(trim(scpx.proc_text,3))>1
+ 
+ORDER BY
+	Surg_Area
+	,Surg_Date
+	,SCHED_OP
+	,Surg_DtTm
+	,CASE_NUMBER
+	,scp.surg_case_id
+	,scp.sched_seq_num
+go
+
+
+
+
+
+
+select scp.surg_case_id, scp.sched_seq_num,* from surg_case_procedure scp order by scp.surg_case_id, scp.sched_seq_num go
+
+
+select * from sch_event_detail sed where sed.sch_event_id in(6054707.00,    6120396.00, 6130711)
+
+
+select into "nl:"
+from
+	 surgical_case 			sc
+	,encounter				e
+	,person					p
+	,sch_event				se
+	,sch_event_attach		sea
+	,surg_case_procedure	scp
+	,sch_event_patient		sep
+	;,prsnl					spr
+	;,prsnl					pr
+plan sc
+	where 	sc.sched_surg_area_cd in(2557236019.00, 2557236003.00, 2557236583.00)
+	and		sc.active_ind 			= 1
+	and		sc.cancel_dt_tm			= null
+	and     sc.sched_start_dt_tm	between
+										cnvtdatetime( "05-JUN-2019 00:00:00")
+											and
+										cnvtdatetime("05-JUN-2019 23:59:00")
+join p
+	where 	p.person_id				= sc.person_id
+join e
+	where	e.encntr_id				= sc.encntr_id
+	and		e.active_ind			= 1
+join sea
+	where	sea.sch_event_id		= sc.sch_event_id
+	and		sea.state_meaning		= "ACTIVE"
+	and 	sea.version_dt_tm 		= cnvtdatetime ("31-DEC-2100 00:00:00.00" )
+	and 	sea.active_ind 			= 1
+;	and 	sea.order_status_cd		!= code_values->cv.cs_6004.canceled_cd
+join se	
+	where	se.sch_event_id 		= sc.sch_event_id
+/*	and 	se.sch_state_cd 		not in(
+												 code_values->cv.cs_14233.canceled_cd
+												,code_values->cv.cs_14233.deleted_cd
+												,code_values->cv.cs_14233.unschedulable_cd
+												,code_values->cv.cs_14233.pending_cd
+											)
+*/
+	and 	se.version_dt_tm 		= cnvtdatetime ("31-DEC-2100 00:00:00.00" )
+	and 	se.active_ind 			= 1
+join scp 
+	where 	scp.order_id			= sea.order_id
+join sep 
+	where 	sep.sch_event_id 		= se.sch_event_id
+	and 	sep.version_dt_tm 		= cnvtdatetime ("31-DEC-2100 00:00:00.00" )
+	and 	sep.active_ind 			= 1	
+order by
+		 sc.sched_surg_area_cd
+		,sc.sched_start_dt_tm
+		,sc.sched_op_loc_cd
+		,sc.surg_case_nbr_formatted
+		,scp.surg_case_id
+		,scp.sched_seq_num

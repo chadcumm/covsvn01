@@ -1,0 +1,127 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+  Author:             Chad Cummings
+  Date Written:       12/10/2019
+  Solution:           Discern
+  Source file name:   cov_eks_med_micro_refhelp.prg
+  Object name:        cov_eks_med_micro_refhelp
+  Request #:
+
+  Program purpose:
+
+  Executing from:     Discern Expert
+
+  Special Notes:      Called by discern expert program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod   Mod Date    Developer              Comment
+---   ----------  --------------------  --------------------------------------
+000   12/10/2019  Chad Cummings			Initial Release from eks_med_micro_refhelp
+001   12/17/2019  Chad Cummings			Changed hidden parameter to be code_value
+******************************************************************************/
+
+DROP PROGRAM cov_eks_med_micro_refhelp :dba GO
+CREATE PROGRAM cov_eks_med_micro_refhelp :dba
+ CALL echo (concat (format (curdate ,"dd-mmm-yyyy;;d" ) ," " ,format (curtime3 ,"hh:mm:ss.cc;3;m" ) ,
+   "  *******  Beginning of Program eks_med_micro_refhelp  *********" ) ,1 ,0 )
+ RECORD treply (
+   1 fieldname = vc
+   1 cnt = i4
+   1 qual [* ]
+     2 display = vc
+     2 hidden = vc
+ )
+ SET treply->fieldname = "MEDICATION"
+ SET treply->cnt = 1
+ SET stat = alterlist (treply->qual ,treply->cnt )
+ SET treply->qual[1 ].display = "*ANY"
+ SET treply->qual[1 ].hidden = "*ANY"
+ SELECT DISTINCT INTO "NL:"
+  medication = cv.display ,
+  _hidden_par =
+  ;001 IF ((cv.cki > " " ) ) cv.cki
+  ;001 ELSE cnvtstring (cv.code_value ,25 ,1 )
+  ;001 ENDIF
+  cnvtstring (cv.code_value ,25 ,1 ) ;001
+  ,description = cv.description
+  FROM (eks_micro_med_r em ),
+   (code_value cv )
+  PLAN (em
+   WHERE (em.catalog_cd > 0 )
+   AND (em.active_ind > 0 ) )
+   JOIN (cv
+   WHERE (cv.code_value = em.catalog_cd ) )
+  ORDER BY cnvtupper (cv.display ) ,
+   cv.code_value
+  DETAIL
+   treply->cnt = (treply->cnt + 1 ) ,
+   stat = alterlist (treply->qual ,treply->cnt ) ,
+   treply->qual[treply->cnt ].display = medication ,
+   treply->qual[treply->cnt ].hidden = _hidden_par
+  WITH nocounter
+ ;end select
+ CALL closereply (false )
+ CALL echo (concat (format (curdate ,"dd-mmm-yyyy;;d" ) ," " ,format (curtime3 ,"hh:mm:ss.cc;3;m" ) ,
+   "  *******  End of Program eks_med_micro_refhelp  *********" ) ,1 ,0 )
+ SUBROUTINE  closereply (bstandard )
+  DECLARE sql = vc
+  DECLARE sqlreply = vc WITH private
+  DECLARE sqlselect = vc WITH private
+  SET reply->cnt = 0
+  IF ((bstandard = false ) )
+   SET sqlselect = concat ('select into "NL:"  ' ,trim (treply->fieldname ) ,
+    " = SubString(1, 1024, tReply->qual[d.seq].display), " ,
+    "_HIDDEN_PAR = SubString(1, 1024, tReply->qual[d.seq].hidden) " ,
+    "from (dummyt d with seq = Value(tReply->cnt)) /**/" )
+  ELSE
+   SET sqlselect = concat ('select into "NL:"  ' ,trim (treply->fieldname ) ,
+    " = SubString(1, 256, tReply->qual[d.seq].display), " ,' _hidden = " " ' ,
+    "from (dummyt d with seq = Value(tReply->cnt)) /**/" )
+  ENDIF
+  SET sqlreply = concat (" where tReply->qual[d.seq].display > ' ' " ," head report " ,
+   "stat = alterlist(reply->qual,reply->cnt + 50) " ,"stat = 0 " ,
+   'reply->fieldname = concat(reportinfo(1),"^") ' ,"reply->fieldsize = size(reply->fieldname) " ,
+   "detail " ,"reply->cnt = reply->cnt + 1 " ,"if(mod(reply->cnt,50) = 1) " ,
+   "stat = alterlist(reply->qual,reply->cnt + 50) " ,"endif " ,
+   'reply->qual[reply->cnt].result = concat(reportinfo(2),"^") ' ,"foot report " ,
+   "stat = alterlist(reply->qual,reply->cnt) " ,"with maxrow = 1, reporthelp, check go " )
+  SET sql = concat (sqlselect ,sqlreply )
+  CALL parser (sql ,1 )
+  IF ((reply->cnt = 0 ) )
+   CALL helperror ("No items found" )
+  ENDIF
+  SET treply->cnt = 0
+  SET stat = alterlist (treply->qual ,0 )
+  CALL echo ("SENDING REPLY WITH :" )
+  CALL echorecord (reply )
+ END ;Subroutine
+ SUBROUTINE  helperror (errmsgx )
+  SET strtext = errmsgx
+  SELECT DISTINCT INTO "NL:"
+   error_message = strtext ,
+   _hidden = d1.seq
+   FROM (dummyt d1 WITH seq = 1 )
+   PLAN (d1 )
+   ORDER BY d1.seq
+   HEAD REPORT
+    stat = 0 ,
+    reply->cnt = 0 ,
+    reply->fieldname = concat (reportinfo (1 ) ,"^" ) ,
+    reply->fieldsize = size (reply->fieldname )
+   DETAIL
+    reply->cnt = (reply->cnt + 1 ) ,
+    IF ((mod (reply->cnt ,50 ) = 1 ) ) stat = alterlist (reply->qual ,(reply->cnt + 50 ) )
+    ENDIF
+    ,reply->qual[reply->cnt ].result = concat (reportinfo (2 ) ,"^" )
+   FOOT REPORT
+    stat = alterlist (reply->qual ,reply->cnt )
+   WITH maxrow = 1 ,reporthelp ,check
+  ;end select
+ END ;Subroutine
+END GO

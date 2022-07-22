@@ -1,0 +1,216 @@
+/*********************************************************************************************
+*                                                                                            *
+**********************************************************************************************
+ 
+        Source file name:   cov_disch_doc_author.prg
+        Object name:        cov_disch_doc_author
+ 
+        Product:
+        Product Team:
+ 
+        Program purpose:
+ 
+        Tables read:
+ 
+        Tables updated:     n/a
+ 
+        Executing from:     EKS_EXEC_CCL_L Template
+ 
+        Special Notes:
+ 
+ 
+**********************************************************************************************
+*                      GENERATED MODIFICATION CONTROL LOG
+**********************************************************************************************
+*
+* Mod Date          Feature     Engineer        Comment
+* --- ----------    -------     -------------   ----------------------------------------------
+* 000 09/05/2018                CCUMMIN4        Initial Creation
+*********************************************************************************************/
+drop program cov_disch_doc_author:dba go
+create program cov_disch_doc_author:dba
+ 
+prompt
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "Note Type" = ""
+ 
+with OUTDEV, NOTE_TYPE
+ 
+ 
+ 
+/**************************************************************
+; DVDev DECLARED SUBROUTINES
+**************************************************************/
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+ 
+free record t_rec
+record t_rec
+(
+	1 cv
+	 2 cs_8
+	  3 auth_cd					= f8
+	 2 cs_72
+	  3 inpatient_disch_note	= f8
+	1 patient
+	 2 encntr_id				= f8
+	 2 person_id 				= f8
+	 2 template_id				= f8
+	 2 event_id					= f8
+ 	1 qual
+ 	 2 note_type_string			= vc
+	 2 log_filename				= vc
+	 2 log_message				= vc
+	 2 log_time					= dq8
+	 2 errcode					= i4
+	 2 errmsg					= vc
+	 2 retval					= i2
+	 2 log_misc1				= vc
+	1 note_type_cnt				= i2
+	1 note_type[*]
+	 2 result					= vc
+)
+ 
+declare cnt 								= i2 with noconstant(0)
+declare i                               	= i4 with noconstant(0)
+declare str									= vc with noconstant(" ")
+declare notfnd                 				= vc with constant("<not_found>")
+ 
+set retval 									= -1
+set log_message 							= build2("Error in ", curprog)
+set log_misc1 								= fillstring(25,' ')
+ 
+set t_rec->cv.cs_8.auth_cd					= uar_get_code_by(	"MEANING",	8,	"AUTH")
+ 
+set t_rec->patient.encntr_id 				= link_encntrid
+set t_rec->patient.person_id				= link_personid
+set t_rec->patient.template_id				= link_template
+set t_rec->patient.event_id					= link_clineventid
+ 
+set t_rec->qual.log_filename				= build(
+														 "cer_temp:"
+																		,cnvtlower(curprog)
+														,"_logging_"
+																		,format(curdate, "MMDDYYYY;;D")
+														, ".dat"
+													)
+ 
+set t_rec->qual.note_type_string	= trim($NOTE_TYPE)
+ 
+ 
+if	(t_rec->patient.person_id <= 0.0)
+  set t_rec->qual.log_misc1 = "Missing person_id check linked logic template"
+  go to exit_script
+endif
+ 
+if	(t_rec->patient.encntr_id <= 0.0)
+    set t_rec->qual.log_misc1 ="Missing encounter_id check linked logic template"
+    go to exit_script
+endif
+ 
+if (t_rec->qual.note_type_string > " ")
+	select into "nl:"
+	from
+		code_value cv
+	plan cv
+		where cv.code_set 		= 72
+		and   cv.display_key 	= t_rec->qual.note_type_string
+		and   cv.active_ind		= 1
+	head report
+		cnt = 0
+	detail
+		cnt = (cnt + 1)
+		t_rec->cv.cs_72.inpatient_disch_note = cv.code_value
+	foot report
+		if (cnt > 1)
+    		t_rec->cv.cs_72.inpatient_disch_note = -1.0
+		endif
+	with nocounter
+	if	(t_rec->cv.cs_72.inpatient_disch_note = 0.0)
+    	set t_rec->qual.log_misc1 = "No Note type to search for"
+    	go to exit_script
+    elseif (t_rec->cv.cs_72.inpatient_disch_note = -1.0)
+    	set t_rec->qual.log_misc1 ="Event Code Lookup failure, too many qualifiers"
+    	go to exit_script
+	endif
+	else
+		set t_rec->qual.log_misc1 = "No Note type to search for"
+    	go to exit_script
+endif
+ 
+ 
+ 
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+ 
+select into "nl:"
+from
+	clinical_event ce
+	,prsnl p
+plan ce
+	where ce.person_id				= t_rec->patient.person_id
+	and   ce.encntr_id				= t_rec->patient.encntr_id
+	and   ce.event_cd				= t_rec->cv.cs_72.inpatient_disch_note
+	and   ce.valid_from_dt_tm		<= cnvtdatetime(curdate,curtime3)
+	and   ce.valid_until_dt_tm		>= cnvtdatetime(curdate,curtime3)
+	and	  ce.result_status_cd		= t_rec->cv.cs_8.auth_cd
+join p
+	where p.person_id				= ce.updt_id
+order by
+	 ce.event_end_dt_tm desc
+	,ce.event_cd
+head report
+	cnt = 0
+head ce.event_cd
+	cnt = (cnt + 1)
+	t_rec->qual.retval 		= 100
+	t_rec->qual.log_misc1 	= concat(p.username)
+with nocounter
+ 
+ 
+ 
+ 
+#exit_script
+ 
+/*** Logging ***/
+if(validate(EKMLOG_IND, -1) > 0) ;TRUE if Debug Mode (4) or Debug Tracing (>4)
+	call echo(concat("filename: ", t_rec->qual.log_filename))
+  	;write the record structures to a log file in ccluserdir for debugging
+	if (validate(eksdata))
+		call echorecord(eksdata, t_rec->qual.log_filename, 1)
+		call echorecord(eksdata)
+	endif
+	if (validate(reply))
+		call echorecord(reply, t_rec->qual.log_filename, 1)
+		call echorecord(reply)
+	endif
+	set t_rec->qual.log_time 	= cnvtdatetime(curdate,curtime3)
+	call echorecord(t_rec, t_rec->qual.log_filename, 1)
+	call echorecord(t_rec)
+endif
+ 
+/*** Check for Errors ***/
+set t_rec->qual.errcode = ERROR(t_rec->qual.errmsg,0)
+if(t_rec->qual.errcode > 0)
+  set t_rec->qual.log_misc1 = build2("Error: ", errmsg)
+  set t_rec->qual.retval 	= -1
+endif
+ 
+set retval		= t_rec->qual.retval
+set log_misc1	= t_rec->qual.log_misc1
+set log_message	= log_misc1
+ 
+call echo(build('retval : ', retval))
+call echo(build('log_misc1 :', log_misc1))
+ 
+ 
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+ 
+end
+go

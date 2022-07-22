@@ -1,0 +1,8 @@
+select * from code_Value cv where cv.code_value = 683987
+
+select * from ccl_report_audit cra where cra.begin_dt_tm >= cnvtdatetime(curdate,0)
+ and cra.object_name = "COV_AMB_CNTRSBSTNC_RPT*"
+order by cra.updt_dt_tm desc
+
+
+

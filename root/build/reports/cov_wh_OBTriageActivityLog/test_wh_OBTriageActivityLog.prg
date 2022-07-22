@@ -1,0 +1,306 @@
+/*****************************************************************************************
+	Covenant Health Information Technology
+	Knoxville, Tennessee
+******************************************************************************************
+	Author:				Dan Herren
+	Date Written:		April 2020
+	Solution:			Infection Control
+	Source file name:  	cov_wh_OBTriageActivityLog.prg
+	Object name:		cov_wh_OBTriageActivityLog
+	CR#:				3411
+ 
+	Program purpose:	OB Triage Activity Log of Outpatient Monitoring patients.
+	Executing from:		CCL
+  	Special Notes:
+ 
+******************************************************************************************
+*  	GENERATED MODIFICATION CONTROL LOG
+*
+*  	Revision #   Mod Date    Developer             Comment
+*  	-----------  ----------  --------------------  ---------------------------------------
+*
+*
+******************************************************************************************/
+ 
+drop program test_wh_OBTriageActivityLog:DBA go
+create program test_wh_OBTriageActivityLog:DBA
+ 
+prompt
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "Report or Grid" = 0
+	, "Start Date/Time" = "SYSDATE"
+	, "End Date/Time" = "SYSDATE"
+	, "Facility" = 21250403.00
+ 
+with OUTDEV, POST_GRID_PMPT, START_DATETIME_PMPT, END_DATETIME_PMPT,
+	FACILITY_PMPT
+ 
+ 
+/**************************************************************
+; DVDev RECORD STRUCTURE
+**************************************************************/
+Record rec(
+	1 username          		= vc
+	1 startdate         		= vc
+	1 enddate          	 		= vc
+	1 encntr_cnt				= i4
+	1 list[*]
+		2 facility      		= vc
+		2 nurse_unit			= vc
+		2 pat_name      		= vc
+		2 fin           		= vc
+		2 mrn           		= vc
+		2 age					= vc
+		2 dob					= dq8
+		2 ega					= vc
+		2 edd					= vc
+		2 event_cnt				= i4
+		2 reason_visit     		= vc
+		2 mode_arrival	 		= vc
+		2 triage_start_dt		= dq8
+		2 triage_end_dt			= dq8
+		2 triage_los			= vc
+		2 events[*]
+			3 reason_visit     	= vc
+			3 mode_arrival	 	= vc
+			3 triage_start_dt	= dq8
+			3 triage_end_dt		= dq8
+			3 triage_los		= vc
+;			3 event_id		  	= f8
+		2 primary_nurse			= vc
+		2 admit_phyician		= vc
+		2 discharge_dispo		= vc
+		2 encntr_id				= f8
+		2 event_id				= f8
+2 tempval = vc
+)
+ 
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+declare ACTIVE_VAR         	= f8 with constant(uar_get_code_by("DISPLAYKEY", 48,  "ACTIVE")),protect
+declare FIN_VAR            	= f8 with constant(uar_get_code_by("DISPLAYKEY", 319, "FINNBR")),protect
+declare MRN_VAR            	= f8 with constant(uar_get_code_by("DISPLAYKEY", 319, "MRN")),protect
+declare OP_MONITOR_VAR 	   	= f8 with constant(uar_get_code_by("DISPLAYKEY", 71,  "OUTPATIENTMONITORING")),protect
+declare TRIAGE_START_VAR  	= f8 with constant(uar_get_code_by("DISPLAYKEY", 72,  "OBTRIAGETIMESTART")),protect
+declare TRIAGE_END_VAR 		= f8 with constant(uar_get_code_by("DISPLAYKEY", 72,  "OBTRIAGETIMEEND")),protect
+declare TRIAGE_LOS_VAR  	= f8 with constant(uar_get_code_by("DISPLAYKEY", 72,  "OBTOTALTRIAGETIME")),protect
+declare MODE_ARRIVAL_VAR 	= f8 with constant(uar_get_code_by("DISPLAYKEY", 72,  "MODEOFARRIVAL")),protect
+declare REASON_VISIT_VAR 	= f8 with constant(uar_get_code_by("DISPLAYKEY", 72,  "REASONFORVISITOB")),protect
+;
+declare OPR_FAC_VAR		   	= vc with noconstant(fillstring(1000," "))
+declare OPR_NU_VAR		   	= vc with noconstant(fillstring(1000," "))
+;
+declare	START_DATETIME		= f8
+declare END_DATETIME		= f8
+;
+declare username           	= vc with protect
+declare initcap()          	= c100
+;
+declare num					= i4 with noconstant(0)
+declare idx					= i4 with noconstant(0)
+ 
+ 
+/**************************************************************
+; DVDev START CODING
+**************************************************************/
+;GET USERNAME FOR REPORT
+select into "NL:"
+from
+	prsnl p
+where p.person_id = reqinfo->updt_id
+detail
+	rec->username = p.username
+with nocounter
+ 
+ 
+;-----------------------------------------------------
+; SET DATE PROMPT VARIABLES FOR MANUAL TESTING
+;-----------------------------------------------------
+;set START_DATETIME = CNVTDATETIME("13-APR-2020 00:00:00")
+;set END_DATETIME   = CNVTDATETIME("13-APR-2020 23:59:59")
+ 
+ 
+;-----------------------------------------------------
+; SET DATE PROMPTS TO RECORD STRUCTURE
+;-----------------------------------------------------
+set rec->startdate = $START_DATETIME_PMPT 	;substring(1,11,$START_DATETIME_PMPT)
+set rec->enddate   = $END_DATETIME_PMPT		;substring(1,11,$END_DATETIME_PMPT)
+ 
+ 
+;SET FACILITY VARIABLE
+if(substring(1,1,reflect(parameter(parameter2($FACILITY_PMPT),0))) = "L")	;multiple values were selected
+	set OPR_FAC_VAR = "in"
+elseif(parameter(parameter2($FACILITY_PMPT),1)= 0.0)						;all (any) values were selected
+	set OPR_FAC_VAR = "!="
+else																		;a single value was selected
+	set OPR_FAC_VAR = "="
+endif
+ 
+ 
+;;SET NURSE UNIT VARIABLE
+;if(substring(1,1,reflect(parameter(parameter2($NURSE_UNIT_PMPT),0))) = "L")	;multiple values were selected
+;	set OPR_NU_VAR = "in"
+;elseif(parameter(parameter2($NURSE_UNIT_PMPT),1)= 0.0)						;all (any) values were selected
+;	set OPR_NU_VAR = "!="
+;else																		;a single value was selected
+;	set OPR_NU_VAR = "="
+;endif
+ 
+;call echorecord(ENCNTR_VAR)
+;go to exitscript
+ 
+;==============================================================================
+; MAIN DATA SELECT
+;==============================================================================
+call echo(build("*** MAIN DATA SELECT ***"))
+select into "NL:"
+ 
+from ENCOUNTER e
+ 
+	,(inner join ENCNTR_ALIAS ea on ea.encntr_id = e.encntr_id
+		and ea.encntr_alias_type_cd = FIN_VAR ;1077
+		and ea.end_effective_dt_tm > sysdate
+		and ea.alias = "2010300769"
+		and ea.active_ind = 1)
+ 
+	,(inner join ENCNTR_ALIAS ea2 on ea2.encntr_id = e.encntr_id
+		and ea2.encntr_alias_type_cd = MRN_VAR  ;1079
+		and ea2.end_effective_dt_tm > sysdate
+		and ea2.active_ind = 1)
+ 
+	,(inner join PERSON p on p.person_id = e.person_id
+		and p.active_ind = 1)
+ 
+	,(inner join CLINICAL_EVENT ce on ce.encntr_id = e.encntr_id
+		and ce.person_id = e.person_id
+		and (ce.event_end_dt_tm between cnvtdatetime($START_DATETIME_PMPT) and cnvtdatetime($END_DATETIME_PMPT))
+		and ce.result_status_cd in (25,34,35)
+		and ce.event_cd in (MODE_ARRIVAL_VAR, TRIAGE_START_VAR, TRIAGE_END_VAR, TRIAGE_LOS_VAR, REASON_VISIT_VAR)
+		and ce.valid_until_dt_tm = cnvtdatetime("31-DEC-2100 0"))
+ 
+	,(left join CE_DATE_RESULT cdr on cdr.event_id = ce.event_id
+		and cdr.valid_until_dt_tm = cnvtdatetime("31-DEC-2100 0"))
+ 
+where e.active_ind = 1
+	and operator(e.loc_facility_cd, OPR_FAC_VAR, $FACILITY_PMPT)
+	and e.encntr_type_cd = OP_MONITOR_VAR  ;2555137211
+	and e.end_effective_dt_tm > sysdate
+	and e.active_ind = 1
+ 
+order by ce.encntr_id, ce.event_cd, ce.event_id
+ 
+head report
+	cnt = 0
+ 
+head ce.encntr_id
+ 	cnt = cnt + 1
+ 
+	if (mod(cnt,10) = 1 or cnt = 10)
+		stat = alterlist(rec->list,cnt + 9)
+	endif
+ 
+ 	rec->encntr_cnt = cnt
+ 
+	rec->list[cnt].facility      	= uar_get_code_display(e.loc_facility_cd) ;facility
+	rec->list[cnt].nurse_unit		= uar_get_code_display(e.loc_nurse_unit_cd) ;nurse_unit
+	rec->list[cnt].pat_name      	= p.name_full_formatted
+	rec->list[cnt].age				= cnvtage(p.birth_dt_tm)
+	rec->list[cnt].dob				= p.birth_dt_tm
+	rec->list[cnt].fin 			 	= ea.alias
+	rec->list[cnt].mrn           	= ea2.alias
+ 	rec->list[cnt].encntr_id	 	= ce.encntr_id
+	rec->list[cnt].tempval 			= uar_get_code_display(e.encntr_type_cd)
+ 
+	rcnt = 0
+    call echo(ce.encntr_id)
+head ce.event_id
+	rcnt = rcnt + 1
+ 	call echo(ce.event_id)
+ 	if (mod(rcnt,10) = 1 or rcnt = 1)
+ 		stat = alterlist(rec->list[cnt].events, rcnt + 9)
+ 	endif
+ 
+;	rec->list[cnt].events[rcnt].event_id = ce.event_id
+ 	call echo(build(trim(cnvtstring(ce.event_cd))," (",uar_get_Code_display(ce.event_cd),")"))
+	case (ce.event_cd)
+		of REASON_VISIT_VAR :
+			rec->list[cnt].events[rcnt].reason_visit 	= ce.result_val
+ 
+		of MODE_ARRIVAL_VAR :
+			rec->list[cnt].events[rcnt].mode_arrival	= ce.result_val
+ 
+		of TRIAGE_START_VAR :
+			rec->list[cnt].events[rcnt].triage_start_dt	= cdr.result_dt_tm
+ 
+		of TRIAGE_END_VAR :
+			rec->list[cnt].events[rcnt].triage_end_dt 	= cdr.result_dt_tm
+ 
+		of TRIAGE_LOS_VAR :
+			rec->list[cnt].events[rcnt].triage_los 		= ce.result_val
+ 
+;		else 
+;			rec->list[pos].temp = ce.result_val
+	endcase
+ 
+ 	rec->list[cnt].event_cnt = rcnt
+ 
+;foot ce.event_id
+;	null
+ 
+foot ce.encntr_id
+	stat = alterlist(rec->list[cnt].events, rcnt)
+ 
+foot report
+	stat = alterlist(rec->list, cnt)
+ 
+with nocounter, expand = 1
+ 
+call echorecord(rec)
+;go to exitscript
+ 
+;============================
+; REPORT OUTPUT
+;============================
+;if ($POST_GRID_PMPT = 1) ;Grid
+;
+	;select distinct into value ($OUTDEV)
+	select into value ($OUTDEV)
+		 facility      		= rec->list[d.seq].facility
+;		,nurse_unit			= rec->list[d.seq].nurse_unit
+		,pat_name	   		= rec->list[d.seq].pat_name
+		,fin		   		= rec->list[d.seq].fin
+		,mrn		   		= rec->list[d.seq].mrn
+;		,tempval 			= rec->list[d.seq].tempval
+		,reason_visit		= rec->list[d.seq].events[d2.seq].reason_visit
+		,mode_arrival		= rec->list[d.seq].events[d2.seq].mode_arrival
+		,triage_start_dt	= format(rec->list[d.seq].events[d2.seq].triage_start_dt, "mm/dd/yyyy hh:mm;;q")
+		,triage_end_dt		= format(rec->list[d.seq].events[d2.seq].triage_end_dt, "mm/dd/yyyy hh:mm;;q")
+		,triage_los			= rec->list[d.seq].events[d2.seq].triage_los
+;		,event_id			= rec->list[d.seq].events[d2.seq].event_id
+		,encntr_id     		= rec->list[d.seq].encntr_id
+		,event_id			= rec->list[d.seq].event_id
+		,encntr_cnt	   		= rec->encntr_cnt
+		,event_cnt			= rec->list[d.seq].event_cnt
+		,username      		= rec->username
+		,startdate 	   		= rec->startdate
+		,enddate   	   		= rec->enddate
+ 
+	from
+		 (dummyt d  with seq = value(size(rec->list,5)))
+		,(dummyt d2 with seq = 1)
+ 
+	plan d
+	where maxrec(d2, size(rec->list[d.seq].events,5))
+ 
+	join d2
+ 
+	order by facility, pat_name, encntr_id, event_id
+ 
+	with nocounter, format, check, separator = " "
+ 
+#exitscript
+end
+go
+ 

@@ -1,0 +1,17 @@
+
+Fields are TAB delimited.
+Rows are LF terminated.
+
+Field #	Field Name	Field Data				Notes
+01		FAC			Facility + FIN	
+02		NAME_FULL	Patient_Name			Pipe symbol (|) if empty
+03		PMRN		MRN						Pipe symbol (|) if empty
+04		IOE			Patient_Type_IOE		Pipe symbol (|) if empty
+05		EXAM_NAME	Order_Mnemonic			Pipe symbol (|) if empty
+06		CK_IN_NBR	Accession_Nbr			Pipe symbol (|) if empty
+07		EXAM_STAT	Exam_Status				Pipe symbol (|) if empty
+08		ORD_PHYS	Order_Dr_Name			Pipe symbol (|) if empty
+09		PAT_TYPE	Patient_Type			Pipe symbol (|) if empty
+10		CK_IN_DT	Check_In_Dt_Tm			Pipe symbol (|) if empty
+11		HCPCS		CPTCD + CPTCD_Modifier	Pipe symbol (|) if empty
+

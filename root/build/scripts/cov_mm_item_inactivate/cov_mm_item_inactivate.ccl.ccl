@@ -1,0 +1,17 @@
+SELECT
+	
+	 oii.value_key
+	,descrip = "test description"
+
+FROM
+	object_identifier_index   oii
+
+where oii.value_key > " "
+and oii.identifier_type_cd =            3101.00
+and oii.object_type_cd =        3119.00
+with maxrec = 10
+
+;78505869
+
+select * from code_value cv where cv.code_value = 2559043093
+select * from code_value cv where cv.code_set = 220 and cv.cdf_meaning = "INVVIEW"

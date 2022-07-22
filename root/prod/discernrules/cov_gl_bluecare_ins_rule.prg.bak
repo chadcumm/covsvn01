@@ -1,0 +1,71 @@
+ 
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:			Geetha Saravanan
+	Date Written:		Feb'2018
+	Solution:			PathNet - General laboratory - Speciman Management
+	Source file name:	      cov_gl_bluecare_ins_rule.prg
+	Object name:		cov_gl_bluecare_ins_rule
+	Request#:			42
+ 
+	Program purpose:	      Find the insurance plan name for an encounter that is passed as a parameter
+					from cov_gl_bluecare_insu EKM and return the logical value to EKM.
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+Mod Date	Developer			Comment
+----------	--------------------	------------------------------------------
+ 
+******************************************************************************/
+ 
+ 
+DROP PROGRAM cov_gl_bluecare_ins_rule:DBA GO
+CREATE PROGRAM cov_gl_bluecare_ins_rule:DBA
+ 
+SET retval = 0
+ 
+DECLARE encntrid = f8 with noconstant(0.0), PROTECT
+ 
+SET encntrid = trigger_encntrid ;97733145.00
+ 
+SELECT
+	H.PLAN_NAME
+	, H.ACTIVE_IND
+	, H.BEG_EFFECTIVE_DT_TM
+	, H.END_EFFECTIVE_DT_TM
+	, H.HEALTH_PLAN_ID
+	, E.ENCNTR_ID
+ 
+FROM
+	HEALTH_PLAN H, ENCNTR_PLAN_RELTN E
+ 
+PLAN H WHERE (CNVTUPPER(H.PLAN_NAME) = "BLUECARE*" OR CNVTUPPER(H.PLAN_NAME) = "TENNCARE*")
+	AND H.ACTIVE_IND = 1
+ 
+JOIN E WHERE H.HEALTH_PLAN_ID = E.HEALTH_PLAN_ID
+	AND E.ENCNTR_ID = encntrid ;97733145.00
+ 
+ 
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT
+ 
+IF (CURQUAL > 0)
+ 
+	set RETVAL = 100
+ 
+ENDIF
+ 
+ 
+ 
+END
+ 
+GO
+ 

@@ -1,0 +1,102 @@
+<REPORTLAYOUT name="cov_rad_MissingImageURL" group="0" orientation="0" outputtype="0" printhead="0" intermecprinthead="0" unittype="0" pageheight="11" pagewidth="8.5" leftmargin="0.5" rightmargin="0.5" topmargin="0.5" bottommargin="0.5" destination="0" severity="1" i18nenabledliterals="0" htmltable="0" locked="0" subreport="0" version="142" timestamp="43234.5095949074" xmlversion="6" programhasprompts="1" executingprogram="" tableview="0" tableborderwidth="0.014" tablebordercolor="0" tablecolumndefault="1" tablebackcolor="16777215" tablebackmode="0" fileversion="2017.11.1.81"><RPTDESCRIPTION><![CDATA[/*****************************************************************************
+ *  Covenant Health Information Technology
+ *  Knoxville, Tennessee
+ *****************************************************************************
+ 
+    Author:            Dan Herren
+    Date Written:      August 2017
+    Soluation:         Anatomic Pathology
+    Source file name:  cov_ant_PleuralFluidAnalysis.prg
+    Object name:       cov_ant_PleuralFluidAnalysis
+    Request #:         2
+ 
+    Program purpose:   Identify patients in a given time interval who
+                       have pleural or ascites (paracentesis) body fluid
+                       evaluation in general clinical lab hematology
+                       department (cell count and differential) and
+                       cytology within 3 days of hematology sample.
+ 
+    Executing from:    CCL.
+ 
+    Special Notes:
+ 
+ ******************************************************************************
+ *  GENERATED MODIFICATION CONTROL LOG
+ ******************************************************************************
+ *
+ *  Mod Date     Developer             Comment
+ *  -----------  --------------------  ----------------------------------------
+ *
+ ******************************************************************************/]]></RPTDESCRIPTION><RPTSPOOLWITHOPTIONS><![CDATA[deleted,DIO=value(_DIOTYPE)]]></RPTSPOOLWITHOPTIONS><RPTLAYOUT name="HeadPageSection" height="0.625" order="0" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="HeadPageSection" left="0.271" top="0.448" width="8.501" height="0.625" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/></RPTLAYOUT><RPTLAYOUT name="DetailSection" height="0.323" order="1" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="DetailSection" left="0.271" top="1.25" width="8.501" height="0.323" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/></RPTLAYOUT><RPTLAYOUT name="FootPageSection" height="0.448" order="2" pagebreak="0" advanceypos="1" maxheight="0" allowmaxheight="0" absolutey="0" allowabsolutey="0" keep="1" expandedheight="1" expanded="1"><RPTFONT ver="1" name="Times" size="1000" bold="0" italic="0" underline="0" strikethrough="0" color="0"/><RPTTEXT ver="1" name="FootPageSection" left="0.271" top="1.75" width="8.501" height="0.448" anchor="0" angle="0" flags="0" borders="0" padding="0" paddingsize="0" linespacing="0" rtf="0" grow="0" backcolor="16777215" backmode="0"/><RPTPEN width="0.014" color="0" style="0"/></RPTLAYOUT><RPTQUERY name="Query1" layout="1"><RPTQUERYSTRING><![CDATA[SELECT DISTINCT INTO $OUTDEV
+	person_id = p.person_id
+	, pat_name = p.name_full_formatted
+	, case_number = CNVTACC(pc.accession_nbr)
+	, order_dt = FORMAT(ord.current_start_dt_tm, "mm/dd/yy hh:mm;;d")
+	, collect_dt = FORMAT(pc.case_collect_dt_tm, "mm/dd/yy hh:mm;;d")
+	, specimen = UAR_GET_CODE_DISPLAY(cs.specimen_cd)
+	, lab_order = UAR_GET_CODE_DISPLAY(ord.catalog_cd)
+	, room = UAR_GET_CODE_DISPLAY(e.location_cd)
+	, facility = org.org_name
+
+FROM
+	pathology_case   pc
+	, case_specimen   cs
+	, person   p
+	, prsnl_org_reltn   por
+	, encounter   e
+	, clinical_event   ce
+	, orders   ord
+	, organization   org
+	, collection_info_qualifiers   ciq
+
+PLAN pc	
+	WHERE pc.case_id != 0.00
+ 
+JOIN cs	
+	WHERE cs.case_id = pc.case_id
+		AND cs.specimen_cd IN (ASCITICFL_SPECIMEN_VAR, PLEURALFL_SPECIMEN_VAR)
+ 
+JOIN p 
+	WHERE p.person_id = pc.person_id
+	   AND p.active_ind = 1
+  
+JOIN e 
+	WHERE e.encntr_id = pc.encntr_id
+	   AND e.person_id = pc.person_id
+ 
+JOIN ce	
+	WHERE ce.encntr_id = e.encntr_id
+		AND ce.person_id = pc.person_id
+ 
+JOIN ord 
+	WHERE ord.encntr_id = e.encntr_id
+		AND ord.person_id = e.person_id
+		AND ord.catalog_cd IN (CELLCOUNTWDIFFBODYFLUID_VAR, FLOWCYTOMETRYREPORT_VAR, NONGYNPATHOLOGYREPORT_VAR)
+		AND (ord.current_start_dt_tm BETWEEN CNVTDATETIME(CONCAT($STARTDATE_PMPT, CHAR(32), "00:00:00"))
+		AND CNVTDATETIME(CONCAT($ENDDATE_PMPT, CHAR(32), "23.59.59")))
+		AND ABS(DATETIMECMP(pc.case_collect_dt_tm, ord.current_start_dt_tm)) <= 3
+ 
+JOIN org 
+	WHERE org.organization_id = e.organization_id
+		AND org.organization_id = $FACILITY_PMPT
+ 
+JOIN ciq 
+	WHERE ciq.catalog_cd = ce.catalog_cd
+		AND ciq.specimen_type_cd IN (ASCITESFL_SPECIMENTYPE_VAR, PLEURALFL_SPECIMENTYPE_VAR)
+
+JOIN por 
+	WHERE por.person_id = reqinfo->updt_id
+		AND por.active_ind = 1
+		AND por.end_effective_dt_tm >sysdate
+
+ORDER BY
+	facility
+	, room
+	, pat_name
+	, case_number
+	, order_dt
+	, collect_dt
+	, specimen
+	, lab_order
+
+WITH FORMAT, SEPARATOR = " ", TIME = 60]]></RPTQUERYSTRING><RPTSELECTIF condition="1"><![CDATA[]]></RPTSELECTIF><RPTSELECTIF condition="0"><![CDATA[]]></RPTSELECTIF><RPTSELECTIF condition="0"><![CDATA[]]></RPTSELECTIF></RPTQUERY><RPTDRIVER name="cov_ant_medinsurancecode" params="$outdev, $facility_pmpt, $startdate_pmpt, $enddate_pmpt"/><RPTCODEVALUE name="ASCITESFL_SPECIMENTYPE_VAR" type="DISPLAYKEY" expression="ASCITES FL" codeset="2052"/><RPTCODEVALUE name="PLEURALFL_SPECIMENTYPE_VAR" type="DISPLAYKEY" expression="PLEURAL FL" codeset="2052"/><RPTCODEVALUE name="ASCITICFL_SPECIMEN_VAR" type="DISPLAYKEY" expression="ASCITICFL" codeset="1306"/><RPTCODEVALUE name="PLEURALFL_SPECIMEN_VAR" type="DISPLAYKEY" expression="PLEURALFL" codeset="1306"/><RPTCODEVALUE name="CELLCOUNTWDIFFBODYFLUID_VAR" type="DISPLAYKEY" expression="CELLCOUNTWDIFFBODYFLUID" codeset="200"/><RPTCODEVALUE name="FLOWCYTOMETRYREPORT_VAR" type="DISPLAYKEY" expression="FLOWCYTOMETRYREPORT" codeset="200"/><RPTCODEVALUE name="NONGYNPATHOLOGYREPORT_VAR" type="DISPLAYKEY" expression="NONGYNPATHOLOGYREPORT" codeset="200"/><RPTCODEVALUE name="FACILITYS_VAR" type="DISPLAYKEY" expression="FACILITYS" codeset="222"/><RPTHEADERS><RPTHEADER name="Head Page" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"><RPTSECTION name="HeadPageSection"/></RPTHEADER><RPTHEADER name="Head facility" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"/><RPTHEADER name="Head pat_name" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"/><RPTHEADER name="Detail" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"><RPTSECTION name="DetailSection"/></RPTHEADER><RPTHEADER name="Foot pat_name" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"/><RPTHEADER name="Foot facility" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"/><RPTHEADER name="Foot Page" version="1" keeptogether="1" keepgroup="0" repeat="0" forcefootpage="0"><RPTSECTION name="FootPageSection"/></RPTHEADER></RPTHEADERS></REPORTLAYOUT>

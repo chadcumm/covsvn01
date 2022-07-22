@@ -1,0 +1,425 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+  Author:             Chad Cummings
+  Date Written:       02/22/2020
+  Solution:           
+  Source file name:   cov_him_purge_queue.prg
+  Object name:        cov_him_purge_queue
+  Request #:
+
+  Program purpose:
+
+  Executing from:     CCL
+
+  Special Notes:      Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod   Mod Date    Developer              Comment
+---   ----------  --------------------  --------------------------------------
+000   02/22/2020  Chad Cummings			Initial Release
+******************************************************************************/
+drop program cov_him_purge_queue:dba go
+create program cov_him_purge_queue:dba
+
+prompt
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+
+with OUTDEV
+
+
+call echo(build("loading script:",curprog))
+set nologvar = 0	;do not create log = 1		, create log = 0
+set noaudvar = 0	;do not create audit = 1	, create audit = 0
+%i ccluserdir:cov_custom_ccl_common.inc
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Program Setup **************************************"))
+
+if (not(validate(reply,0)))
+record  reply
+(
+	1 text = vc
+	1 status_data
+	 2 status = c1
+	 2 subeventstatus[1]
+	  3 operationname = c15
+	  3 operationstatus = c1
+	  3 targetobjectname = c15
+	  3 targetobjectvalue = c100
+)
+endif
+
+call set_codevalues(null)
+call check_ops(null)
+
+free set t_rec
+record t_rec
+(
+  1 filename				  = vc
+  1 filename_shortcut		  = vc
+  1 purge_prsnl_id            = f8
+  1 refuse_prsnl_id           = f8
+  1 cmg_refuse_prsnl_id		  = f8
+  1 cnt			              = i4
+  1 order_cnt                 = i4
+  1 order_qual[*]
+   2 order_notification_id    = f8
+   2 order_id                 = f8
+   2 action_sequence		  	= i2
+   2 performing_prsnl_id		= f8
+   2 actioned_to_prsnl_id		= f8
+   2 send_ind					= i2
+   2 signed_ind					= i2
+  1 request_comment			  	= vc
+  1 doc[*]
+	 2 event_id					= f8
+	 2 performing_prsnl_id		= f8
+	 2 actioned_to_prsnl_id		= f8
+	 2 send_ind					= i2
+	 2 signed_ind				= i2
+	 2 notification_uid			= vc
+	 2 ce_event_prsnl_id		= f8
+)
+
+free record 680226request
+record 680226request (
+  1 review_personnel  
+    2 personnel_id = f8   
+    2 personnel_tz = i4   
+    2 personnel_group_id = f8   
+  1 reviews [*]   
+    2 nurse_reviews [*]   
+      3 order_id = f8   
+      3 action_sequence = i4   
+      3 review_action  
+        4 complete_ind = i2   
+    2 doctor_cosigns [*]   
+      3 order_id = f8   
+      3 action_sequence = i4   
+      3 bypass_rx_req_printing_ind = i2   
+      3 review_action  
+        4 admin_clear_ind = i2   
+        4 complete_ind = i2   
+) 
+
+
+if (program_log->run_from_ops != 1)
+  call addEmailLog("chad.cummings@covhlth.com")
+endif
+
+set t_rec->filename = concat(trim(cnvtlower(curprog)),"_",trim(format(sysdate,"yyyymmdd_hhmmss;;q")),".dat")
+set t_rec->filename_shortcut = concat(trim("cclscratch:"),t_rec->filename)
+
+select into "nl:"
+from
+	prsnl p
+plan p
+	where p.username in(
+							"HIMPURGE","HIMREFUSAL","CMGREFUSAL"
+						)
+	and   p.active_ind = 1
+order by
+	 p.person_id
+	,p.beg_effective_dt_tm desc
+head p.person_id
+	case (p.username)
+		of "HIMREFUSAL":	t_rec->refuse_prsnl_id		= p.person_id
+		of "HIMPURGE":		t_rec->purge_prsnl_id 		= p.person_id
+		of "CMGREFUSAL":	t_rec->cmg_refuse_prsnl_id	= p.person_id
+	endcase
+with nocounter
+call writeLog(build2("t_rec->refuse_prsnl_id	 =",trim(cnvtstring(t_rec->refuse_prsnl_id))))
+call writeLog(build2("t_rec->purge_prsnl_id		 =",trim(cnvtstring(t_rec->purge_prsnl_id))))
+call writeLog(build2("t_rec->cmg_refuse_prsnl_id =",trim(cnvtstring(t_rec->cmg_refuse_prsnl_id))))
+
+call writeLog(build2("* END   Program Setup **************************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("* START Getting Forwarded Documents for Signature **********************"))
+call uar_CrmBeginApp(600005, hApp)
+call uar_CrmBeginTask(hApp, 967100, hTask)
+call uar_CrmBeginReq(hTask, "", 967705, hStep)
+ 
+set hRequest = uar_CrmGetRequest(hStep)
+ 
+set hreceiver = uar_SrvGetStruct(hRequest, "receiver")
+call uar_SrvSetDouble(hreceiver, "pool_id", 0.00)
+call uar_SrvSetDouble(hreceiver, "provider_id", t_rec->purge_prsnl_id)
+call uar_SrvSetDouble(hRequest, "patient_id", 0.00)
+ 
+set hstatus_codes = uar_SrvAddItem(hRequest, "status_codes")
+call uar_SrvSetDouble(hstatus_codes, "status_cd", code_values->cv.cs_79.onhold_cd)
+call writeLog(build2("*** code_values->cv.cs_79.onhold_cd:",cnvtstring(code_values->cv.cs_79.onhold_cd)))
+ 
+set hstatus_codes = uar_SrvAddItem(hRequest, "status_codes")
+call uar_SrvSetDouble(hstatus_codes, "status_cd", code_values->cv.cs_79.pending_cd)
+call writeLog(build2("*** code_values->cv.cs_79.pending_cd:",cnvtstring(code_values->cv.cs_79.pending_cd)))
+ 
+set hstatus_codes = uar_SrvAddItem(hRequest, "status_codes")
+call uar_SrvSetDouble(hstatus_codes, "status_cd", code_values->cv.cs_79.opened_cd)
+call writeLog(build2("*** code_values->cv.cs_79.opened_cd:",cnvtstring(code_values->cv.cs_79.opened_cd)))
+ 
+set hdate_range = uar_SrvGetStruct(hRequest, "date_range")
+call uar_SrvSetDate(hdate_range, "begin_dt_tm", cnvtdatetime(curdate,curtime3))
+call uar_SrvSetDate(hdate_range, "end_dt_tm", cnvtdatetime(curdate,curtime3))
+ 
+set hconfiguration = uar_SrvGetStruct(hRequest, "configuration")
+call uar_SrvSetDouble(hconfiguration, "msg_category_config_id",2946684997.00)
+call uar_SrvSetDouble(hconfiguration, "msg_subcategory_config_id", 0.00)
+call uar_SrvSetLong(hconfiguration, "application_number", 600005)
+ 
+set hload = uar_SrvGetStruct(hRequest, "load")
+call uar_SrvSetShort(hload, "only_unassigned_pool_items_ind", 0)
+call uar_SrvSetShort(hload, "suppress_unauth_docs_ind", 0)
+call uar_SrvSetShort(hload, "all_docs_ind", 1)
+call uar_SrvSetShort(hload, "names_ind", 1)
+ 
+set performDtTm = cnvtdatetime(curdate, curtime3)
+call uar_CrmPerform(hStep)
+call echo(build("Elapsed Time (seconds):", datetimediff(cnvtdatetime(curdate, curtime3), performDtTm, 5)))
+ 
+set hReply = uar_CrmGetReply(hStep)
+call writeLog(build2("*** Getting Reply for Documents:",cnvtstring(hReply)))
+ 
+set i = uar_SrvGetItemCount(hReply, "documents")
+call writeLog(build2("**** Number of Documents Found:",cnvtstring(i)))
+ 
+declare notification_uid = vc with noconstant(" ")
+declare event_id = f8 with noconstant(0.0)
+if (i > 0)
+	call writeLog(build2("***** Documents Found"))
+	for (j = 1 to i)
+		set event_id = 0.0
+		set notification_uid = " "
+		set hList = uar_SrvGetItem(hReply, "documents", j-1)
+		set event_id = uar_SrvGetDouble(hList, "event_id")
+		set notification_uid = uar_SrvGetStringPtr(hList, "notification_uid")
+		set t_rec->cnt = (t_rec->cnt + 1)
+		set stat = alterlist(t_rec->doc,t_rec->cnt)
+		set t_rec->doc[t_rec->cnt].event_id				= event_id
+		set t_rec->doc[t_rec->cnt].notification_uid		= notification_uid
+		set t_rec->doc[t_rec->cnt].send_ind				= 1
+		set t_rec->doc[t_rec->cnt].signed_ind			= 1
+		set t_rec->doc[t_rec->cnt].performing_prsnl_id	= t_rec->purge_prsnl_id
+	endfor
+else
+	call writeLog(build2("***** No Documents Found"))
+	set reply->status_data->status = "Z"
+	go to exit_script
+endif
+ 
+call uar_CrmEndReq(hStep)
+call uar_CrmEndTask(hTask)
+call uar_CrmEndApp(hApp)
+ 
+call writeLog(build2("* END  Getting Forwarded Documents for Signature **********************"))
+
+call writeLog(build2("* START Getting Forwarded Orders for Signature **********************"))
+call uar_CrmBeginApp(600005, hApp)
+call uar_CrmBeginTask(hApp, 967100, hTask)
+call uar_CrmBeginReq(hTask, "", 967706, hStep)
+ 
+set hRequest = uar_CrmGetRequest(hStep)
+ 
+set hreceiver = uar_SrvGetStruct(hRequest, "receiver")
+call uar_SrvSetDouble(hreceiver, "pool_id", 0.00)
+call uar_SrvSetDouble(hreceiver, "provider_id", t_rec->purge_prsnl_id)
+call uar_SrvSetDouble(hRequest, "patient_id", 0.00)
+ 
+set hstatus_codes = uar_SrvAddItem(hRequest, "status_codes")
+call uar_SrvSetDouble(hstatus_codes, "status_cd", code_values->cv.cs_79.onhold_cd)
+call writeLog(build2("*** code_values->cv.cs_79.onhold_cd:",cnvtstring(code_values->cv.cs_79.onhold_cd)))
+ 
+set hstatus_codes = uar_SrvAddItem(hRequest, "status_codes")
+call uar_SrvSetDouble(hstatus_codes, "status_cd", code_values->cv.cs_79.pending_cd)
+call writeLog(build2("*** code_values->cv.cs_79.pending_cd:",cnvtstring(code_values->cv.cs_79.pending_cd)))
+ 
+set hstatus_codes = uar_SrvAddItem(hRequest, "status_codes")
+call uar_SrvSetDouble(hstatus_codes, "status_cd", code_values->cv.cs_79.opened_cd)
+call writeLog(build2("*** code_values->cv.cs_79.opened_cd:",cnvtstring(code_values->cv.cs_79.opened_cd)))
+ 
+set hdate_range = uar_SrvGetStruct(hRequest, "date_range")
+call uar_SrvSetDate(hdate_range, "begin_dt_tm", cnvtdatetime(curdate-300,curtime3))
+call uar_SrvSetDate(hdate_range, "end_dt_tm", cnvtdatetime(curdate,curtime3))
+ 
+set hconfiguration = uar_SrvGetStruct(hRequest, "configuration")
+call uar_SrvSetDouble(hconfiguration, "msg_category_config_id",2946684457.00)
+call uar_SrvSetDouble(hconfiguration, "msg_subcategory_config_id", 0.00)
+call uar_SrvSetLong(hconfiguration, "application_number", 600005)
+ 
+set hload = uar_SrvGetStruct(hRequest, "load")
+call uar_SrvSetShort(hload, "only_unassigned_pool_items_ind", 0)
+call uar_SrvSetShort(hload, "names_ind", 1)
+ 
+set performDtTm = cnvtdatetime(curdate, curtime3)
+call uar_CrmPerform(hStep)
+call echo(build("Elapsed Time (seconds):", datetimediff(cnvtdatetime(curdate, curtime3), performDtTm, 5)))
+ 
+set hReply = uar_CrmGetReply(hStep)
+call writeLog(build2("*** Getting Reply for Orders:",cnvtstring(hReply)))
+ 
+set i = uar_SrvGetItemCount(hReply, "orders")
+call writeLog(build2("**** Number of orders Found:",cnvtstring(i)))
+ 
+declare order_notification_id = f8 with noconstant(0.0)
+declare order_id = f8 with noconstant(0.0)
+if (i > 0)
+	call writeLog(build2("***** Orders Found"))
+	for (j = 1 to i)
+		set order_id = 0.0
+		set order_notification_id = 0.0
+		set hList = uar_SrvGetItem(hReply, "orders", j-1)
+		set order_id = uar_SrvGetDouble(hList, "order_id")
+		set order_notification_id = uar_SrvGetDouble(hList, "order_notification_id")
+		set t_rec->order_cnt = (t_rec->order_cnt + 1)
+		set stat = alterlist(t_rec->order_qual,t_rec->order_cnt)
+		set t_rec->order_qual[t_rec->order_cnt].order_id				= order_id
+		set t_rec->order_qual[t_rec->order_cnt].order_notification_id		= order_notification_id
+		set t_rec->order_qual[t_rec->order_cnt].send_ind				= 1
+		set t_rec->order_qual[t_rec->order_cnt].signed_ind				= 1
+		set t_rec->order_qual[t_rec->order_cnt].performing_prsnl_id		= t_rec->purge_prsnl_id
+		set t_rec->order_qual[t_rec->order_cnt].action_sequence			= 2
+	endfor
+else
+	call writeLog(build2("***** No Orders Found"))
+	set reply->status_data->status = "Z"
+	go to exit_script
+endif
+ 
+call uar_CrmEndReq(hStep)
+call uar_CrmEndTask(hTask)
+call uar_CrmEndApp(hApp)
+ 
+call writeLog(build2("* END  Getting Forwarded Orders for Signature **********************"))
+
+call writeLog(build2("* START Signing Documents **********************"))
+ 
+for (i = 1 to size(t_rec->doc,5))
+	call uar_CrmBeginApp(600005, hApp)
+	call uar_CrmBeginTask(hApp, 967100, hTask)
+	call uar_CrmBeginReq(hTask, "", 967529, hStep)
+ 
+	set hRequest = uar_CrmGetRequest(hStep)
+	call uar_SrvSetDouble(hRequest, "action_prsnl_id", t_rec->purge_prsnl_id)
+ 
+	set haction = uar_SrvGetStruct(hRequest, "action")
+	call uar_SrvSetShort(haction, "sign_ind", 1)
+	call uar_SrvSetShort(haction, "review_ind", 0)
+ 
+	set hdocuments = uar_SrvAddItem(hRequest, "documents")
+	call uar_SrvSetDouble(hdocuments, "event_id", 0.00)
+	call uar_SrvSetLong(hdocuments, "event_version", 0)
+	call uar_SrvSetString(hdocuments, "notification_uid", t_rec->doc[i].notification_uid)
+	call uar_SrvSetLong(hdocuments, "notification_version", 0)
+	call uar_SrvSetLong(hdocuments, "notification_assign_version", 0)
+	call uar_SrvSetString(hdocuments, "comment", "")
+	call uar_SrvSetShort(hRequest, "run_synchronously_ind", 0)
+	call uar_SrvSetDouble(hRequest, "on_behalf_of_prsnl_id", 0.00)
+	call uar_SrvSetDouble(hRequest, "pool_id", 0.00)
+	call uar_SrvSetDate(hRequest, "action_dt_tm", cnvtdatetime(curdate,curtime3))
+	call uar_SrvSetLong(hRequest, "action_tz", 126)
+ 
+	set performDtTm = cnvtdatetime(curdate, curtime3)
+	;call uar_CrmPerform(hStep)
+	call echo(build("Elapsed Time (seconds):", datetimediff(cnvtdatetime(curdate, curtime3), performDtTm, 5)))
+ 
+	set hReply = uar_CrmGetReply(hStep)
+ 
+	call uar_CrmEndReq(hStep)
+	call uar_CrmEndTask(hTask)
+	call uar_CrmEndApp(hApp)
+endfor
+call writeLog(build2("* END Signing Documents **********************"))
+
+call writeLog(build2("* START Signing Orders **********************"))
+ 
+for (i = 1 to size(t_rec->order_qual,5))
+		
+		set stat = initrec(680226request)
+		free record 680226reply
+		
+		set 680226request->review_personnel.personnel_group_id	= 0.0
+		set 680226request->review_personnel.personnel_id 		= t_rec->purge_prsnl_id
+		set 680226request->review_personnel.personnel_tz 		= 126
+		
+		set stat = alterlist(680226request->reviews,1)
+		set stat = alterlist(680226request->reviews[1].doctor_cosigns,1)
+		set 680226request->reviews[1].doctor_cosigns[1].order_id						= t_rec->order_qual[i].order_id
+		set 680226request->reviews[1].doctor_cosigns[1].bypass_rx_req_printing_ind		= 0
+		set 680226request->reviews[1].doctor_cosigns[1].action_sequence					= 2
+		set 680226request->reviews[1].doctor_cosigns[1].review_action.admin_clear_ind 	= 0
+		set 680226request->reviews[1].doctor_cosigns[1].review_action.complete_ind		= 1	
+		
+		set stat = tdbexecute(600005,500196,680226,"REC",680226request,"REC",680226reply)
+		
+		call echorecord(680226reply)
+	
+	/*
+	call uar_CrmBeginApp(600005, hApp)
+	call uar_CrmBeginTask(hApp, 500196, hTask)
+	call uar_CrmBeginReq(hTask, "", 680226, hStep)
+ 
+	set haction = uar_SrvAddItem(hRequest, "review_personnel")
+	call uar_SrvSetDouble(haction, "personnel_id", t_rec->purge_prsnl_id)
+	call uar_SrvSetShort(haction, "personnel_tz", 126)
+ 	call uar_SrvSetShort(haction, "personnel_group_id", 0)
+ 	
+	set hdocuments1 = uar_SrvAddItem(hRequest, "reviews")
+	set hdocuments = uar_SrvAddItem(hdocuments1, "doctor_cosigns")
+	
+	call uar_SrvSetDouble(hdocuments, "order_id", t_rec->order_qual[i].order_id)
+	call uar_SrvSetShort(hdocuments, "action_sequence", t_rec->order_qual[i].action_sequence)
+	call uar_SrvSetShort(hdocuments, "bypass_rx_req_printing_ind", 0)
+	
+	set hdocuments2 = uar_SrvAddItem(hdocuments, "review_action")
+	call uar_SrvSetShort(hdocuments2, "admin_clear_ind", 0)
+	call uar_SrvSetShort(hdocuments2, "complete_ind", 1)
+
+
+ 
+	set performDtTm = cnvtdatetime(curdate, curtime3)
+	call uar_CrmPerform(hStep)
+	call echo(build("Elapsed Time (seconds):", datetimediff(cnvtdatetime(curdate, curtime3), performDtTm, 5)))
+ 
+	set hReply = uar_CrmGetReply(hStep)
+	
+ 	set hList = uar_SrvGetItem(hReply, "transaction_status", 0)
+ 	set success_ind = uar_SrvGetShort(hList, "success_ind")
+ 	call writeLog(build2("success_ind=",trim(cnvtstring(success_ind))))
+ 	
+	call uar_CrmEndReq(hStep)
+	call uar_CrmEndTask(hTask)
+	call uar_CrmEndApp(hApp)
+	*/
+endfor
+call writeLog(build2("* END Signing Orders **********************"))
+
+set reply->status_data->status = "S"
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Next Section  **************************************"))
+call writeLog(build2("* END   Next Section  **************************************"))
+call writeLog(build2("************************************************************"))
+
+
+#exit_script
+
+if (validate(t_rec))
+	call echojson(t_rec,concat(program_log->files.file_path,t_rec->filename),1)
+	call addAttachment(program_log->files.file_path,t_rec->filename)
+endif
+
+call exitScript(null)
+call echorecord(t_rec)
+;call echorecord(code_values)
+call echorecord(program_log)
+
+
+end
+go

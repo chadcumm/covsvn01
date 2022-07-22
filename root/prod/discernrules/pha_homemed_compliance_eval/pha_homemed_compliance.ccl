@@ -1,0 +1,27 @@
+select 
+	oor.related_from_order_id
+	,ocd.compliance_status_cd
+	,ocd.last_occurred_dt_tm
+	,log_misc1 = concat(" Status: ",uar_get_code_display(ocd.compliance_status_cd)
+  						,"@NEWLINE Comments: ",lt.long_text
+  						,"@NEWLINE Last Taken: ",format(ocd.last_occurred_dt_tm, "@SHORTDATETIME"))
+ 
+	,lt.long_text_id
+	,lt.long_text
+from
+	order_order_reltn oor
+	,order_compliance_detail ocd
+	,long_text lt
+	,orders o
+plan oor
+	where oor.relation_type_cd = value(uar_get_code_by("MEANING",4001987,"CONVERT"))
+	and oor.related_to_order_id = 2349654989
+join o
+	where o.order_id = oor.related_from_order_id
+	and o.orig_ord_as_flag in (1,2)
+join ocd
+	where ocd.order_nbr = outerjoin(oor.related_from_order_id)
+	and ocd.compliance_status_cd != 0
+join lt
+	where lt.long_text_id = outerjoin(ocd.long_text_id)
+with nocounter

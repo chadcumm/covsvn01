@@ -1,0 +1,616 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+	Author:				Chad Cummings
+	Date Written:		
+	Solution:			
+	Source file name:	cov_ltd_update_ops.prg
+	Object name:		cov_ltd_update_ops
+	Request #:
+
+	Program purpose:
+
+	Executing from:		CCL
+
+ 	Special Notes:		Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod 	Mod Date	  Developer				      Comment
+--- 	----------	--------------------	----------------------------------
+000 	08/12/2021  Chad Cummings			Initial Release
+******************************************************************************/
+
+drop program cov_ltd_update_ops:dba go
+create program cov_ltd_update_ops:dba
+
+prompt 
+	"Output to File/Printer/MINE" = "MINE"
+	, "AUDIT_MODE" = "" 
+
+with OUTDEV, AUDIT_MODE
+
+
+call echo(build("loading script:",curprog))
+set nologvar = 0	;do not create log = 1		, create log = 0
+set noaudvar = 0	;do not create audit = 1	, create audit = 0
+%i ccluserdir:cov_custom_ccl_common.inc
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom Section  ************************************"))
+
+if (not(validate(reply,0)))
+record  reply
+(
+	1 text = vc
+	1 status_data
+	 2 status = c1
+	 2 subeventstatus[1]
+	  3 operationname = c15
+	  3 operationstatus = c1
+	  3 targetobjectname = c15
+	  3 targetobjectvalue = c100
+)
+endif
+
+set reply->status_data.status = "F"
+
+call set_codevalues(null)
+call check_ops(null)
+
+free set t_rec
+record t_rec
+(
+	1 prompts
+	 2 outdev		= vc
+	 2 audit_mode	= vc
+	1 files
+	 2 records_attachment = vc
+	1 cons
+	 2 audit_mode 	= vc
+	1 dates
+	 2 start_dt_tm	= dq8
+	 2 end_dt_tm	= dq8
+	1 cnt 		= i4
+	1 qual[*]
+	 2 utility_ind = i2
+	 2 person_id   = f8
+	 2 mrn = vc
+	 2 patient_name = vc
+	 2 lh_cnt_ltd_data_id = f8
+	 2 ce_dynamic_label_id = f8
+	 2 disc_dt_tm = dq8
+)
+
+free record list 
+record list
+(
+    1 qual[*]
+        2 ce_dynamic_label_id = f8
+        2 lh_cnt_ltd_data_id = f8
+        2 disc_dt_tm = dq8
+) 
+
+free record filters 
+record filters
+(
+    1 events[*]
+        2 event_cd = f8
+        2 nomens[*]
+            3 nomenclature_id = f8
+) 
+
+free record list2 
+record list2
+(
+    1 qual[*]
+        2 ce_dynamic_label_id = f8
+        2 disc_dt_tm = dq8
+) 
+
+free record filters3 
+record filters3
+(
+    1 events[*]
+        2 event_cd = f8
+        2 nomens[*]
+            3 nomenclature_id = f8
+) 
+
+free record list3 
+record list3
+(
+    1 qual[*]
+        2 ce_dynamic_label_id = f8
+        2 disc_dt_tm = dq8
+) 
+
+set t_rec->prompts.outdev = $OUTDEV
+set t_rec->prompts.audit_mode = $AUDIT_MODE
+
+call writeLog(build2("->$OUTDEV=", $OUTDEV))
+call writeLog(build2("->$AUDIT_MODE=", $AUDIT_MODE))
+call writeLog(build2("->t_rec->prompts.outdev=",t_rec->prompts.outdev))
+call writeLog(build2("->t_rec->prompts.audit_mode=",t_rec->prompts.audit_mode))
+
+set t_rec->files.records_attachment = concat(trim(cnvtlower(curprog)),"_rec_",trim(format(sysdate,"yyyy_mm_dd_hh_mm_ss;;d")),".dat")
+
+set t_rec->dates.start_dt_tm 	= cnvtdatetime("01-APR-2018 00:00:00")	;before go-live
+set t_rec->dates.end_dt_tm 		= cnvtdatetime(curdate,curtime3)	
+
+call writeLog(build2("->t_rec->dates.start_dt_tm=",format(t_rec->dates.start_dt_tm,";;q")))
+call writeLog(build2("->t_rec->dates.end_dt_tm=",format(t_rec->dates.end_dt_tm,";;q")))
+
+set t_rec->cons.audit_mode = "Y"
+
+if (t_rec->prompts.audit_mode = "N")
+	call writeLog(build2("-->Turning off audit mode"))
+	set t_rec->cons.audit_mode = "N"
+endif
+call writeLog(build2("->t_rec->cons.audit_mode=", t_rec->cons.audit_mode))
+
+call writeLog(build2("* END   Custom Section  ************************************"))
+call writeLog(build2("************************************************************"))
+
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Gathering Utility 1 Data ***************************"))
+
+select into "nl:"
+from
+    lh_cnt_ic_patient_device pd
+    , lh_cnt_ltd_data ltd
+plan pd
+    where pd.discontinue_dt_tm != null
+    and pd.ce_dynamic_label_id != 0
+join ltd
+    where ltd.ce_dynamic_label_id = pd.ce_dynamic_label_id
+    and ltd.disc_dt_tm = null
+	and (ltd.insert_dt_tm != null
+		or ltd.poa_dt_tm != null)
+	and ltd.ltd_type_flag != 0
+order by
+    pd.ce_dynamic_label_id
+    , pd.discontinue_dt_tm desc
+head report
+    cnt = 0
+    call writeLog(build2("->Starting Query 1"))
+detail
+    cnt += 1
+    if(mod(cnt, 100) = 1)
+        stat = alterlist(list->qual, cnt + 99)
+    endif
+    list->qual[cnt].ce_dynamic_label_id = ltd.ce_dynamic_label_id
+    list->qual[cnt].lh_cnt_ltd_data_id = ltd.lh_cnt_ltd_data_id
+    list->qual[cnt].disc_dt_tm = cnvtdatetime(pd.discontinue_dt_tm)
+    call writeLog(build2("-->cnt=",cnvtstring(cnt)))
+    call writeLog(build2("-->ce_dynamic_label_id=",cnvtstring(ltd.ce_dynamic_label_id)))
+    call writeLog(build2("-->lh_cnt_ltd_data_id=",cnvtstring(ltd.lh_cnt_ltd_data_id)))
+    call writeLog(build2("-->disc_dt_tm=",format(pd.discontinue_dt_tm,";;q")))
+foot report
+    stat = alterlist(list->qual, cnt)
+    call writeLog(build2("<-Leaving Query 1"))
+with nocounter
+
+call writeLog(build2("** Adding Data to Audit Record ****************************"))
+
+if (size(list->qual, 5) > 0)
+	
+	select into "nl:"
+	from
+		 (dummyt dt with seq = size(list->qual, 5))
+		,ce_dynamic_label cdl
+		,person p
+	plan dt
+	join cdl
+		where cdl.ce_dynamic_label_id = list->qual[dt.seq].ce_dynamic_label_id
+	join p
+		where p.person_id = cdl.person_id
+	head report 
+		i = t_rec->cnt
+	detail
+		i = (i + 1)
+		stat = alterlist(t_rec->qual,i)
+		t_rec->qual[i].lh_cnt_ltd_data_id = list->qual[dt.seq].lh_cnt_ltd_data_id
+		t_rec->qual[i].ce_dynamic_label_id = list->qual[dt.seq].ce_dynamic_label_id
+		t_rec->qual[i].disc_dt_tm = list->qual[dt.seq].disc_dt_tm
+		t_rec->qual[i].person_id = p.person_id
+		t_rec->qual[i].patient_name = p.name_full_formatted
+		t_rec->qual[i].utility_ind = 1
+	foot report
+		t_rec->cnt = i
+	with nocounter
+endif
+
+call writeLog(build2("* END   Gathering Utility 1 Data ***************************"))
+call writeLog(build2("************************************************************"))
+
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Updating Utility 1 Data ****************************"))
+
+if (size(list->qual, 5) > 0)
+	if (t_rec->cons.audit_mode = "N")
+		call writeLog(build2("** UPDATES STARTED"))
+	
+		update into lh_cnt_ltd_data ltd
+		    , (dummyt dt with seq = size(list->qual, 5))
+		set ltd.disc_dt_tm = cnvtdatetime(list->qual[dt.seq].disc_dt_tm)
+		    , ltd.updt_task = 654
+		    , ltd.updt_applctx = 18325080
+		    , ltd.updt_dt_tm = sysdate
+		    , ltd.updt_cnt = ltd.updt_cnt + 1
+		    , ltd.updt_id = 2
+		plan dt
+		join ltd
+		    where ltd.ce_dynamic_label_id = list->qual[dt.seq].ce_dynamic_label_id
+		    and ltd.lh_cnt_ltd_data_id = list->qual[dt.seq].lh_cnt_ltd_data_id
+		with nocounter
+		
+		commit 
+	
+	
+	else
+		call writeLog(build2("** UPDATES SKIPPED, PROGRAM IN AUDIT MODE"))
+	endif
+else
+	call writeLog(build2("** UPDATES SKIPPED, NO RESULTS FOUND TO UPDATE"))
+endif
+
+call writeLog(build2("* END   Updating Utility 1 Data ****************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Gathering Utility 2 Data ***************************"))
+
+call writeLog(build2("** First Query *********************************************"))
+
+select into "nl:"
+from
+    br_datamart_category c
+    , br_datamart_filter f
+    , br_datamart_value v
+plan c
+    where c.category_mean = "MP_LINES_TUBES_DRAINS_V2"
+join f
+    where f.br_datamart_category_id = c.br_datamart_category_id
+    and f.filter_category_mean in ("EVENT", "EVENT_NOMEN")
+    and f.filter_mean = "*DISC*"
+join v
+    where v.br_datamart_filter_id = f.br_datamart_filter_id
+order by
+    f.filter_seq
+    , f.filter_category_mean
+head report
+    ecnt = 0
+head f.filter_seq
+    ncnt = 0
+detail
+    if(f.filter_category_mean = "EVENT")
+        ecnt += 1
+        stat = alterlist(filters->events, ecnt)
+        filters->events[ecnt].event_cd = v.parent_entity_id
+    elseif(f.filter_category_mean = "EVENT_NOMEN")
+        ncnt = size(filters->events[ecnt]->nomens, 5) + 1
+        stat = alterlist(filters->events[ecnt]->nomens, ncnt)
+        filters->events[ecnt]->nomens[ncnt].nomenclature_id = v.parent_entity_id
+    endif
+foot f.filter_seq
+    null
+foot report
+    null
+with nocounter
+
+call writeLog(build2("** Second Query *******************************************"))
+
+select into "nl:"
+from
+    lh_cnt_ltd_data ltd
+    , ce_dynamic_label cdl
+    , (dummyt d1 with seq = size(filters->events, 5))
+    , (dummyt d2 with seq = 1)
+    , clinical_event ce
+    , (left join ce_coded_result ccr
+		on ccr.event_id = ce.event_id
+        and ccr.valid_until_dt_tm > sysdate
+        and ccr.nomenclature_id = filters->events[d1.seq]->nomens[d2.seq].nomenclature_id)
+    , (left join ce_date_result cdr
+        on cdr.event_id = ce.event_id
+        and cdr.valid_until_dt_tm > sysdate)
+plan d1
+    where maxrec(d2, size(filters->events[d1.seq]->nomens, 5))
+join d2
+join ltd
+    where ltd.disc_dt_tm = null
+    and (ltd.insert_dt_tm != null
+        or ltd.poa_dt_tm != null)
+	and ltd.ltd_type_flag != 0
+	and not exists
+	(
+		select 1
+		from lh_cnt_ic_patient_device d
+		where d.ce_dynamic_label_id = ltd.ce_dynamic_label_id
+	)
+join cdl
+    where cdl.ce_dynamic_label_id = ltd.ce_dynamic_label_id
+    and cdl.valid_until_dt_tm > sysdate
+join ce
+    where ce.ce_dynamic_label_id = cdl.ce_dynamic_label_id
+    and ce.event_cd = filters->events[d1.seq].event_cd
+    and ce.valid_until_dt_tm > sysdate
+join ccr
+join cdr
+order by
+    ce.ce_dynamic_label_id
+    , ce.event_end_dt_tm desc
+head report
+    cnt = 0
+head ce.ce_dynamic_label_id
+    cnt += 1
+    if(mod(cnt, 100) = 1)
+        stat = alterlist(list2->qual, cnt + 99)
+    endif
+    list2->qual[cnt].ce_dynamic_label_id = ce.ce_dynamic_label_id
+detail
+    if(list2->qual[cnt].disc_dt_tm in (null, 0))
+        if(ccr.nomenclature_id != 0)
+            list2->qual[cnt].disc_dt_tm = cnvtdatetime(ce.event_end_dt_tm)
+        elseif(cdr.result_dt_tm != null)
+            list2->qual[cnt].disc_dt_tm = cnvtdatetime(cdr.result_dt_tm)
+        endif
+    endif
+foot ce.ce_dynamic_label_id
+    if(list2->qual[cnt].disc_dt_tm in (null, 0)
+        and cdl.label_status_cd = value(uar_get_code_by("MEANING", 4002015, "INACTIVE")))
+        list2->qual[cnt].disc_dt_tm = cnvtdatetime(cdl.valid_from_dt_tm)
+    endif
+foot report
+    stat = alterlist(list2->qual, cnt)
+with nocounter, orahintcbo("index(ce xie22clinical_event)")
+
+
+call writeLog(build2("** Adding Data to Audit Record ****************************"))
+
+if (size(list2->qual, 5) > 0)
+	
+	select into "nl:"
+	from
+		 (dummyt dt with seq = size(list2->qual, 5))
+		,ce_dynamic_label cdl
+		,person p
+	plan dt
+	join cdl
+		where cdl.ce_dynamic_label_id = list2->qual[dt.seq].ce_dynamic_label_id
+	join p
+		where p.person_id = cdl.person_id
+	head report 
+		i = t_rec->cnt
+	detail
+		i = (i + 1)
+		stat = alterlist(t_rec->qual,i)
+		t_rec->qual[i].ce_dynamic_label_id = list2->qual[dt.seq].ce_dynamic_label_id
+		t_rec->qual[i].disc_dt_tm = list2->qual[dt.seq].disc_dt_tm
+		t_rec->qual[i].person_id = p.person_id
+		t_rec->qual[i].patient_name = p.name_full_formatted
+		t_rec->qual[i].utility_ind = 2
+	foot report
+		t_rec->cnt = i
+	with nocounter
+endif
+
+call writeLog(build2("* END   Gathering Utility 2 Data ***************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Updating Utility 2 Data ****************************"))
+
+if (size(list2->qual, 5) > 0)
+	
+	if (t_rec->cons.audit_mode = "N")
+		call writeLog(build2("** UPDATES STARTED"))
+	
+		update into lh_cnt_ltd_data ltd
+		    , (dummyt dt with seq = size(list2->qual, 5))
+		set ltd.disc_dt_tm = cnvtdatetime(list2->qual[dt.seq].disc_dt_tm)
+		    , ltd.updt_dt_tm = sysdate
+		    , ltd.updt_task = 654
+		    , ltd.updt_applctx = 18325080
+		    , ltd.updt_cnt = ltd.updt_cnt + 1
+		    , ltd.updt_id = 2
+		plan dt
+		    where list2->qual[dt.seq].disc_dt_tm not in (null, 0)
+		join ltd
+		    where ltd.ce_dynamic_label_id = list2->qual[dt.seq].ce_dynamic_label_id
+		with nocounter
+		
+		commit 
+	
+	else
+		call writeLog(build2("** UPDATES SKIPPED, PROGRAM IN AUDIT MODE"))
+	endif
+else
+	call writeLog(build2("** UPDATES SKIPPED, NO RESULTS FOUND TO UPDATE"))
+endif
+call writeLog(build2("* END   Updating Utility 2 Data ****************************"))
+call writeLog(build2("************************************************************"))
+
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Gathering Utility 3 Data ***************************"))
+
+select into "nl:"
+from
+	 lh_cnt_ltd_data ltd
+	,ce_dynamic_label cdl
+	,clinical_event ce
+plan ltd
+	where ltd.disc_dt_tm = null
+	and ltd.updt_dt_tm between cnvtdatetime(t_rec->dates.start_dt_tm) and cnvtdatetime(t_rec->dates.end_dt_tm)
+	and ltd.ltd_type_flag != 0
+join cdl
+	where cdl.ce_dynamic_label_id = ltd.ce_dynamic_label_id
+	and cdl.valid_until_dt_tm > sysdate
+join ce
+	where ce.ce_dynamic_label_id = cdl.ce_dynamic_label_id
+	and ce.valid_until_dt_tm > sysdate
+order by
+	 ce.ce_dynamic_label_id
+	,ce.event_end_dt_tm desc
+head report
+	call writeLog(build2("->Starting Query 3"))
+	cnt = 0
+head ce.ce_dynamic_label_id
+	cnt += 1
+	if(mod(cnt, 100) = 1)
+		stat = alterlist(list3->qual, cnt + 99)
+	endif
+	list3->qual[cnt].ce_dynamic_label_id = ce.ce_dynamic_label_id
+foot ce.ce_dynamic_label_id
+	if(list3->qual[cnt].disc_dt_tm in (null, 0) and cdl.label_status_cd = value(uar_get_code_by("MEANING", 4002015, "INACTIVE")))
+		list3->qual[cnt].disc_dt_tm = cnvtdatetime(cdl.valid_from_dt_tm)
+	endif
+	call writeLog(build2("-->cnt=",cnvtstring(cnt)))
+    call writeLog(build2("-->ce_dynamic_label_id=",cnvtstring(list3->qual[cnt].ce_dynamic_label_id)))
+    call writeLog(build2("-->disc_dt_tm=",format(list3->qual[cnt].disc_dt_tm,";;q")))
+foot report
+	stat = alterlist(list3->qual, cnt)
+	call writeLog(build2("<-Leaving Query 3"))
+with nocounter, orahintcbo("index(ce xie22clinical_event)")
+
+
+
+call writeLog(build2("** Adding Data to Audit Record ****************************"))
+
+if (size(list3->qual, 5) > 0)
+
+	select into "nl:"
+	from
+		 (dummyt dt with seq = size(list3->qual, 5))
+		,ce_dynamic_label cdl
+		,person p
+	plan dt
+	join cdl
+		where cdl.ce_dynamic_label_id = list3->qual[dt.seq].ce_dynamic_label_id
+	join p
+		where p.person_id = cdl.person_id
+	head report 
+		i = t_rec->cnt
+	detail
+		i = (i + 1)
+		stat = alterlist(t_rec->qual,i)
+		t_rec->qual[i].ce_dynamic_label_id = list3->qual[dt.seq].ce_dynamic_label_id
+		t_rec->qual[i].disc_dt_tm = list3->qual[dt.seq].disc_dt_tm
+		t_rec->qual[i].person_id = p.person_id
+		t_rec->qual[i].patient_name = p.name_full_formatted
+		t_rec->qual[i].utility_ind = 3
+	foot report
+		t_rec->cnt = i
+	with nocounter
+endif
+
+call writeLog(build2("* END   Gathering Utility 3 Data ***************************"))
+call writeLog(build2("************************************************************"))
+
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Updating Utility 3 Data ****************************"))
+
+if (size(list3->qual, 5) > 0)
+	
+	if (t_rec->cons.audit_mode = "N")
+		call writeLog(build2("** UPDATES STARTED"))
+	
+		update into lh_cnt_ltd_data ltd
+	    	, (dummyt dt with seq = size(list3->qual, 5))
+		set ltd.disc_dt_tm = cnvtdatetime(list3->qual[dt.seq].disc_dt_tm)
+	    	, ltd.updt_dt_tm = sysdate
+	    	, ltd.updt_task = 654
+	    	, ltd.updt_applctx = 18325080
+	    	, ltd.updt_cnt = ltd.updt_cnt + 1
+	    	, ltd.updt_id = 2
+		plan dt
+	  		where list3->qual[dt.seq].disc_dt_tm not in (null, 0)
+		join ltd
+	    	where ltd.ce_dynamic_label_id = list3->qual[dt.seq].ce_dynamic_label_id
+		with nocounter
+		
+		commit 
+	else
+		call writeLog(build2("** UPDATES SKIPPED, PROGRAM IN AUDIT MODE"))
+	endif
+else
+	call writeLog(build2("** UPDATES SKIPPED, NO RESULTS FOUND TO UPDATE"))
+endif
+
+call writeLog(build2("* END   Updating Utility 3 Data ****************************"))
+call writeLog(build2("************************************************************"))
+
+
+call get_mrn(0)
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Creating Audit Log *********************************"))
+
+
+set audit_header = concat(
+								^"UTILITY_IND"^			,^,^,
+								^"MRN"^					,^,^,
+								^"PATIENT"^				,^,^, 
+								^"PERSON_ID"^			,^,^,
+								^"DISC_DT_TM"^			,^,^,
+								^"LH_CNT_LTD_DATA_ID"^	,^,^,
+								^"CE_DYNAMIC_LABEL_ID"^	,^,^
+						)
+
+call writeAudit(audit_header)
+
+for (i=1 to t_rec->cnt)
+	set audit_line = ""
+	set audit_line = build2(
+								^"^,trim(cnvtstring(t_rec->qual[i].utility_ind)),^"^,^,^,
+								^"^,trim(t_rec->qual[i].mrn),^"^,^,^,
+								^"^,trim(t_rec->qual[i].patient_name),^"^,^,^,
+								^"^,trim(cnvtstring(t_rec->qual[i].person_id)),^"^,^,^,
+								^"^,trim(format(t_rec->qual[i].disc_dt_tm,"DD-MMM-YYYY HH:MM:SS;;q")),^"^,^,^,
+								^"^,trim(cnvtstring(t_rec->qual[i].lh_cnt_ltd_data_id)),^"^,^,^,
+								^"^,trim(cnvtstring(t_rec->qual[i].ce_dynamic_label_id)),^"^,^,^
+							)
+	call writeAudit(audit_line)				
+endfor
+
+
+call writeLog(build2("* END   Creating Audit Log *********************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom   *******************************************"))
+
+call echojson(t_rec, concat("cclscratch:",t_rec->files.records_attachment) , 1)
+call echojson(list, concat("cclscratch:",t_rec->files.records_attachment) , 1)
+call echojson(filters, concat("cclscratch:",t_rec->files.records_attachment) , 1)
+call echojson(list2, concat("cclscratch:",t_rec->files.records_attachment) , 1)
+call echojson(list3, concat("cclscratch:",t_rec->files.records_attachment) , 1)
+
+execute cov_astream_file_transfer "cclscratch",t_rec->files.records_attachment,"","CP"
+execute cov_astream_file_transfer "cclscratch",replace(program_log->files.filename_audit,program_log->files.file_path,""),"","CP"
+
+call addAttachment(program_log->files.file_path, replace(t_rec->files.records_attachment,"cclscratch:",""))
+
+call writeLog(build2("* END   Custom   *******************************************"))
+call writeLog(build2("************************************************************"))
+
+set reply->status_data.status = "S"
+
+#exit_script
+call exitScript(null)
+;call echorecord(t_rec)
+;call echorecord(code_values)
+call echorecord(program_log)
+
+
+end
+go

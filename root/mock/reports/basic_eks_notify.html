@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <title>JSON Test Script</title>
+ <meta name="discern" content="CCLLINK,CCLNEWWINDOW,CCLEVENT,MPAGES_EVENT,APPLINK,XMLCCLREQUEST">
+ <meta http-equiv="x-ua-compatible" content="IE=edge" />
+ 
+<script language="javascript">
+ 
+function stringForClinicalEvent(patId, enctrId, pID, synch_rule){
+ 
+        var ceString = '^COMMITRULE^,^';
+        ceString += (patId + "^,");
+        ceString += ("^" + enctrId + "^,");
+        ceString += ("^0.0^,^" + synch_rule + "^,^");
+        ceString += ("<P>ID=");
+        ceString += pID;
+        ceString += '^';
+        alert(ceString);
+        return ceString;
+    }
+ 
+    //125328124	20743786
+	function DismissAlert(){
+		var patientID = 20743786;
+		var encounterID = 125328124;
+		var provider_id = 1;
+		var dismiss_alert = "dsch_medrec_alert_dismiss";
+ 
+	    ;CCLLINK("eks_call_synch_event", stringForClinicalEvent(patientID, encounterID, provider_id, dismiss_alert), 1);
+	    CCLLINK("eks_call_synch_event", "^MINE^,^20743786.0^,^125328124.0^,^0.0^,^dsch_medrec_alert_dismiss^,^<P>ID=2^", 1);
+		CCLEVENT("EVENT_EKS_OK", "");
+		//CCLEVENT("EVENT_NOTIFY_DELETE");
+ 	}
+ 
+ 
+	function closeNotify() {
+	      javascript:CCLEVENT("EVENT_NOTIFY_DELETE", "");
+	      javascript:CCLEVENT("EVENT_NOTIFY_MINIMIZE", "");
+	}//close
+ 
+ 
+</script>
+</head>
+<body>
+ <input type="button" value="Accept Alert" onclick="DismissAlert();" />
+</body>
+</html>

@@ -1,0 +1,303 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+	Author:				Chad Cummings
+	Date Written:		06/01/2020
+	Solution:			Perioperative
+	Source file name:	cov_preprocess_oef_covid19.prg
+	Object name:		cov_preprocess_oef_covid19
+	Request #:
+
+	Program purpose:
+
+	Executing from:		CCL
+
+ 	Special Notes:		Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod 	Mod Date	  Developer				      Comment
+--- 	----------	--------------------	--------------------------------------
+001 	06/01/2020	  Chad Cummings
+******************************************************************************/
+drop program cov_preprocess_oef_covid19:dba go
+create program cov_preprocess_oef_covid19:dba
+ 
+ 
+/*   
+record request   
+(    
+     1 encntrid              = f8   
+     1 personid              = f8   
+     1 synonymid             = f8   
+     1 catalogcd             = f8   
+     1 orderid               = f8   
+     1 detaillist[*]   
+       2 oefieldid           = f8   
+       2 oefieldvalue        = f8   
+       2 oefielddisplayvalue = vc   
+       2 oefielddttmvalue    = dq8   
+       2 oefieldmeaningid    = f8   
+       2 valuerequiredind    = i2   
+)  
+*/
+
+call echo(build("setting up reply"))
+if (not(validate(reply,0))) 
+	record reply (
+	 1 orderchangeflag = i2
+	  1 orderid = f8
+	  1 detaillist [*]
+	    2 oefieldid = f8
+	    2 oefieldvalue = f8
+	    2 oefielddisplayvalue = vc
+	    2 oefielddttmvalue = dq8
+	    2 oefieldmeaningid = f8
+	    2 valuerequiredind = i2
+	  1 status_data
+	    2 status = c1
+	   2 subeventstatus [1]
+	      3 sourceobjectname = c15
+	      3 sourceobjectqual = i4
+	      3 sourceobjectvalue = c50
+	      3 operationname = c15
+	      3 operationstatus = c1
+	      3 targetobjectname = c15
+	      3 targetobjectvalue = c50
+	)
+endif
+
+call echo(build("setting up t_rec"))
+free record t_rec
+record t_rec
+(
+	1 log_filename 			= vc
+    1 encntr_id             = f8   
+    1 person_id             = f8   
+    1 synonym_id            = f8   
+    1 catalog_cd            = f8   
+    1 order_id              = f8   	
+    1 sex_cd				= f8
+    1 fin 					= vc
+	1 name					= vc
+	1 facility				= vc
+	1 unit					= vc
+	1 facility_cd			= f8
+	1 unit_cd				= f8
+	1 room_cd				= f8
+	1 room					= vc
+	1 encntr_type			= vc
+	1 encntr_type_cd		= f8
+	1 inpatient_dt_tm		= dq8
+	1 symptomatic_ind		= i2
+	1 cnt 					= i2
+	1 qual[*]
+	 2 event_id				= f8
+	 2 event_cd				= f8
+	 2 event_display		= vc
+	 2 event_end_dt_tm		= dq8
+	 2 result_val			= vc
+	 2 result_dt_tm			= dq8
+%i cust_script:cov_oef_covid19.inc
+)
+
+call echo(build("setting up subroutines"))
+%i cust_script:cov_sub_covid19.inc
+
+call echo(build("setting up base values")) 
+set cnt = size(request->detaillist,5)
+set reply_cnt = 0
+declare temp_display_value = vc
+declare temp_value = f8
+
+set t_rec->log_filename = concat("cclscratch:",trim(cnvtlower(curprog)),"_",trim(format(sysdate,"mmdd_hhmmss;;d")),"_rec.dat")
+set t_rec->encntr_id  	= request->encntrid
+set t_rec->person_id  	= request->personid
+set t_rec->synonym_id  	= request->synonymid
+set t_rec->catalog_cd  	= request->catalogcd
+set t_rec->order_id  	= request->orderid
+
+call echo(build("setting up get_oef_fields"))
+call get_oef_fields(0)
+
+call echo(build("setting up get_event_codes"))
+call get_event_codes(0)
+
+call echo(build("setting up get_results"))
+call get_results(0)
+
+call echo(build("setting up get_patient_info"))
+call get_patient_info(0)
+
+call echo(build("setting up get_pregnancy_status"))
+call get_pregnancy_status(0)
+
+call echo(build("setting up first_test_id"))
+set reply_cnt = reply_cnt + 1
+set stat = alterlist(reply->detaillist, reply_cnt)
+set reply->detaillist[reply_cnt]->oefieldid = t_rec->first_test_id
+set reply->detaillist[reply_cnt]->oefieldvalue = 0.0 
+set reply->detaillist[reply_cnt]->oefielddisplayvalue = "Unknown"
+set reply->detaillist[reply_cnt]->oefieldmeaningid = t_rec->first_test_mean
+if (t_rec->covid19_first_test_question_result = "Yes")
+	set reply->detaillist[reply_cnt]->oefieldvalue = 0.0
+	set reply->detaillist[reply_cnt]->oefielddisplayvalue = "No" ;The question asked is the opposite response
+elseif (t_rec->covid19_first_test_question_result = "No")
+	set reply->detaillist[reply_cnt]->oefieldvalue = 0.0
+	set reply->detaillist[reply_cnt]->oefielddisplayvalue = "No" ;The question asked is the opposite response
+endif
+call echo(build("response=",trim(reply->detaillist[reply_cnt]->oefielddisplayvalue)))
+
+call echo(build("setting up symptomatic_id"))
+set reply_cnt = reply_cnt + 1
+set stat = alterlist(reply->detaillist, reply_cnt)
+set reply->detaillist[reply_cnt]->oefieldid = t_rec->symptomatic_id
+set reply->detaillist[reply_cnt]->oefieldmeaningid = t_rec->symptomatic_mean
+set reply->detaillist[reply_cnt]->oefieldvalue = 0.0 
+set reply->detaillist[reply_cnt]->oefielddisplayvalue = "Unknown"
+if (t_rec->covid_risk_result = "None of the above")
+	set reply->detaillist[reply_cnt]->oefieldvalue = 0.0
+	set reply->detaillist[reply_cnt]->oefielddisplayvalue = "No"
+elseif (t_rec->covid_risk_result = "Unable*")
+	set reply->detaillist[reply_cnt]->oefieldvalue = 0.0
+	set reply->detaillist[reply_cnt]->oefielddisplayvalue = "Unknown"
+else
+	if (t_rec->covid19_symptoms_start_date_result > " ")
+		set reply->detaillist[reply_cnt]->oefieldvalue = 0.0
+		set reply->detaillist[reply_cnt]->oefielddisplayvalue = "Yes"
+		set t_rec->symptomatic_ind = 1
+	endif
+endif
+call echo(build("response=",trim(reply->detaillist[reply_cnt]->oefielddisplayvalue)))
+
+call echo(build("setting up symptoms_start_dt_tm_id"))
+set reply_cnt = reply_cnt + 1
+set stat = alterlist(reply->detaillist, reply_cnt)
+set reply->detaillist[reply_cnt]->oefieldid = t_rec->symptoms_start_dt_tm_id
+set reply->detaillist[reply_cnt]->oefieldmeaningid = t_rec->symptoms_start_dt_tm_mean
+set reply->detaillist[reply_cnt]->oefieldvalue = 0.0 
+set reply->detaillist[reply_cnt]->oefielddisplayvalue = "Unknown"
+if (t_rec->covid19_symptoms_start_date_result > " ")
+		set reply->detaillist[reply_cnt]->oefieldvalue = 0.0
+		set reply->detaillist[reply_cnt]->oefielddisplayvalue = t_rec->covid19_symptoms_start_date_result
+		set t_rec->symptomatic_ind = 1
+endif
+call echo(build("response=",trim(reply->detaillist[reply_cnt]->oefielddisplayvalue)))
+
+call echo(build("setting up employed_in_healtcare_id"))
+set reply_cnt = reply_cnt + 1
+set stat = alterlist(reply->detaillist, reply_cnt)
+set reply->detaillist[reply_cnt]->oefieldid = t_rec->employed_in_healtcare_id
+set reply->detaillist[reply_cnt]->oefieldmeaningid = t_rec->employed_in_healtcare_mean
+set reply->detaillist[reply_cnt]->oefieldvalue = 0.0 
+set reply->detaillist[reply_cnt]->oefielddisplayvalue = "Unknown"
+if (t_rec->covid19_healthcare_worker_result > "")
+	set reply->detaillist[reply_cnt]->oefieldvalue = 0.0
+	set reply->detaillist[reply_cnt]->oefielddisplayvalue = t_rec->covid19_healthcare_worker_result
+endif
+call echo(build("response=",trim(reply->detaillist[reply_cnt]->oefielddisplayvalue)))
+
+
+call echo(build("setting up congregate_care_setting_id"))
+set reply_cnt = reply_cnt + 1
+set stat = alterlist(reply->detaillist, reply_cnt)
+set reply->detaillist[reply_cnt]->oefieldid = t_rec->congregate_care_setting_id
+set reply->detaillist[reply_cnt]->oefieldmeaningid = t_rec->congregate_care_setting_mean
+set reply->detaillist[reply_cnt]->oefieldvalue = 0.0 
+set reply->detaillist[reply_cnt]->oefielddisplayvalue = "Unknown"
+if (t_rec->covid19_congregate_question_result > "")
+	set reply->detaillist[reply_cnt]->oefieldvalue = 0.0
+	set reply->detaillist[reply_cnt]->oefielddisplayvalue = t_rec->covid19_congregate_question_result
+endif
+call echo(build("response=",trim(reply->detaillist[reply_cnt]->oefielddisplayvalue)))
+
+
+call echo(build("setting up pregnant_id"))
+set reply_cnt = reply_cnt + 1
+set stat = alterlist(reply->detaillist, reply_cnt)
+set reply->detaillist[reply_cnt]->oefieldid = t_rec->pregnant_id
+set reply->detaillist[reply_cnt]->oefieldmeaningid = t_rec->pregnant_mean
+set reply->detaillist[reply_cnt]->oefieldvalue = 0.0
+set reply->detaillist[reply_cnt]->oefielddisplayvalue = "Unknown"
+if (uar_get_code_meaning(t_rec->sex_cd) = "MALE")
+	set reply->detaillist[reply_cnt]->oefieldvalue = 0.0; "Unknown"
+	set reply->detaillist[reply_cnt]->oefielddisplayvalue = "Not Pregnant"
+else
+	if (t_rec->pregnancy_result = "Confirmed positive")
+		set reply->detaillist[reply_cnt]->oefieldvalue = 0.0
+		set reply->detaillist[reply_cnt]->oefielddisplayvalue = "Pregnant"	
+	elseif (t_rec->pregnancy_result in("Patient denies","Confirmed negative"))
+		set reply->detaillist[reply_cnt]->oefieldvalue = 0.0
+		set reply->detaillist[reply_cnt]->oefielddisplayvalue = "Not Pregnant"	
+	endif
+endif
+call echo(build("response=",trim(reply->detaillist[reply_cnt]->oefielddisplayvalue)))
+
+call echo(build("setting up hopsitalized_id"))
+set reply_cnt = reply_cnt + 1
+set stat = alterlist(reply->detaillist, reply_cnt)
+set reply->detaillist[reply_cnt]->oefieldid = t_rec->hopsitalized_id
+set reply->detaillist[reply_cnt]->oefieldmeaningid = t_rec->hopsitalized_mean
+set reply->detaillist[reply_cnt]->oefieldvalue = 0.0 
+set reply->detaillist[reply_cnt]->oefielddisplayvalue = "Unknown"
+if (t_rec->inpatient_dt_tm > 0.0)
+	set reply->detaillist[reply_cnt]->oefieldvalue = 0.0
+	set reply->detaillist[reply_cnt]->oefielddisplayvalue = "Yes"
+else
+	set reply->detaillist[reply_cnt]->oefieldvalue = 0.0
+	set reply->detaillist[reply_cnt]->oefielddisplayvalue = "No"
+endif
+call echo(build("response=",trim(reply->detaillist[reply_cnt]->oefielddisplayvalue)))
+
+
+call echo(build("setting up icu_id"))
+set reply_cnt = reply_cnt + 1
+set stat = alterlist(reply->detaillist, reply_cnt)
+set reply->detaillist[reply_cnt]->oefieldid = t_rec->icu_id
+set reply->detaillist[reply_cnt]->oefieldmeaningid = t_rec->icu_mean
+set reply->detaillist[reply_cnt]->oefieldvalue = 0.0 
+set reply->detaillist[reply_cnt]->oefielddisplayvalue = "Unknown"
+
+select into "nl:"
+from
+	 location l
+	,code_value_outbound cvo
+plan l
+	where l.location_cd = t_rec->unit_cd
+	and   cnvtdatetime(curdate,curtime3) between l.beg_effective_dt_tm and l.end_effective_dt_tm
+	and   l.location_type_cd = value(uar_get_code_by("MEANING",222,"NURSEUNIT"))
+join cvo
+	where cvo.code_value = l.location_cd
+	and   cvo.contributor_source_cd = value(uar_get_code_by("DISPLAY",73,"COVDEV1"))
+	and   cvo.alias in("ICU")
+head report
+	reply->detaillist[reply_cnt]->oefieldvalue = 0.0
+	reply->detaillist[reply_cnt]->oefielddisplayvalue = "No"
+detail
+	reply->detaillist[reply_cnt]->oefieldvalue = 0.0
+	reply->detaillist[reply_cnt]->oefielddisplayvalue = "Yes"
+with nullreport,nocounter
+call echo(build("response=",trim(reply->detaillist[reply_cnt]->oefielddisplayvalue)))
+
+if(reply_cnt > 0)
+	set reply->orderchangeflag = 1
+	set reply->orderid = request->orderid
+endif
+         
+set reply->status_data->status = "S"
+
+call echojson(t_rec,	t_rec->log_filename,1)
+call echojson(reply,	t_rec->log_filename,1)
+call echojson(request,	t_rec->log_filename,1)
+call echojson(reqinfo,	t_rec->log_filename,1)
+
+ 
+end
+go
+ 
+ 
+ 

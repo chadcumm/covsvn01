@@ -1,0 +1,20 @@
+free record 963006request go
+record 963006request
+(
+	1 person_id = f8
+) go
+
+free record 963006reply go
+record 963006reply
+(
+
+) go
+
+set 963006request->person_id = 18257847 go
+
+call echorecord(963006request) go
+
+set stat = tdbexecute(600005, 963006, 963006, "REC", 963006request, "REC", 963006reply) go
+call echorecord(963006reply) go
+
+

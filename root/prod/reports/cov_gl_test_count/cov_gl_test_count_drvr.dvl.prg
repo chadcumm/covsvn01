@@ -1,0 +1,424 @@
+ 
+;**************************************************************
+; DVDev DECLARED SUBROUTINES
+;**************************************************************
+ 
+declare _CreateFonts(dummy) = null with Protect
+declare _CreatePens(dummy) = null with Protect
+declare PageBreak(dummy) = null with Protect
+declare FinalizeReport(sSendReport=vc) = null with Protect
+declare HeadReportSection(nCalc=i2) = f8 with Protect
+declare HeadReportSectionABS(nCalc=i2,OffsetX=f8,OffsetY=f8) = f8 with Protect
+declare HeadPageSection(nCalc=i2) = f8 with Protect
+declare HeadPageSectionABS(nCalc=i2,OffsetX=f8,OffsetY=f8) = f8 with Protect
+declare HeadLabelSection(nCalc=i2) = f8 with Protect
+declare HeadLabelSectionABS(nCalc=i2,OffsetX=f8,OffsetY=f8) = f8 with Protect
+declare DetailSection(nCalc=i2) = f8 with Protect
+declare DetailSectionABS(nCalc=i2,OffsetX=f8,OffsetY=f8) = f8 with Protect
+declare FootPageSection(nCalc=i2) = f8 with Protect
+declare FootPageSectionABS(nCalc=i2,OffsetX=f8,OffsetY=f8) = f8 with Protect
+declare InitializeReport(dummy) = null with Protect
+ 
+;**************************************************************
+; DVDev DECLARED VARIABLES
+;**************************************************************
+ 
+declare _hReport = i4 with NoConstant(0),protect
+declare _YOffset = f8 with NoConstant(0.0),protect
+declare _XOffset = f8 with NoConstant(0.0),protect
+declare Rpt_Render = i2 with Constant(0),protect
+declare _CRLF = vc with Constant(concat(char(13),char(10))),protect
+declare RPT_CalcHeight = i2 with Constant(1),protect
+declare _YShift = f8 with NoConstant(0.0),protect
+declare _XShift = f8 with NoConstant(0.0),protect
+declare _SendTo = vc with NoConstant(""),protect
+declare _rptErr = i2 with NoConstant(0),protect
+declare _rptStat = i2 with NoConstant(0),protect
+declare _oldFont = i4 with NoConstant(0),protect
+declare _oldPen = i4 with NoConstant(0),protect
+declare _dummyFont = i4 with NoConstant(0),protect
+declare _dummyPen = i4 with NoConstant(0),protect
+declare _fDrawHeight = f8 with NoConstant(0.0),protect
+declare _rptPage = i4 with NoConstant(0),protect
+declare _DIOTYPE = i2 with NoConstant(8),protect
+declare _OutputType = i2 with noConstant(RPT_PostScript),protect
+declare _Helvetica90 = i4 with NoConstant(0),protect
+declare _Helvetica12B0 = i4 with NoConstant(0),protect
+declare _Helvetica16B0 = i4 with NoConstant(0),protect
+declare _Helvetica12BU0 = i4 with NoConstant(0),protect
+declare _Helvetica24B0 = i4 with NoConstant(0),protect
+declare _Times100 = i4 with NoConstant(0),protect
+declare _pen14S0C0 = i4 with NoConstant(0),protect
+ 
+;**************************************************************
+; DVDev DEFINED SUBROUTINES
+;**************************************************************
+ 
+subroutine PageBreak(dummy)
+set _rptPage = uar_rptEndPage(_hReport)
+set _rptPage = uar_rptStartPage(_hReport)
+set _YOffset = RptReport->m_marginTop
+end ; PageBreak
+ 
+subroutine FinalizeReport(sSendReport)
+set _rptPage = uar_rptEndPage(_hReport)
+set _rptStat = uar_rptEndReport(_hReport)
+declare sFilename = vc with NoConstant(trim(sSendReport)),private
+declare bPrint = i2 with NoConstant(0),private
+if(textlen(sFilename)>0)
+set bPrint = CheckQueue(sFilename)
+  if(bPrint)
+    execute cpm_create_file_name "RPT","PS"
+    set sFilename = cpm_cfn_info->file_name_path
+  endif
+endif
+set _rptStat = uar_rptPrintToFile(_hReport,nullterm(sFileName))
+if(bPrint)
+  set spool value(sFilename) value(sSendReport) with deleted,DIO=value(_DIOTYPE)
+endif
+declare _errorFound = i2 with noConstant(0),protect
+declare _errCnt = i2 with noConstant(0),protect
+set _errorFound = uar_RptFirstError( _hReport , RptError )
+while ( _errorFound = RPT_ErrorFound and _errCnt < 512 )
+   set _errCnt = _errCnt+1
+   set stat = AlterList(RptErrors->Errors,_errCnt)
+set RptErrors->Errors[_errCnt].m_severity = RptError->m_severity
+     set RptErrors->Errors[_errCnt].m_text =  RptError->m_text
+     set RptErrors->Errors[_errCnt].m_source = RptError->m_source
+   set _errorFound = uar_RptNextError( _hReport , RptError )
+endwhile
+set _rptStat = uar_rptDestroyReport(_hReport)
+end ; FinalizeReport
+ 
+subroutine HeadReportSection(nCalc)
+declare a1=f8 with noconstant(0.0),private
+set a1=(HeadReportSectionABS(nCalc,_XOffset,_YOffset))
+return (a1)
+end ;subroutine HeadReportSection(nCalc)
+ 
+subroutine HeadReportSectionABS(nCalc,OffsetX,OffsetY)
+declare sectionHeight = f8 with noconstant(1.310000), private
+declare __FACILITYFLD = vc with NoConstant(build2(a->facility,char(0))),protect
+declare __DATERNGFLD = vc with NoConstant(build2(BUILD2(FORMAT(CNVTDATETIME($begdate),"mm/dd/yyyy hh:mm;;q"), ' - ', FORMAT(
+CNVTDATETIME($enddate),"mm/dd/yyyy hh:mm;;q")),char(0))),protect
+if (nCalc = RPT_RENDER)
+set RptSD->m_flags = 20
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_lineSpacing = RPT_SINGLE
+set RptSD->m_rotationAngle = 0
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + -0.500
+set RptSD->m_width = 7.500
+set RptSD->m_height = 0.490
+set _oldFont = uar_rptSetFont(_hReport, _Helvetica24B0)
+set _oldPen = uar_rptSetPen(_hReport,_pen14S0C0)
+; DRAW LABEL --- TitleLbl
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Covenant Health System",char(0)))
+set RptSD->m_flags = 16
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_y = OffsetY + 0.438
+set RptSD->m_x = OffsetX + 1.938
+set RptSD->m_width = 1.750
+set RptSD->m_height = 0.469
+; DRAW TEXT --- FacilityFld
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FACILITYFLD)
+set RptSD->m_flags = 0
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_y = OffsetY + 0.938
+set RptSD->m_x = OffsetX + 1.250
+set RptSD->m_width = 4.188
+set RptSD->m_height = 0.375
+set _DummyFont = uar_rptSetFont(_hReport, _Helvetica16B0)
+; DRAW TEXT --- daterngfld
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __DATERNGFLD)
+	set _YOffset = OffsetY + sectionHeight
+endif
+return(sectionHeight)
+end ;subroutine HeadReportSectionABS(nCalc,OffsetX,OffsetY)
+ 
+subroutine HeadPageSection(nCalc)
+declare a1=f8 with noconstant(0.0),private
+set a1=(HeadPageSectionABS(nCalc,_XOffset,_YOffset))
+return (a1)
+end ;subroutine HeadPageSection(nCalc)
+ 
+subroutine HeadPageSectionABS(nCalc,OffsetX,OffsetY)
+declare sectionHeight = f8 with noconstant(0.290000), private
+declare __PRINTDATEFLD = vc with NoConstant(build2(CONCAT('Print Date : ', FORMAT(CURDATE,"MM/DD/YYYY;;D")),char(0))),protect
+if (nCalc = RPT_RENDER)
+set RptSD->m_flags = 0
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_lineSpacing = RPT_SINGLE
+set RptSD->m_rotationAngle = 0
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 0.000
+set RptSD->m_width = 2.031
+set RptSD->m_height = 0.292
+set _oldFont = uar_rptSetFont(_hReport, _Helvetica12B0)
+set _oldPen = uar_rptSetPen(_hReport,_pen14S0C0)
+; DRAW TEXT --- PrintDateFld
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __PRINTDATEFLD)
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 6.000
+set RptSD->m_width = 1.510
+set RptSD->m_height = 0.260
+; DRAW TEXT --- PgNbrFld
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2(RPT_PAGEOFPAGE,char(0)))
+set RptSD->m_flags = 20
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 1.948
+set RptSD->m_width = 2.417
+set RptSD->m_height = 0.292
+; DRAW LABEL --- ReportTitleLbl
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Test Distribution Report",char(0)))
+	set _YOffset = OffsetY + sectionHeight
+endif
+return(sectionHeight)
+end ;subroutine HeadPageSectionABS(nCalc,OffsetX,OffsetY)
+ 
+subroutine HeadLabelSection(nCalc)
+declare a1=f8 with noconstant(0.0),private
+set a1=(HeadLabelSectionABS(nCalc,_XOffset,_YOffset))
+return (a1)
+end ;subroutine HeadLabelSection(nCalc)
+ 
+subroutine HeadLabelSectionABS(nCalc,OffsetX,OffsetY)
+declare sectionHeight = f8 with noconstant(0.820000), private
+declare __ORDLABFLD = vc with NoConstant(build2(CONCAT('Ordering Lab :', labtotals->qual [d.seq].ordlab),char(0))),protect
+declare __PERFLABFLD = vc with NoConstant(build2(CONCAT('Performing Lab :', labtotals->qual [d.seq].plabqual [d2.seq].perflab),
+char(0))),protect
+declare __INSTRUMENTFLD = vc with NoConstant(build2(CONCAT('Instrument/Bench :', labtotals->qual [d.seq].plabqual [d2.seq].
+instqual [d3.seq].instrument),char(0))),protect
+declare __TOTORDTESTSFLD = vc with NoConstant(build2(BUILD2('Total Tests : ',TRIM(CNVTSTRING(labtotals->qual [d.seq].tottests))),
+char(0))),protect
+declare __TOTPERFTESTSFLD = vc with NoConstant(build2(BUILD2('Total Tests : ',TRIM(CNVTSTRING(labtotals->qual [d.seq].plabqual [d2
+.seq].tottests))),char(0))),protect
+declare __TOTTESTSINSTFLD = vc with NoConstant(build2(BUILD2('Total Tests : ',TRIM(CNVTSTRING(labtotals->qual [d.seq].plabqual [d2
+.seq].instqual [d3.seq].tottests))),char(0))),protect
+if (nCalc = RPT_RENDER)
+set RptSD->m_flags = 0
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_lineSpacing = RPT_SINGLE
+set RptSD->m_rotationAngle = 0
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 0.313
+set RptSD->m_width = 3.750
+set RptSD->m_height = 0.250
+set _oldFont = uar_rptSetFont(_hReport, _Helvetica12B0)
+set _oldPen = uar_rptSetPen(_hReport,_pen14S0C0)
+; DRAW TEXT --- ordlabfld
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __ORDLABFLD)
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_y = OffsetY + 0.188
+set RptSD->m_x = OffsetX + 0.500
+set RptSD->m_width = 3.875
+set RptSD->m_height = 0.250
+; DRAW TEXT --- perflabfld
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __PERFLABFLD)
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_y = OffsetY + 0.375
+set RptSD->m_x = OffsetX + 0.688
+set RptSD->m_width = 3.688
+set RptSD->m_height = 0.250
+; DRAW TEXT --- instrumentFld
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __INSTRUMENTFLD)
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_y = OffsetY + 0.000
+set RptSD->m_x = OffsetX + 4.500
+set RptSD->m_width = 1.854
+set RptSD->m_height = 0.260
+; DRAW TEXT --- totordtestsfld
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __TOTORDTESTSFLD)
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_y = OffsetY + 0.188
+set RptSD->m_x = OffsetX + 4.688
+set RptSD->m_width = 1.833
+set RptSD->m_height = 0.313
+; DRAW TEXT --- totperftestsfld
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __TOTPERFTESTSFLD)
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_y = OffsetY + 0.375
+set RptSD->m_x = OffsetX + 4.813
+set RptSD->m_width = 2.000
+set RptSD->m_height = 0.250
+; DRAW TEXT --- totTestsInstFld
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __TOTTESTSINSTFLD)
+set RptSD->m_flags = 4
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_y = OffsetY + 0.563
+set RptSD->m_x = OffsetX + 0.500
+set RptSD->m_width = 1.042
+set RptSD->m_height = 0.260
+set _DummyFont = uar_rptSetFont(_hReport, _Helvetica12BU0)
+; DRAW LABEL --- TestLbl
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Test",char(0)))
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_y = OffsetY + 0.583
+set RptSD->m_x = OffsetX + 4.875
+set RptSD->m_width = 1.208
+set RptSD->m_height = 0.240
+; DRAW LABEL --- TestCountLbl
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Test Count",char(0)))
+	set _YOffset = OffsetY + sectionHeight
+endif
+return(sectionHeight)
+end ;subroutine HeadLabelSectionABS(nCalc,OffsetX,OffsetY)
+ 
+subroutine DetailSection(nCalc)
+declare a1=f8 with noconstant(0.0),private
+set a1=(DetailSectionABS(nCalc,_XOffset,_YOffset))
+return (a1)
+end ;subroutine DetailSection(nCalc)
+ 
+subroutine DetailSectionABS(nCalc,OffsetX,OffsetY)
+declare sectionHeight = f8 with noconstant(0.270000), private
+declare __TESTNAME = vc with NoConstant(build2(labtotals->qual [d.seq].plabqual [d2.seq].instqual [d3.seq].testqual [cnt].testname
+,char(0))),protect
+if (nCalc = RPT_RENDER)
+set RptSD->m_flags = 0
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_lineSpacing = RPT_SINGLE
+set RptSD->m_rotationAngle = 0
+set RptSD->m_y = OffsetY + 0.010
+set RptSD->m_x = OffsetX + 0.500
+set RptSD->m_width = 3.260
+set RptSD->m_height = 0.260
+set _oldFont = uar_rptSetFont(_hReport, _Times100)
+set _oldPen = uar_rptSetPen(_hReport,_pen14S0C0)
+; DRAW TEXT --- TestName
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __TESTNAME)
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_y = OffsetY + 0.021
+set RptSD->m_x = OffsetX + 4.906
+set RptSD->m_width = 1.656
+set RptSD->m_height = 0.260
+; DRAW TEXT --- TestCount
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2(testcount,char(0)))
+	set _YOffset = OffsetY + sectionHeight
+endif
+return(sectionHeight)
+end ;subroutine DetailSectionABS(nCalc,OffsetX,OffsetY)
+ 
+subroutine FootPageSection(nCalc)
+declare a1=f8 with noconstant(0.0),private
+set a1=(FootPageSectionABS(nCalc,_XOffset,_YOffset))
+return (a1)
+end ;subroutine FootPageSection(nCalc)
+ 
+subroutine FootPageSectionABS(nCalc,OffsetX,OffsetY)
+declare sectionHeight = f8 with noconstant(0.250000), private
+declare __PAGEFTR = vc with NoConstant(build2(build2(TRIM(CURDOMAIN),':',TRIM(CURPROG)),char(0))),protect
+if (nCalc = RPT_RENDER)
+set RptSD->m_flags = 16
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_lineSpacing = RPT_SINGLE
+set RptSD->m_rotationAngle = 0
+set RptSD->m_y = OffsetY + 0.010
+set RptSD->m_x = OffsetX + 0.000
+set RptSD->m_width = 7.500
+set RptSD->m_height = 0.240
+set _oldFont = uar_rptSetFont(_hReport, _Helvetica90)
+set _oldPen = uar_rptSetPen(_hReport,_pen14S0C0)
+; DRAW TEXT --- PageFtr
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __PAGEFTR)
+	set _YOffset = OffsetY + sectionHeight
+endif
+return(sectionHeight)
+end ;subroutine FootPageSectionABS(nCalc,OffsetX,OffsetY)
+ 
+subroutine InitializeReport(dummy)
+set RptReport->m_recSize = 102
+set RptReport->m_reportName = "COV_GL_TEST_COUNT_DRVR"
+set RptReport->m_pageWidth = 8.50
+set RptReport->m_pageHeight = 11.00
+set RptReport->m_orientation = Rpt_Portrait
+set RptReport->m_marginLeft = 0.50
+set RptReport->m_marginRight = 0.50
+set RptReport->m_marginTop = 0.50
+set RptReport->m_marginBottom = 0.50
+set RptReport->m_horzPrintOffset = _XShift
+set RptReport->m_vertPrintOffset = _YShift
+set RptReport->m_dioFlag = 0
+set _YOffset = RptReport->m_marginTop
+set _XOffset = RptReport->m_marginLeft
+set _hReport = uar_rptCreateReport(RptReport, _OutputType,Rpt_Inches)
+set _rptErr = uar_rptSetErrorLevel(_hReport,Rpt_Error)
+set _rptStat = uar_rptStartReport(_hReport)
+set _rptPage = uar_rptStartPage(_hReport)
+call _CreateFonts(0)
+call _CreatePens(0)
+end ;_InitializeReport
+ 
+subroutine _CreateFonts(dummy)
+set RptFont->m_recSize = 62
+set RptFont->m_fontName = RPT_TIMES
+set RptFont->m_pointSize = 10
+set RptFont->m_bold = RPT_OFF
+set RptFont->m_italic = RPT_OFF
+set RptFont->m_underline = RPT_OFF
+set RptFont->m_strikethrough = RPT_OFF
+set RptFont->m_rgbColor = RPT_BLACK
+set _Times100 = uar_rptCreateFont(_hReport, RptFont)
+set RptFont->m_fontName = RPT_HELVETICA
+set RptFont->m_pointSize = 24
+set RptFont->m_bold = RPT_ON
+set _Helvetica24B0 = uar_rptCreateFont(_hReport, RptFont)
+set RptFont->m_pointSize = 16
+set _Helvetica16B0 = uar_rptCreateFont(_hReport, RptFont)
+set RptFont->m_pointSize = 12
+set _Helvetica12B0 = uar_rptCreateFont(_hReport, RptFont)
+set RptFont->m_underline = RPT_ON
+set _Helvetica12BU0 = uar_rptCreateFont(_hReport, RptFont)
+set RptFont->m_pointSize = 9
+set RptFont->m_bold = RPT_OFF
+set RptFont->m_underline = RPT_OFF
+set _Helvetica90 = uar_rptCreateFont(_hReport, RptFont)
+end;**************Create Fonts*************
+ 
+subroutine _CreatePens(dummy)
+set RptPen->m_recSize = 16
+set RptPen->m_penWidth = 0.014
+set RptPen->m_penStyle = 0
+set RptPen->m_rgbColor =  RPT_BLACK
+set _pen14S0C0 = uar_rptCreatePen(_hReport,RptPen)
+end;**************Create Pen*************
+ 
+;**************Report Layout End*************
+ 
+ 

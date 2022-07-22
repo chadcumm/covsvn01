@@ -1,0 +1,814 @@
+/*****************************************************************************
+ 
+Source file name:  BC_ALL_RAD_REQUISITION.PRG
+Object name:       MIREQUISITN
+ 
+Program purpose:   Future MI requisitions
+ 
+Executing from:    PowerChart
+ 
+Special Notes:
+ 
+*************************************************************************************************************************
+Rev  Date         Jira       Programmer             Comment
+---  -----------  ---------  ---------------------  --------------------------------------------------------------------
+000  23-FEB-2017  CST-7160   Barry Wong             Created.
+     03-MAY-2017             Barry Wong             Modified to handle multiple requisitions
+     01-JUN-2017             Barry Wong             Added Research Study, Callback Phone and Additional Copies To details
+                                                    Note: Additional Copies To is actually the Consult MD
+     17-JUN-2017             Barry Wong             Added logic to use the originating encounter ID as the encounter ID
+                                                    for future requisitions
+001  21-JUN-2017  CST-10217  Barry Wong             Modified for US OB requisition
+002  22-JUN-2017             Barry Wong             Added Relevent Previous Exam OEF for US OB requisition
+003                          Barry Wong             Added additional US OS OEF
+004  29-JUN-2017  CST-11377  Barry Wong             Added logic to extract ordering provider MSP#
+005  29-JUN-2017  CST-7160   Barry Wong             Changed OEF declarations to use code set 16449
+006  30-AUG-2017  CST-7160   Barry Wong             Changed delimiter for Additional Copies To from a comma to a semi-colon.
+                                                    Removed re-routing logic which is now handled by Cerner in the
+                                                    "middleware"
+007  20-SEP-2017             Barry Wong             Added logic to bypass requisition if the order is not in the future.
+008  25-SEP-2017  CST-12386  Barry Wong             Modified for PET Scan
+009  28-SEP-2017  CST-12386  Barry Wong             Reason for Exam OEF changed from REASONFOREXAMDCP12684 to
+                                                    REASONFOREXAMDCP
+010  16-OCT-2017  CST-7087   Barry Wong             Modified logic to extract cc'ed providers from OEFs CCPROVIDER,
+                                                    CCPROVIDER2 and CCPROVIDER3
+011  16-OCT-2017  CST-7087   Barry Wong             Reason for Exam OEF changed from REASONFOREXAMDCP to REASONFOREXAM
+012  17-OCT-2017  CST-7087   Barry Wong             Added OEF REASONFOREXAMDCP to pull other information
+                                                    Modify logic to handle the new reason for exam OEF reassigments
+013  01-NOV-2017  CST-7087   Barry Wong             Added logic to bypass printing requisition with specific actions or
+                                                    statuses and non-future requisitions
+                                                    Modified to check and process all future orders and bypass the rest
+014  06-MAY-2018  CST-18659  Barry Wong             Added new logic to control Autoprinting and Reprinting
+015  12-MAY-2018  CST-22290  Barry Wong             Updated first CC provider from CC Provider to CC Provider 1 - MI. This
+                                                    is changed in BC_ALL_RAD_REQ_INC_DCLS.INC and the program recompiled.
+016  15-MAY-2018  CST-22290  Barry Wong             Added variables used by logic to print CC Provider in sorted order
+017  05-JUN-2018  CST-25140  Jeremy Gunn            Added 'Scheduling Location' variable and OEF logic
+018  05-JUN-2018  CST-26896  Jeremy Gunn            Added Patient Phone Number
+019  06-JUN-2018  CST-26896  Jeremy Gunn            Ordering location derived from order action table in bc_all_rad_req_orderdata
+020  19-JUN-2018  CST-27371  Barry Wong             Modified to bypass printing if the encounter ID = 0.00
+021  06-JUL-2018  CST-28499  Barry Wong             Added OEF 'Rad MI Blood Thinners'
+022  10-JUL-2018  CST_multi  Barry Wong             Updated printing/filtering logic
+023  13-JUL-2018  CST_multi  Barry Wong             Added logic to handle MI orders entered by Scheduling
+024  26-JUL-2018  CST-22665  Barry Wong             Modified to print the Supervising Physician (if applicable)
+025  26-JUL-2018  CST-28738  Barry Wong             Modified to print the Primary Care Provider (if applicable)
+026  28-NOV-2018  TEST-10493 Barry Wong             Modified to include digits OEF in the exam name.
+027  04-DEC-2018  CST-34940  Barry Wong             Re-compiled to pick up CST Lab event codes
+028  24-JUN-2019             Barry Wong             Change gbl_debug_on to M1_debug_on
+029  24-JUN-2019             Barry Wong             Updated to not print parentheses when there is no digits (refer to
+                                                    TEST-10493)
+030  03-OCT-2019  CST-14018  Barry Wong             Modified for spinal precaution indicator and orders
+031  11-MAR-2020  CST-80950  Barry Wong             Updated to determine if an order is a Bone Density order by looking at
+                                                    activity subtype of the order instead of using the powerplan. The
+                                                    updates are in the bc_all_rad_req_orderdata.inc and the
+                                                    bc_all_rad_req_inc_dcls.inc file. This program only needs to be
+                                                    recompiled.
+032  27-MAR-2020  CST-83245  Barry Wong             Added logic to pull in multiple isolation codes (same as the banner bar)
+033  23-APR-2020  CST-86365  Barry Wong             Added a time delay to the execution
+     22-MAY-2020  CST-86365  Barry Wong             Increased pause from 5 to 14 seconds.
+034  19-MAY-2020  CST-80064  Barry Wong             Added electonic signature and other format changes to the layout.
+                                                    Changed OEF_Pregnant to use the code value with Displaykey =
+                                                    'PREGNANT12623'.
+                                                    Added OEF_Other_Portable
+035  10-JUN-2020  CST-86704  Jeremy Gunn            Added MRI data to record orders_rec and print_order - REVERTED 10-JUL-2020
+036  06-JUL-2020  CST-93226  Barry Wong             Added requisition audit logic
+037  10-JUL-2020  CST-93388  Jeremy Gunn            Modified to use the action date/time of the 'ORDER' action as the
+                                                    electronic signed date field and updated fldOrderDate on layout
+038  19-AUG-2020  CST-96777  Jeremy Gunn            Added logic from Cerner's pfmt_560601_resend_reprint to grab originating encntr
+039  28-AUG-2020  CST-96777  Jeremy Gunn            Added test around Cerner's pfmt_560601_resend_reprint code to only execute on
+                                                    a re-print
+040  30-SEP-2020  CST-99242  Barry Wong             Modified to include external lab results. Changes made in the INC files.
+*************************************************************************************************************************/
+ 
+drop program cmctestreq:dba go
+create program cmctestreq:dba
+ 
+; Time delay
+;call pause(2)  ;033
+;call pause(2)  ;033
+;call pause(2)  ;033
+;call pause(2)  ;033
+;call pause(2)  ;033
+;call pause(2)  ;033
+;call pause(2)  ;033
+ 
+;=====================================================
+; DVDev DECLARED SUBROUTINES
+;=====================================================
+execute bc_all_all_std_routines
+execute bc_all_all_date_routines
+execute bc_all_all_req_prt_check  ;014
+execute bc_all_all_req_audit_updt ;036
+ 
+declare sBD_PowerPlan(pCatalog_CD = F8, pBD_PowerPlan_ID = f8) = I2 WITH COPY, PERSIST
+ 
+declare log_file = vc with constant("BC_ALL_RAD_REQUISITION.LOG")
+set M1_debug_on = 0
+set M1_trace_on = 1
+ 
+ 
+;=====================================================
+; DEBUG - Free REQUEST record
+;=====================================================
+if (M1_debug_on = 1 )
+  free set request
+endif
+ 
+;=====================================================
+; DVDev Record structure
+;=====================================================
+record request(
+  1 person_id         = f8
+  1 print_prsnl_id    = f8
+  1 order_qual[*]
+    2 order_id        = f8
+    2 encntr_id       = f8
+    2 conversation_id = f8
+  1 printer_name      = c50
+)
+ 
+if (M1_trace_on = 1 )
+  call sWRITE_MESSAGE_NOFLAG("Entered program...", log_file)
+endif
+ 
+;=====================================================
+; DEBUG - Setup REQUEST information for test order
+;=====================================================
+if (M1_debug_on = 1 )
+  set request->person_id = 11925675.00
+  set request->print_prsnl_id = 0.00
+  set request->printer_name = "MINE"
+  set stat = alterlist(request->order_qual, 1 )
+  set request->order_qual[1 ].order_id = 316977231.00
+  set request->order_qual[1 ].encntr_id = 0.00
+  set request->order_qual[1 ].conversation_id = 0.00
+endif
+ 
+if (M1_trace_on = 1 )
+  call ECHOJSON(request, "ECHOJSONM1A", 1 )
+endif
+ 
+if (request->print_prsnl_id > 5.00) ;039
+  ;=====================================================
+  ; Get Originating Encounter (taken from Cerner's pfmt_560601_resend_reprint) ;038
+  ;=====================================================
+  ; First check for the originating_encntr_id of the order
+  select into "nl:"
+  from (dummyt d with seq=size(request->order_qual,5)),
+        orders o,
+        order_action oa
+  plan d
+  where request->order_qual[d.seq].encntr_id = 0.00
+    and request->order_qual[d.seq].order_id != 0.00
+    and request->printer_name > " "
+ 
+  join o
+  where o.order_id = request->order_qual[d.seq].order_id
+    and o.catalog_type_cd = value(uar_get_code_by("MEANING",6000,"RADIOLOGY"))
+    and o.originating_encntr_id != 0.00
+ 
+  join oa
+  where oa.order_id = o.order_id
+    and oa.action_sequence =
+      (select max(action_sequence) from order_action
+       where order_id = o.order_id)
+ 
+  detail
+     request->order_qual[d.seq].conversation_id = oa.order_conversation_id
+     request->order_qual[d.seq].encntr_id = o.originating_encntr_id
+  with nocounter
+ 
+  ; If there is no originating_encntr_id on the order (eg the order was placed in scheduling) get the encntr_id of the last encntr
+  select into "nl:"
+  from
+    (dummyt d with seq=size(request->order_qual,5)),
+    orders o,
+    order_action oa,
+    person p,
+    encounter e
+ 
+  plan d
+  where request->order_qual[d.seq].encntr_id = 0.00
+    and request->order_qual[d.seq].order_id != 0.00
+    and request->printer_name > " "
+ 
+  join o
+  where o.order_id = request->order_qual[d.seq].order_id
+    and o.catalog_type_cd = value(uar_get_code_by("MEANING",6000,"RADIOLOGY"))
+ 
+  join oa
+  where oa.order_id = o.order_id
+  and oa.action_sequence =
+    (select max(action_sequence) from order_action
+     where order_id = o.order_id)
+ 
+  join p
+  where p.person_id = o.person_id
+ 
+  join e
+  where e.reg_dt_tm = p.last_encntr_dt_tm
+ 
+  detail
+    request->order_qual[d.seq].conversation_id = oa.order_conversation_id
+    request->order_qual[d.seq].encntr_id = e.encntr_id
+  with nocounter
+endif ;039
+ 
+ 
+;=====================================================
+; DVDev Record structure
+;=====================================================
+free set common_rec
+record common_rec(
+  1 pat_data
+    2 weight_val      = vc
+    2 weight_unit     = vc
+    2 height_val      = vc
+    2 height_unit     = vc
+    2 process_alert   = vc
+    2 disease_alert   = vc
+  1 allergy
+    2 allergy1        = vc
+    2 allergy2        = vc
+    2 allergy3        = vc
+    2 allergy4        = vc
+    2 more_allergy    = vc
+  1 relevent_lab
+    2 creatinine      = vc
+    2 eGFR            = vc
+    2 INR             = vc
+    2 PTT             = vc
+    2 PLT             = vc
+    2 FallRiskScore   = vc
+    2 glucose         = vc
+  1 spinal_info            ;030
+    2 precaution_ind  = vc ;030
+    2 spinal_orders   = vc ;030
+)
+with persistscript
+ 
+free set orders_rec
+record orders_rec(
+  1 spoolout_ind          = i2
+  1 perform_location      = f8
+  1 printer_reassigned    = i2
+  1 order_location        = vc
+  1 qual[*]
+    2 order_id            = f8
+    2 encntr_id           = f8
+    2 encntr_num          = vc
+    2 site                = vc
+    2 nurseunit           = vc
+    2 room                = vc
+    2 bed                 = vc
+    2 ordering_md         = vc
+    2 order_by_name       = vc
+    2 order_as_mnemonic   = vc
+    2 order_frequency     = vc
+    2 order_priority      = vc
+    2 order_rqstdttm      = vc
+    2 MI_perform_locn     = f8
+    2 BD_requisition_ind  = i2
+    2 req_type_indicator  = i2
+    2 ordering_md_id      = f8
+    2 ordering_md_MSP     = vc
+    2 ordering_md_phone   = vc
+    2 order_dt_tm         = vc
+    2 order_signed_dt_tm  = dq8 ;037
+    2 isolation           = vc
+    2 spec_instructions   = vc
+    2 health_plan
+      3 ins_plan_name     = vc
+      3 ins_plan_nbr      = vc
+      3 ins_plan_expdt    = vc
+    2 BD_req
+      3 BD_densitometry   = vc
+      3 BD_patient_hx     = vc
+      3 BD_previous_data  = vc
+      3 BD_previous_ind   = vc
+      3 BD_relevant_meds  = vc
+    2 Reg_req
+      3 reason_exam       = vc
+      3 transport_mode    = vc
+      3 portable_reason   = vc
+    2 USOB_req
+      3 LNMP              = vc
+      3 EDD               = vc
+      3 RelevantPrevExam  = vc
+      3 OB_prev_exam_loc  = vc
+    2 PET_req
+      3 CTMRINM_prev_ind  = vc
+      3 diabetic_ind      = vc
+      3 pregnant_ind      = vc
+      3 PET_previous_ind  = vc
+      3 PET_prev_exam_loc = vc
+    2 patient_type        = vc
+    2 callback_number     = vc
+    2 research_study      = vc
+    2 addl_copies_to      = vc
+    2 sched_location      = vc ;017
+    2 pat_phone           = vc ;018
+    2 blood_thinners      = vc ;021
+    2 supervising_md      = vc ;024
+    2 primary_care_phys   = vc ;025
+    2 digits              = vc ;026
+/*
+    ;035 MRI Fields
+    2 MRI_req
+      3 radacutetrauma                = vc
+      3 radbackdominantpain           = vc
+      3 radbreasttissueexpander       = vc
+      3 radcardiacpacemaker           = vc
+      3 radcaudaequinasyndrome        = vc
+      3 radcerebralaneurysmclip       = vc
+      3 radclaustrophobic             = vc
+      3 raddiabetes                   = vc
+      3 radfixedknee                  = vc
+      3 radhistoryofcancer            = vc
+      3 radimplantedinfusionpump      = vc
+      3 radinternalelectrodes         = vc
+      3 radintravascularstent         = vc
+      3 radlegdominantpain            = vc
+      3 radlivertransplant            = vc
+      3 radmiddleearprosthesis        = vc
+      3 radneurologicalsymptoms       = vc
+      3 radneurostimulator            = vc
+      3 radosteonecrosis              = vc
+      3 radpicciv                     = vc
+      3 radprevioushipknee            = vc
+      3 radpreviouslumbar             = vc
+      3 radseverebackpainfor65        = vc
+      3 radseverehepaticdisease       = vc
+      3 radshrapnelbullet             = vc
+      3 radsuspectedinfection         = vc
+      3 radsuspectedtumour            = vc
+      3 radunexplainedweightloss      = vc
+      3 radunknowntoallmri            = vc
+      3 raduseofivdrugs               = vc
+      3 radweightbearingxr            = vc
+      3 radmetallicorbitalforeignbody = vc
+      3 radpreviousmrirecommendation  = vc
+*/
+)
+ 
+free set print_order
+record print_order(
+  1 spoolout_ind       = i2
+  1 perform_location   = f8
+  1 printer_reassigned = i2
+  1 order_location     = vc
+  ; Single order
+  1 order_id           = f8
+  1 encntr_id          = f8
+  1 encntr_num         = vc
+  1 site               = vc
+  1 nurseunit          = vc
+  1 room               = vc
+  1 bed                = vc
+  1 ordering_md        = vc
+  1 order_by_name      = vc
+  1 order_as_mnemonic  = vc
+  1 order_frequency    = vc
+  1 order_priority     = vc
+  1 order_rqstdttm     = vc
+  1 MI_perform_locn    = f8
+  1 BD_requisition_ind = i2
+  1 req_type_indicator = i2
+  1 ordering_md_id     = f8
+  1 ordering_md_MSP    = vc
+  1 ordering_md_phone  = vc
+  1 order_dt_tm        = vc
+  1 order_signed_dt_tm = dq8 ;037
+  1 isolation          = vc
+  1 spec_instructions  = vc
+  ; Health Plan
+  1 ins_plan_name      = vc
+  1 ins_plan_nbr       = vc
+  1 ins_plan_expdt     = vc
+  ; BD Requisition
+  1 BD_densitometry    = vc
+  1 BD_patient_hx      = vc
+  1 BD_previous_data   = vc
+  1 BD_previous_ind    = vc
+  1 BD_relevant_meds   = vc
+  ; Regular Requisition
+  1 reason_exam        = vc
+  1 transport_mode     = vc
+  1 portable_reason    = vc
+  ; USOB Requisition
+  1 LNMP               = vc
+  1 EDD                = vc
+  1 RelevantPrevExam   = vc
+  1 OB_prev_exam_loc   = vc
+  ; PET Requisition
+  1 CTMRINM_prev_ind   = vc
+  1 diabetic_ind       = vc
+  1 pregnant_ind       = vc
+  1 PET_previous_ind   = vc
+  1 PET_prev_exam_loc  = vc
+  1 patient_type       = vc
+  1 callback_number    = vc
+  1 research_study     = vc
+  1 addl_copies_to     = vc
+  1 sched_location     = vc ;017
+  1 pat_phone          = vc ;018
+  1 blood_thinners     = vc ;021
+  1 supervising_md     = vc ;024
+  1 primary_care_phys  = vc ;025
+/*
+  ; MRI requsition 035
+  1 radacutetrauma                = vc
+  1 radbackdominantpain           = vc
+  1 radbreasttissueexpander       = vc
+  1 radcardiacpacemaker           = vc
+  1 radcaudaequinasyndrome        = vc
+  1 radcerebralaneurysmclip       = vc
+  1 radclaustrophobic             = vc
+  1 raddiabetes                   = vc
+  1 radfixedknee                  = vc
+  1 radhistoryofcancer            = vc
+  1 radimplantedinfusionpump      = vc
+  1 radinternalelectrodes         = vc
+  1 radintravascularstent         = vc
+  1 radlegdominantpain            = vc
+  1 radlivertransplant            = vc
+  1 radmiddleearprosthesis        = vc
+  1 radneurologicalsymptoms       = vc
+  1 radneurostimulator            = vc
+  1 radosteonecrosis              = vc
+  1 radpicciv                     = vc
+  1 radprevioushipknee            = vc
+  1 radpreviouslumbar             = vc
+  1 radseverebackpainfor65        = vc
+  1 radseverehepaticdisease       = vc
+  1 radshrapnelbullet             = vc
+  1 radsuspectedinfection         = vc
+  1 radsuspectedtumour            = vc
+  1 radunexplainedweightloss      = vc
+  1 radunknowntoallmri            = vc
+  1 raduseofivdrugs               = vc
+  1 radweightbearingxr            = vc
+  1 radmetallicorbitalforeignbody = vc
+  1 radpreviousmrirecommendation  = vc
+*/
+)
+with persistscript
+ 
+%i CUST_SCRIPT:bc_all_rad_requisition_patrecd.inc
+ 
+;=====================================================
+; Declarations
+;=====================================================
+declare cvFuture   = f8 with protect, constant(uar_get_code_by("DISPLAYKEY", 6004, "FUTURE"))
+declare reroute_printer_ind = i2
+declare route_description = vc
+declare output_printer = C50
+declare order_idx = i4
+declare ifuture_flag = i2 ;007
+declare order_num = i4 with noconstant(0)
+declare CCprovider1 = vc  ;016
+declare CCprovider2 = vc  ;016
+declare CCprovider3 = vc  ;016
+declare DigitString = vc  ;026
+declare SpinalOrdString = vc  ;030
+declare requisition_printed = i2  ;036
+ 
+set requisition_printed = 0       ;036
+ 
+%i CUST_SCRIPT:bc_all_rad_req_inc_dcls.inc
+%i CUST_SCRIPT:bc_all_all_req_isolation_dcls.inc  ;032
+ 
+;=====================================================
+; Set the route. This has to match with the route
+; name as defined through DCPTools.
+;=====================================================
+set route_description = "Future MI Requisition" ; This is a hardcode route name
+ 
+;=====================================================
+; Get ordering location (using printer name)
+;=====================================================
+;019
+;select into "nl:"
+;  from dcp_flex_printer dfp,
+;       dcp_flex_rtg dfr
+;where dfp.printer_name = output_printer
+;   and dfr.dcp_flex_rtg_id = dfp.dcp_flex_rtg_id
+;   and dfr.dcp_output_route_id = dfp.dcp_output_route_id
+;detail
+;  orders_rec->order_location = uar_get_code_display(dfr.value1_cd )
+;
+;with nocounter, time=10
+ 
+;=====================================================
+; Get common patient information
+;=====================================================
+%i CUST_SCRIPT:bc_all_all_requisition_patinfo.inc
+ 
+;=====================================================
+; Get remaining requisition information
+;  - Must have a patient
+;  - Must have at least one order passed from PC
+;=====================================================
+if (M1_trace_on = 1 )
+  call sWRITE_MESSAGE_NOFLAG("Order Selection...", log_file)
+  call sWRITE_MESSAGE_NOFLAG(build2("request->person_id=",cnvtstring(request->person_id)), log_file)
+  call sWRITE_MESSAGE_NOFLAG(build2("size(request->order_qual, 5)=",cnvtstring(size(request->order_qual, 5))), log_file)
+endif
+if (request->person_id > 0.00 )
+  if (size(request->order_qual, 5) > 0 )
+    set orders_rec->spoolout_ind = 1
+    ;=====================================================
+    ; Allocate ORDERS_REC structure for # of orders
+    ;=====================================================
+    set stat = alterlist(orders_rec->qual, size(request->order_qual, 5) )
+ 
+    ;=====================================================
+    ; Get information common to all orders
+    ;=====================================================
+%i CUST_SCRIPT:bc_all_rad_req_patdata.inc
+%i CUST_SCRIPT:bc_all_rad_req_allergydata.inc
+%i CUST_SCRIPT:bc_all_rad_req_labdata.inc
+ 
+    ;=====================================================
+    ; Get information specific to each order
+    ;=====================================================
+    for (order_idx = 1 to size(request->order_qual, 5) )
+ 	call sWRITE_MESSAGE_NOFLAG(build2("order_idx=",cnvtstring(order_idx)), log_file)
+ 	call sWRITE_MESSAGE_NOFLAG(build2("order_id=",cnvtstring(request->order_qual[order_idx ].order_id)), log_file)
+ 	call sWRITE_MESSAGE_NOFLAG(build2("print_prsnl_id=",cnvtstring(request->print_prsnl_id)), log_file)
+      ;=====================================================
+      ; Process if order is not cancelled, completed or
+      ; discontinued (1,1,1) and is a future order
+      ;=====================================================
+;014      if (sORDER_TYPE_EQUAL(request->order_qual[order_idx ].order_id, cvFuture ) = 1 and
+;014          sBYPASS_PRINT_ON_STATUS(request->order_qual[order_idx ].order_id, 1, 1, 1 ) = 0 )
+ 	  call sWRITE_MESSAGE_NOFLAG(build2("sREQ_MIFutureReq="
+ 	  	,cnvtstring(sREQ_MIFutureReq(request->order_qual[order_idx ].order_id, request->print_prsnl_id ))), log_file)
+      if (sREQ_MIFutureReq(request->order_qual[order_idx ].order_id, request->print_prsnl_id ) = 1 )  ;014
+        ; Must be a Future order with a status of On Hold
+        ; Must be a reprint request OR a system generated request where the order has no order action
+ 
+        if (M1_trace_on = 1 )
+          call sWRITE_MESSAGE_NOFLAG("Passed order filter...", log_file)
+        endif
+;023        if (request->order_qual[order_idx ].encntr_id > 0.00 )  ;020
+;023 Start
+        if (((sSCHEDULING_MI_ORDER(request->order_qual[order_idx ].order_id ) = 0 ) and
+             (request->order_qual[order_idx ].encntr_id > 0.00 )) or
+            ((sSCHEDULING_MI_ORDER(request->order_qual[order_idx ].order_id ) = 1 ) and
+             (request->print_prsnl_id > 5.00 ) ) )
+          ;Must not be a non-Scheduling MI order OR a reprint of a Scheduling MI order
+;023 End
+          set order_num = order_num + 1
+;020        ;=====================================================
+;020        ; Assign originating encounter ID if required
+;020        ;=====================================================
+;020        if (request->order_qual[order_idx ].encntr_id = 0.00 )
+;020          set request->order_qual[order_idx ].encntr_id = sGET_ORIG_ENCNTR_ID(request->order_qual[order_idx ].order_id )
+;020        endif
+ 
+        if (M1_trace_on = 1 )
+          call sWRITE_MESSAGE_NOFLAG("Passed last filter...", log_file)
+        endif
+ 
+%i CUST_SCRIPT:bc_all_all_req_encdata.inc
+%i CUST_SCRIPT:bc_all_rad_req_orderdata.inc
+%i CUST_SCRIPT:bc_all_all_req_isolation_extr.inc  ;032
+        endif ;020
+      endif   ;013
+    endfor
+  endif
+endif
+ 
+;=====================================================
+; Resize order record after unwanted orders are
+; bypassed
+;=====================================================
+if (order_num > 0 )
+  set stat = alterlist(orders_rec->qual, order_num )
+endif
+ 
+if (M1_trace_on = 1 )
+  call sWRITE_MESSAGE_NOFLAG(cnvtstring(order_num), log_file)
+  call ECHOJSON(common_rec, "ECHOJSONM1B", 1 )
+  call ECHOJSON(orders_rec, "ECHOJSONM1C", 1 )
+endif
+ 
+;=====================================================
+; Print requisitions one at a time after any printer
+; reassignment check/update
+;=====================================================
+if (orders_rec->spoolout_ind = 1 and order_num > 0 )
+  for (order_idx = 1 to size(orders_rec->qual, 5) )
+    ;=====================================================
+    ; Assign an order to the layout print record
+    ;=====================================================
+    set print_order->spoolout_ind       = orders_rec->spoolout_ind
+    set print_order->perform_location   = orders_rec->perform_location
+    set print_order->printer_reassigned = orders_rec->printer_reassigned
+    set print_order->order_location     = orders_rec->order_location
+    ; Order information
+    set print_order->order_id           = orders_rec->qual[order_idx ].order_id
+    set print_order->encntr_id          = orders_rec->qual[order_idx ].encntr_id
+    set print_order->encntr_num         = orders_rec->qual[order_idx ].encntr_num
+    set print_order->site               = orders_rec->qual[order_idx ].site
+    set print_order->nurseunit          = orders_rec->qual[order_idx ].nurseunit
+    set print_order->room               = orders_rec->qual[order_idx ].room
+    set print_order->bed                = orders_rec->qual[order_idx ].bed
+    set print_order->ordering_md        = orders_rec->qual[order_idx ].ordering_md
+    set print_order->order_by_name      = orders_rec->qual[order_idx ].order_by_name
+;026    set print_order->order_as_mnemonic  = orders_rec->qual[order_idx ].order_as_mnemonic
+    if (textlen(trim(orders_rec->qual[order_idx ].digits )) > 0 )                                            ;029
+      set print_order->order_as_mnemonic  = concat(trim(orders_rec->qual[order_idx ].order_as_mnemonic ),    ;026
+                                                   "  (", trim(orders_rec->qual[order_idx ].digits ), ")" )  ;026
+    else                                                                                                     ;029
+      set print_order->order_as_mnemonic  = trim(orders_rec->qual[order_idx ].order_as_mnemonic )            ;029
+    endif                                                                                                    ;029
+    set print_order->order_frequency    = orders_rec->qual[order_idx ].order_frequency
+    set print_order->order_priority     = orders_rec->qual[order_idx ].order_priority
+    set print_order->order_rqstdttm     = orders_rec->qual[order_idx ].order_rqstdttm
+    set print_order->MI_perform_locn    = orders_rec->qual[order_idx ].MI_perform_locn
+    set print_order->BD_requisition_ind = orders_rec->qual[order_idx ].BD_requisition_ind
+    set print_order->req_type_indicator = orders_rec->qual[order_idx ].req_type_indicator
+    set print_order->ordering_md_id     = orders_rec->qual[order_idx ].ordering_md_id
+    set print_order->ordering_md_MSP    = orders_rec->qual[order_idx ].ordering_md_MSP
+    set print_order->ordering_md_phone  = orders_rec->qual[order_idx ].ordering_md_phone
+    set print_order->order_dt_tm        = orders_rec->qual[order_idx ].order_dt_tm
+    set print_order->order_signed_dt_tm = orders_rec->qual[order_idx ].order_signed_dt_tm ;037
+    set print_order->isolation          = orders_rec->qual[order_idx ].isolation
+    set print_order->spec_instructions  = orders_rec->qual[order_idx ].spec_instructions
+    set print_order->ins_plan_name      = orders_rec->qual[order_idx ].health_plan.ins_plan_name
+    set print_order->ins_plan_nbr       = orders_rec->qual[order_idx ].health_plan.ins_plan_nbr
+    set print_order->ins_plan_expdt     = orders_rec->qual[order_idx ].health_plan.ins_plan_expdt
+    set print_order->BD_densitometry    = orders_rec->qual[order_idx ].BD_req.BD_densitometry
+    set print_order->BD_patient_hx      = orders_rec->qual[order_idx ].BD_req.BD_patient_hx
+    set print_order->BD_previous_data   = orders_rec->qual[order_idx ].BD_req.BD_previous_data
+    set print_order->BD_previous_ind    = orders_rec->qual[order_idx ].BD_req.BD_previous_ind
+    set print_order->BD_relevant_meds   = orders_rec->qual[order_idx ].BD_req.BD_relevant_meds
+    set print_order->reason_exam        = orders_rec->qual[order_idx ].Reg_req.reason_exam
+    set print_order->transport_mode     = orders_rec->qual[order_idx ].Reg_req.transport_mode
+    set print_order->portable_reason    = orders_rec->qual[order_idx ].Reg_req.portable_reason
+    set print_order->LNMP               = orders_rec->qual[order_idx ].USOB_req.LNMP
+    set print_order->EDD                = orders_rec->qual[order_idx ].USOB_req.EDD
+    set print_order->RelevantPrevExam   = orders_rec->qual[order_idx ].USOB_req.RelevantPrevExam
+    set print_order->OB_prev_exam_loc   = orders_rec->qual[order_idx ].USOB_req.OB_prev_exam_loc
+    set print_order->patient_type       = orders_rec->qual[order_idx ].patient_type
+    set print_order->callback_number    = orders_rec->qual[order_idx ].callback_number
+    set print_order->research_study     = orders_rec->qual[order_idx ].research_study
+    set print_order->addl_copies_to     = replace(orders_rec->qual[order_idx ].addl_copies_to, "; ", "", 1 )
+    set print_order->CTMRINM_prev_ind   = orders_rec->qual[order_idx ].PET_req.CTMRINM_prev_ind
+    set print_order->diabetic_ind       = orders_rec->qual[order_idx ].PET_req.diabetic_ind
+    set print_order->pregnant_ind       = orders_rec->qual[order_idx ].PET_req.pregnant_ind
+    set print_order->PET_previous_ind   = orders_rec->qual[order_idx ].PET_req.PET_previous_ind
+    set print_order->PET_prev_exam_loc  = orders_rec->qual[order_idx ].PET_req.PET_prev_exam_loc
+    set print_order->sched_location     = orders_rec->qual[order_idx ].sched_location  ;017
+    set print_order->pat_phone          = orders_rec->qual[order_idx ].pat_phone  ;018
+    set print_order->blood_thinners     = orders_rec->qual[order_idx ].blood_thinners  ;021
+    set print_order->supervising_md     = orders_rec->qual[order_idx ].supervising_md    ;024
+    set print_order->primary_care_phys  = orders_rec->qual[order_idx ].primary_care_phys ;025
+/*
+    ;035 MRI Fields
+    set print_order->radacutetrauma                 = orders_rec->qual[order_idx ].MRI_req.radacutetrauma
+    set print_order->radbackdominantpain            = orders_rec->qual[order_idx ].MRI_req.radbackdominantpain
+    set print_order->radbreasttissueexpander        = orders_rec->qual[order_idx ].MRI_req.radbreasttissueexpander
+    set print_order->radcardiacpacemaker            = orders_rec->qual[order_idx ].MRI_req.radcardiacpacemaker
+    set print_order->radcaudaequinasyndrome         = orders_rec->qual[order_idx ].MRI_req.radcaudaequinasyndrome
+    set print_order->radcerebralaneurysmclip        = orders_rec->qual[order_idx ].MRI_req.radcerebralaneurysmclip
+    set print_order->radclaustrophobic              = orders_rec->qual[order_idx ].MRI_req.radclaustrophobic
+    set print_order->raddiabetes                    = orders_rec->qual[order_idx ].MRI_req.raddiabetes
+    set print_order->radfixedknee                   = orders_rec->qual[order_idx ].MRI_req.radfixedknee
+    set print_order->radhistoryofcancer             = orders_rec->qual[order_idx ].MRI_req.radhistoryofcancer
+    set print_order->radimplantedinfusionpump       = orders_rec->qual[order_idx ].MRI_req.radimplantedinfusionpump
+    set print_order->radinternalelectrodes          = orders_rec->qual[order_idx ].MRI_req.radinternalelectrodes
+    set print_order->radintravascularstent          = orders_rec->qual[order_idx ].MRI_req.radintravascularstent
+    set print_order->radlegdominantpain             = orders_rec->qual[order_idx ].MRI_req.radlegdominantpain
+    set print_order->radlivertransplant             = orders_rec->qual[order_idx ].MRI_req.radlivertransplant
+    set print_order->radmiddleearprosthesis         = orders_rec->qual[order_idx ].MRI_req.radmiddleearprosthesis
+    set print_order->radneurologicalsymptoms        = orders_rec->qual[order_idx ].MRI_req.radneurologicalsymptoms
+    set print_order->radneurostimulator             = orders_rec->qual[order_idx ].MRI_req.radneurostimulator
+    set print_order->radosteonecrosis               = orders_rec->qual[order_idx ].MRI_req.radosteonecrosis
+    set print_order->radpicciv                      = orders_rec->qual[order_idx ].MRI_req.radpicciv
+    set print_order->radprevioushipknee             = orders_rec->qual[order_idx ].MRI_req.radprevioushipknee
+    set print_order->radpreviouslumbar              = orders_rec->qual[order_idx ].MRI_req.radpreviouslumbar
+    set print_order->radseverebackpainfor65         = orders_rec->qual[order_idx ].MRI_req.radseverebackpainfor65
+    set print_order->radseverehepaticdisease        = orders_rec->qual[order_idx ].MRI_req.radseverehepaticdisease
+    set print_order->radshrapnelbullet              = orders_rec->qual[order_idx ].MRI_req.radshrapnelbullet
+    set print_order->radsuspectedinfection          = orders_rec->qual[order_idx ].MRI_req.radsuspectedinfection
+    set print_order->radsuspectedtumour             = orders_rec->qual[order_idx ].MRI_req.radsuspectedtumour
+    set print_order->radunexplainedweightloss       = orders_rec->qual[order_idx ].MRI_req.radunexplainedweightloss
+    set print_order->radunknowntoallmri             = orders_rec->qual[order_idx ].MRI_req.radunknowntoallmri
+    set print_order->raduseofivdrugs                = orders_rec->qual[order_idx ].MRI_req.raduseofivdrugs
+    set print_order->radweightbearingxr             = orders_rec->qual[order_idx ].MRI_req.radweightbearingxr
+    set print_order->radmetallicorbitalforeignbody  = orders_rec->qual[order_idx ].MRI_req.radmetallicorbitalforeignbody
+    set print_order->radpreviousmrirecommendation   = orders_rec->qual[order_idx ].MRI_req.radpreviousmrirecommendation
+*/
+ 
+    ;=====================================================
+    ; Check if printer reassignment is required using
+    ; performing location and DCP Routing
+    ;=====================================================
+    ; Default printer to ordering location printer
+    set output_printer = request->printer_name
+ 
+/* ;006 Start
+    if (M1_debug_on = 0 )
+      ; Check if future order location is a MI department
+      if (orders_rec->qual[order_idx ].MI_perform_locn > 0.00 )
+        ; Default to no re-routing
+        set reroute_printer_ind = 0
+        ; Determine if the performing location is a MI location
+        select into "nl:"
+          from code_value cv
+         where cv.code_set = 220
+           and cv.code_value = orders_rec->qual[order_idx ].MI_perform_locn
+           and cv.display_key like "*MEDIMAGING"
+           and cv.cdf_meaning = "AMBULATORY"
+        detail
+          reroute_printer_ind = 1
+        with nocounter, time=10
+ 
+        ; Search for different printer if the performing location is a MI location
+        ; Only reassign printer name if one is found
+        if (reroute_printer_ind = 1 )
+          select into "nl:"
+            from dcp_output_route dor,
+                 dcp_flex_rtg dfr,
+                 dcp_flex_printer dfp
+           where dor.route_description = route_description
+             and dfr.dcp_output_route_id = dor.dcp_output_route_id
+             and dfr.value1_cd = orders_rec->qual[order_idx ].MI_perform_locn
+             and dfp.dcp_output_route_id = dor.dcp_output_route_id
+             and dfp.dcp_flex_rtg_id = dfr.dcp_flex_rtg_id
+          detail
+            output_printer = trim(dfp.printer_name, 3)
+          with nocounter, time=5
+        endif
+      endif
+      ; Call the layout to print the requisition
+      execute bc_all_rad_requisition_lyt value(output_printer )
+    endif
+*/ ;006 End
+ 
+    ; Call the layout to print the requisition
+    if (M1_trace_on = 1 )
+      call sWRITE_MESSAGE_NOFLAG("Before layout call...", log_file)
+    endif
+    if (orders_rec->spoolout_ind = 1 and order_num > 0 and M1_debug_on = 0 )
+ 
+      execute bc_all_rad_requisition_lyt value(output_printer )
+      call write_reqn_info("M1", request, print_order, print_order, "" )  ;036
+      set requisition_printed = 1                                         ;036
+ 
+    endif
+    if (M1_trace_on = 1 )
+      call sWRITE_MESSAGE_NOFLAG("After layout call...", log_file)
+    endif
+ 
+  endfor
+endif
+ 
+; Write an audit record if a requisition did not print
+if (requisition_printed = 0 and M1_debug_on = 0 )  ;036
+  call write_rqst_info("M1", request )             ;036
+endif                                              ;036
+ 
+if (M1_trace_on = 1 )
+  call sWRITE_MESSAGE_NOFLAG("Exiting program...", log_file)
+endif
+ 
+set M1_trace_on = 0
+ 
+#exit_script
+ call echorecord(orders_rec)
+;**************************************************************
+; DVDev DEFINED SUBROUTINES
+;**************************************************************
+subroutine sBD_PowerPlan(pCatalog_CD, pBD_PowerPlan_ID )
+  declare BD_Found = I2
+ 
+  set BD_Found = 0
+  if (pCatalog_CD not = 0.00 and pBD_PowerPlan_ID not = 0.00 )
+    select into "nl:"
+           pc.pathway_catalog_is
+    from order_catalog_synonym   o
+       , pathway_comp   p
+       , pathway_catalog  pc
+ 
+    where o.catalog_cd = pCatalog_CD
+      and p.parent_entity_id = o.synonym_id
+      and p.active_ind = 1
+      and pc.pathway_catalog_id = p.pathway_catalog_id
+      and pc.active_ind = 1
+ 
+    detail
+      if (pc.pathway_catalog_id = pBD_PowerPlan_ID )
+        BD_Found = 1
+      endif
+ 
+    with maxrec = 1, ncounter, time=10
+  endif
+  return(BD_Found )
+end ;subroutine
+ 
+end
+go
+ 

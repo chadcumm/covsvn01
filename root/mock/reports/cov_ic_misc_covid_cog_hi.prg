@@ -1,0 +1,80 @@
+
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+	Author:			Geetha Paramasivam
+	Date Written:		Oct'2020
+	Solution:			Infection Control
+	Source file name:	      cov_ic_misc_covid_cog_hi.prg
+	Object name:		cov_ic_misc_covid_cog_hi
+	Request#:			CR# 8785
+	Program purpose:	      MIS-C & COVID19 Alert
+	Executing from:		Rule
+ 	Special Notes:
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+Mod Date	Developer			Comment
+----------	--------------	------------------------------------------
+******************************************************************************/
+
+
+drop program cov_ic_misc_covid_cog_hi:dba go
+create program cov_ic_misc_covid_cog_hi:dba
+ 
+
+declare crp_var      = f8 with constant(uar_get_code_by("DISPLAY", 72, "CRP")),protect
+declare sed_auto_var = f8 with constant(uar_get_code_by("DISPLAY", 72, "Sed Rate Automated")),protect
+declare sed_west_var = f8 with constant(uar_get_code_by("DISPLAY", 72, "Sed Rate Westergren")),protect
+declare fibrin_var   = f8 with constant(uar_get_code_by("DISPLAY", 72, "Fibrinogen Lvl")),protect
+declare procal_var   = f8 with constant(uar_get_code_by("DISPLAY", 72, "Procalcitonin")),protect
+declare dimer_var    = f8 with constant(uar_get_code_by("DISPLAY", 72, "D Dimer (Quant)")),protect
+declare ferri_var    = f8 with constant(uar_get_code_by("DISPLAY", 72, "Ferritin Lvl")),protect
+declare ldh_var      = f8 with constant(uar_get_code_by("DISPLAY", 72, "LDH")),protect
+declare interle_var  = f8 with constant(uar_get_code_by("DISPLAY", 72, "Interleukin 6")),protect
+declare neuts_var    = f8 with constant(uar_get_code_by("DISPLAY", 72, "Absolute Neuts")),protect
+
+declare log_message = vc with noconstant('')
+set retval = 0
+
+
+select into 'nl:'
+ce.encntr_id, ce.event_cd, event = uar_get_code_display(ce.event_cd), ce.result_val
+, event_end_dt = format(ce.event_end_dt_tm, 'mm/dd/yyyy hh:mm:ss;;d')
+
+from	clinical_event ce, ce_event_action cea
+
+plan ce where ce.encntr_id = trigger_encntrid
+	and ce.event_cd in(crp_var,sed_auto_var,sed_west_var,fibrin_var,procal_var,dimer_var,ferri_var,ldh_var,interle_var,neuts_var)  
+	and ce.event_id = (select max(ce1.event_id) from clinical_event ce1
+		where ce1.encntr_id = ce.encntr_id
+		and ce1.event_cd = ce.event_cd
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+ 		and ce1.result_status_cd in (34.00, 25.00, 35.00)
+		and ce1.event_tag != "Date\Time Correction"
+		group by ce1.encntr_id, ce1.event_cd)
+		
+join cea where cea.event_id = ce.event_id
+	and cea.normalcy_cd in(203.00, 207)	;CRIT, HI
+		
+head report
+	log_message = "No Cogulation HI/CRIT lvl found"
+	retval = 0
+detail
+	log_message = concat("Cogulation HI/CRIT lvl found on ",format(ce.event_end_dt_tm,";;q"))
+	retval = 100
+
+with nocounter
+
+call echo(build2('log_msg = ', log_message,  '--retval = ', retval))
+
+ 
+end go
+
+
+
+
+ 

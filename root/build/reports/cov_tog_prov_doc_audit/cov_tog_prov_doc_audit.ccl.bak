@@ -1,0 +1,314 @@
+select * from ccl_report_audit cra where cra.object_name = "COV_TOG_PROV_DOC_AUDIT*" order by cra.begin_dt_tm desc
+
+select * from code_value cv where cv.code_value=2553766379
+
+select distinct
+    
+    ;, sab2.appt_book_id
+     location_cd = evaluate(sab2.appt_book_id,
+        ; PROD
+        1657812.00, 2553766363.00,
+        1657816.00, 2553766379.00,
+        1690166.00, 2553766395.00,
+        1690170.00, 2553766411.00,
+        1690174.00, 2555024953.00,
+        1657820.00, 2553766443.00,
+        1657824.00, 2553766459.00,
+        ; BUILD     
+        1689567.00, 2553766363.00,
+        1689569.00, 2553766379.00,
+        1689565.00, 2553766395.00,
+        1689563.00, 2553766411.00,
+        1689561.00, 2555024953.00,
+        1689577.00, 2553766443.00,
+        1689575.00, 2553766459.00,      
+        0.0
+        ),
+        department = sab2.mnemonic
+from
+    SCH_APPT_BOOK sab       ; facility
+    , (inner join SCH_BOOK_LIST sbl on sbl.appt_book_id = sab.appt_book_id)
+ 
+    , (inner join SCH_APPT_BOOK sab2 on sab2.appt_book_id = sbl.child_appt_book_id) ; department
+    , (inner join SCH_BOOK_LIST sbl2 on sbl2.appt_book_id = sab2.appt_book_id)
+
+where
+    sab.appt_book_id = 1651454
+ 
+order by
+    sab2.mnemonic
+ 
+ 
+select * from sch_appt sa where sa.appt_location_cd=  2553766379 and sa.end_dt_tm > cnvtdatetime(Curdate,curtime3)
+ ;cnvtdatetime("31-DEC-2100 00:00:00")
+ 
+ select  distinct
+ 	p.name_full_formatted 
+ 	,sa.resource_cd
+ 	,sa.appt_location_cd
+ from 
+ 	 sch_appt sa
+ 	,sch_resource sr
+ 	,prsnl p
+ plan sa
+ 	where sa.appt_location_cd in(2553766363.00 ;TOG - Blount
+                                         ,2553766379.00 ;TOG - Downtown
+                                         ;         0.00 ;TOG - Harriman
+                                         ,2553766395.00 ;TOG - Lenoir City
+                                         ,2553766411.00 ;TOG - MHHS
+                                         ,2555024953.00 ;TOG - Oak Ridge
+                                         ,2553766443.00 ;TOG - Sevier
+                                         ,2553766459.00 ;TOG - West
+                                         )
+ 	and sa.resource_cd > 0.0
+ join sr
+ 	where sr.resource_cd = sa.resource_cd
+ 	and   sr.person_id > 0.0
+ join p
+ 	where p.person_id = sr.person_id
+ order by
+ 	p.name_full_formatted
+ with format(date,";;q"),uar_code(d),nocounter
+
+;ROGERS, MAILIEN REED DO	Rogers,Mailien Reed DO	 3232758849.00	TOG MORRISTOWN	   2553766411.00
+
+
+select * from person p where p.person_id = 16238270
+
+/*
+,sch_appt sap
+plan sa
+	where expand(i,1,t_rec->app_loc_cnt,sa.appt_location_cd,t_rec->app_loc[i].app_location_cd)
+	and   sa.beg_dt_tm between cnvtdatetime(t_rec->start_dt_tm) and cnvtdatetime(t_rec->end_dt_tm)
+	and   expand(j,1,t_rec->res_cnt,sa.resource_cd,t_rec->res_list[j].resource_cd)
+	and   sa.role_meaning != "PATIENT"
+	and   sa.sch_state_cd in(
+									 code_values->cv.cs_14233.checked_out_cd
+									,code_values->cv.cs_14233.checked_in_cd
+									,code_values->cv.cs_14233.finalized_cd
+									,code_values->cv.cs_14233.complete_cd
+								)
+join sap
+	where sap.sch_event_id = sa.sch_event_id
+	and   sap.role_meaning = "PATIENT"
+	and   sap.encntr_id > 0.0*/
+ select  
+ 	p.name_full_formatted 
+ 	;,sa.resource_cd
+ 	,sap.candidate_id
+ 	,sa.beg_dt_tm ";;q"
+ 	,sa.end_dt_tm ";;q"
+ 	,p1.name_full_formatted
+ 	,sap.person_id
+ 	,ea.alias
+ 	,e.reg_dt_tm ";;q"
+ 	,e.encntr_id
+ 	,sa.appt_location_cd
+ 	,uar_Get_code_display(sa.appt_location_cd)
+ from 
+ 	 sch_appt sa
+ 	,sch_resource sr
+ 	,sch_appt sap
+ 	,prsnl p
+ 	,person p1
+ 	,encounter e
+ 	,encntr_alias ea
+ plan sa
+ 	where sa.appt_location_cd=  2553766411 ;2553766379
+ 	and sa.resource_cd =3232758849
+ 	;and sa.beg_dt_tm between cnvtdatetime("21-SEP-2019") and cnvtdatetime("26-SEP-2019")
+ join sr
+ 	where sr.resource_cd = sa.resource_cd
+ 	and   sr.person_id > 0.0
+ join p
+ 	where p.person_id = sr.person_id
+ join sap
+	where sap.sch_event_id = sa.sch_event_id
+	and   sap.role_meaning = "PATIENT"
+;	and   sap.encntr_id = 0.0
+ join p1
+ 	where p1.person_id = sap.person_id
+ join e
+ 	where e.encntr_id = sap.encntr_id
+ join ea
+        where ea.encntr_id = outerjoin(e.encntr_id)
+        and   ea.beg_effective_dt_tm <= outerjoin( cnvtdatetime(curdate,curtime3))
+        and   ea.end_effective_dt_tm >=  outerjoin(cnvtdatetime(curdate,curtime3))
+        and   ea.active_ind =  outerjoin(1)
+        and   ea.encntr_alias_type_cd = outerjoin( value(uar_get_code_by("MEANING",319,"FIN NBR")))
+ order by
+ 	 p.name_full_formatted
+ 	,e.encntr_id 
+ 	,sa.beg_dt_tm desc
+ with format(date,";;q"),uar_code(d),nocounter
+;     .00
+
+select sap.beg_dt_tm,sap.encntr_id,sap.role_meaning,ea.alias,sap.sch_appt_id,sap.sch_event_id,
+* from sch_appt sap,encntr_alias ea where 
+
+sap.candidate_id in(     575965740.00,
+  566781062.00,
+  556554119.00,
+  498598353.00,
+  471336499.00,
+  566781062.00,
+  575965740.00,
+  556554119.00,
+  498598353.00,
+  471336499.00,
+  471336499.00,
+  498598353.00,
+  556554119.00,
+  566781062.00,
+  575965740.00,
+  471336499.00,
+  498598353.00,
+  556554119.00,
+  566781062.00,
+  575965740.00
+)
+
+;sap.encntr_id =   118635235.00
+
+and  ea.encntr_id = outerjoin(sap.encntr_id)
+        and   ea.beg_effective_dt_tm <= outerjoin( cnvtdatetime(curdate,curtime3))
+        and   ea.end_effective_dt_tm >=  outerjoin(cnvtdatetime(curdate,curtime3))
+        and   ea.active_ind =  outerjoin(1)
+        and   ea.encntr_alias_type_cd = outerjoin( value(uar_get_code_by("MEANING",319,"FIN NBR")))
+with format(Date,";;q"),uar_code(d)
+
+select distinct 
+;	 sab1.mnemonic
+;	,sab2.mnemonic
+;	,sab3.mnemonic
+;	,sr.*
+	 sr.resource_cd
+	,sr.description
+from
+	 sch_appt_book sab1
+	,sch_book_list sbl1
+	,sch_appt_book sab2
+	,sch_book_list sbl2
+	,sch_appt_book sab3
+	,sch_book_list sbl3
+	,sch_resource sr
+plan sab1 
+	where sab1.mnemonic_key = "THOMPSON ONCOLOGY GROUP"
+	and   sab1.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join sbl1
+	where sbl1.appt_book_id = sab1.appt_book_id
+	and	  sbl1.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   sbl1.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+	and   sbl1.active_ind = 1
+join sab2
+	where sab2.appt_book_id = sbl1.child_appt_book_id
+join sbl2
+	where sbl2.appt_book_id = sab2.appt_book_id
+	and	  sbl2.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   sbl2.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+	and   sbl2.active_ind = 1
+join sab3
+	where sab3.appt_book_id = sbl2.child_appt_book_id
+join sbl3
+	where sbl3.appt_book_id = sab3.appt_book_id
+	and	  sbl3.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   sbl3.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+	and   sbl3.active_ind = 1
+join sr
+	where sr.resource_cd = sbl3.resource_cd
+	and   sr.person_id > 0.0
+order by 
+	sr.description
+	
+select 
+	 p.name_full_formatted
+	,cra.*
+	,*
+from ccl_report_Audit cra,prsnl p where cra.object_name = "COV_TOG_PROV_DOC_AUDIT:DBA" and p.person_id = cra.updt_id
+order by
+	cra.begin_dt_tm desc
+with format(date,";;q")
+
+   ;42478677.00
+execute cov_sn_surg_sched "MINE", 1, 3144505.00, VALUE(2552926529.00), "02-OCT-2019 00:00:00", "31-OCT-2019 23:59:00" go
+
+select * from code_value cv where cv.code_value= 2562821711
+
+;"MINE", 2553766379.00, VALUE(2562821711.00), "01-SEP-2019 00:00:00", "30-SEP-2019 23:59:00"
+
+select * from prsnl p where p.person_id = 18438198
+
+select 
+	 o.order_id
+	,order_prov=p2.name_full_formatted
+	,order_pos = uar_get_code_display(p2.position_cd)
+	,to_prov=p1.name_full_formatted
+	,to_prov_pos = uar_get_code_display(p1.position_cd)
+	,o.order_mnemonic
+	,o.clinical_display_line
+	,entering_prov = p3.name_full_formatted
+	,entering_prov_pos = uar_get_code_display(p3.position_cd)
+from 
+	 order_notification on1 
+	,prsnl p1
+	,order_action oa
+	,prsnl p2
+	,orders o
+	,prsnl p3
+plan on1
+	where on1.order_id = 2118177805
+join o
+	where o.order_id = on1.order_id
+join oa
+	where oa.order_id = o.order_id
+	and   oa.action_type_cd = value(uar_get_code_by("MEANING",6003,"ORDER"))
+join p1 
+	where p1.person_id = on1.to_prsnl_id
+join p2
+	where p2.person_id = oa.order_provider_id
+join p3
+	where p3.person_id = oa.action_personnel_id	
+	
+	
+select distinct
+	cep.action_dt_tm
+	,uar_get_code_meaning(cep.action_type_cd)
+	,uar_get_code_meaning(cep.action_status_cd)
+	,cep.event_id
+	,cep.action_prsnl_id
+	,cep.ce_event_prsnl_id
+	
+	
+from
+	clinical_event ce
+	,ce_Event_prsnl cep
+plan ce
+	where ce.event_id in( 1491207615,1490905532)
+join cep
+	where cep.event_id = ce.event_id
+	and   cep.valid_until_dt_tm >= cnvtdatetime(curdate,curtime3)
+	and   cep.valid_from_dt_tm <= cnvtdatetime(curdate,curtime3)
+order by 
+	ce.event_id
+	,cep.action_dt_tm asc
+with format(date,";;q")
+
+
+select ea.alias,ea.encntr_id,* from encntr_alias ea where ea.alias in("1829201651","1834101509","2007000666","2006301965",
+"2005902314")
+
+select
+	 ea.alias 
+	,e.encntr_id
+	,e.reg_dt_tm
+	,e.encntr_type_cd
+from
+	 encounter e
+	,encntr_alias ea
+plan ea
+	where ea.alias in("1829201651","1834101509","2007000666","2006301965","2005101822")
+join e
+	where e.encntr_id = ea.encntr_id
+with nocounter, uar_code(d), format(date,";;q")
+
+;

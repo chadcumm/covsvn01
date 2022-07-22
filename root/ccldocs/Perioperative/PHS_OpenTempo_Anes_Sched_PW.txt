@@ -1,0 +1,43 @@
+SELECT [Case ID],[Date],Room,[Scheduled Start],[Scheduled Stop],Consultant,[Procedure Type],[Notes],[Custom1],[Custom 2],[Custom3]
+FROM
+		(SELECT	appt.appt_id [Case ID],
+			Convert(varchar,appt.start_datetime,103) [Date],
+			res.abbr Room , --changed from name to abbr 2014-07-24
+			Convert(char(5),resbooking.start_datetime,108) [Scheduled Start],
+			Convert(char(5),resbooking.stop_datetime,108) [Scheduled Stop],
+			/*res_pract.name Consultant,*/
+			res_ref.name Consultant, --pull primary or referring pract
+			service.name [Procedure Type],
+			probooking.act_name [Notes],
+			CAST(REPLACE(CAST(appt.long_comment as varchar(4000)),'"','''''') as Text) [Custom1],
+			patbooking.age [Custom 2],
+			proname.abbr [Custom3],
+			
+		--Need to prioritze the room by resunit id. In this case, the ids (51,54,129) are in the proper priorty order.
+		RANK() OVER(PARTITION BY appt.appt_id ORDER BY res.resunit_id) ResunitRank
+		
+		FROM   (((((((prod.dbo.appt appt 
+		INNER JOIN prod.dbo.probooking probooking ON appt.appt_id=probooking.appt_id) 
+		INNER JOIN prod.dbo.resbooking resbooking ON appt.appt_id=resbooking.appt_id) 
+		INNER JOIN prod.dbo.patbooking patbooking ON appt.appt_id=patbooking.appt_id) 
+		INNER JOIN prod.dbo.res res ON resbooking.res_id=res.res_id) 
+		INNER JOIN prod.dbo.pro pro ON probooking.pro_id=pro.pro_id)
+		INNER JOIN prod.dbo.proname ON pro.proname_id = proname.proname_id
+		--LEFT OUTER JOIN prod.dbo.res res_pract ON probooking.prim_pract_id=res_pract.res_id) 
+		LEFT OUTER JOIN prod.dbo.res res_ref ON patbooking.referring_phys_id=res_ref.res_id )
+		LEFT OUTER JOIN prod.dbo.service service ON pro.service_id=service.service_id) 
+		INNER JOIN prod.dbo.pat pat ON patbooking.pat_id=pat.pat_id
+		
+		WHERE  res.restype_id = 2 
+		AND appt.start_datetime > CAST(getdate() as DATE)
+		AND appt.start_datetime < CAST(getdate()+8 as DATE)
+		AND res.resunit_id in (65,109))a
+
+WHERE ResunitRank = 1		
+order by [Case ID]
+
+
+csv_dest_PW:
+PHS_OpenTempo_Anes_Sched_PW.csv
+"Case ID","Date","Room","Scheduled Start","Scheduled Stop","Consultant","Procedure Type","Notes","Custom1","Custom2","Custom3"
+

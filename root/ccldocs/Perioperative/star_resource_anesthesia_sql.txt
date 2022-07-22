@@ -1,0 +1,360 @@
+Here is the Star SQL.    Charge data may not be 100% complete in Cerner as late charges/credits may be entered in Star.  This is TBD.  Also, the SIM Cd as stated below will not be in Cerner.  Insurance data in Star will not match Cerner but will be similar.  
+
+I didn’t write then.  Burton did.  Wendy replaced it.
+
+
+/***********************************************************************
+Query: QBLF_RA_DEMOG_EXT
+
+Description:  This query pulls the demographic information for accounts
+whose Anesthesiology physician billing is billed by Resource Anesthesia. 
+
+Requestor/Department:              
+
+Date Created: 08/11/2016
+
+Created By: Wendy Welch
+
+Output:  Export
+
+                            MODIFICATION LOG                               
+-----------------------------------------------------------------------  
+ Name                 DATE        Project/Ticket    Reason                 
+ 
+-----------------------------------------------------------------------  
+
+---------------------------------------------------------------------*/
+--SET SHOW_PLAN = Y
+
+-- Activate the following lines for exporting to Excel from QREPro.
+--SET FORMAT=COMMA
+--SET METHOD=SQL_FILE_IMAGE
+
+SET FILE='/export/outgoing/ra/ra_demog_$.txt',
+--SET FILE='/export/outgoing/ra/ra_demog_catchup.txt',
+FORMAT='TAB', METHOD=HOST_OUT
+
+SET DISPLAY_HEADING=Y
+
+SELECT      'L' HEADING 'Facility',
+            pat_ind HEADING 'Patient Ind',
+            pat_type HEADING 'Patient Type',
+            TO_DATE(MED_LINK@ADM_DT,'YYYYMMDD')
+                HEADING 'Admit Date',
+            TO_DATE(MED_LINK@DSCHRG_DT,'YYYYMMDD')
+                HEADING 'DC Date',   
+            TO_DATE(MED_LINK@VISIT_LINK@ACDT_DATE,'YYYYMMDD')
+                HEADING 'Accident Date',
+            demog_link@pat_name_first HEADING 'Patient First Name',
+            demog_link@pat_name_last HEADING 'Patient Last Name',
+            demog_link@pat_name_mi HEADING 'Patient Middle Name',
+            TO_DATE(demog_link@birthdate, 'YYYYMMDD') 
+                HEADING 'Patient Birth Date',
+            TO_DATE(DEMOG_LINK@EXPIRED_DT, 'YYYYMMDD')
+                HEADING 'Expired Date',
+            demog_link@sex HEADING 'Patient Sex',
+            demog_link@pat_addr_1 HEADING 'Patient Addr 1',
+            demog_link@pat_addr_2 HEADING 'Patient Addr 2',
+            demog_link@pat_city HEADING 'Patient City',
+            demog_link@pat_state HEADING 'Patient St',
+            demog_link@pat_zip_code HEADING 'Patient Zip Code',
+            demog_link@phone_nbr HEADING 'Patent Phone Number',
+            ag_pat_emplr.emp_phone_nbr HEADING 'Workplace Phone',
+            demog_link@pat_ssn HEADING 'Patient SSN',
+            ag_pat_emplr.emp_name HEADING 'Employer Name',
+            ag_pat_emplr.emp_addr_1 HEADING 'Employer Addr 1',
+            ag_pat_emplr.emp_addr_2 HEADING 'Employer Addr 2',
+            ag_pat_emplr.emp_city HEADING 'Employer City',
+            ag_pat_emplr.emp_st HEADING 'Employer St',
+            ag_pat_emplr.emp_zip HEADING 'Employer Zip Code',
+            ag_pat_emplr.emp_phone_nbr HEADING 'Employer Phone',
+            med_link@unit_nbr HEADING 'MRN',
+            pat_acct_nbr HEADING 'Patient Account Number',
+            demog_link@marital_status HEADING 'Patient Marital Status',
+            ag_pat_emplr.emplmnt_stat_desc HEADING 'Employment Status',
+            demog_link@race_cd HEADING 'Race Code',
+            
+            MED_LINK@GUARANTOR_LINK@GUAR_DEMOG_LINK@PAT_NAME_FIRST
+                HEADING 'Guarantor First Name',
+            MED_LINK@GUARANTOR_LINK@GUAR_DEMOG_LINK@PAT_NAME_LAST
+                HEADING 'Guarantor Last Name',    
+            MED_LINK@GUARANTOR_LINK@GUAR_DEMOG_LINK@PAT_NAME_MI
+                HEADING 'Guarantor Middle Name',
+            
+TO_DATE(MED_LINK@GUARANTOR_LINK@GUAR_DEMOG_LINK@BIRTHDATE,'YYYYMMDD')
+                HEADING 'Guarantor Birthdate', 
+            MED_LINK@GUARANTOR_LINK@GUAR_DEMOG_LINK@SEX 
+                HEADING 'Guarantor Sex',    
+            med_link@guarantor_link@guar_demog_link@pat_addr_1 
+                HEADING 'Guarantor Add1',
+            med_link@guarantor_link@guar_demog_link@pat_addr_2 
+                HEADING 'Guarantor Add2',
+            med_link@guarantor_link@guar_demog_link@pat_city 
+                HEADING 'Guarantor City',
+            med_link@guarantor_link@guar_demog_link@pat_state 
+                HEADING 'Guarantor St',
+            med_link@guarantor_link@guar_demog_link@pat_zip_code 
+                HEADING 'Guarantor Zip',
+            MED_LINK@GUARANTOR_LINK@GUAR_DEMOG_LINK@PHONE_NBR
+                HEADING 'Guarantor Phone',
+            MED_LINK@GUARANTOR_LINK@GUAR_EMPR_LINK@EMP_PHONE
+                HEADING 'Guarantor Work Phone',   
+            MED_LINK@GUARANTOR_LINK@GUAR_DEMOG_LINK@PAT_SSN
+                HEADING 'Guarantor SSN',
+            MED_LINK@GUARANTOR_LINK@GUAR_EMPR_LINK@EMP_NAME
+                HEADING 'Guarantor Work Name',
+            MED_LINK@GUARANTOR_LINK@GUAR_EMPR_LINK@EMP_ADDR_1
+                HEADING 'Guarantor Work Address 1',
+            MED_LINK@GUARANTOR_LINK@GUAR_EMPR_LINK@EMP_ADDR_2
+                HEADING 'Guarantor Work Address 2',
+            MED_LINK@GUARANTOR_LINK@GUAR_EMPR_LINK@EMP_CITY
+                HEADING 'Guarantor Work City',
+            MED_LINK@GUARANTOR_LINK@GUAR_EMPR_LINK@EMP_ST
+                HEADING 'Guarantor Work St',    
+            MED_LINK@GUARANTOR_LINK@GUAR_EMPR_LINK@EMP_ZIP   
+                HEADING 'Guarantor Work Zip',
+            MED_LINK@GUARANTOR_LINK@GUAR_EMPR_LINK@EMP_PHONE
+                HEADING 'Guarantor Work Phone',
+            ' ', --GUAR STATMT CONTR
+            ' ', --GUAR MARITAL CODE
+            ' ', --GUAR EMPLOYMENT STATUS
+            ' ', --GUAR RELATIONSHIP CODE
+            MED_LINK@GUARANTOR_LINK@GUAR_REL_CODE
+                HEADING 'Guarantor Relationship',
+            
+            EXTRACT(PIECE(PIECE(MED_LINK@PAT_REL_LINK@REL_NAME,',',2),' 
+',1),1,12)
+                HEADING 'Relative First Name',
+            EXTRACT(PIECE(MED_LINK@PAT_REL_LINK@REL_NAME,',',1),1,33)
+                HEADING 'Relative Last Name',
+            EXTRACT(PIECE(PIECE(MED_LINK@PAT_REL_LINK@REL_NAME,',',2),' 
+',2),1)
+                HEADING 'Relative Middle Name',                            
+    
+            TO_DATE(MED_LINK@PAT_REL_LINK@REL_BIRTH,'YYYYMMDD')
+                HEADING 'Relative Birthdate',
+            MED_LINK@PAT_REL_LINK@REL_SEX
+                HEADING 'Relative Sex',
+            MED_LINK@PAT_REL_LINK@REL_ADDR_1
+                HEADING 'Relative Addr 1',
+            MED_LINK@PAT_REL_LINK@REL_ADDR_2
+                HEADING 'Relative Addr 2',
+            MED_LINK@PAT_REL_LINK@REL_CITY
+                HEADING 'Relative City',
+            MED_LINK@PAT_REL_LINK@REL_ST
+                HEADING 'Relative St',    
+            MED_LINK@PAT_REL_LINK@REL_ZIP
+                HEADING 'Relative Zip',
+            MED_LINK@PAT_REL_LINK@REL_PHONE
+                HEADING 'Relative Phone',
+            MED_LINK@PAT_REL_LINK@EMP_PHONE
+                HEADING 'Relative Employer Phone',
+            MED_LINK@PAT_REL_LINK@REL_SSN
+                HEADING 'Relative SSN',
+            MED_LINK@PAT_REL_LINK@EMP_NAME
+                HEADING 'Employer Name',
+            MED_LINK@PAT_REL_LINK@EMP_ADDR_1
+                HEADING 'Employer Address 1',
+            MED_LINK@PAT_REL_LINK@EMP_ADDR_2
+                HEADING 'Employer Address 2',
+            MED_LINK@PAT_REL_LINK@EMP_CITY
+                HEADING 'Employer City',
+            MED_LINK@PAT_REL_LINK@EMP_ST
+                HEADING 'Employer St',
+            MED_LINK@PAT_REL_LINK@EMP_ZIP
+                HEADING 'Employer Zip',
+            MED_LINK@PAT_REL_LINK@EMP_PHONE
+                HEADING 'Employer Phone',
+            ' ',
+            ' ',
+            ' ',
+            MED_LINK@PAT_REL_LINK@REL_CODE
+                HEADING 'Relationship',
+            ATND_PHYS
+                HEADING 'STAR MD #',
+            ATND_PHYS_NAME
+                HEADING 'MD Name',
+            ' ',
+            ' ',
+            ' ',
+            
+            MED_LINK@INS_COB_1_LINK@CARRIER_CODE
+                HEADING 'Insurance Code 1',
+            MED_LINK@INS_COB_1_LINK@CARRIER_NAME
+                HEADING 'Insurance Name 1',
+            MED_LINK@INS_COB_1_LINK@POLICY_NBR
+                HEADING 'Insurance Policy # 1',
+            MED_LINK@INS_COB_1_LINK@GROUP_NBR
+                HEADING 'Insurance Group # 1',    
+            MED_LINK@INS_COB_1_LINK@CARRIER_ADDRESS_1
+                HEADING 'Insurance Addr1 1',
+            MED_LINK@INS_COB_1_LINK@CARRIER_ADDRESS_2
+                HEADING 'Insurance Addr2 1',
+            MED_LINK@INS_COB_1_LINK@CARRIER_CITY
+                HEADING 'Insurance City 1',
+            MED_LINK@INS_COB_1_LINK@CARRIER_STATE
+                HEADING 'Insurance St 1',
+            MED_LINK@INS_COB_1_LINK@CARRIER_ZIPCODE
+                HEADING 'Insurance Zip 1',
+            MED_LINK@INS_COB_1_LINK@CARRIER_PHONE_NBR
+                HEADING 'Insurance Phone 1',
+            MED_LINK@INS_COB_1_LINK@APPROVAL_NBR
+                HEADING 'Insurance Appr # 1',
+            PIECE(PIECE(MED_LINK@INS_COB_1_LINK@INSURED_NAME,',',2),';',1)
+                HEADING 'Insurance FName 1',
+            PIECE(MED_LINK@INS_COB_1_LINK@INSURED_NAME,',',1)
+                HEADING 'Insurance LName 1',
+            PIECE(MED_LINK@INS_COB_1_LINK@INSURED_NAME,';',2)
+                HEADING 'Insurance MName 1',
+            TO_DATE(MED_LINK@INS_COB_1_LINK@INSURED_BIRTHDATE,
+                    'YYYYMMDD') HEADING 'Insurance Birthdate 1',
+            MED_LINK@INS_COB_1_LINK@INSURED_SEX
+                HEADING 'Insurance Sex 1',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',                            
+            MED_LINK@INS_COB_1_LINK@INSURED_SSN
+                HEADING 'Insurance SSN 1',
+            ' ',                
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',                
+            MED_LINK@INS_COB_1_LINK@SAME_AS_FLAG
+                HEADING 'Insurance SameAs 1',
+              
+            MED_LINK@INS_COB_3_LINK@CARRIER_CODE
+                HEADING 'Insurance Code 3',
+            MED_LINK@INS_COB_3_LINK@CARRIER_NAME
+                HEADING 'Insurance Name 3',
+            MED_LINK@INS_COB_3_LINK@POLICY_NBR
+                HEADING 'Insurance Policy # 3',
+            MED_LINK@INS_COB_3_LINK@GROUP_NBR
+                HEADING 'Insurance Group # 3',    
+            MED_LINK@INS_COB_3_LINK@CARRIER_ADDRESS_1
+                HEADING 'Insurance Addr1 3',
+            MED_LINK@INS_COB_3_LINK@CARRIER_ADDRESS_2
+                HEADING 'Insurance Addr2 3',
+            MED_LINK@INS_COB_3_LINK@CARRIER_CITY
+                HEADING 'Insurance City 3',
+            MED_LINK@INS_COB_3_LINK@CARRIER_STATE
+                HEADING 'Insurance St 3',
+            MED_LINK@INS_COB_3_LINK@CARRIER_ZIPCODE
+                HEADING 'Insurance Zip 3',
+            MED_LINK@INS_COB_3_LINK@CARRIER_PHONE_NBR
+                HEADING 'Insurance Phone 3',
+            MED_LINK@INS_COB_3_LINK@APPROVAL_NBR
+                HEADING 'Insurance Appr # 3',
+            PIECE(PIECE(MED_LINK@INS_COB_3_LINK@INSURED_NAME,',',2),';',1)
+                HEADING 'Insurance FName 3',
+            PIECE(MED_LINK@INS_COB_3_LINK@INSURED_NAME,',',1)
+                HEADING 'Insurance LName 3',
+            PIECE(MED_LINK@INS_COB_3_LINK@INSURED_NAME,';',2)
+                HEADING 'Insurance MName 3',
+            TO_DATE(MED_LINK@INS_COB_3_LINK@INSURED_BIRTHDATE,
+                    'YYYYMMDD') HEADING 'Insurance Birthdate 3',
+            MED_LINK@INS_COB_3_LINK@INSURED_SEX
+                HEADING 'Insurance Sex 3',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',                                            
+            MED_LINK@INS_COB_3_LINK@INSURED_SSN
+                HEADING 'Insurance SSN 3',
+            ' ',                
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',                
+            MED_LINK@INS_COB_3_LINK@SAME_AS_FLAG
+                HEADING 'Insurance SameAs 3',
+                
+            MED_LINK@INS_COB_5_LINK@CARRIER_CODE
+                HEADING 'Insurance Code 5',
+            MED_LINK@INS_COB_5_LINK@CARRIER_NAME
+                HEADING 'Insurance Name 5',
+            MED_LINK@INS_COB_5_LINK@POLICY_NBR
+                HEADING 'Insurance Policy # 5',
+            MED_LINK@INS_COB_5_LINK@GROUP_NBR
+                HEADING 'Insurance Group # 5',    
+            MED_LINK@INS_COB_5_LINK@CARRIER_ADDRESS_1
+                HEADING 'Insurance Addr1 5',
+            MED_LINK@INS_COB_5_LINK@CARRIER_ADDRESS_2
+                HEADING 'Insurance Addr2 5',
+            MED_LINK@INS_COB_5_LINK@CARRIER_CITY
+                HEADING 'Insurance City 5',
+            MED_LINK@INS_COB_5_LINK@CARRIER_STATE
+                HEADING 'Insurance St 5',
+            MED_LINK@INS_COB_5_LINK@CARRIER_ZIPCODE
+                HEADING 'Insurance Zip 5',
+            MED_LINK@INS_COB_5_LINK@CARRIER_PHONE_NBR
+                HEADING 'Insurance Phone 5',
+            MED_LINK@INS_COB_5_LINK@APPROVAL_NBR
+                HEADING 'Insurance Appr # 5',
+            PIECE(PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,',',2),';',1)
+                HEADING 'Insurance FName 5',
+            PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,',',1)
+                HEADING 'Insurance LName 5',
+            PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,';',2)
+                HEADING 'Insurance MName 5',
+            TO_DATE(MED_LINK@INS_COB_5_LINK@INSURED_BIRTHDATE,
+                    'YYYYMMDD') HEADING 'Insurance Birthdate 5',
+            MED_LINK@INS_COB_5_LINK@INSURED_SEX
+                HEADING 'Insurance Sex 5',
+                            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',                            
+            MED_LINK@INS_COB_5_LINK@INSURED_SSN
+                HEADING 'Insurance SSN 5',
+            ' ',                
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',                
+            MED_LINK@INS_COB_5_LINK@SAME_AS_FLAG
+                HEADING 'Insurance SameAs 5',
+            demog_link@pat_cell_ph_nbr
+                                                            
+FROM        fc_chg_dt_indx,
+            ag_pat_emplr
+
+WHERE       fac = 'L' AND
+            chg_dt = TODAY - 1 AND    
+            --chg_dt BETWEEN '04/24/2017' AND TODAY - 1 AND
+            med_link@ins_cob_1_link@carrier_code NOT IN
+            ('711015','711016','711017','711018','711019',
+             '711020','711021','711022') AND
+            chg_link@dept IN ('ANL','DRL') AND
+            chg_link@sim_code IN ('10001','02367') AND
+            fc_chg_dt_indx.intn = ag_pat_emplr.intn AND
+            fc_chg_dt_indx.an = ag_pat_emplr.an
+            
+ORDER BY    serv_dt,pat_acct_nbr
+
+GROUP BY    serv_dt,pat_acct_nbr  

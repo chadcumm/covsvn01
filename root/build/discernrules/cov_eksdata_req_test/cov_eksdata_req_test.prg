@@ -1,0 +1,46 @@
+drop program cov_eksdata_req_test go
+create program cov_eksdata_req_test 
+
+prompt 
+	"FILENAME" = ""
+	, "REQUEST" = "" 
+
+with FILENAME, REQUEST
+
+
+if ($FILENAME = "")
+	DECLARE FILEPATH = VC WITH CONSTANT( "CCLUSERDIR:test_eksdate.json" ) 
+else
+	DECLARE FILEPATH = VC WITH CONSTANT($FILENAME ) 
+endif
+ 
+free set request 
+
+declare line_in = vc 
+
+FREE DEFINE RTL3 
+DEFINE RTL3 IS FILEPATH 
+select into "nl:"
+from rtl3t r
+detail
+	line_in = concat(line_in,r.line)
+with nocounter 
+;call echo(line_in) go
+set stat = cnvtjsontorec(line_in) 
+
+;call echorecord(eksdata) 
+declare link_encntrid = f8 with noconstant(0.0)
+declare link_personid = f8 with noconstant(0.0)
+declare trigger_orderid = f8 with noconstant(0.0)
+
+declare curindex = i2 with noconstant(17)
+declare retval = i2 with noconstant(0)
+
+execute 3cov_rollup_orderids ^meds1|meds2^
+
+call echo(build2("retval = ",retval))
+end go
+
+
+;cov_eks_req_test "test.json" go
+

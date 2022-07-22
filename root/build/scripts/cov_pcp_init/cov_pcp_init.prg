@@ -1,0 +1,118 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+  Author:             Chad Cummings
+  Date Written:       02/20/2020
+  Solution:           
+  Source file name:   cov_pcp_init.prg
+  Object name:        cov_pcp_init
+  Request #:
+
+  Program purpose:
+
+  Executing from:     CCL
+
+  Special Notes:      Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod   Mod Date    Developer              Comment
+---   ----------  --------------------  --------------------------------------
+000   02/20/2020  Chad Cummings			Initial Release (https://wiki.cerner.com/x/4Si_hQ)
+******************************************************************************/
+
+drop program cov_pcp_init go
+create program cov_pcp_init
+
+free set requestin 
+record requestin
+(
+	1 request
+	 2 n_encntr_id = f8
+	 2 N_ATTEND_DOC_ID = f8
+	 2 O_ATTEND_DOC_ID = f8
+	 2 TRANSACTION  = vc
+	 2 n_person_id = f8
+) 
+
+free set t_rec 
+record t_rec
+(
+	1 cnt = i4
+	1 qual[*]
+	 2 encntr_id = f8
+	 2 person_id = f8
+)
+
+select into "nl:"
+from
+	encntr_domain ed
+	,encounter e
+	,person_prsnl_reltn ppr
+plan ed
+	where ed.end_effective_dt_tm = cnvtdatetime("31-DEC-2100 00:00:00")
+	and   ed.encntr_id not in(
+								select ce.encntr_id
+								from
+									clinical_event ce
+								where ce.encntr_id = ed.encntr_id
+								and   ce.event_cd in(
+														select code_value 
+														from code_value 
+														where code_set = 72 
+														and display = "D-Primary Care Physician")
+								and   ce.valid_until_dt_tm >= cnvtdatetime(curdate,curtime3)
+							)
+	and	  ed.active_ind = 1
+	join e	
+		where e.encntr_id = ed.encntr_id
+		/*and   e.encntr_type_cd not in(
+												 value(uar_get_code_by("DISPLAY",71,"Legacy Data"))
+												,value(uar_get_code_by("DISPLAY",71,"Scheduled"))
+											)
+		and   e.active_ind = 1
+		and   e.encntr_status_cd in(
+										value(uar_get_code_by("MEANING",261,"ACTIVE"))
+									)	
+		and	  e.disch_dt_tm = null
+		*/
+join ppr
+	where 	ppr.person_id = e.person_id
+	and		ppr.person_prsnl_r_cd = value(uar_get_code_by("MEANING",331,"PCP"))
+	and   	ppr.active_ind = 1
+	and   	ppr.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   	ppr.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+order by
+	 ed.beg_effective_dt_tm desc
+	,ed.person_id
+head ed.person_id
+	if (t_rec->cnt < 5)
+		t_rec->cnt = (t_rec->cnt + 1)
+		stat = alterlist(t_rec->qual,t_rec->cnt)
+		t_rec->qual[t_rec->cnt].encntr_id = ed.encntr_id
+		t_rec->qual[t_rec->cnt].person_id = ed.person_id
+	endif
+with nocounter
+
+for (i=1 to t_rec->cnt)
+	set stat = initrec(requestin)
+	;set requestin->request.n_encntr_id = t_rec->qual[i].encntr_id
+	set requestin->request.n_person_id = t_rec->qual[i].person_id
+	set requestin->request.TRANSACTION = "UMPI"
+	
+	;set requestin->request.O_ATTEND_DOC_ID = 1.0
+	;set requestin->request.N_ATTEND_DOC_ID = 2.0
+	call echorecord(requestin)
+	execute pfmt_cov_updt_pcp
+endfor
+
+;call echorecord(t_rec)
+
+
+end go
+
+

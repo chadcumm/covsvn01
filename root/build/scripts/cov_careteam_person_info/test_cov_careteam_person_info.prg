@@ -1,0 +1,463 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+	Author:				Chad Cummings
+	Date Written:		03/30/2020
+	Solution:			
+	Source file name:	cov_careteam_person_info.prg
+	Object name:		cov_careteam_person_info
+	Request #:
+
+	Program purpose:
+
+	Executing from:		CCL
+
+ 	Special Notes:		Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod 	Mod Date	  Developer				      Comment
+--- 	----------	--------------------	----------------------------------
+000 	03/30/2020  Chad Cummings			Initial Release
+******************************************************************************/
+
+drop program test_cov_careteam_person_info:dba go
+create program test_cov_careteam_person_info:dba
+
+prompt
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+
+with OUTDEV
+
+
+call echo(build("loading script:",curprog))
+set nologvar = 0	;do not create log = 1		, create log = 0
+set noaudvar = 0	;do not create audit = 1	, create audit = 0
+%i ccluserdir:cov_custom_ccl_common.inc
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom Section  ************************************"))
+
+if (not(validate(reply,0)))
+record  reply
+(
+	1 text = vc
+	1 status_data
+	 2 status = c1
+	 2 subeventstatus[1]
+	  3 operationname = c15
+	  3 operationstatus = c1
+	  3 targetobjectname = c15
+	  3 targetobjectvalue = c100
+) with protect
+endif
+
+set reply->status_data.status = "F" 
+
+call set_codevalues(null)
+call check_ops(null)
+
+;101107 - PM_ENS_PERSON_INFO
+record 101107_request (
+  1 person_info_qual = i4   
+  1 esi_ensure_type = c3  
+  1 person_info [*]   
+    2 action_type = c3  
+    2 new_person = c1  
+    2 person_info_id = f8   
+    2 person_id = f8   
+    2 info_type_cd = f8   
+    2 info_sub_type_cd = f8   
+    2 active_ind_ind = i2   
+    2 active_ind = i2   
+    2 active_status_cd = f8   
+    2 active_status_dt_tm = dq8   
+    2 active_status_prsnl_id = f8   
+    2 beg_effective_dt_tm = dq8   
+    2 end_effective_dt_tm = dq8   
+    2 long_text_id = f8   
+    2 value_numeric_ind = i2   
+    2 value_numeric = i4   
+    2 value_dt_tm = dq8   
+    2 chartable_ind_ind = i2   
+    2 chartable_ind = i2   
+    2 contributor_system_cd = f8   
+    2 long_text = c32000  
+    2 priority_seq = i4   
+    2 internal_seq = i4   
+    2 value_cd = f8   
+    2 updt_cnt = i4   
+    2 pm_hist_tracking_id = f8   
+    2 transaction_dt_tm = dq8   
+) 
+
+
+free set t_rec
+record t_rec
+(
+	1 dates
+	 2 start_dt_tm				= dq8
+	 2 end_dt_tm				= dq8
+	1 dminfo
+	 2 info_domain				= vc
+	 2 info_name				= vc
+	1 code_value
+	 2 user_defined_cd			= f8
+	1 user_defined
+	 2 poa_first_name_cd 				= f8
+	 2 poa_last_name_cd 				= f8
+	 2 poa_phone_number_cd 				= f8
+	 2 legal_guardian_first_name_cd 	= f8
+	 2 legal_guardian_last_name_cd 		= f8
+	 2 legal_guardian_phone_number_cd 	= f8
+	 2 conservator_first_name_cd 		= f8
+	 2 conservator_last_name_cd 		= f8
+	 2 conservator_phone_number_cd 		= f8
+	 2 sec_poa_first_name_cd 			= f8
+	 2 sec_poa_last_name_cd 			= f8
+	 2 sec_poa_phone_number_cd 			= f8
+	 2 sec_legal_guardian_first_name_cd = f8
+	 2 sec_legal_guardian_last_name_cd 	= f8
+	 2 sec_legal_guardian_phone_number_cd = f8
+	 2 sec_conservator_first_name_cd 	= f8
+	 2 sec_conservator_last_name_cd 	= f8
+	 2 sec_conservator_phone_number_cd 	= f8
+	1 relationships
+	 2 poa_cd 					= f8
+	 2 guardian_cd 				= f8
+	 2 conservator_cd 			= f8
+	 2 sec_poa_cd 				= f8
+	 2 sec_guardian_cd 			= f8
+	 2 sec_conservator_cd 		= f8
+	1 cnt						= i4
+	1 qual[*]
+	 2 person_id				= f8
+	 2 encntr_id				= f8
+	 2 related_person_id		= f8
+	 2 assigned_reltn_type_cd	= f8
+	 2 prsnl_first_name			= vc
+	 2 prsnl_last_name			= vc
+	 2 prsnl_phone				= vc
+	 2 prsnl_first_name_cd		= f8
+	 2 prsnl_last_name_cd		= f8
+	 2 prsnl_phone_cd			= f8
+	 2 processed_ind			= i2
+	1 eso_cnt					= i2
+	1 eso_qual[*]
+	 2 encntr_id				= f8
+) with protect
+
+declare i = i2 with noconstant(0), protect
+declare j = i2 with noconstant(0), protect
+declare k = i2 with noconstant(0), protect
+
+
+
+set t_rec->dminfo.info_domain	= "COV_DEV_OPS"
+set t_rec->dminfo.info_name		= concat(trim(cnvtupper(curprog)),":","start_dt_tm")
+
+set t_rec->code_value.user_defined_cd = uar_get_code_by("MEANING",355,"USERDEFINED")
+
+select into "nl:"
+from
+	code_value cv
+	,code_value_set cvs
+plan cvs
+	where cvs.display =  "info_sub_type_cd"
+join cv
+	where cv.code_set = cvs.code_set
+	and   cv.active_ind = 1
+	and   cv.display in(
+							 "Primary POA First Name"
+							,"Primary POA Last Name"
+							,"Primary POA Phone"
+							,"Primary Legal Guardian First Name"
+							,"Primary Legal Guardian Last Name"
+							,"Primary Legal Guardian Phone"
+							,"Primary Conservator First Name"
+							,"Primary Conservator Last Name"
+							,"Primary Conservator Phone"
+							,"Secondary POA First Name"
+							,"Secondary POA Last Name"
+							,"Secondary POA Phone"
+							,"Secondary Legal Guardian First Name"
+							,"Secondary Legal Guardian Last Name"
+							,"Secondary Legal Guardian Phone"
+							,"Secondary Conservator First Name"
+							,"Secondary Conservator Last Name"
+							,"Secondary Conservator Phone"
+						)
+order by
+	 cv.display 
+	,cv.code_value
+head report
+	cnt = 0
+head cv.code_value
+	case (cv.display)
+		of "Primary POA First Name": t_rec->user_defined.poa_first_name_cd = cv.code_value
+		of "Primary POA Last Name": t_rec->user_defined.poa_last_name_cd = cv.code_value
+		of "Primary POA Phone": t_rec->user_defined.poa_phone_number_cd = cv.code_value
+		of "Primary Legal Guardian First Name": t_rec->user_defined.legal_guardian_first_name_cd = cv.code_value
+		of "Primary Legal Guardian Last Name": t_rec->user_defined.legal_guardian_last_name_cd = cv.code_value
+		of "Primary Legal Guardian Phone": t_rec->user_defined.legal_guardian_phone_number_cd = cv.code_value
+		of "Primary Conservator First Name": t_rec->user_defined.conservator_first_name_cd = cv.code_value
+		of "Primary Conservator Last Name": t_rec->user_defined.conservator_last_name_cd = cv.code_value
+		of "Primary Conservator Phone": t_rec->user_defined.conservator_phone_number_cd = cv.code_value
+		of "Secondary POA First Name": t_rec->user_defined.sec_poa_first_name_cd = cv.code_value
+		of "Secondary POA Last Name": t_rec->user_defined.sec_poa_last_name_cd = cv.code_value
+		of "Secondary POA Phone": t_rec->user_defined.sec_poa_phone_number_cd = cv.code_value
+		of "Secondary Legal Guardian First Name": t_rec->user_defined.sec_legal_guardian_first_name_cd = cv.code_value
+		of "Secondary Legal Guardian Last Name": t_rec->user_defined.sec_legal_guardian_last_name_cd = cv.code_value
+		of "Secondary Legal Guardian Phone": t_rec->user_defined.sec_legal_guardian_phone_number_cd = cv.code_value
+		of "Secondary Conservator First Name": t_rec->user_defined.sec_conservator_first_name_cd = cv.code_value
+		of "Secondary Conservator Last Name": t_rec->user_defined.sec_conservator_last_name_cd = cv.code_value
+		of "Secondary Conservator Phone": t_rec->user_defined.sec_conservator_phone_number_cd = cv.code_value
+	endcase
+with nocounter
+
+select into "nl:"
+from
+	code_value cv
+plan cv
+	where cv.code_set = 4003145
+	and   cv.active_ind = 1
+	and   cv.display_key in(
+							"POWEROFATTORNEYPRIMARY"
+							,"CONSERVATORPRIMARY"
+							,"GUARDIANPRIMARY"
+							,"POWEROFATTORNEYSECONDARY"
+							,"CONSERVATORSECONDARY"
+							,"GUARDIANSECONDARY"
+						)
+order by
+	cv.code_value
+head report
+	cnt = 0
+head cv.code_value
+	case (cv.display_key)
+		of "POWEROFATTORNEYPRIMARY":			t_rec->relationships.poa_cd = cv.code_value
+		of "CONSERVATORPRIMARY":				t_rec->relationships.conservator_cd = cv.code_value
+		of "GUARDIANPRIMARY":					t_rec->relationships.guardian_cd = cv.code_value
+		of "POWEROFATTORNEYSECONDARY":			t_rec->relationships.sec_poa_cd = cv.code_value
+		of "CONSERVATORSECONDARY":				t_rec->relationships.sec_conservator_cd = cv.code_value
+		of "GUARDIANSECONDARY":					t_rec->relationships.sec_guardian_cd = cv.code_value
+	endcase
+with nocounter
+
+call writeLog(build2("* END   Custom Section  ************************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("* START Get Date Range ******************************"))
+
+set t_rec->dates.start_dt_tm = get_dminfo_date(t_rec->dminfo.info_domain,t_rec->dminfo.info_name)
+
+if (t_rec->dates.start_dt_tm = 0.0)
+	call writeLog(build2("->No start date and time found, setting to go live date"))
+	
+endif
+
+set t_rec->dates.start_dt_tm = cnvtdatetime("11-JUL-2021 07:04:00")
+
+set t_rec->dates.end_dt_tm = cnvtdatetime(curdate,curtime3)
+
+call writeLog(build2("* END   Get Date Range ******************************"))
+
+set reply->status_data.status = "Z" 
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Finding Updated Care Teams *************************"))
+
+select into "nl:"
+from
+	dcp_shift_assignment dsa
+	,code_value cv
+	,person p
+	,phone ph
+	,dummyt d1
+plan dsa
+	where dsa.pct_care_team_id = 0.0
+	and   dsa.beg_effective_dt_tm between cnvtdatetime(t_rec->dates.start_dt_tm) and cnvtdatetime(t_rec->dates.end_dt_tm)
+	and   dsa.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join cv
+	where cv.code_value = dsa.assigned_reltn_type_cd
+	and   cv.display in(
+							 "Guardian (Primary)"
+							,"Conservator (Primary)"
+							,"Guardian (Secondary)"
+							,"Conservator (Secondary)"
+							,"Power of Attorney (Primary)"
+							,"Power of Attorney (Secondary)"
+					)
+join p
+	where p.person_id = dsa.related_person_id
+join d1
+join ph
+	where ph.parent_entity_id = p.person_id
+order by
+	 dsa.person_id
+	,cv.code_value
+	,dsa.beg_effective_dt_tm desc
+head report
+	i = 0
+head dsa.person_id
+	null
+head cv.code_value
+	i = (i + 1)
+	stat = alterlist(t_rec->qual,i)
+	t_rec->qual[i].assigned_reltn_type_cd 	= dsa.assigned_reltn_type_cd
+	t_rec->qual[i].encntr_id 				= dsa.encntr_id
+	t_rec->qual[i].person_id 				= dsa.person_id
+	t_rec->qual[i].prsnl_first_name			= p.name_first
+	t_rec->qual[i].prsnl_last_name			= p.name_last
+	t_rec->qual[i].prsnl_phone				= cnvtphone(ph.phone_num,uar_get_code_by("MEANING",281,"US"))
+	t_rec->qual[i].related_person_id		= p.person_id
+	case (dsa.assigned_reltn_type_cd)
+		of t_rec->relationships.conservator_cd:
+												  t_rec->qual[i].prsnl_first_name_cd = t_rec->user_defined.conservator_first_name_cd 
+												  t_rec->qual[i].prsnl_last_name_cd = t_rec->user_defined.conservator_last_name_cd
+												  t_rec->qual[i].prsnl_phone_cd = t_rec->user_defined.conservator_phone_number_cd
+		of t_rec->relationships.guardian_cd:
+												  t_rec->qual[i].prsnl_first_name_cd = t_rec->user_defined.legal_guardian_first_name_cd 
+												  t_rec->qual[i].prsnl_last_name_cd = t_rec->user_defined.legal_guardian_last_name_cd
+												  t_rec->qual[i].prsnl_phone_cd = t_rec->user_defined.legal_guardian_phone_number_cd
+		of t_rec->relationships.poa_cd:
+												  t_rec->qual[i].prsnl_first_name_cd = t_rec->user_defined.poa_first_name_cd 
+												  t_rec->qual[i].prsnl_last_name_cd = t_rec->user_defined.poa_last_name_cd
+												  t_rec->qual[i].prsnl_phone_cd = t_rec->user_defined.poa_phone_number_cd
+		of t_rec->relationships.sec_conservator_cd:
+												  t_rec->qual[i].prsnl_first_name_cd = t_rec->user_defined.sec_conservator_first_name_cd 
+												  t_rec->qual[i].prsnl_last_name_cd = t_rec->user_defined.sec_conservator_last_name_cd
+												  t_rec->qual[i].prsnl_phone_cd = t_rec->user_defined.sec_conservator_phone_number_cd
+		of t_rec->relationships.sec_guardian_cd:
+												  t_rec->qual[i].prsnl_first_name_cd = t_rec->user_defined.sec_legal_guardian_first_name_cd 
+												  t_rec->qual[i].prsnl_last_name_cd = t_rec->user_defined.sec_legal_guardian_last_name_cd
+												  t_rec->qual[i].prsnl_phone_cd = t_rec->user_defined.sec_legal_guardian_phone_number_cd
+		of t_rec->relationships.sec_poa_cd:
+												  t_rec->qual[i].prsnl_first_name_cd = t_rec->user_defined.sec_poa_first_name_cd 
+												  t_rec->qual[i].prsnl_last_name_cd = t_rec->user_defined.sec_poa_last_name_cd
+												  t_rec->qual[i].prsnl_phone_cd = t_rec->user_defined.sec_poa_phone_number_cd
+	endcase
+foot report
+	t_rec->cnt = i
+with format(date,";;q"),uar_code(d,1),outerjoin=d1
+
+if (t_rec->cnt = 0)
+	go to exit_script
+endif
+
+call writeLog(build2("* END   Finding Updated Care Teams *************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Processing Care Team to PERSON_INFO ****************"))
+
+for (i=1 to t_rec->cnt)
+	set stat = initrec(101107_request)
+	free record 101107_reply
+	set k = 0
+	if (t_rec->qual[i].prsnl_first_name > " ")
+		set k = (k + 1)
+		set 101107_request->person_info_qual = k
+		set stat = alterlist(101107_request->person_info,k)
+		set 101107_request->person_info[k].action_type 			= "ADD"
+		set 101107_request->person_info[k].person_id 			= t_rec->qual[i].person_id
+		set 101107_request->person_info[k].info_type_cd			= t_rec->code_value.user_defined_cd
+		set 101107_request->person_info[k].info_sub_type_cd		= t_rec->qual[i].prsnl_first_name_cd
+		set 101107_request->person_info[k].long_text			= t_rec->qual[i].prsnl_first_name
+	endif
+	
+	if (t_rec->qual[i].prsnl_last_name > " ")
+		set k = (k + 1)
+		set 101107_request->person_info_qual = k
+		set stat = alterlist(101107_request->person_info,k)
+		set 101107_request->person_info[k].action_type 			= "ADD"
+		set 101107_request->person_info[k].person_id 			= t_rec->qual[i].person_id
+		set 101107_request->person_info[k].info_type_cd			= t_rec->code_value.user_defined_cd
+		set 101107_request->person_info[k].info_sub_type_cd		= t_rec->qual[i].prsnl_last_name_cd
+		set 101107_request->person_info[k].long_text			= t_rec->qual[i].prsnl_last_name
+	endif
+
+	if (t_rec->qual[i].prsnl_phone > " ")
+		set k = (k + 1)
+		set 101107_request->person_info_qual = k
+		set stat = alterlist(101107_request->person_info,k)
+		set 101107_request->person_info[k].action_type 			= "ADD"
+		set 101107_request->person_info[k].person_id 			= t_rec->qual[i].person_id
+		set 101107_request->person_info[k].info_type_cd			= t_rec->code_value.user_defined_cd
+		set 101107_request->person_info[k].info_sub_type_cd		= t_rec->qual[i].prsnl_phone_cd
+		set 101107_request->person_info[k].long_text			= t_rec->qual[i].prsnl_phone
+	endif
+		
+	call echorecord(101107_request)
+	set stat = tdbexecute(650001,965200,101107,"REC",101107_request,"REC",101107_reply)
+	call echorecord(101107_reply)
+	
+endfor
+
+call writeLog(build2("* END   Processing Care Team to PERSON_INFO ****************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Sending ESO Messages *******************************"))
+
+select into "nl:"
+	encntr_id = t_rec->qual[d1.seq].encntr_id
+from
+	(dummyt d1 with seq=t_rec->cnt)
+order by
+	encntr_id
+head report
+	k = 0
+head encntr_id
+	k = (k + 1)
+	stat = alterlist(t_rec->eso_qual,k)
+	t_rec->eso_qual[k].encntr_id = encntr_id
+foot report
+	t_rec->eso_cnt = k
+with nocounter
+
+for (k = 1 to t_rec->eso_cnt)
+	execute cov_send_a31_by_encntr_id ^nl:^,t_rec->qual[k].encntr_id
+endfor
+
+call writeLog(build2("* END   Sending ESO Messages *******************************"))
+call writeLog(build2("************************************************************"))
+
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom   *******************************************"))
+call writeLog(build2("* END   Custom   *******************************************"))
+call writeLog(build2("************************************************************"))
+
+#exit_script
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Setting Ops Dates **********************************"))
+
+if (reply->status_data.status in("Z","S"))
+	call writeLog(build2("->",format(t_rec->dates.end_dt_tm,";;q")))
+	;call set_dminfo_date(t_rec->dminfo.info_domain,t_rec->dminfo.info_name,t_rec->dates.end_dt_tm)
+endif
+
+if (reply->status_data.status in("S"))
+	call writeLog(build2(cnvtrectojson(t_rec)))
+	call addEmailLog("chad.cummings@covhlth.com")
+endif
+
+call writeLog(build2("* END   Setting Ops Dates **********************************"))
+call writeLog(build2("************************************************************"))
+
+
+
+call exitScript(null)
+call echorecord(t_rec)
+;call echorecord(code_values)
+;call echorecord(program_log)
+
+
+end
+go

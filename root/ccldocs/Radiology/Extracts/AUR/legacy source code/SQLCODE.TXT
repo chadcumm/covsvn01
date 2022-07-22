@@ -1,0 +1,5461 @@
+
+SQL List for 08/01/2018
+=====================================================
+
+
+SQL: QBCC_AUR_DICTATION_EXT                       SUBQUERY: NO
+DESC: Dictation for AUR Report
+Last Edit: 05/18/2018    Last Comp: 05/18/2018    Last Run:  08/01/2018
+START: ALL  0429
+                                                  FILE: "/export/outgoing/aur/aur_code$.txt"
+
+SET START_DATE = 'ALL', START_TIME = '0429' 
+/*---------------------------------------------------------------------
+Query: QBCC_AUR_DICTATION_EXT
+Batch Process: 
+Batch Name: 
+Description: 
+Requestor/Department: 
+Date Created: 2/26/2015
+Created By: 
+Output: FTP
+                             MODIFICATION LOG
+-----------------------------------------------------------------------
+Name                 DATE        Project/Ticket   Reason
+-----------------------------------------------------------------------
+Created on 06-27-03 by Burton Goodge
+Added Doc 51454 July 1, 2013 Neil Tremaine
+Removed two pipes '|' that their new software company wanted removed
+September 18, 2013 Burton Goodge 
+Marty Henning     01/02/2017    IN568426 Removed 12289
+Marty Henning     08/14/2017    IN495171  Added 53744
+Wendy Welch     04/07/2016      Modified to accomodate Intercompany 
+                                Insurances.
+Marty Henning     09/19/2016      Modified to add New MD.
+Marty Henning     07/12/2017      Modified to add New MD (53698)
+Arturo Barajas    07/18/2017      Modified to add New MDs (53598, 53705, 
+                                  53690, 53673, 53656)
+Arturo Barajas    11/15/2017      Modified to add New MD (53932)
+Marty Henning     11/28/2017      Modified to add New MD (53942 per 
+IN553868)
+Arturo Barajas    02/20/2018      Modified to add New MDs (54039,54038)
+David Thornton    05/18/2018     IN649955 Added 54118,54126,54128
+---------------------------------------------------------------------*/
+SET SHOW_PLAN=Y
+
+SET FILE = '/export/outgoing/aur/aur_code$.txt',
+    format = tab, method = host_out
+
+DECLARE VARIABLE
+        :XEXAM1  CHARACTER(150),
+        :XEXAM2  CHARACTER(150),
+        :XEXAM3  CHARACTER(150),
+        :XEXAM4  CHARACTER(150),
+        :XEXAM5  CHARACTER(150),
+        :XEXAM6  CHARACTER(150),
+        :XEXAM7  CHARACTER(150),
+        :XEXAM8  CHARACTER(150),
+        :XEXAM9  CHARACTER(150),
+        :XEXAM10 CHARACTER(150),
+        :XDPT    CHARACTER(3),
+        :XLINK   NUMERIC(10),
+        :XCKIN   NUMERIC(10),
+        :XION    CHARACTER(13),
+        :XGRPBY  CHARACTER(30),
+        :XINTN   INTEGER(13),
+        :XAN     CHARACTER(13)
+
+SELECT 
+       (SELECT FIM_LINK@HCPCS_CD
+          FROM AG_SIM G
+         WHERE G.SIM_DPT = I.DPT AND I.EXAM_CD = G.SIM_CD) AS HCD,
+       (SELECT  CTR|':'|
+                PNL_SIM_CD|':'|
+                PNL_SIM_DESC|':'|
+                PNL_SIM_LINK@FIM_LINK@HCPCS_CD 
+          FROM  AG_SIM_CHG_PNL P
+         WHERE  P.SIM_DPT = I.DPT AND
+                P.CTR = 1 AND 
+                I.EXAM_CD = P.SIM_CD)                      AS PNL1,
+        PIECE(PNL1,':',1)                                  AS PCTR1,
+        PIECE(PNL1,':',2)                                  AS PSIM1,
+        PIECE(PNL1,':',3)                                  AS PSIMD1,
+        PIECE(PNL1,':',4)                                  AS HCP1,
+       (SELECT  CTR|':'|
+                PNL_SIM_CD|':'|
+                PNL_SIM_DESC|':'|
+                PNL_SIM_LINK@FIM_LINK@HCPCS_CD 
+          FROM  AG_SIM_CHG_PNL P
+         WHERE  P.SIM_DPT = I.DPT AND
+                P.CTR = 2 AND 
+                I.EXAM_CD = P.SIM_CD)                      AS PNL2,
+        PIECE(PNL2,':',1)                                  AS PCTR2,
+        PIECE(PNL2,':',2)                                  AS PSIM2,
+        PIECE(PNL2,':',3)                                  AS PSIMD2,
+        PIECE(PNL2,':',4)                                  AS HCP2,
+        R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD        RAD_NBR,
+        IDNAME('X',R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD)
+                                                           AS DR_RAD,
+        PIECE(PIECE(DR_RAD,',',2),' ',1)                   AS RAD_FIRST,
+        PIECE(DR_RAD,',',1)                                AS RAD_LAST,
+        PIECE(PIECE(I.ORD_PHY,',',2),' ',1)                AS ORD_FIRST,
+        PIECE(I.ORD_PHY,',',1)                             AS ORD_LAST,
+        CASE WHEN FAC = 'F' AND MED_LINK@PAT_TYPE = 'DCF'
+             THEN 'W'
+             WHEN FAC = 'F' AND (D.DPT = 'XRD'
+                            AND MED_LINK@PAT_TYPE = 'CNF')
+             THEN '#'
+             WHEN FAC = 'A' AND MED_LINK@PAT_TYPE = 'MSA'
+             THEN 'M'
+             WHEN FAC = 'A' AND EXTRACT(R.EXAM_NAME,1,4) = 'APET'
+             THEN 'T'
+             WHEN FAC = 'S' AND (D.DPT = 'XRS'
+                            AND MED_LINK@PAT_TYPE = 'COS')
+             THEN '$'
+             ELSE FAC
+        END                                                AS SPECIAL_FAC,
+        MED_LINK@PAT_NAME                                  AS PN,
+        CASE WHEN EXTRACT(MED_LINK@PAT_TYPE,1,2) = 'ED'
+             THEN 'E'
+             WHEN MED_LINK@INPAT_OUTPAT_IND = 'In'
+             THEN 'I'
+             ELSE 'O'
+        END                                                AS IOE,
+-- ZK_DATE COMPARE
+      ((SELECT DOC_DT
+          FROM XC_CK_IN_RES S
+         WHERE S.DPT = D.DPT
+           AND S.CK_IN_NBR = D.CK_IN_NBR
+           AND S.EXAM_CD_KEY = I.EXAM_CD_KEY            
+           AND RES_NBR = 26)\1)                            AS RPT_DT,
+-- ZK_DATE COMPARE
+      ((TODAY - 3)\1)                              AS TODAY_MINUS_1,
+        CASE WHEN I.EXAM_CD_KEY BETWEEN 70000 AND 79999
+             THEN 'INVA'
+             ELSE 'DIAG'
+        END                                                AS PROC_TYPE,
+        COALESCE(I.FIN_RPT_LIN_IND, 0)                     AS RPT_LINK,
+        I.PAT_ACCT_NBR|COALESCE(I.FIN_RPT_LIN_IND,I.CK_IN_NBR)
+                                                           AS GRP_RPTS,
+        CASE WHEN MED_LINK@ICD_IND IN ('0','B')
+             THEN EXTRACT(MED_LINK@ADM_DIAG_DESC_ICD10,1,70)
+             WHEN MED_LINK@ICD_IND = '9'
+             THEN MED_LINK@ADM_DIAG_DESC
+        END                                        AS ADM_DIAG_DESC,
+        CASE WHEN MED_LINK@ICD_IND IN ('0','B')
+             THEN EXTRACT(MED_LINK@WK_DIAG_DESC_ICD10,1,70)
+             WHEN MED_LINK@ICD_IND = '9'
+             THEN MED_LINK@WK_DIAG
+        END                                        AS WK_DIAG
+
+FROM    RADIOLOGY.XC_CK_IN_INFO_DATE D,
+                  XC_CK_IN_INFO I,
+                  XC_CK_IN_RES R,
+                  XW_EXAM_RESULT_DTL E                     
+
+WHERE   D.CK_IN_DATE BETWEEN TODAY - 40 AND TODAY
+  AND   D.DPT IN ('XRM','XRN')
+  AND   E.DPT = D.DPT
+  AND   I.DPT = D.DPT
+  AND   R.DPT = D.DPT
+  AND   D.CK_IN_NBR = I.CK_IN_NBR
+  AND   D.CK_IN_NBR = R.CK_IN_NBR
+  AND   I.EXAM_CD_KEY NOT BETWEEN 30000 AND 39999
+  AND   I.EXAM_CD_KEY = R.EXAM_CD_KEY
+  AND   R.DOC_NBR IS NOT NULL
+  AND   R.DOC_NBR = E.DOC_NBR
+
+HAVING
+--      DOCUMENTS WITH TODAY-3 AS DATE
+        RPT_DT = TODAY_MINUS_1
+--      ALLOW ONLY AUR PHYSICIANS TO PASS TO DOWNLOAD
+   AND  RAD_NBR IN (212,1441,3493,7353,7393,9392,9892,
+                    12225,12232,12242,12271,12281,12282,12286,12287,
+                    12290,12299,
+                    12338,12354,12369,12375,12384,
+                    12498,12499,
+                    12513,12515,12556,12573,12587,
+                    12617,12621,12626,12627,12635,12655,12686,
+                    12703,12719,12742,12752,12798,
+                    12810,12813,
+                    50964,51328,51383,51454,53166,
+                    53253,53598,53656,53673,53690,53698,53705,53744,53932,
+                    53942,54038,54039,54118,54126,54128,
+                   'RAD'
+                    )
+
+ORDER BY D.DPT,MED_LINK@UNIT_NBR|I.PAT_ACCT_NBR|I.CK_IN_NBR
+
+INITIAL
+SET :XCKIN = -1, :XGRPBY = ''
+
+DETAIL
+IF :XGRPBY <> GRP_RPTS
+   IF :XCKIN = I.CK_IN_NBR
+      IF EXTRACT(LINE_TEXT,1,10) <> '          '                        
+         WRITE LINE_TEXT|CHR(13)
+      ENDIF
+   ENDIF
+ENDIF
+
+BREAK AT 2
+SET :XEXAM1 = '', :XEXAM2 = '', :XEXAM3 = '', :XEXAM4 = ''
+SET :XEXAM5 = '', :XEXAM6 = '', :XEXAM7 = '', :XEXAM8 = ''
+SET :XEXAM9 = '', :XEXAM10 = ''
+IF :XGRPBY <> GRP_RPTS
+   IF RPT_LINK = 0
+      IF PCTR1 IS NULL
+         SET :XEXAM1 =                             
+         CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HCD|'~'|I.INT_ORD_NBR
+      ELSEIF PCTR1 = 1 AND HCD IS NOT NULL
+         SET :XEXAM1 =
+         CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HCD|'~'|I.INT_ORD_NBR
+         SET :XEXAM2 = 
+         CK_IN_NBR|'~'|PSIM1|'~'|PSIMD1|'~'|HCP1|'~'|I.INT_ORD_NBR
+      ELSEIF PCTR1 = 1 AND HCD IS NULL
+         SET :XEXAM1 = 
+         CK_IN_NBR|'~'|PSIM1|'~'|PSIMD1|'~'|HCP1|'~'|I.INT_ORD_NBR
+         SET :XEXAM2 = 
+         CK_IN_NBR|'~'|PSIM2|'~'|PSIMD2|'~'|HCP2|'~'|I.INT_ORD_NBR
+      ENDIF
+   ELSE
+      SET :XDPT = I.DPT
+      SET :XLINK = FIN_RPT_LIN_IND 
+      RUN QBC_BJG_AUR_DICTATE_S1
+   ENDIF
+   IF :XCKIN = -1
+      SET :XCKIN = I.CK_IN_NBR
+   ENDIF
+   IF :XCKIN = I.CK_IN_NBR 
+      WRITE SPECIAL_FAC|'~'|
+            I.PAT_ACCT_NBR|'~'|
+            SUBSTRING(TO_DATE(I.CK_IN_DT,'YYYYMMDD'),1,4)|'-'|
+            SUBSTRING(TO_DATE(I.CK_IN_DT,'YYYYMMDD'),5,2)|'-'|
+            SUBSTRING(TO_DATE(I.CK_IN_DT,'YYYYMMDD'),7,2)|'~'|
+            TO_TIME(I.CK_IN_TM,'HHMM24')|'~'|  
+            EXTRACT(R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD,1,20)
+            |'~'|RAD_FIRST|'~'|RAD_LAST|'~'|
+            ORD_PHY_CD|'~'|ORD_FIRST|'~'|ORD_LAST|'~'|
+            IOE|'~'|PROC_TYPE|CHR(13) 
+            
+IF MED_LINK@INS_COB_1_LINK@CARRIER_CODE NOT IN 
+      ('711015','711016','711017','711018','711019',
+       '711020','711021','711022') 
+      WRITE                   
+            MED_LINK@UNIT_NBR|'~'|PIECE(PIECE(PN,',',2),' ',1)|'~'|
+            EXTRACT(PIECE(PIECE(PN,',',2),' ',2))|'~'|PIECE(PN,',',1)|'~'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),1,4)|'-'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),5,2)|'-'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),7,2)|'~'|
+            EXTRACT(DEMOG_LINK@SEX)|'~'|
+            MED_LINK@INS_COB_1_LINK@CARRIER_NAME|'~'|
+            MED_LINK@INS_COB_1_LINK@CARRIER_CODE|CHR(13) 
+   ELSE
+            
+      WRITE 
+            MED_LINK@UNIT_NBR|'~'|PIECE(PIECE(PN,',',2),' ',1)|'~'|
+            EXTRACT(PIECE(PIECE(PN,',',2),' ',2))|'~'|PIECE(PN,',',1)|'~'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),1,4)|'-'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),5,2)|'-'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),7,2)|'~'|
+            EXTRACT(DEMOG_LINK@SEX)|'~'| 
+            MED_LINK@INS_COB_3_LINK@CARRIER_NAME|'~'|
+            MED_LINK@INS_COB_3_LINK@CARRIER_CODE|CHR(13)     
+   ENDIF                           
+
+      WRITE 'Procedure Ordered: '|:XEXAM1|CHR(13)
+      IF :XEXAM2 IS NOT NULL
+         WRITE  '                   '|:XEXAM2|CHR(13)
+      ENDIF
+      IF :XEXAM3 IS NOT NULL
+         WRITE  '                   '|:XEXAM3|CHR(13)
+      ENDIF
+      IF :XEXAM4 IS NOT NULL
+         WRITE  '                   '|:XEXAM4|CHR(13)
+      ENDIF
+      IF :XEXAM5 IS NOT NULL
+         WRITE  '                   '|:XEXAM5|CHR(13)
+      ENDIF
+      IF :XEXAM6 IS NOT NULL
+         WRITE  '                   '|:XEXAM6|CHR(13)
+      ENDIF
+      IF :XEXAM7 IS NOT NULL
+         WRITE  '                   '|:XEXAM7|CHR(13)
+      ENDIF
+      IF :XEXAM8 IS NOT NULL
+         WRITE  '                   '|:XEXAM8|CHR(13)
+      ENDIF
+      IF :XEXAM9 IS NOT NULL
+         WRITE  '                   '|:XEXAM9|CHR(13)
+      ENDIF
+      IF :XEXAM10 IS NOT NULL
+         WRITE  '                   '|:XEXAM10|CHR(13)
+      ENDIF
+      WRITE 'Admitting DX: '|ADM_DIAG_DESC|CHR(13)
+      WRITE 'Working DX: '|MED_LINK@WK_DIAG|CHR(13)
+      WRITE  ' '|CHR(13)
+   ENDIF       
+ENDIF
+
+BREAK AFTER 2
+IF :XGRPBY <> GRP_RPTS
+   WRITE 'END OF REPORT'|CHR(13)
+   SET :XINTN = INTN
+   SET :XAN = AN
+   RUN QBC_BJG_AUR_INSERT_PATS
+ENDIF          
+SET :XCKIN = -1
+SET :XGRPBY = GRP_RPTS 
+========================================
+SQL: QBCC_AUR_DICTATION_EXT_TST                   SUBQUERY: NO
+DESC: Dictation for AUR Report
+Last Edit: 05/09/2018    Last Comp: 05/09/2018    Last Run:  05/09/2018
+START:   
+                                                  
+
+--SET START_DATE = 'ALL', START_TIME = '0429' 
+/*---------------------------------------------------------------------
+Query: QBCC_AUR_DICTATION_EXT
+Batch Process: 
+Batch Name: 
+Description: 
+Requestor/Department: 
+Date Created: 2/26/2015
+Created By: 
+Output: FTP
+                             MODIFICATION LOG
+-----------------------------------------------------------------------
+Name                 DATE        Project/Ticket   Reason
+-----------------------------------------------------------------------
+Created on 06-27-03 by Burton Goodge
+Added Doc 51454 July 1, 2013 Neil Tremaine
+Removed two pipes '|' that their new software company wanted removed
+September 18, 2013 Burton Goodge 
+Marty Henning     01/02/2017    IN568426 Removed 12289
+Marty Henning     08/14/2017    IN495171  Added 53744
+Wendy Welch     04/07/2016      Modified to accomodate Intercompany 
+                                Insurances.
+Marty Henning     09/19/2016      Modified to add New MD.
+Marty Henning     07/12/2017      Modified to add New MD (53698)
+Arturo Barajas    07/18/2017      Modified to add New MDs (53598, 53705, 
+                                  53690, 53673, 53656)
+Arturo Barajas    11/15/2017      Modified to add New MD (53932)
+Marty Henning     11/28/2017      Modified to add New MD (53942 per 
+IN553868)
+Arturo Barajas    02/20/2018      Modified to add New MDs (54039,54038)
+---------------------------------------------------------------------*/
+SET SHOW_PLAN=Y
+/*
+SET FILE = '/export/outgoing/aur/aur_code$.txt',
+    format = tab, method = host_out
+*/
+DECLARE VARIABLE
+        :XEXAM1  CHARACTER(150),
+        :XEXAM2  CHARACTER(150),
+        :XEXAM3  CHARACTER(150),
+        :XEXAM4  CHARACTER(150),
+        :XEXAM5  CHARACTER(150),
+        :XEXAM6  CHARACTER(150),
+        :XEXAM7  CHARACTER(150),
+        :XEXAM8  CHARACTER(150),
+        :XEXAM9  CHARACTER(150),
+        :XEXAM10 CHARACTER(150),
+        :XDPT    CHARACTER(3),
+        :XLINK   NUMERIC(10),
+        :XCKIN   NUMERIC(10),
+        :XION    CHARACTER(13),
+        :XGRPBY  CHARACTER(30),
+        :XINTN   INTEGER(13),
+        :XAN     CHARACTER(13)
+
+SELECT 
+       (SELECT FIM_LINK@HCPCS_CD
+          FROM AG_SIM G
+         WHERE G.SIM_DPT = I.DPT AND I.EXAM_CD = G.SIM_CD) AS HCD,
+       (SELECT  CTR|':'|
+                PNL_SIM_CD|':'|
+                PNL_SIM_DESC|':'|
+                PNL_SIM_LINK@FIM_LINK@HCPCS_CD 
+          FROM  AG_SIM_CHG_PNL P
+         WHERE  P.SIM_DPT = I.DPT AND
+                P.CTR = 1 AND 
+                I.EXAM_CD = P.SIM_CD)                      AS PNL1,
+        PIECE(PNL1,':',1)                                  AS PCTR1,
+        PIECE(PNL1,':',2)                                  AS PSIM1,
+        PIECE(PNL1,':',3)                                  AS PSIMD1,
+        PIECE(PNL1,':',4)                                  AS HCP1,
+       (SELECT  CTR|':'|
+                PNL_SIM_CD|':'|
+                PNL_SIM_DESC|':'|
+                PNL_SIM_LINK@FIM_LINK@HCPCS_CD 
+          FROM  AG_SIM_CHG_PNL P
+         WHERE  P.SIM_DPT = I.DPT AND
+                P.CTR = 2 AND 
+                I.EXAM_CD = P.SIM_CD)                      AS PNL2,
+        PIECE(PNL2,':',1)                                  AS PCTR2,
+        PIECE(PNL2,':',2)                                  AS PSIM2,
+        PIECE(PNL2,':',3)                                  AS PSIMD2,
+        PIECE(PNL2,':',4)                                  AS HCP2,
+        R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD        RAD_NBR,
+        IDNAME('X',R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD)
+                                                           AS DR_RAD,
+        PIECE(PIECE(DR_RAD,',',2),' ',1)                   AS RAD_FIRST,
+        PIECE(DR_RAD,',',1)                                AS RAD_LAST,
+        PIECE(PIECE(I.ORD_PHY,',',2),' ',1)                AS ORD_FIRST,
+        PIECE(I.ORD_PHY,',',1)                             AS ORD_LAST,
+        CASE WHEN FAC = 'F' AND MED_LINK@PAT_TYPE = 'DCF'
+             THEN 'W'
+             WHEN FAC = 'F' AND (D.DPT = 'XRD'
+                            AND MED_LINK@PAT_TYPE = 'CNF')
+             THEN '#'
+             WHEN FAC = 'A' AND MED_LINK@PAT_TYPE = 'MSA'
+             THEN 'M'
+             WHEN FAC = 'A' AND EXTRACT(R.EXAM_NAME,1,4) = 'APET'
+             THEN 'T'
+             WHEN FAC = 'S' AND (D.DPT = 'XRS'
+                            AND MED_LINK@PAT_TYPE = 'COS')
+             THEN '$'
+             ELSE FAC
+        END                                                AS SPECIAL_FAC,
+        MED_LINK@PAT_NAME                                  AS PN,
+        CASE WHEN EXTRACT(MED_LINK@PAT_TYPE,1,2) = 'ED'
+             THEN 'E'
+             WHEN MED_LINK@INPAT_OUTPAT_IND = 'In'
+             THEN 'I'
+             ELSE 'O'
+        END                                                AS IOE,
+-- ZK_DATE COMPARE
+      ((SELECT DOC_DT
+          FROM XC_CK_IN_RES S
+         WHERE S.DPT = D.DPT
+           AND S.CK_IN_NBR = D.CK_IN_NBR
+           AND S.EXAM_CD_KEY = I.EXAM_CD_KEY            
+           AND RES_NBR = 26)\1)                            AS RPT_DT,
+-- ZK_DATE COMPARE
+      ((TODAY - 3)\1)                              AS TODAY_MINUS_1,
+        CASE WHEN I.EXAM_CD_KEY BETWEEN 70000 AND 79999
+             THEN 'INVA'
+             ELSE 'DIAG'
+        END                                                AS PROC_TYPE,
+        COALESCE(I.FIN_RPT_LIN_IND, 0)                     AS RPT_LINK,
+        I.PAT_ACCT_NBR|COALESCE(I.FIN_RPT_LIN_IND,I.CK_IN_NBR)
+                                                           AS GRP_RPTS,
+        CASE WHEN MED_LINK@ICD_IND IN ('0','B')
+             THEN EXTRACT(MED_LINK@ADM_DIAG_DESC_ICD10,1,70)
+             WHEN MED_LINK@ICD_IND = '9'
+             THEN MED_LINK@ADM_DIAG_DESC
+        END                                        AS ADM_DIAG_DESC,
+        CASE WHEN MED_LINK@ICD_IND IN ('0','B')
+             THEN EXTRACT(MED_LINK@WK_DIAG_DESC_ICD10,1,70)
+             WHEN MED_LINK@ICD_IND = '9'
+             THEN MED_LINK@WK_DIAG
+        END                                        AS WK_DIAG
+
+FROM    RADIOLOGY.XC_CK_IN_INFO_DATE D,
+                  XC_CK_IN_INFO I,
+                  XC_CK_IN_RES R,
+                  XW_EXAM_RESULT_DTL E                     
+
+WHERE   D.CK_IN_DATE BETWEEN TODAY - 40 AND TODAY
+  AND   D.DPT IN ('XRM','XRN')
+  AND   E.DPT = D.DPT
+  AND   I.DPT = D.DPT
+  AND   R.DPT = D.DPT
+  AND   D.CK_IN_NBR = I.CK_IN_NBR
+  AND   D.CK_IN_NBR = R.CK_IN_NBR
+  AND   I.EXAM_CD_KEY NOT BETWEEN 30000 AND 39999
+  AND   I.EXAM_CD_KEY = R.EXAM_CD_KEY
+  AND   R.DOC_NBR IS NOT NULL
+  AND   R.DOC_NBR = E.DOC_NBR
+
+HAVING
+--      DOCUMENTS WITH TODAY-3 AS DATE
+        RPT_DT = TODAY_MINUS_1
+--      ALLOW ONLY AUR PHYSICIANS TO PASS TO DOWNLOAD
+   AND  RAD_NBR IN (212,1441,3493,7353,7393,9392,9892,
+                    12225,12232,12242,12271,12281,12282,12286,12287,
+                    12290,12299,
+                    12338,12354,12369,12375,12384,
+                    12498,12499,
+                    12513,12515,12556,12573,12587,
+                    12617,12621,12626,12627,12635,12655,12686,
+                    12703,12719,12742,12752,12798,
+                    12810,12813,
+                    50964,51328,51383,51454,53166,
+                    53253,53598,53656,53673,53690,53698,53705,53744,53932,
+                    53942,54038,54039,
+                   'RAD'
+                    )
+
+ORDER BY D.DPT,MED_LINK@UNIT_NBR|I.PAT_ACCT_NBR|I.CK_IN_NBR
+
+INITIAL
+SET :XCKIN = -1, :XGRPBY = ''
+
+DETAIL
+IF :XGRPBY <> GRP_RPTS
+   IF :XCKIN = I.CK_IN_NBR
+      IF EXTRACT(LINE_TEXT,1,10) <> '          '                        
+         WRITE LINE_TEXT|CHR(13)
+      ENDIF
+   ENDIF
+ENDIF
+
+BREAK AT 2
+SET :XEXAM1 = '', :XEXAM2 = '', :XEXAM3 = '', :XEXAM4 = ''
+SET :XEXAM5 = '', :XEXAM6 = '', :XEXAM7 = '', :XEXAM8 = ''
+SET :XEXAM9 = '', :XEXAM10 = ''
+IF :XGRPBY <> GRP_RPTS
+   IF RPT_LINK = 0
+      IF PCTR1 IS NULL
+         SET :XEXAM1 =                             
+         CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HCD|'~'|I.INT_ORD_NBR
+      ELSEIF PCTR1 = 1 AND HCD IS NOT NULL
+         SET :XEXAM1 =
+         CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HCD|'~'|I.INT_ORD_NBR
+         SET :XEXAM2 = 
+         CK_IN_NBR|'~'|PSIM1|'~'|PSIMD1|'~'|HCP1|'~'|I.INT_ORD_NBR
+      ELSEIF PCTR1 = 1 AND HCD IS NULL
+         SET :XEXAM1 = 
+         CK_IN_NBR|'~'|PSIM1|'~'|PSIMD1|'~'|HCP1|'~'|I.INT_ORD_NBR
+         SET :XEXAM2 = 
+         CK_IN_NBR|'~'|PSIM2|'~'|PSIMD2|'~'|HCP2|'~'|I.INT_ORD_NBR
+      ENDIF
+   ELSE
+      SET :XDPT = I.DPT
+      SET :XLINK = FIN_RPT_LIN_IND 
+      RUN QBC_BJG_AUR_DICTATE_S1
+   ENDIF
+   IF :XCKIN = -1
+      SET :XCKIN = I.CK_IN_NBR
+   ENDIF
+   IF :XCKIN = I.CK_IN_NBR 
+      WRITE SPECIAL_FAC|'~'|
+            I.PAT_ACCT_NBR|'~'|
+            SUBSTRING(TO_DATE(I.CK_IN_DT,'YYYYMMDD'),1,4)|'-'|
+            SUBSTRING(TO_DATE(I.CK_IN_DT,'YYYYMMDD'),5,2)|'-'|
+            SUBSTRING(TO_DATE(I.CK_IN_DT,'YYYYMMDD'),7,2)|'~'|
+            TO_TIME(I.CK_IN_TM,'HHMM24')|'~'|  
+            EXTRACT(R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD,1,20)
+            |'~'|RAD_FIRST|'~'|RAD_LAST|'~'|
+            ORD_PHY_CD|'~'|ORD_FIRST|'~'|ORD_LAST|'~'|
+            IOE|'~'|PROC_TYPE|CHR(13) 
+            
+IF MED_LINK@INS_COB_1_LINK@CARRIER_CODE NOT IN 
+      ('711015','711016','711017','711018','711019',
+       '711020','711021','711022') 
+      WRITE                   
+            MED_LINK@UNIT_NBR|'~'|PIECE(PIECE(PN,',',2),' ',1)|'~'|
+            EXTRACT(PIECE(PIECE(PN,',',2),' ',2))|'~'|PIECE(PN,',',1)|'~'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),1,4)|'-'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),5,2)|'-'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),7,2)|'~'|
+            EXTRACT(DEMOG_LINK@SEX)|'~'|
+            MED_LINK@INS_COB_1_LINK@CARRIER_NAME|'~'|
+            MED_LINK@INS_COB_1_LINK@CARRIER_CODE|CHR(13) 
+   ELSE
+            
+      WRITE 
+            MED_LINK@UNIT_NBR|'~'|PIECE(PIECE(PN,',',2),' ',1)|'~'|
+            EXTRACT(PIECE(PIECE(PN,',',2),' ',2))|'~'|PIECE(PN,',',1)|'~'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),1,4)|'-'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),5,2)|'-'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),7,2)|'~'|
+            EXTRACT(DEMOG_LINK@SEX)|'~'| 
+            MED_LINK@INS_COB_3_LINK@CARRIER_NAME|'~'|
+            MED_LINK@INS_COB_3_LINK@CARRIER_CODE|CHR(13)     
+   ENDIF                           
+
+      WRITE 'Procedure Ordered: '|:XEXAM1|CHR(13)
+      IF :XEXAM2 IS NOT NULL
+         WRITE  '                   '|:XEXAM2|CHR(13)
+      ENDIF
+      IF :XEXAM3 IS NOT NULL
+         WRITE  '                   '|:XEXAM3|CHR(13)
+      ENDIF
+      IF :XEXAM4 IS NOT NULL
+         WRITE  '                   '|:XEXAM4|CHR(13)
+      ENDIF
+      IF :XEXAM5 IS NOT NULL
+         WRITE  '                   '|:XEXAM5|CHR(13)
+      ENDIF
+      IF :XEXAM6 IS NOT NULL
+         WRITE  '                   '|:XEXAM6|CHR(13)
+      ENDIF
+      IF :XEXAM7 IS NOT NULL
+         WRITE  '                   '|:XEXAM7|CHR(13)
+      ENDIF
+      IF :XEXAM8 IS NOT NULL
+         WRITE  '                   '|:XEXAM8|CHR(13)
+      ENDIF
+      IF :XEXAM9 IS NOT NULL
+         WRITE  '                   '|:XEXAM9|CHR(13)
+      ENDIF
+      IF :XEXAM10 IS NOT NULL
+         WRITE  '                   '|:XEXAM10|CHR(13)
+      ENDIF
+      WRITE 'Admitting DX: '|ADM_DIAG_DESC|CHR(13)
+      WRITE 'Working DX: '|MED_LINK@WK_DIAG|CHR(13)
+      WRITE  ' '|CHR(13)
+   ENDIF       
+ENDIF
+
+BREAK AFTER 2
+IF :XGRPBY <> GRP_RPTS
+   WRITE 'END OF REPORT'|CHR(13)
+   SET :XINTN = INTN
+   SET :XAN = AN
+   RUN QBC_BJG_AUR_INSERT_PATS
+ENDIF          
+SET :XCKIN = -1
+SET :XGRPBY = GRP_RPTS 
+========================================
+SQL: QBCC_AUR_DICTATION_MAH_TEST                  SUBQUERY: NO
+DESC: 
+Last Edit: 10/10/2016    Last Comp: 08/13/2017    Last Run:  01/04/2018
+START:   
+                                                  
+
+--SET START_DATE = 'ALL', START_TIME = '0429' 
+/*---------------------------------------------------------------------
+Query: QBCC_AUR_DICTATION_EXT
+Batch Process: 
+Batch Name: 
+Description: 
+Requestor/Department: 
+Date Created: 2/26/2015
+Created By: 
+Output: FTP
+                             MODIFICATION LOG
+-----------------------------------------------------------------------
+Name                 DATE        Project/Ticket   Reason
+-----------------------------------------------------------------------
+Created on 06-27-03 by Burton Goodge
+Added Doc 51454 July 1, 2013 Neil Tremaine
+Removed two pipes '|' that their new software company wanted removed
+September 18, 2013 Burton Goodge 
+
+Wendy Welch     04/07/2016      Modified to accomodate Intercompany 
+                                Insurances.
+Marty Henning     09/19/2016      Modified to add New MD.
+---------------------------------------------------------------------*/
+--SET SHOW_PLAN=Y
+
+SET FORMAT=comma
+SET METHOD=SQL_FILE_IMAGE
+
+
+
+DECLARE VARIABLE
+        :XEXAM1  CHARACTER(150),
+        :XEXAM2  CHARACTER(150),
+        :XEXAM3  CHARACTER(150),
+        :XEXAM4  CHARACTER(150),
+        :XEXAM5  CHARACTER(150),
+        :XEXAM6  CHARACTER(150),
+        :XEXAM7  CHARACTER(150),
+        :XEXAM8  CHARACTER(150),
+        :XEXAM9  CHARACTER(150),
+        :XEXAM10 CHARACTER(150),
+        :XDPT    CHARACTER(3),
+        :XLINK   NUMERIC(10),
+        :XCKIN   NUMERIC(10),
+        :XION    CHARACTER(13),
+        :XGRPBY  CHARACTER(30),
+        :XINTN   INTEGER(13),
+        :XAN     CHARACTER(13)
+
+SELECT 
+       (SELECT FIM_LINK@HCPCS_CD
+          FROM AG_SIM G
+         WHERE G.SIM_DPT = I.DPT AND I.EXAM_CD = G.SIM_CD) AS HCD,
+       (SELECT  CTR|':'|
+                PNL_SIM_CD|':'|
+                PNL_SIM_DESC|':'|
+                PNL_SIM_LINK@FIM_LINK@HCPCS_CD 
+          FROM  AG_SIM_CHG_PNL P
+         WHERE  P.SIM_DPT = I.DPT AND
+                P.CTR = 1 AND 
+                I.EXAM_CD = P.SIM_CD)                      AS PNL1,
+        PIECE(PNL1,':',1)                                  AS PCTR1,
+        PIECE(PNL1,':',2)                                  AS PSIM1,
+        PIECE(PNL1,':',3)                                  AS PSIMD1,
+        PIECE(PNL1,':',4)                                  AS HCP1,
+       (SELECT  CTR|':'|
+                PNL_SIM_CD|':'|
+                PNL_SIM_DESC|':'|
+                PNL_SIM_LINK@FIM_LINK@HCPCS_CD 
+          FROM  AG_SIM_CHG_PNL P
+         WHERE  P.SIM_DPT = I.DPT AND
+                P.CTR = 2 AND 
+                I.EXAM_CD = P.SIM_CD)                      AS PNL2,
+        PIECE(PNL2,':',1)                                  AS PCTR2,
+        PIECE(PNL2,':',2)                                  AS PSIM2,
+        PIECE(PNL2,':',3)                                  AS PSIMD2,
+        PIECE(PNL2,':',4)                                  AS HCP2,
+        R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD        RAD_NBR,
+        IDNAME('X',R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD)
+                                                           AS DR_RAD,
+        PIECE(PIECE(DR_RAD,',',2),' ',1)                   AS RAD_FIRST,
+        PIECE(DR_RAD,',',1)                                AS RAD_LAST,
+        PIECE(PIECE(I.ORD_PHY,',',2),' ',1)                AS ORD_FIRST,
+        PIECE(I.ORD_PHY,',',1)                             AS ORD_LAST,
+        CASE WHEN FAC = 'F' AND MED_LINK@PAT_TYPE = 'DCF'
+             THEN 'W'
+             WHEN FAC = 'F' AND (D.DPT = 'XRD'
+                            AND MED_LINK@PAT_TYPE = 'CNF')
+             THEN '#'
+             WHEN FAC = 'A' AND MED_LINK@PAT_TYPE = 'MSA'
+             THEN 'M'
+             WHEN FAC = 'A' AND EXTRACT(R.EXAM_NAME,1,4) = 'APET'
+             THEN 'T'
+             WHEN FAC = 'S' AND (D.DPT = 'XRS'
+                            AND MED_LINK@PAT_TYPE = 'COS')
+             THEN '$'
+             ELSE FAC
+        END                                                AS SPECIAL_FAC,
+        MED_LINK@PAT_NAME                                  AS PN,
+        CASE WHEN EXTRACT(MED_LINK@PAT_TYPE,1,2) = 'ED'
+             THEN 'E'
+             WHEN MED_LINK@INPAT_OUTPAT_IND = 'In'
+             THEN 'I'
+             ELSE 'O'
+        END                                                AS IOE,
+-- ZK_DATE COMPARE
+      ((SELECT DOC_DT
+          FROM XC_CK_IN_RES S
+         WHERE S.DPT = D.DPT
+           AND S.CK_IN_NBR = D.CK_IN_NBR
+           AND S.EXAM_CD_KEY = I.EXAM_CD_KEY            
+           AND RES_NBR = 26)\1)                            AS RPT_DT,
+-- ZK_DATE COMPARE
+      ((TODAY - 3)\1)                              AS TODAY_MINUS_1,
+        CASE WHEN I.EXAM_CD_KEY BETWEEN 70000 AND 79999
+             THEN 'INVA'
+             ELSE 'DIAG'
+        END                                                AS PROC_TYPE,
+        COALESCE(I.FIN_RPT_LIN_IND, 0)                     AS RPT_LINK,
+        I.PAT_ACCT_NBR|COALESCE(I.FIN_RPT_LIN_IND,I.CK_IN_NBR)
+                                                           AS GRP_RPTS,
+        CASE WHEN MED_LINK@ICD_IND IN ('0','B')
+             THEN EXTRACT(MED_LINK@ADM_DIAG_DESC_ICD10,1,70)
+             WHEN MED_LINK@ICD_IND = '9'
+             THEN MED_LINK@ADM_DIAG_DESC
+        END                                        AS ADM_DIAG_DESC,
+        CASE WHEN MED_LINK@ICD_IND IN ('0','B')
+             THEN EXTRACT(MED_LINK@WK_DIAG_DESC_ICD10,1,70)
+             WHEN MED_LINK@ICD_IND = '9'
+             THEN MED_LINK@WK_DIAG
+        END                                        AS WK_DIAG
+
+FROM    RADIOLOGY.XC_CK_IN_INFO_DATE D,
+                  XC_CK_IN_INFO I,
+                  XC_CK_IN_RES R,
+                  XW_EXAM_RESULT_DTL E                     
+
+WHERE   D.CK_IN_DATE BETWEEN TODAY - 40 AND TODAY
+  AND   D.DPT IN ('XRM','XRN')
+  AND   E.DPT = D.DPT
+  AND   I.DPT = D.DPT
+  AND   R.DPT = D.DPT
+  AND   D.CK_IN_NBR = I.CK_IN_NBR
+  AND   D.CK_IN_NBR = R.CK_IN_NBR
+  AND   I.EXAM_CD_KEY NOT BETWEEN 30000 AND 39999
+  AND   I.EXAM_CD_KEY = R.EXAM_CD_KEY
+  AND   R.DOC_NBR IS NOT NULL
+  AND   R.DOC_NBR = E.DOC_NBR
+
+HAVING
+--      DOCUMENTS WITH TODAY-3 AS DATE
+        RPT_DT = TODAY_MINUS_1
+--      ALLOW ONLY AUR PHYSICIANS TO PASS TO DOWNLOAD
+   AND  RAD_NBR IN (212,1441,3493,7353,7393,9392,9892,
+                    12225,12232,12242,12271,12281,12282,12286,12287,12289,
+                    12290,12299,
+                    12338,12354,12369,12375,12384,
+                    12498,12499,
+                    12513,12515,12556,12573,12587,
+                    12617,12621,12626,12627,12635,12655,12686,
+                    12703,12719,12742,12752,12798,
+                    12810,12813,
+                    50964,51328,51383,51454,53166,
+                    53253
+                    )
+
+ORDER BY D.DPT,MED_LINK@UNIT_NBR|I.PAT_ACCT_NBR|I.CK_IN_NBR
+
+INITIAL
+SET :XCKIN = -1, :XGRPBY = ''
+
+DETAIL
+IF :XGRPBY <> GRP_RPTS
+   IF :XCKIN = I.CK_IN_NBR
+      IF EXTRACT(LINE_TEXT,1,10) <> '          '                        
+         WRITE LINE_TEXT|CHR(13)
+      ENDIF
+   ENDIF
+ENDIF
+
+BREAK AT 2
+SET :XEXAM1 = '', :XEXAM2 = '', :XEXAM3 = '', :XEXAM4 = ''
+SET :XEXAM5 = '', :XEXAM6 = '', :XEXAM7 = '', :XEXAM8 = ''
+SET :XEXAM9 = '', :XEXAM10 = ''
+IF :XGRPBY <> GRP_RPTS
+   IF RPT_LINK = 0
+      IF PCTR1 IS NULL
+         SET :XEXAM1 =                             
+         CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HCD|'~'|I.INT_ORD_NBR
+      ELSEIF PCTR1 = 1 AND HCD IS NOT NULL
+         SET :XEXAM1 =
+         CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HCD|'~'|I.INT_ORD_NBR
+         SET :XEXAM2 = 
+         CK_IN_NBR|'~'|PSIM1|'~'|PSIMD1|'~'|HCP1|'~'|I.INT_ORD_NBR
+      ELSEIF PCTR1 = 1 AND HCD IS NULL
+         SET :XEXAM1 = 
+         CK_IN_NBR|'~'|PSIM1|'~'|PSIMD1|'~'|HCP1|'~'|I.INT_ORD_NBR
+         SET :XEXAM2 = 
+         CK_IN_NBR|'~'|PSIM2|'~'|PSIMD2|'~'|HCP2|'~'|I.INT_ORD_NBR
+      ENDIF
+   ELSE
+      SET :XDPT = I.DPT
+      SET :XLINK = FIN_RPT_LIN_IND 
+      RUN QBC_BJG_AUR_DICTATE_S1
+   ENDIF
+   IF :XCKIN = -1
+      SET :XCKIN = I.CK_IN_NBR
+   ENDIF
+   IF :XCKIN = I.CK_IN_NBR 
+      WRITE SPECIAL_FAC|'~'|
+            I.PAT_ACCT_NBR|'~'|
+            SUBSTRING(TO_DATE(I.CK_IN_DT,'YYYYMMDD'),1,4)|'-'|
+            SUBSTRING(TO_DATE(I.CK_IN_DT,'YYYYMMDD'),5,2)|'-'|
+            SUBSTRING(TO_DATE(I.CK_IN_DT,'YYYYMMDD'),7,2)|'~'|
+            TO_TIME(I.CK_IN_TM,'HHMM24')|'~'|  
+            EXTRACT(R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD,1,20)
+            |'~'|RAD_FIRST|'~'|RAD_LAST|'~'|
+            ORD_PHY_CD|'~'|ORD_FIRST|'~'|ORD_LAST|'~'|
+            IOE|'~'|PROC_TYPE|CHR(13) 
+            
+IF MED_LINK@INS_COB_1_LINK@CARRIER_CODE NOT IN 
+      ('711015','711016','711017','711018','711019',
+       '711020','711021','711022') 
+      WRITE                   
+            MED_LINK@UNIT_NBR|'~'|PIECE(PIECE(PN,',',2),' ',1)|'~'|
+            EXTRACT(PIECE(PIECE(PN,',',2),' ',2))|'~'|PIECE(PN,',',1)|'~'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),1,4)|'-'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),5,2)|'-'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),7,2)|'~'|
+            EXTRACT(DEMOG_LINK@SEX)|'~'|
+            MED_LINK@INS_COB_1_LINK@CARRIER_NAME|'~'|
+            MED_LINK@INS_COB_1_LINK@CARRIER_CODE|CHR(13) 
+   ELSE
+            
+      WRITE 
+            MED_LINK@UNIT_NBR|'~'|PIECE(PIECE(PN,',',2),' ',1)|'~'|
+            EXTRACT(PIECE(PIECE(PN,',',2),' ',2))|'~'|PIECE(PN,',',1)|'~'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),1,4)|'-'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),5,2)|'-'|
+            SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),7,2)|'~'|
+            EXTRACT(DEMOG_LINK@SEX)|'~'| 
+            MED_LINK@INS_COB_3_LINK@CARRIER_NAME|'~'|
+            MED_LINK@INS_COB_3_LINK@CARRIER_CODE|CHR(13)     
+   ENDIF                           
+
+      WRITE 'Procedure Ordered: '|:XEXAM1|CHR(13)
+      IF :XEXAM2 IS NOT NULL
+         WRITE  '                   '|:XEXAM2|CHR(13)
+      ENDIF
+      IF :XEXAM3 IS NOT NULL
+         WRITE  '                   '|:XEXAM3|CHR(13)
+      ENDIF
+      IF :XEXAM4 IS NOT NULL
+         WRITE  '                   '|:XEXAM4|CHR(13)
+      ENDIF
+      IF :XEXAM5 IS NOT NULL
+         WRITE  '                   '|:XEXAM5|CHR(13)
+      ENDIF
+      IF :XEXAM6 IS NOT NULL
+         WRITE  '                   '|:XEXAM6|CHR(13)
+      ENDIF
+      IF :XEXAM7 IS NOT NULL
+         WRITE  '                   '|:XEXAM7|CHR(13)
+      ENDIF
+      IF :XEXAM8 IS NOT NULL
+         WRITE  '                   '|:XEXAM8|CHR(13)
+      ENDIF
+      IF :XEXAM9 IS NOT NULL
+         WRITE  '                   '|:XEXAM9|CHR(13)
+      ENDIF
+      IF :XEXAM10 IS NOT NULL
+         WRITE  '                   '|:XEXAM10|CHR(13)
+      ENDIF
+      WRITE 'Admitting DX: '|ADM_DIAG_DESC|CHR(13)
+      WRITE 'Working DX: '|MED_LINK@WK_DIAG|CHR(13)
+      WRITE  ' '|CHR(13)
+   ENDIF       
+ENDIF
+
+BREAK AFTER 2
+IF :XGRPBY <> GRP_RPTS
+   WRITE 'END OF REPORT'|CHR(13)
+   SET :XINTN = INTN
+   SET :XAN = AN
+   RUN QBC_BJG_AUR_INSERT_PATS
+ENDIF          
+SET :XCKIN = -1
+SET :XGRPBY = GRP_RPTS 
+========================================
+SQL: QBCC_AUR_DICTATION_RPT                       SUBQUERY: NO
+DESC: Dictation for AUR Report
+Last Edit: 05/18/2018    Last Comp: 05/18/2018    Last Run:  05/18/2018
+START:   
+                                                  FILE: "C:\AURRAD.txt"
+
+/*---------------------------------------------------------------------
+Query: QBCC_AUR_DICTATION_RPT
+Batch Process: 
+Batch Name: 
+Description: 
+Requestor/Department: 
+Date Created: 2/26/2015
+Created By: 
+Output: FTP
+                             MODIFICATION LOG
+-----------------------------------------------------------------------
+Name                 DATE        Project/Ticket   Reason
+-----------------------------------------------------------------------
+Marty Henning     08/14/2017    IN495171  Added 53744
+Arturo Barajas    07/18/2017     Added New MDs (53598,53656,53673, 
+                                   53705,53690)
+Arturo Barajas    11/15/2017    Added New MD (53932)
+Marty Henning     11/28/2017    Added New MD (53942)
+Arturo Barajas    02/20/2018    Added New MDs (54038,54039)
+David Thornton    05/18/2018     IN649955         Added 54118,54126,54128
+---------------------------------------------------------
+------------*/
+SET SHOW_PLAN=Y
+SET FILE = 'C:\AURRAD.txt',
+    format = COMMA
+
+SELECT  DISTINCT PHYS_NBR, PHY_NAME
+
+FROM    COMMON_CLINICAL.AG_PHYSICIAN
+
+WHERE   PHYS_NBR IN (212,1441,3493,7353,7393,9392,9892,
+                     12225,12232,12242,12271,12281,12282,12286,12287,12289,
+                     12290,12299,
+                     12338,12354,12369,12375,12384,
+                     12498,12499,
+                     12513,12515,12556,12573,12587,
+                     12617,12621,12626,12627,12635,12655,12686,
+                     12703,12719,12742,12752,12798,
+                     12810,12813,
+                     50964,51328,51383,51454,53166,
+                     53253,53598,53656,53673,53690,53698,
+                     53705,53744,53932,53942,
+                     54038,54039,54118,54126,54128
+) 
+========================================
+SQL: QBCC_DEMOGRAPHICS_AUR_EXT                    SUBQUERY: NO
+DESC: 
+Last Edit: 04/11/2016    Last Comp: 11/15/2017    Last Run:  04/11/2016
+START:   
+                                                  
+
+/***********************************************************************  
+ 
+ Query: QBCC_DEMOGRAPHICS_AUR_EXT                     
+                                                             
+ Description:  Common Demographic Download Query
+             
+ Requestor/Department:                                         
+                           
+ Date Created:  8/9/2005                                        
+              
+ Created By:  BURTON J. GOODGE                                             
+        
+ Output:  export file                       
+
+                             MODIFICATION LOG                              
+ -----------------------------------------------------------------------   
+  Name                 DATE        Project/Ticket   Reason                 
+ -----------------------------------------------------------------------   
+ Wendy Welch         04/08/2016     Modified for Intercompany Insurances  
+ ---------------------------------------------------------------------*/
+--
+DECLARE VARIABLE
+        :XPHNBR         INTEGER(6),
+        :XUPIN          CHARACTER(15)
+--
+--SET FILE = '/conv/commondm.tab',
+--    FORMAT = 'TAB', METHOD = HOST_OUT
+--
+-- Selects non-intercompany insurances.  
+SELECT EXTRACT(MED_LINK@INS_COB_1_LINK@INSURED_RELAT_CODE,1) AS REL_CD1,
+       EXTRACT(MED_LINK@INS_COB_3_LINK@INSURED_RELAT_CODE,1) AS REL_CD3,
+       EXTRACT(MED_LINK@INS_COB_5_LINK@INSURED_RELAT_CODE,1) AS REL_CD5,
+       MED_LINK@PAT_REL_LINK@REL_NAME AS RELL_NAME,
+       EXTRACT(PIECE(PIECE(RELL_NAME,',',2),' ',1),1,12) AS REL_NAME_FIRST,
+       EXTRACT(PIECE(PIECE(RELL_NAME,',',2),' ',2),1) AS REL_NAME_MI,
+       EXTRACT(PIECE(RELL_NAME,',',1),1,33) AS REL_NAME_LAST,
+       DEMOG_LINK@RACE_CD AS PRC,
+       DEMOG_LINK@MARITAL_STATUS_CD AS PMC,
+       PAT_EMP_LINK@EMPLMNT_STAT_CD AS ESC,
+       GUAR_LINK@GUAR_DEMOG_LINK@RACE_CD AS GRC,
+       GUAR_LINK@GUAR_DEMOG_LINK@MARITAL_STATUS_CD AS GMC,
+       GUAR_LINK@GUAR_EMPR_LINK@EMPLMNT_STAT_CD AS GSC,
+       MED_LINK@PAT_REL_LINK@EMPLMNT_STAT_CD AS RSC,
+       MED_LINK@PAT_REL_LINK@REL_CODE AS RRC,
+       CASE WHEN MED_LINK@PAT_TYPE = 'DCM' 
+            THEN 'D'
+                   --Added for Morristown Radiology Diag Center
+            WHEN EXTRACT(MED_LINK@PAT_TYPE,1,2) = 'ED'
+            THEN 'E'
+            WHEN MED_LINK@INPAT_OUTPAT_IND = 'In'
+            THEN 'I'
+            ELSE 'O'
+            END AS IOE,
+       MED_LINK@FAC|' '|IOE|' '|MED_LINK@PAT_TYPE AS LOCATIONX,  
+       CASE WHEN REL_CD1 IS NOT NULL THEN REL_CD1
+            ELSE '9'
+            END AS REL_TO_PAT1,
+ 
+       CASE WHEN REL_CD3 IS NOT NULL THEN REL_CD3
+            ELSE '9'
+            END AS REL_TO_PAT3, 
+ 
+       CASE WHEN REL_CD5 IS NOT NULL THEN REL_CD5
+            ELSE '9'
+            END AS REL_TO_PAT5,
+       COALESCE(VISIT_LINK@REF_PHY_CD, MED_LINK@ATTEND_PHY,' ')
+             AS PHYS_NBR,
+       COALESCE(VISIT_LINK@REF_PHY_NM, MED_LINK@ATTEND_PHY_NM, ' ')
+                AS PHYS_NAME,
+       GUAR_LINK@GUAR_REL_CODE AS GUAR_REL_CD,
+       GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_FIRST|' '|
+       EXTRACT(GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_MI,1)|' '|
+       GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_LAST
+               AS GUAR_NAME,
+       CASE WHEN
+       (SELECT CONTR_CD FROM CC_CONTR_PAT_IDX C
+        WHERE C.INTN = I.INTN AND C.AN = I.AN
+          AND CONTR_CD = '7022') 
+            THEN '999999'
+            ELSE
+       MED_LINK@INS_COB_1_LINK@CARRIER_CODE 
+       END AS CAR1CD, 
+
+       CASE WHEN
+       (SELECT CONTR_CD FROM CC_CONTR_PAT_IDX C
+        WHERE C.INTN = I.INTN AND C.AN = I.AN
+          AND CONTR_CD = '7022') 
+            THEN 'TCSC Cares 4 Breast Hlth'
+            ELSE
+       MED_LINK@INS_COB_1_LINK@CARRIER_NAME 
+       END AS CAR1NAME,
+       ' ' AS PROFILEID 
+       
+ 
+FROM    BC_AUR_PTS  I
+
+WHERE   LOAD_DT = TODAY
+
+--
+DETAIL 
+
+IF  MED_LINK@INS_COB_1_LINK@CARRIER_CODE 
+    NOT IN ('711015','711016','711017','711018','711019',
+            '711020','711021','711022')
+        
+        SET :XUPIN = ' '
+        SET :XHPNBR = PHYS_NBR
+        RUN QBC_BJG_DEMOGRAPHIC_GET_UPIN
+ 
+        WRITE
+        MED_LINK@ADM_DT,
+        INTN,
+        AN,
+--Pat Info
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_NAME_FIRST,' '),1,18),
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_NAME_LAST,' '),1,25),
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_NAME_MI,' '),1,18),
+        COALESCE(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),' '),
+        COALESCE(TO_DATE(DEMOG_LINK@EXPIRED_DT, 'YYYYMMDD'),' '),
+        COALESCE(DEMOG_LINK@SEX,'U'),
+        CASE WHEN DEMOG_LINK@PAT_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_ADDR_1,' '),1,30) END,
+        CASE WHEN DEMOG_LINK@PAT_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_ADDR_2,' '),1,30) END,
+--10
+        COALESCE(DEMOG_LINK@PAT_ZIP_CODE,' '),
+        COALESCE(TRANSLATE(DEMOG_LINK@PHONE_NBR,'()*- '),' '),
+        COALESCE(TRANSLATE(PAT_EMP_LINK@EMP_PHONE_NBR,'()*- '),' '), 
+              -- WORK PHONE NBR
+        COALESCE(TRANSLATE(DEMOG_LINK@PAT_SSN,'-'),' '),
+        EXTRACT(COALESCE(TRANSLATE(
+                PAT_EMP_LINK@EMP_NAME,';'),' '),1,33),
+        CASE WHEN PAT_EMP_LINK@EMP_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        COALESCE(EXTRACT(
+                PAT_EMP_LINK@EMP_ADDR_1,1,30),' ') END,
+        CASE WHEN PAT_EMP_LINK@EMP_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        COALESCE(EXTRACT(
+                PAT_EMP_LINK@EMP_ADDR_2,1,30),' ') END,
+        COALESCE(PAT_EMP_LINK@EMP_ZIP,' '),
+        COALESCE(TRANSLATE(PAT_EMP_LINK@EMP_PHONE_NBR,'()*- '),' '),
+        COALESCE(MED_LINK@UNIT_NBR,' '), --MRN 
+--20
+        COALESCE(MED_LINK@PAT_ACCT_NBR,' '),
+        CASE WHEN PMC = 'U' THEN 'U'
+             WHEN PMC = ' ' THEN 'U'
+             WHEN PMC = ''  THEN 'U'
+             ELSE PMC
+        END AS PAT_MAR_CD,
+        CASE WHEN ESC IS NOT NULL THEN ESC
+             ELSE '9'
+        END AS PAT_EMP_STAT,
+        ' ', --PSS
+        CASE WHEN PRC IS NOT NULL THEN PRC
+             ELSE '9'
+        END AS P_RC,
+--Guarantor Info
+        EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_FIRST,' '),1,18),
+        EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_LAST,' '),1,25),
+        EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_MI,' '),1,18),
+        COALESCE(
+             TO_DATE(GUAR_LINK@GUAR_DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),' '), 
+        COALESCE(GUAR_LINK@GUAR_DEMOG_LINK@SEX,'U'),
+--30
+        CASE WHEN GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_1 [ '"" ""' THEN ' '
+        ELSE EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_1,' '),1,30) END,
+        CASE WHEN GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_2 [ '"" ""' THEN ' '
+        ELSE EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_2,' '),1,30) END,
+        COALESCE(GUAR_LINK@GUAR_DEMOG_LINK@PAT_ZIP_CODE,' '),
+        COALESCE(TRANSLATE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PHONE_NBR,'()*- '),' '),
+        COALESCE(TRANSLATE(
+             GUAR_LINK@GUAR_EMPR_LINK@EMP_PHONE,'()*- '),' '),   
+        COALESCE(TRANSLATE(GUAR_LINK@GUAR_DEMOG_LINK@PAT_SSN,'-'),' '),    
+         EXTRACT(COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_NAME,' '),1,33),
+        CASE WHEN GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_1 [ '"" ""' THEN ' '
+             ELSE
+        EXTRACT(COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_1,' '),1,30)
+             END,
+        CASE WHEN GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_2 [ '"" ""' THEN ' '
+             ELSE
+        EXTRACT(COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_2,' '),1,30)
+             END,
+        COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_ZIP,' '),
+        COALESCE(TRANSLATE(
+             GUAR_LINK@GUAR_EMPR_LINK@EMP_PHONE,'()*- '),' '),  
+        ' ', --GUAR STATMT CONTR
+        CASE WHEN GMC = 'U' THEN 'U'
+             WHEN GMC = ' ' THEN 'U'
+             WHEN GMC = ''  THEN 'U'
+             ELSE GMC
+        END AS GUAR_MAR_CD,
+        CASE WHEN GSC IS NOT NULL THEN GSC
+             ELSE '9'
+        END AS GUAR_EMP_STAT,  
+        ' ', --GUAR STUD STAT
+        CASE WHEN GRC IS NOT NULL THEN GRC
+             ELSE '9'
+        END AS G_RC,
+        CASE WHEN GUAR_REL_CD IS NOT NULL THEN GUAR_REL_CD
+             ELSE 'C'
+         END AS GUAR_RELCD,
+--Next of Kin    
+        EXTRACT(COALESCE(REL_NAME_FIRST,' '),1,18),
+        EXTRACT(COALESCE(REL_NAME_LAST,' '),1,25),
+        EXTRACT(COALESCE(REL_NAME_MI,' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@PAT_REL_LINK@REL_BIRTH,
+                 'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@PAT_REL_LINK@REL_SEX,'U'),
+        CASE WHEN MED_LINK@PAT_REL_LINK@REL_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@REL_ADDR_1,' '),1,30) END,
+        CASE WHEN MED_LINK@PAT_REL_LINK@REL_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@REL_ADDR_2,' '),1,30) END,
+        COALESCE(MED_LINK@PAT_REL_LINK@REL_ZIP,' '),
+        COALESCE(TRANSLATE(MED_LINK@PAT_REL_LINK@REL_PHONE,'()*- '),' '), 
+        COALESCE(TRANSLATE(MED_LINK@PAT_REL_LINK@EMP_PHONE,'()*- '),' '),  
+         COALESCE(TRANSLATE(MED_LINK@PAT_REL_LINK@REL_SSN,'-'),' '),
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@EMP_NAME,' '),1,33),
+        CASE WHEN MED_LINK@PAT_REL_LINK@EMP_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@EMP_ADDR_1,' '),1,30) END,
+        CASE WHEN MED_LINK@PAT_REL_LINK@EMP_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@EMP_ADDR_2,' '),1,30) END,
+        COALESCE(MED_LINK@PAT_REL_LINK@EMP_ZIP,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@PAT_REL_LINK@EMP_PHONE,'()*- '),' '),  
+        ' ', --NO REL MSC
+        CASE WHEN RSC IS NOT NULL THEN RSC
+             ELSE '9'
+        END AS REL_EMP_STAT,  
+        ' ', --NO REL STUD STAT
+        ' ', --NO REL RACE CODE
+        CASE WHEN RRC IS NOT NULL THEN RRC
+             ELSE 'C'
+        END AS REL_REL_CD,
+        CASE WHEN EXTRACT(PHYS_NBR,1) = ';' THEN ' '
+             ELSE PHYS_NBR END,
+        EXTRACT(COALESCE(PHYS_NAME,' '),1,20), 
+        COALESCE(:XUPIN,' '),
+        ProfileID,
+        ' ',   --Billing Rule Code
+--------------------------------------------------------------------------
+-- INSURANCE PAGE 1
+        COALESCE(CAR1CD,' '),
+        EXTRACT(COALESCE(CAR1NAME,' '),1,31),
+        EXTRACT(COALESCE(TRANSLATE(
+            MED_LINK@INS_COB_1_LINK@POLICY_NBR,',-/()#'),' '),1,20),
+        CASE WHEN 
+            MED_LINK@INS_COB_1_LINK@GROUP_NBR [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(
+            MED_LINK@INS_COB_1_LINK@GROUP_NBR,' '),1,20) END,  
+        EXTRACT(COALESCE(
+            MED_LINK@INS_COB_1_LINK@CARRIER_ADDRESS_1,' '),1,40),
+        EXTRACT(COALESCE(
+            MED_LINK@INS_COB_1_LINK@CARRIER_ADDRESS_2,' '),1,30),
+        COALESCE(MED_LINK@INS_COB_1_LINK@CARRIER_ZIPCODE,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@INS_COB_1_LINK@CARRIER_PHONE_NBR,'()*- '),' '),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_1_LINK@APPROVAL_NBR,' '),1,15),
+        EXTRACT(COALESCE( 
+        PIECE(PIECE(MED_LINK@INS_COB_1_LINK@INSURED_NAME,',',2),';',1),
+             ' '),1,18),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_1_LINK@INSURED_NAME,',',1),' '),1,25),
+        EXTRACT(COALESCE(PIECE(
+            MED_LINK@INS_COB_1_LINK@INSURED_NAME,';',2),' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@INS_COB_1_LINK@INSURED_BIRTHDATE,
+                'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@INS_COB_1_LINK@INSURED_SEX,'U'),
+        COALESCE(TRANSLATE(MED_LINK@INS_COB_1_LINK@INSURED_SSN,'-'),' '),
+        COALESCE(REL_TO_PAT1,' '),
+        MED_LINK@INS_COB_1_LINK@SAME_AS_FLAG,
+---------------------------------------------------------------------------
+--INSURANCE PAGE 3
+        COALESCE(MED_LINK@INS_COB_3_LINK@CARRIER_CODE,' '),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_3_LINK@CARRIER_NAME,' '),1,31),
+        EXTRACT(COALESCE(
+        TRANSLATE(MED_LINK@INS_COB_3_LINK@POLICY_NBR,',-/()#'),' '),1,20),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_3_LINK@GROUP_NBR,' '),1,20),  
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_3_LINK@CARRIER_ADDRESS_1,' '),1,40),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_3_LINK@CARRIER_ADDRESS_2,' '),1,30),
+        COALESCE(MED_LINK@INS_COB_3_LINK@CARRIER_ZIPCODE,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@INS_COB_3_LINK@CARRIER_PHONE_NBR,'()*- '),' '),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_3_LINK@APPROVAL_NBR,' '),1,15),
+        EXTRACT(COALESCE( 
+        PIECE(PIECE(MED_LINK@INS_COB_3_LINK@INSURED_NAME,',',2),';',1),
+                ' '),1,18),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_3_LINK@INSURED_NAME,',',1),' '),1,25),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_3_LINK@INSURED_NAME,';',2),' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@INS_COB_3_LINK@INSURED_BIRTHDATE,
+                'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@INS_COB_3_LINK@INSURED_SEX,'U'),
+        COALESCE(TRANSLATE(MED_LINK@INS_COB_3_LINK@INSURED_SSN,'-'),' '),
+        COALESCE(REL_TO_PAT3,' '),
+        MED_LINK@INS_COB_3_LINK@SAME_AS_FLAG, 
+---------------------------------------------------------------------------
+--INSURANCE PAGE 5 
+        COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_CODE,' '),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_NAME,' '),1,31),
+        EXTRACT(COALESCE(
+        TRANSLATE(MED_LINK@INS_COB_5_LINK@POLICY_NBR,',-/()#'),' '),1,20),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_5_LINK@GROUP_NBR,' '),1,20),  
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_5_LINK@CARRIER_ADDRESS_1,' '),1,40),
+        EXTRACT(COALESCE(        
+             MED_LINK@INS_COB_5_LINK@CARRIER_ADDRESS_2,' '),1,30),
+        COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_ZIPCODE,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@INS_COB_5_LINK@CARRIER_PHONE_NBR,'()*- '),' '),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_5_LINK@APPROVAL_NBR,' '),1,15),
+        EXTRACT(COALESCE(  
+        PIECE(PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,',',2),';',1),
+             ' '),1,18),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,',',1),' '),1,25),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,';',2),' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@INS_COB_5_LINK@INSURED_BIRTHDATE,
+                'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@INS_COB_5_LINK@INSURED_SEX,' '),
+        COALESCE(TRANSLATE(MED_LINK@INS_COB_5_LINK@INSURED_SSN,'-'),' '),
+        COALESCE(REL_TO_PAT5,' '),
+        MED_LINK@INS_COB_5_LINK@SAME_AS_FLAG 
+        
+ENDIF
+
+-- Selects intercompany insurances.  
+SELECT EXTRACT(MED_LINK@INS_COB_3_LINK@INSURED_RELAT_CODE,1) AS REL_CD1,
+       EXTRACT(MED_LINK@INS_COB_5_LINK@INSURED_RELAT_CODE,1) AS REL_CD3,
+       EXTRACT(MED_LINK@INS_COB_7_LINK@INSURED_RELAT_CODE,1) AS REL_CD5,
+       MED_LINK@PAT_REL_LINK@REL_NAME AS RELL_NAME,
+       EXTRACT(PIECE(PIECE(RELL_NAME,',',2),' ',1),1,12) AS REL_NAME_FIRST,
+       EXTRACT(PIECE(PIECE(RELL_NAME,',',2),' ',2),1) AS REL_NAME_MI,
+       EXTRACT(PIECE(RELL_NAME,',',1),1,33) AS REL_NAME_LAST,
+       DEMOG_LINK@RACE_CD AS PRC,
+       DEMOG_LINK@MARITAL_STATUS_CD AS PMC,
+       PAT_EMP_LINK@EMPLMNT_STAT_CD AS ESC,
+       GUAR_LINK@GUAR_DEMOG_LINK@RACE_CD AS GRC,
+       GUAR_LINK@GUAR_DEMOG_LINK@MARITAL_STATUS_CD AS GMC,
+       GUAR_LINK@GUAR_EMPR_LINK@EMPLMNT_STAT_CD AS GSC,
+       MED_LINK@PAT_REL_LINK@EMPLMNT_STAT_CD AS RSC,
+       MED_LINK@PAT_REL_LINK@REL_CODE AS RRC,
+       CASE WHEN MED_LINK@PAT_TYPE = 'DCM' 
+            THEN 'D'
+                   --Added for Morristown Radiology Diag Center
+            WHEN EXTRACT(MED_LINK@PAT_TYPE,1,2) = 'ED'
+            THEN 'E'
+            WHEN MED_LINK@INPAT_OUTPAT_IND = 'In'
+            THEN 'I'
+            ELSE 'O'
+            END AS IOE,
+       MED_LINK@FAC|' '|IOE|' '|MED_LINK@PAT_TYPE AS LOCATIONX,  
+       CASE WHEN REL_CD1 IS NOT NULL THEN REL_CD1
+            ELSE '9'
+            END AS REL_TO_PAT1,
+ 
+       CASE WHEN REL_CD3 IS NOT NULL THEN REL_CD3
+            ELSE '9'
+            END AS REL_TO_PAT3, 
+ 
+       CASE WHEN REL_CD5 IS NOT NULL THEN REL_CD5
+            ELSE '9'
+            END AS REL_TO_PAT5,
+       COALESCE(VISIT_LINK@REF_PHY_CD, MED_LINK@ATTEND_PHY,' ')
+             AS PHYS_NBR,
+       COALESCE(VISIT_LINK@REF_PHY_NM, MED_LINK@ATTEND_PHY_NM, ' ')
+                AS PHYS_NAME,
+       GUAR_LINK@GUAR_REL_CODE AS GUAR_REL_CD,
+       GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_FIRST|' '|
+       EXTRACT(GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_MI,1)|' '|
+       GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_LAST
+               AS GUAR_NAME,
+       CASE WHEN
+       (SELECT CONTR_CD FROM CC_CONTR_PAT_IDX C
+        WHERE C.INTN = I.INTN AND C.AN = I.AN
+          AND CONTR_CD = '7022') 
+            THEN '999999'
+            ELSE
+       MED_LINK@INS_COB_1_LINK@CARRIER_CODE 
+       END AS CAR1CD, 
+
+       CASE WHEN
+       (SELECT CONTR_CD FROM CC_CONTR_PAT_IDX C
+        WHERE C.INTN = I.INTN AND C.AN = I.AN
+          AND CONTR_CD = '7022') 
+            THEN 'TCSC Cares 4 Breast Hlth'
+            ELSE
+       MED_LINK@INS_COB_1_LINK@CARRIER_NAME 
+       END AS CAR1NAME,
+       ' ' AS PROFILEID 
+       
+ 
+FROM    BC_AUR_PTS  I
+
+WHERE   LOAD_DT = TODAY
+
+--
+DETAIL 
+
+IF  MED_LINK@INS_COB_1_LINK@CARRIER_CODE 
+    IN ('711015','711016','711017','711018','711019',
+        '711020','711021','711022')
+        
+        SET :XUPIN = ' '
+        SET :XHPNBR = PHYS_NBR
+        RUN QBC_BJG_DEMOGRAPHIC_GET_UPIN
+ 
+        WRITE
+        MED_LINK@ADM_DT,
+        INTN,
+        AN,
+--Pat Info
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_NAME_FIRST,' '),1,18),
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_NAME_LAST,' '),1,25),
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_NAME_MI,' '),1,18),
+        COALESCE(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),' '),
+        COALESCE(TO_DATE(DEMOG_LINK@EXPIRED_DT, 'YYYYMMDD'),' '),
+        COALESCE(DEMOG_LINK@SEX,'U'),
+        CASE WHEN DEMOG_LINK@PAT_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_ADDR_1,' '),1,30) END,
+        CASE WHEN DEMOG_LINK@PAT_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_ADDR_2,' '),1,30) END,
+--10
+        COALESCE(DEMOG_LINK@PAT_ZIP_CODE,' '),
+        COALESCE(TRANSLATE(DEMOG_LINK@PHONE_NBR,'()*- '),' '),
+        COALESCE(TRANSLATE(PAT_EMP_LINK@EMP_PHONE_NBR,'()*- '),' '), 
+              -- WORK PHONE NBR
+        COALESCE(TRANSLATE(DEMOG_LINK@PAT_SSN,'-'),' '),
+        EXTRACT(COALESCE(TRANSLATE(
+                PAT_EMP_LINK@EMP_NAME,';'),' '),1,33),
+        CASE WHEN PAT_EMP_LINK@EMP_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        COALESCE(EXTRACT(
+                PAT_EMP_LINK@EMP_ADDR_1,1,30),' ') END,
+        CASE WHEN PAT_EMP_LINK@EMP_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        COALESCE(EXTRACT(
+                PAT_EMP_LINK@EMP_ADDR_2,1,30),' ') END,
+        COALESCE(PAT_EMP_LINK@EMP_ZIP,' '),
+        COALESCE(TRANSLATE(PAT_EMP_LINK@EMP_PHONE_NBR,'()*- '),' '),
+        COALESCE(MED_LINK@UNIT_NBR,' '), --MRN 
+--20
+        COALESCE(MED_LINK@PAT_ACCT_NBR,' '),
+        CASE WHEN PMC = 'U' THEN 'U'
+             WHEN PMC = ' ' THEN 'U'
+             WHEN PMC = ''  THEN 'U'
+             ELSE PMC
+        END AS PAT_MAR_CD,
+        CASE WHEN ESC IS NOT NULL THEN ESC
+             ELSE '9'
+        END AS PAT_EMP_STAT,
+        ' ', --PSS
+        CASE WHEN PRC IS NOT NULL THEN PRC
+             ELSE '9'
+        END AS P_RC,
+--Guarantor Info
+        EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_FIRST,' '),1,18),
+        EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_LAST,' '),1,25),
+        EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_MI,' '),1,18),
+        COALESCE(
+             TO_DATE(GUAR_LINK@GUAR_DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),' '), 
+        COALESCE(GUAR_LINK@GUAR_DEMOG_LINK@SEX,'U'),
+--30
+        CASE WHEN GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_1 [ '"" ""' THEN ' '
+        ELSE EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_1,' '),1,30) END,
+        CASE WHEN GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_2 [ '"" ""' THEN ' '
+        ELSE EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_2,' '),1,30) END,
+        COALESCE(GUAR_LINK@GUAR_DEMOG_LINK@PAT_ZIP_CODE,' '),
+        COALESCE(TRANSLATE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PHONE_NBR,'()*- '),' '),
+        COALESCE(TRANSLATE(
+             GUAR_LINK@GUAR_EMPR_LINK@EMP_PHONE,'()*- '),' '),   
+        COALESCE(TRANSLATE(GUAR_LINK@GUAR_DEMOG_LINK@PAT_SSN,'-'),' '),    
+         EXTRACT(COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_NAME,' '),1,33),
+        CASE WHEN GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_1 [ '"" ""' THEN ' '
+             ELSE
+        EXTRACT(COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_1,' '),1,30)
+             END,
+        CASE WHEN GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_2 [ '"" ""' THEN ' '
+             ELSE
+        EXTRACT(COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_2,' '),1,30)
+             END,
+        COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_ZIP,' '),
+        COALESCE(TRANSLATE(
+             GUAR_LINK@GUAR_EMPR_LINK@EMP_PHONE,'()*- '),' '),  
+        ' ', --GUAR STATMT CONTR
+        CASE WHEN GMC = 'U' THEN 'U'
+             WHEN GMC = ' ' THEN 'U'
+             WHEN GMC = ''  THEN 'U'
+             ELSE GMC
+        END AS GUAR_MAR_CD,
+        CASE WHEN GSC IS NOT NULL THEN GSC
+             ELSE '9'
+        END AS GUAR_EMP_STAT,  
+        ' ', --GUAR STUD STAT
+        CASE WHEN GRC IS NOT NULL THEN GRC
+             ELSE '9'
+        END AS G_RC,
+        CASE WHEN GUAR_REL_CD IS NOT NULL THEN GUAR_REL_CD
+             ELSE 'C'
+         END AS GUAR_RELCD,
+--Next of Kin    
+        EXTRACT(COALESCE(REL_NAME_FIRST,' '),1,18),
+        EXTRACT(COALESCE(REL_NAME_LAST,' '),1,25),
+        EXTRACT(COALESCE(REL_NAME_MI,' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@PAT_REL_LINK@REL_BIRTH,
+                 'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@PAT_REL_LINK@REL_SEX,'U'),
+        CASE WHEN MED_LINK@PAT_REL_LINK@REL_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@REL_ADDR_1,' '),1,30) END,
+        CASE WHEN MED_LINK@PAT_REL_LINK@REL_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@REL_ADDR_2,' '),1,30) END,
+        COALESCE(MED_LINK@PAT_REL_LINK@REL_ZIP,' '),
+        COALESCE(TRANSLATE(MED_LINK@PAT_REL_LINK@REL_PHONE,'()*- '),' '), 
+        COALESCE(TRANSLATE(MED_LINK@PAT_REL_LINK@EMP_PHONE,'()*- '),' '),  
+         COALESCE(TRANSLATE(MED_LINK@PAT_REL_LINK@REL_SSN,'-'),' '),
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@EMP_NAME,' '),1,33),
+        CASE WHEN MED_LINK@PAT_REL_LINK@EMP_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@EMP_ADDR_1,' '),1,30) END,
+        CASE WHEN MED_LINK@PAT_REL_LINK@EMP_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@EMP_ADDR_2,' '),1,30) END,
+        COALESCE(MED_LINK@PAT_REL_LINK@EMP_ZIP,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@PAT_REL_LINK@EMP_PHONE,'()*- '),' '),  
+        ' ', --NO REL MSC
+        CASE WHEN RSC IS NOT NULL THEN RSC
+             ELSE '9'
+        END AS REL_EMP_STAT,  
+        ' ', --NO REL STUD STAT
+        ' ', --NO REL RACE CODE
+        CASE WHEN RRC IS NOT NULL THEN RRC
+             ELSE 'C'
+        END AS REL_REL_CD,
+        CASE WHEN EXTRACT(PHYS_NBR,1) = ';' THEN ' '
+             ELSE PHYS_NBR END,
+        EXTRACT(COALESCE(PHYS_NAME,' '),1,20), 
+        COALESCE(:XUPIN,' '),
+        ProfileID,
+        ' ',   --Billing Rule Code
+--------------------------------------------------------------------------
+-- INSURANCE PAGE 1
+        COALESCE(CAR1CD,' '),
+        EXTRACT(COALESCE(CAR1NAME,' '),1,31),
+        EXTRACT(COALESCE(TRANSLATE(
+            MED_LINK@INS_COB_3_LINK@POLICY_NBR,',-/()#'),' '),1,20),
+        CASE WHEN 
+            MED_LINK@INS_COB_3_LINK@GROUP_NBR [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(
+            MED_LINK@INS_COB_3_LINK@GROUP_NBR,' '),1,20) END,  
+        EXTRACT(COALESCE(
+            MED_LINK@INS_COB_3_LINK@CARRIER_ADDRESS_1,' '),1,40),
+        EXTRACT(COALESCE(
+            MED_LINK@INS_COB_3_LINK@CARRIER_ADDRESS_2,' '),1,30),
+        COALESCE(MED_LINK@INS_COB_3_LINK@CARRIER_ZIPCODE,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@INS_COB_3_LINK@CARRIER_PHONE_NBR,'()*- '),' '),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_3_LINK@APPROVAL_NBR,' '),1,15),
+        EXTRACT(COALESCE( 
+        PIECE(PIECE(MED_LINK@INS_COB_3_LINK@INSURED_NAME,',',2),';',1),
+             ' '),1,18),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_3_LINK@INSURED_NAME,',',1),' '),1,25),
+        EXTRACT(COALESCE(PIECE(
+            MED_LINK@INS_COB_3_LINK@INSURED_NAME,';',2),' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@INS_COB_3_LINK@INSURED_BIRTHDATE,
+                'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@INS_COB_3_LINK@INSURED_SEX,'U'),
+        COALESCE(TRANSLATE(MED_LINK@INS_COB_3_LINK@INSURED_SSN,'-'),' '),
+        COALESCE(REL_TO_PAT1,' '),
+        MED_LINK@INS_COB_3_LINK@SAME_AS_FLAG,
+---------------------------------------------------------------------------
+--INSURANCE PAGE 3
+        COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_CODE,' '),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_NAME,' '),1,31),
+        EXTRACT(COALESCE(
+        TRANSLATE(MED_LINK@INS_COB_5_LINK@POLICY_NBR,',-/()#'),' '),1,20),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_5_LINK@GROUP_NBR,' '),1,20),  
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_5_LINK@CARRIER_ADDRESS_1,' '),1,40),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_5_LINK@CARRIER_ADDRESS_2,' '),1,30),
+        COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_ZIPCODE,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@INS_COB_5_LINK@CARRIER_PHONE_NBR,'()*- '),' '),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_5_LINK@APPROVAL_NBR,' '),1,15),
+        EXTRACT(COALESCE( 
+        PIECE(PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,',',2),';',1),
+                ' '),1,18),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,',',1),' '),1,25),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,';',2),' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@INS_COB_5_LINK@INSURED_BIRTHDATE,
+                'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@INS_COB_5_LINK@INSURED_SEX,'U'),
+        COALESCE(TRANSLATE(MED_LINK@INS_COB_5_LINK@INSURED_SSN,'-'),' '),
+        COALESCE(REL_TO_PAT3,' '),
+        MED_LINK@INS_COB_5_LINK@SAME_AS_FLAG, 
+---------------------------------------------------------------------------
+--INSURANCE PAGE 5 
+        COALESCE(MED_LINK@INS_COB_7_LINK@CARRIER_CODE,' '),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_7_LINK@CARRIER_NAME,' '),1,31),
+        EXTRACT(COALESCE(
+        TRANSLATE(MED_LINK@INS_COB_7_LINK@POLICY_NBR,',-/()#'),' '),1,20),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_7_LINK@GROUP_NBR,' '),1,20),  
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_7_LINK@CARRIER_ADDRESS_1,' '),1,40),
+        EXTRACT(COALESCE(        
+             MED_LINK@INS_COB_7_LINK@CARRIER_ADDRESS_2,' '),1,30),
+        COALESCE(MED_LINK@INS_COB_7_LINK@CARRIER_ZIPCODE,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@INS_COB_7_LINK@CARRIER_PHONE_NBR,'()*- '),' '),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_7_LINK@APPROVAL_NBR,' '),1,15),
+        EXTRACT(COALESCE(  
+        PIECE(PIECE(MED_LINK@INS_COB_7_LINK@INSURED_NAME,',',2),';',1),
+             ' '),1,18),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_7_LINK@INSURED_NAME,',',1),' '),1,25),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_7_LINK@INSURED_NAME,';',2),' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@INS_COB_7_LINK@INSURED_BIRTHDATE,
+                'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@INS_COB_7_LINK@INSURED_SEX,' '),
+        COALESCE(TRANSLATE(MED_LINK@INS_COB_7_LINK@INSURED_SSN,'-'),' '),
+        COALESCE(REL_TO_PAT5,' '),
+        MED_LINK@INS_COB_7_LINK@SAME_AS_FLAG 
+        
+ENDIF
+
+        
+========================================
+SQL: QBC_BJG_AUR_CLEANUP_AUR_PTS                  SUBQUERY: NO
+DESC: test
+Last Edit: 09/28/2015    Last Comp: 08/13/2017    Last Run:  08/01/2018
+START:   
+                                                  
+
+
+--Created on 02-02-11 by Burton Goodge
+-- 
+DELETE FROM  BC_AUR_PTS WHERE LOAD_DT < TODAY - 9 
+========================================
+SQL: QBC_BJG_AUR_CR_TBL_BC_AUR_PTS                SUBQUERY: NO
+DESC: test
+Last Edit: 08/13/2013    Last Comp: 09/16/2014    Last Run:  08/13/2013
+START:   
+                                                  
+
+--Created on 02-02-11 by Burton Goodge
+-- 
+drop tabLE bc_aur_pts
+CREATE TABLE BC_AUR_PTS(
+INTN            INTEGER(13),
+AN              CHARACTER(13),
+LOAD_DT         DATE,
+PRIMARY KEY(INTN,AN),
+FOREIGN KEY MED_LINK(INTN,AN) REFERENCES AG_MEDICAL,
+FOREIGN KEY DEMOG_LINK(INTN) REFERENCES AG_DEMOG,
+FOREIGN KEY VISIT_LINK(INTN,AN) REFERENCES AG_MISC_VISIT,
+FOREIGN KEY PAT_EMP_LINK(INTN,AN) REFERENCES AG_PAT_EMPLR,
+FOREIGN KEY GUAR_LINK(INTN,AN) REFERENCES AG_GUARANTOR)
+========================================
+SQL: QBC_BJG_AUR_CR_TBL_BC_AUR_PTSZ               SUBQUERY: NO
+DESC: test
+Last Edit: 03/10/2011    Last Comp:               Last Run:  
+START:   
+                                                  
+
+--Created on 02-02-11 by Burton Goodge
+-- 
+DROP   TABLE BC_AUR_PTS
+CREATE TABLE BC_AUR_PTS(
+INTN            INTEGER(13),
+AN              CHARACTER(13),
+PRIMARY KEY(INTN,AN),
+FOREIGN KEY MED_LINK(INTN,AN) REFERENCES AG_MEDICAL,
+FOREIGN KEY DEMOG_LINK(INTN) REFERENCES AG_DEMOG,
+FOREIGN KEY VISIT_LINK(INTN,AN) REFERENCES AG_MISC_VISIT)
+========================================
+SQL: QBC_BJG_AUR_DEMO_AUTO_BATCH                  SUBQUERY: NO
+DESC: 
+Last Edit: 09/22/2016    Last Comp: 05/19/2018    Last Run:  08/01/2018
+START: ALL  0417
+                                                  
+
+-- QBC_BJG_AUR_DICTATION replaced by QBCC_AUR_DICTATION_EXT 9/8/2015 David 
+-- Thornton
+--This is the calling batch file for the common demographic billing file
+--
+-- add physician numbers to QBC_BJG_AUR_DICTATION SQL
+
+SET START_DATE = 'ALL', START_TIME = '0417'
+
+RUN QBC_BJG_AUR_CLEANUP_AUR_PTS
+RUN QBC_BJG_AUR_DEMO_CLEAN_UP
+RUN QBCC_AUR_DICTATION_EXT 
+RUN QBC_BJG_AUR_DEMO_DOWNLOAD
+RUN QBC_BJG_AUR_DEMO_UPLOADFILE
+RUN QBMC_AUR_DEMOGRAPHICS_EXT
+-- 
+========================================
+SQL: QBC_BJG_AUR_DEMO_AUTO_MAN                    SUBQUERY: NO
+DESC: 
+Last Edit: 09/24/2015    Last Comp: 07/17/2016    Last Run:  09/28/2015
+START:   
+                                                  
+
+-- QBC_BJG_AUR_DICTATION replaced by QBCC_AUR_DICTATION_EXT 9/8/2015 David 
+-- Thornton
+--This is the calling batch file for the common demographic billing file
+--
+-- add physician numbers to QBC_BJG_AUR_DICTATION SQL
+
+RUN QBC_BJG_AUR_CLEANUP_AUR_PTS
+RUN QBC_BJG_AUR_DEMO_CLEAN_UP
+RUN QBCC_AUR_DICTATION_MAN
+RUN QBC_BJG_AUR_DEMO_DOWNLOAD_M
+RUN QBC_BJG_AUR_DEMO_UPLOADFILE
+RUN QBC_BJG_AUR_DEMO_CREATE_MAN        -- for morristown
+-- 
+========================================
+SQL: QBC_BJG_AUR_DEMO_CLEAN_UP                    SUBQUERY: NO
+DESC: Download for VISTA Radiology computer.
+Last Edit: 02/02/2011    Last Comp: 08/13/2017    Last Run:  08/01/2018
+START:   
+                                                  
+
+--COMMON DEMOGRAPHIC DATA MAIN DOWNLOAD QUERY
+--THIS QUERY WILL DELETE FROM TEMP TABLE TO LOAD DATA
+FOR FURTHER --PROCESISNG
+--BURTON J. GOODGE, 08/09/2005
+
+DELETE FROM BC_DEMOGRAPHIC_TEMPM
+ 
+========================================
+SQL: QBC_BJG_AUR_DEMO_CREATE_MAN                  SUBQUERY: NO
+DESC: Download for AUR Radiology computer billing.
+Last Edit: 09/28/2015    Last Comp: 07/17/2016    Last Run:  09/28/2015
+START:   
+                                                  FILE: "/export/outgoing/aur/aur_covhlth_demog20150924.txt"
+
+--COMMON DEMOGRAPHIC DATA BUILD DOWNLOAD FINAL FILE QUERY FOR MHHS
+--
+--BURTON J. GOODGE, 08/09/2005
+--
+SET FILE = '/export/outgoing/aur/aur_covhlth_demog20150924.txt',
+    FORMAT = 'TAB', METHOD = HOST_OUT
+--
+--   
+SELECT  CASE WHEN MED_LINK@PAT_TYPE = 'DCM'
+             THEN 'D'
+             WHEN EXTRACT(MED_LINK@PAT_TYPE,1,2) = 'ED'                   
+             THEN 'E'                                                     
+             WHEN MED_LINK@INPAT_OUTPAT_IND = 'In'                        
+             THEN 'I'                                                     
+             ELSE 'O'                                                     
+             END AS IOE,
+        MED_LINK@FAC AS FAC,
+(SELECT OCCUR_CD FROM PATIENT_CARE.CU_UB82_OCC C
+        WHERE C.INTN = T.INTN AND C.AN = T.AN AND CTR = 1) AS OCC1,
+(SELECT OCCUR_CD FROM PATIENT_CARE.CU_UB82_OCC C
+        WHERE C.INTN = T.INTN AND C.AN = T.AN AND CTR = 2) AS OCC2,
+CASE WHEN PROF_ID = 'CT' THEN '999999' ELSE INS1CC  END INS1CCD,
+CASE WHEN PROF_ID = 'CT' THEN 'TCSC Cares 4 Breast Hlth'
+     ELSE INS1CN
+     END AS INS1CND
+
+
+FROM    BC_DEMOGRAPHIC_TEMPM T
+--
+WHERE   FAC = 'M'
+--
+DETAIL 
+--  
+        WRITE
+--Pat Info
+        FAC,
+        IOE,
+        MED_LINK@PAT_TYPE,
+        COALESCE(TO_DATE(MED_LINK@ADM_DT,'YYYYMMDD'),' '),
+        COALESCE(TO_DATE(MED_LINK@DSCHRG_DT,'YYYYMMDD'),' '),   
+        COALESCE(TO_DATE(MED_LINK@VISIT_LINK@ACDT_DATE,'YYYYMMDD'),' '),
+        PFN,
+        PLN,
+        PMN,
+        PBD,
+        PED,
+        PSEX,
+        PAD1,
+        PAD2,
+        COALESCE(MED_LINK@DEMOG_LINK@PAT_CITY,' ') AS PCTY,
+        COALESCE(MED_LINK@DEMOG_LINK@PAT_STATE,' ') AS PST,
+        PZIP,
+        PHP,
+        PWP,
+        PSSN,
+        PEN,
+        PEAD1,
+        PEAD2,
+        COALESCE(MED_LINK@PAT_EMPLOYER_LINK@EMP_CITY,' ') AS PECTY,
+        COALESCE(MED_LINK@PAT_EMPLOYER_LINK@EMP_ST,' ') AS PEST,
+        PEZIP,
+        PEPH,
+        PMRN, 
+        PPAT,
+        PMS,
+        PEMS,
+        PREC,
+--Guar Info
+        GFN,
+        GLN,
+        GMN,
+        GBD,
+        GSEX,
+        GAD1,
+        GAD2,
+        COALESCE(MED_LINK@GUARANTOR_LINK@GUAR_DEMOG_LINK@PAT_CITY,' ')
+                AS GCTY,
+        COALESCE(MED_LINK@GUARANTOR_LINK@GUAR_DEMOG_LINK@PAT_STATE,' ')
+                AS GST,
+        GZIP,
+        GHP,
+        GWP,
+        GSSN,
+        GEN,
+        GEAD1,
+        GEAD2,
+        COALESCE(MED_LINK@GUARANTOR_LINK@GUAR_EMPR_LINK@EMP_CITY,' ')
+                AS GECTY,
+        COALESCE(MED_LINK@GUARANTOR_LINK@GUAR_EMPR_LINK@EMP_ST,' ')
+                AS GEST,
+        GEZIP,
+        GEPH,
+        GSC,
+        GMS,
+        GEMS,
+        GREC,
+        GPRC,
+--Next of Kin    
+        RFN,
+        RLN,
+        RMN,
+        RBD,
+        RSEX,
+        RAD1,
+        RAD2,
+        COALESCE(MED_LINK@PAT_REL_LINK@REL_CITY,' ') AS RCTY,
+        COALESCE(MED_LINK@PAT_REL_LINK@REL_ST,' ') AS RST,
+        RZIP,
+        RHP,
+        RWP,
+        RSSN,
+        REN,
+        READ1,
+        READ2,
+        COALESCE(MED_LINK@PAT_REL_LINK@EMP_CITY,' ') AS RECTY,
+        COALESCE(MED_LINK@PAT_REL_LINK@EMP_ST,' ') AS REST,
+        REZIP,
+        REPH,
+        RMS,
+        REMS,
+        RREC,
+        RPRC,
+--
+        PHNBR,
+        PHNAME, 
+        UPIN,
+        OCC1,
+        OCC2,
+   
+--------------------------------------------------------------------------
+-- INSURANCE PAGE 1
+        INS1CCD, --D 
+        INS1CND, --D
+        INS1PN,
+        INS1GN,
+        INS1AD1,
+        INS1AD2,
+        COALESCE(MED_LINK@INS_COB_1_LINK@CARRIER_CITY,' '),
+        COALESCE(MED_LINK@INS_COB_1_LINK@CARRIER_STATE,' '),
+        INS1ZIP,
+        INS1CPH,
+        INS1PAN,
+        INS1OFN,
+        INS1OLN,
+        INS1OMN,
+        INS1OBD,
+        INS1OSEX,
+        CASE WHEN INS1SAF = 'P' THEN PAD1
+             WHEN INS1SAF = 'G' THEN GAD1
+             WHEN INS1SAF = 'R' THEN RAD1
+        ELSE ' ' --NO ADDR1
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PAD2
+             WHEN INS1SAF = 'G' THEN GAD2
+             WHEN INS1SAF = 'R' THEN RAD2
+        ELSE ' ' --NO ADDR2
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PCTY
+             WHEN INS1SAF = 'G' THEN GCTY
+             WHEN INS1SAF = 'R' THEN RCTY
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PST
+             WHEN INS1SAF = 'G' THEN GST
+             WHEN INS1SAF = 'R' THEN RST
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PZIP
+             WHEN INS1SAF = 'G' THEN GZIP
+             WHEN INS1SAF = 'R' THEN RZIP
+        ELSE ' ' --NO PZIP
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PHP
+             WHEN INS1SAF = 'G' THEN GHP
+             WHEN INS1SAF = 'R' THEN RHP
+        ELSE ' ' --NO HOME PHONE
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PWP
+             WHEN INS1SAF = 'G' THEN GWP
+             WHEN INS1SAF = 'R' THEN RWP
+        ELSE ' ' --NO WORK PHONE
+        END,
+        INS1OSSN,
+        CASE WHEN INS1SAF = 'P' THEN PEN
+             WHEN INS1SAF = 'G' THEN GEN
+             WHEN INS1SAF = 'R' THEN REN
+        ELSE ' ' --NO EN
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEAD1
+             WHEN INS1SAF = 'G' THEN GEAD1
+             WHEN INS1SAF = 'R' THEN READ1
+        ELSE ' ' --NO EA1
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEAD2
+             WHEN INS1SAF = 'G' THEN GEAD2
+             WHEN INS1SAF = 'R' THEN READ2
+        ELSE ' ' --NO EA2
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PECTY
+             WHEN INS1SAF = 'G' THEN GECTY
+             WHEN INS1SAF = 'R' THEN RECTY
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEST
+             WHEN INS1SAF = 'G' THEN GEST
+             WHEN INS1SAF = 'R' THEN REST
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEZIP
+             WHEN INS1SAF = 'G' THEN GEZIP
+             WHEN INS1SAF = 'R' THEN REZIP
+        ELSE ' ' --NO EZ
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEPH
+             WHEN INS1SAF = 'G' THEN GEPH
+             WHEN INS1SAF = 'R' THEN REPH
+        ELSE ' ' --NO EPH
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PMS
+             WHEN INS1SAF = 'G' THEN GMS
+             WHEN INS1SAF = 'R' THEN RMS
+        ELSE ' ' --NO MS
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEMS
+             WHEN INS1SAF = 'G' THEN GEMS
+             WHEN INS1SAF = 'R' THEN REMS
+        ELSE ' ' --NO EMS
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PREC
+             WHEN INS1SAF = 'G' THEN GREC
+             WHEN INS1SAF = 'R' THEN RREC
+        ELSE ' ' --NO REC
+        END,
+        INS1ORLC,
+        
+---------------------------------------------------------------------------
+--INSURANCE PAGE 3
+        INS3CC,
+        INS3CN,
+        INS3PN,
+        INS3GN,
+        INS3AD1,
+        INS3AD2,
+        COALESCE(MED_LINK@INS_COB_3_LINK@CARRIER_CITY,' '),
+        COALESCE(MED_LINK@INS_COB_3_LINK@CARRIER_STATE,' '),
+        INS3ZIP,
+        INS3CPH,
+        INS3PAN,
+        INS3OFN,
+        INS3OLN,
+        INS3OMN,
+        INS3OBD,
+        INS3OSEX,
+        CASE WHEN INS3SAF = 'P' THEN PAD1
+             WHEN INS3SAF = 'G' THEN GAD1
+             WHEN INS3SAF = 'R' THEN RAD1
+        ELSE ' ' --NO ADDR1
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PAD2
+             WHEN INS3SAF = 'G' THEN GAD2
+             WHEN INS3SAF = 'R' THEN RAD2
+        ELSE ' ' --NO ADDR2
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PCTY
+             WHEN INS3SAF = 'G' THEN GCTY
+             WHEN INS3SAF = 'R' THEN RCTY
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PST
+             WHEN INS3SAF = 'G' THEN GST
+             WHEN INS3SAF = 'R' THEN RST
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PZIP
+             WHEN INS3SAF = 'G' THEN GZIP
+             WHEN INS3SAF = 'R' THEN RZIP
+        ELSE ' ' --NO ZIP
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PHP
+             WHEN INS3SAF = 'G' THEN GHP
+             WHEN INS3SAF = 'R' THEN RHP
+
+
+        ELSE ' ' --NO HOME PHONE
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PWP
+             WHEN INS3SAF = 'G' THEN GWP
+             WHEN INS3SAF = 'R' THEN RWP
+        ELSE ' ' --NO WORK PHONE
+        END,
+        INS3OSSN,
+        CASE WHEN INS3SAF = 'P' THEN PEN
+             WHEN INS3SAF = 'G' THEN GEN
+             WHEN INS3SAF = 'R' THEN REN
+        ELSE ' ' --NO EN
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEAD1
+             WHEN INS3SAF = 'G' THEN GEAD1
+             WHEN INS3SAF = 'R' THEN READ1
+        ELSE ' ' --NO EA1
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEAD2
+             WHEN INS3SAF = 'G' THEN GEAD2
+             WHEN INS3SAF = 'R' THEN READ2
+        ELSE ' ' --NO EA2
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PECTY
+             WHEN INS3SAF = 'G' THEN GECTY
+             WHEN INS3SAF = 'R' THEN RECTY
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEST
+             WHEN INS3SAF = 'G' THEN GEST
+             WHEN INS3SAF = 'R' THEN REST
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEZIP
+             WHEN INS3SAF = 'G' THEN GEZIP
+             WHEN INS3SAF = 'R' THEN REZIP
+        ELSE ' ' --NO EZ
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEPH
+             WHEN INS3SAF = 'G' THEN GEPH
+             WHEN INS3SAF = 'R' THEN REPH
+        ELSE ' ' --NO EPH
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PMS
+             WHEN INS3SAF = 'G' THEN GMS
+             WHEN INS3SAF = 'R' THEN RMS
+        ELSE ' ' --NO MS
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEMS
+             WHEN INS3SAF = 'G' THEN GEMS
+             WHEN INS3SAF = 'R' THEN REMS
+        ELSE ' ' --NO EMS
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PREC
+             WHEN INS3SAF = 'G' THEN GREC
+             WHEN INS3SAF = 'R' THEN RREC
+        ELSE ' ' --NO REC
+        END,
+        INS3ORLC,   
+---------------------------------------------------------------------------
+--INSURANCE PAGE 5 
+        INS5CC,
+        INS5CN,
+        INS5PN,
+        INS5GN,
+        INS5AD1,
+        INS5AD2,
+        COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_CITY,' '),
+        COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_STATE,' '),
+        INS5ZIP,
+        INS5CPH,
+        INS5PAN,
+        INS5OFN,
+        INS5OLN,
+        INS5OMN,
+        INS5OBD,
+        INS5OSEX,
+        CASE WHEN INS5SAF = 'P' THEN PAD1
+             WHEN INS5SAF = 'G' THEN GAD1
+             WHEN INS5SAF = 'R' THEN RAD1
+        ELSE ' ' --NO ADDR1
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PAD2
+             WHEN INS5SAF = 'G' THEN GAD2
+             WHEN INS5SAF = 'R' THEN RAD2
+        ELSE ' ' --NO ADDR2
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PCTY
+             WHEN INS5SAF = 'G' THEN GCTY
+             WHEN INS5SAF = 'R' THEN RCTY
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PST
+             WHEN INS5SAF = 'G' THEN GST
+             WHEN INS5SAF = 'R' THEN RST
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PZIP
+             WHEN INS5SAF = 'G' THEN GZIP
+             WHEN INS5SAF = 'R' THEN RZIP
+        ELSE ' ' --NO ZIP
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PHP
+             WHEN INS5SAF = 'G' THEN GHP
+             WHEN INS5SAF = 'R' THEN RHP
+        ELSE ' ' --NO HOME PHONE
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PWP
+             WHEN INS5SAF = 'G' THEN GWP
+             WHEN INS5SAF = 'R' THEN RWP
+        ELSE ' ' --NO WORK PHONE
+        END,
+        INS5OSSN,
+        CASE WHEN INS5SAF = 'P' THEN PEN
+             WHEN INS5SAF = 'G' THEN GEN
+             WHEN INS5SAF = 'R' THEN REN
+        ELSE ' ' --NO EN
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEAD1
+             WHEN INS5SAF = 'G' THEN GEAD1
+             WHEN INS5SAF = 'R' THEN READ1
+        ELSE ' ' --NO EA1
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEAD2
+             WHEN INS5SAF = 'G' THEN GEAD2
+             WHEN INS5SAF = 'R' THEN READ2
+        ELSE ' ' --NO EA2
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PECTY
+             WHEN INS5SAF = 'G' THEN GECTY
+             WHEN INS5SAF = 'R' THEN RECTY
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEST
+             WHEN INS5SAF = 'G' THEN GEST
+             WHEN INS5SAF = 'R' THEN REST
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEZIP
+             WHEN INS5SAF = 'G' THEN GEZIP
+             WHEN INS5SAF = 'R' THEN REZIP
+        ELSE ' ' --NO EZ
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEPH
+             WHEN INS5SAF = 'G' THEN GEPH
+             WHEN INS5SAF = 'R' THEN REPH
+        ELSE ' ' --NO EPH
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PMS
+             WHEN INS5SAF = 'G' THEN GMS
+             WHEN INS5SAF = 'R' THEN RMS
+        ELSE ' ' --NO MS
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEMS
+             WHEN INS5SAF = 'G' THEN GEMS
+             WHEN INS5SAF = 'R' THEN REMS
+        ELSE ' ' --NO EMS
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PREC
+             WHEN INS5SAF = 'G' THEN GREC
+             WHEN INS5SAF = 'R' THEN RREC
+        ELSE ' ' --NO REC
+        END,
+        INS5ORLC     
+---------------------------------------------------------------------------
+========================================
+SQL: QBC_BJG_AUR_DEMO_CREATE_TMM                  SUBQUERY: NO
+DESC: Download for VISTA Radiology computer.
+Last Edit: 02/02/2011    Last Comp: 11/13/2011    Last Run:  03/10/2011
+START:   
+                                                  
+
+--COMMON DEMOGRAPHIC DATA MAIN DOWNLOAD QUERY
+--THIS QUERY WILL CREATE A TEMP TABLE TO LOAD DATA FOR FURTHER PROCESISNG
+--BURTON J. GOODGE, 08/09/2005
+
+--DROP TABLE BC_DEMOGRAPHIC_TEMPM
+CREATE TABLE BC_DEMOGRAPHIC_TEMPM(
+        ADM_DT        DATE,
+        INTN          INTEGER(13),
+        AN            CHARACTER(13),
+        PFN           CHARACTER(18),
+        PLN           CHARACTER(25),
+        PMN           CHARACTER(18),
+        PBD           CHARACTER(8),
+        PED           CHARACTER(8),
+        PSEX          CHARACTER(1),
+        PAD1          CHARACTER(30),
+        PAD2          CHARACTER(30),
+        PZIP          CHARACTER(9),
+        PHP           CHARACTER(10),
+        PWP           CHARACTER(10),
+        PSSN          CHARACTER(9),
+        PEN           CHARACTER(33),
+        PEAD1         CHARACTER(30),
+        PEAD2         CHARACTER(30),
+        PEZIP         CHARACTER(9),
+        PEPH          CHARACTER(10),
+        PMRN          CHARACTER(20),
+        PPAT          CHARACTER(20),
+        PMS           CHARACTER(1),
+        PEMS          CHARACTER(2),
+        PSST          CHARACTER(1),
+        PREC          CHARACTER(1),
+        GFN           CHARACTER(18),
+        GLN           CHARACTER(25),
+        GMN           CHARACTER(18),
+        GBD           CHARACTER(8),
+        GSEX          CHARACTER(1),
+        GAD1          CHARACTER(30),
+        GAD2          CHARACTER(30),
+        GZIP          CHARACTER(9),
+        GHP           CHARACTER(10),
+        GWP           CHARACTER(10),
+        GSSN          CHARACTER(9),
+        GEN           CHARACTER(33),
+        GEAD1         CHARACTER(30),
+        GEAD2         CHARACTER(30),
+        GEZIP         CHARACTER(9),
+        GEPH          CHARACTER(10),
+        GSC           CHARACTER(1),
+        GMS           CHARACTER(1),
+        GEMS          CHARACTER(2),
+        GSST          CHARACTER(1),
+        GREC          CHARACTER(1),
+        GPRC          CHARACTER(2),
+        RFN           CHARACTER(18),
+        RLN           CHARACTER(25),
+        RMN           CHARACTER(18),
+        RBD           CHARACTER(8),
+        RSEX          CHARACTER(1),
+        RAD1          CHARACTER(30),
+        RAD2          CHARACTER(30),
+        RZIP          CHARACTER(9),
+        RHP           CHARACTER(10),
+        RWP           CHARACTER(10),
+        RSSN          CHARACTER(9),
+        REN           CHARACTER(33),
+        READ1         CHARACTER(30),
+        READ2         CHARACTER(30),
+        REZIP         CHARACTER(9),
+        REPH          CHARACTER(10),
+        RMS           CHARACTER(1),
+        REMS          CHARACTER(2),
+        RSST          CHARACTER(1),
+        RREC          CHARACTER(1),
+        RPRC          CHARACTER(2),
+        PHNBR         CHARACTER(10),
+        PHNAME        CHARACTER(20),
+        UPIN          CHARACTER(10),
+        PROF_ID       CHARACTER(2),
+        BR_CD         CHARACTER(1),
+        INS1CC        CHARACTER(10),
+        INS1CN        CHARACTER(31),
+        INS1PN        CHARACTER(20),
+        INS1GN        CHARACTER(20),
+        INS1AD1       CHARACTER(40),
+        INS1AD2       CHARACTER(30),
+        INS1ZIP       CHARACTER(9),
+        INS1CPH       CHARACTER(10),
+        INS1PAN       CHARACTER(15),
+        INS1OFN       CHARACTER(18),
+        INS1OLN       CHARACTER(25),
+        INS1OMN       CHARACTER(18),
+        INS1OBD       CHARACTER(8),
+        INS1OSEX      CHARACTER(1),
+        INS1OSSN      CHARACTER(9),
+        INS1ORLC      CHARACTER(2),
+        INS1SAF       CHARACTER(1),
+
+        INS3CC        CHARACTER(10),
+        INS3CN        CHARACTER(31),
+        INS3PN        CHARACTER(20),
+        INS3GN        CHARACTER(20),
+        INS3AD1       CHARACTER(40),
+        INS3AD2       CHARACTER(30),
+        INS3ZIP       CHARACTER(9),
+        INS3CPH       CHARACTER(10),
+        INS3PAN       CHARACTER(15),
+        INS3OFN       CHARACTER(18),
+        INS3OLN       CHARACTER(25),
+        INS3OMN       CHARACTER(18),
+        INS3OBD       CHARACTER(8),
+        INS3OSEX      CHARACTER(1),
+        INS3OSSN      CHARACTER(9),
+        INS3ORLC      CHARACTER(2),
+        INS3SAF       CHARACTER(1),
+
+        INS5CC        CHARACTER(10),
+        INS5CN        CHARACTER(31),
+        INS5PN        CHARACTER(20),
+        INS5GN        CHARACTER(20),
+        INS5AD1       CHARACTER(40),
+        INS5AD2       CHARACTER(30),
+        INS5ZIP       CHARACTER(9),
+        INS5CPH       CHARACTER(10),
+        INS5PAN       CHARACTER(15),
+        INS5OFN       CHARACTER(18),
+        INS5OLN       CHARACTER(25),
+        INS5OMN       CHARACTER(18),
+        INS5OBD       CHARACTER(8),
+        INS5OSEX      CHARACTER(1),
+        INS5OSSN      CHARACTER(9),
+        INS5ORLC      CHARACTER(2),
+        INS5SAF       CHARACTER(1),
+PRIMARY KEY(ADM_DT, INTN, AN),
+FOREIGN KEY MED_LINK(INTN,AN) REFERENCES AG_MEDICAL) 
+========================================
+SQL: QBC_BJG_AUR_DEMO_DOWNLOAD                    SUBQUERY: NO
+DESC: Download for VISTA Radiology computer.
+Last Edit: 07/22/2016    Last Comp: 08/13/2017    Last Run:  08/01/2018
+START:   
+                                                  FILE: "/conv/commondm.tab"
+
+/***********************************************************************  
+ 
+ Query: QBC_BJG_AUR_DEMO_DOWNLOAD                     
+                                                             
+ Description:  Common Demographic Download Query
+             
+ Requestor/Department:                                         
+                           
+ Date Created:  8/9/2005                                        
+              
+ Created By:  BURTON J. GOODGE                                             
+        
+ Output:  export file                       
+
+                             MODIFICATION LOG                              
+ -----------------------------------------------------------------------   
+  Name                 DATE        Project/Ticket   Reason                 
+ -----------------------------------------------------------------------   
+ Wendy Welch         04/08/2016    Updated to accommodate for 
+                                   Intercompany Insurances.  
+ ---------------------------------------------------------------------*/
+--
+DECLARE VARIABLE
+        :XPHNBR         INTEGER(6),
+        :XUPIN          CHARACTER(15)
+--
+SET FILE = '/conv/commondm.tab',
+    FORMAT = 'TAB', METHOD = HOST_OUT
+--
+
+SELECT EXTRACT(MED_LINK@INS_COB_1_LINK@INSURED_RELAT_CODE,1) AS REL_CD1,
+       EXTRACT(MED_LINK@INS_COB_3_LINK@INSURED_RELAT_CODE,1) AS REL_CD3,
+       EXTRACT(MED_LINK@INS_COB_5_LINK@INSURED_RELAT_CODE,1) AS REL_CD5,
+       EXTRACT(MED_LINK@INS_COB_7_LINK@INSURED_RELAT_CODE,1) AS REL_CD7,
+       MED_LINK@PAT_REL_LINK@REL_NAME AS RELL_NAME,
+       EXTRACT(PIECE(PIECE(RELL_NAME,',',2),' ',1),1,12) AS REL_NAME_FIRST,
+       EXTRACT(PIECE(PIECE(RELL_NAME,',',2),' ',2),1) AS REL_NAME_MI,
+       EXTRACT(PIECE(RELL_NAME,',',1),1,33) AS REL_NAME_LAST,
+       DEMOG_LINK@RACE_CD AS PRC,
+       DEMOG_LINK@MARITAL_STATUS_CD AS PMC,
+       PAT_EMP_LINK@EMPLMNT_STAT_CD AS ESC,
+       GUAR_LINK@GUAR_DEMOG_LINK@RACE_CD AS GRC,
+       GUAR_LINK@GUAR_DEMOG_LINK@MARITAL_STATUS_CD AS GMC,
+       GUAR_LINK@GUAR_EMPR_LINK@EMPLMNT_STAT_CD AS GSC,
+       MED_LINK@PAT_REL_LINK@EMPLMNT_STAT_CD AS RSC,
+       MED_LINK@PAT_REL_LINK@REL_CODE AS RRC,
+       CASE WHEN MED_LINK@PAT_TYPE = 'DCM' 
+            THEN 'D'
+                   --Added for Morristown Radiology Diag Center
+            WHEN EXTRACT(MED_LINK@PAT_TYPE,1,2) = 'ED'
+            THEN 'E'
+            WHEN MED_LINK@INPAT_OUTPAT_IND = 'In'
+            THEN 'I'
+            ELSE 'O'
+            END AS IOE,
+       MED_LINK@FAC|' '|IOE|' '|MED_LINK@PAT_TYPE AS LOCATIONX,  
+       CASE WHEN REL_CD1 IS NOT NULL THEN REL_CD1
+            ELSE '9'
+            END AS REL_TO_PAT1,
+ 
+       CASE WHEN REL_CD3 IS NOT NULL THEN REL_CD3
+            ELSE '9'
+            END AS REL_TO_PAT3, 
+ 
+       CASE WHEN REL_CD5 IS NOT NULL THEN REL_CD5
+            ELSE '9'
+            END AS REL_TO_PAT5,
+       COALESCE(VISIT_LINK@REF_PHY_CD, MED_LINK@ATTEND_PHY,' ')
+             AS PHYS_NBR,
+       COALESCE(VISIT_LINK@REF_PHY_NM, MED_LINK@ATTEND_PHY_NM, ' ')
+                AS PHYS_NAME,
+       GUAR_LINK@GUAR_REL_CODE AS GUAR_REL_CD,
+       GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_FIRST|' '|
+       EXTRACT(GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_MI,1)|' '|
+       GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_LAST
+               AS GUAR_NAME,
+       CASE WHEN
+       (SELECT CONTR_CD FROM CC_CONTR_PAT_IDX C
+        WHERE C.INTN = I.INTN AND C.AN = I.AN
+          AND CONTR_CD = '7022') 
+            THEN '999999'
+            ELSE
+       MED_LINK@INS_COB_1_LINK@CARRIER_CODE 
+       END AS CAR1CD, 
+
+       CASE WHEN
+       (SELECT CONTR_CD FROM CC_CONTR_PAT_IDX C
+        WHERE C.INTN = I.INTN AND C.AN = I.AN
+          AND CONTR_CD = '7022') 
+            THEN 'TCSC Cares 4 Breast Hlth'
+            ELSE
+       MED_LINK@INS_COB_1_LINK@CARRIER_NAME 
+       END AS CAR1NAME,
+       ' ' AS PROFILEID 
+       
+ 
+FROM    BC_AUR_PTS  I
+
+WHERE   LOAD_DT = TODAY
+
+--
+DETAIL 
+
+-- Selects non-intercompany insurances. 
+IF  MED_LINK@INS_COB_1_LINK@CARRIER_CODE 
+    NOT IN ('711015','711016','711017','711018','711019',
+            '711020','711021','711022')
+            
+        SET :XUPIN = ' '
+        SET :XHPNBR = PHYS_NBR
+        RUN QBC_BJG_DEMOGRAPHIC_GET_UPIN
+ 
+        WRITE
+        MED_LINK@ADM_DT,
+        INTN,
+        AN,
+--Pat Info
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_NAME_FIRST,' '),1,18),
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_NAME_LAST,' '),1,25),
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_NAME_MI,' '),1,18),
+        COALESCE(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),' '),
+        COALESCE(TO_DATE(DEMOG_LINK@EXPIRED_DT, 'YYYYMMDD'),' '),
+        COALESCE(DEMOG_LINK@SEX,'U'),
+        CASE WHEN DEMOG_LINK@PAT_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_ADDR_1,' '),1,30) END,
+        CASE WHEN DEMOG_LINK@PAT_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_ADDR_2,' '),1,30) END,
+--10
+        COALESCE(DEMOG_LINK@PAT_ZIP_CODE,' '),
+        COALESCE(TRANSLATE(DEMOG_LINK@PHONE_NBR,'()*- '),' '),
+        COALESCE(TRANSLATE(PAT_EMP_LINK@EMP_PHONE_NBR,'()*- '),' '), 
+              -- WORK PHONE NBR
+        COALESCE(TRANSLATE(DEMOG_LINK@PAT_SSN,'-'),' '),
+        EXTRACT(COALESCE(TRANSLATE(
+                PAT_EMP_LINK@EMP_NAME,';'),' '),1,33),
+        CASE WHEN PAT_EMP_LINK@EMP_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        COALESCE(EXTRACT(
+                PAT_EMP_LINK@EMP_ADDR_1,1,30),' ') END,
+        CASE WHEN PAT_EMP_LINK@EMP_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        COALESCE(EXTRACT(
+                PAT_EMP_LINK@EMP_ADDR_2,1,30),' ') END,
+        COALESCE(PAT_EMP_LINK@EMP_ZIP,' '),
+        COALESCE(TRANSLATE(PAT_EMP_LINK@EMP_PHONE_NBR,'()*- '),' '),
+        COALESCE(MED_LINK@UNIT_NBR,' '), --MRN 
+--20
+        COALESCE(MED_LINK@PAT_ACCT_NBR,' '),
+        CASE WHEN PMC = 'U' THEN 'U'
+             WHEN PMC = ' ' THEN 'U'
+             WHEN PMC = ''  THEN 'U'
+             ELSE PMC
+        END AS PAT_MAR_CD1,
+        CASE WHEN ESC IS NOT NULL THEN ESC
+             ELSE '9'
+        END AS PAT_EMP_STAT1,
+        ' ', --PSS
+        CASE WHEN PRC IS NOT NULL THEN PRC
+             ELSE '9'
+        END AS P_RC1,
+--Guarantor Info
+        EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_FIRST,' '),1,18),
+        EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_LAST,' '),1,25),
+        EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_MI,' '),1,18),
+        COALESCE(
+             TO_DATE(GUAR_LINK@GUAR_DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),' '), 
+        COALESCE(GUAR_LINK@GUAR_DEMOG_LINK@SEX,'U'),
+--30
+        CASE WHEN GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_1 [ '"" ""' THEN ' '
+        ELSE EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_1,' '),1,30) END,
+        CASE WHEN GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_2 [ '"" ""' THEN ' '
+        ELSE EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_2,' '),1,30) END,
+        COALESCE(GUAR_LINK@GUAR_DEMOG_LINK@PAT_ZIP_CODE,' '),
+        COALESCE(TRANSLATE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PHONE_NBR,'()*- '),' '),
+        COALESCE(TRANSLATE(
+             GUAR_LINK@GUAR_EMPR_LINK@EMP_PHONE,'()*- '),' '),   
+        COALESCE(TRANSLATE(GUAR_LINK@GUAR_DEMOG_LINK@PAT_SSN,'-'),' '),    
+         EXTRACT(COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_NAME,' '),1,33),
+        CASE WHEN GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_1 [ '"" ""' THEN ' '
+             ELSE
+        EXTRACT(COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_1,' '),1,30)
+             END,
+        CASE WHEN GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_2 [ '"" ""' THEN ' '
+             ELSE
+        EXTRACT(COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_2,' '),1,30)
+             END,
+        COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_ZIP,' '),
+        COALESCE(TRANSLATE(
+             GUAR_LINK@GUAR_EMPR_LINK@EMP_PHONE,'()*- '),' '),  
+        ' ', --GUAR STATMT CONTR
+        CASE WHEN GMC = 'U' THEN 'U'
+             WHEN GMC = ' ' THEN 'U'
+             WHEN GMC = ''  THEN 'U'
+             ELSE GMC
+        END AS GUAR_MAR_CD1,
+        CASE WHEN GSC IS NOT NULL THEN GSC
+             ELSE '9'
+        END AS GUAR_EMP_STAT1,  
+        ' ', --GUAR STUD STAT
+        CASE WHEN GRC IS NOT NULL THEN GRC
+             ELSE '9'
+        END AS G_RC1,
+        CASE WHEN GUAR_REL_CD IS NOT NULL THEN GUAR_REL_CD
+             ELSE 'C'
+         END AS GUAR_RELCD1,
+--Next of Kin    
+        EXTRACT(COALESCE(REL_NAME_FIRST,' '),1,18),
+        EXTRACT(COALESCE(REL_NAME_LAST,' '),1,25),
+        EXTRACT(COALESCE(REL_NAME_MI,' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@PAT_REL_LINK@REL_BIRTH,
+                 'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@PAT_REL_LINK@REL_SEX,'U'),
+        CASE WHEN MED_LINK@PAT_REL_LINK@REL_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@REL_ADDR_1,' '),1,30) END,
+        CASE WHEN MED_LINK@PAT_REL_LINK@REL_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@REL_ADDR_2,' '),1,30) END,
+        COALESCE(MED_LINK@PAT_REL_LINK@REL_ZIP,' '),
+        COALESCE(TRANSLATE(MED_LINK@PAT_REL_LINK@REL_PHONE,'()*- '),' '), 
+        COALESCE(TRANSLATE(MED_LINK@PAT_REL_LINK@EMP_PHONE,'()*- '),' '),  
+         COALESCE(TRANSLATE(MED_LINK@PAT_REL_LINK@REL_SSN,'-'),' '),
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@EMP_NAME,' '),1,33),
+        CASE WHEN MED_LINK@PAT_REL_LINK@EMP_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@EMP_ADDR_1,' '),1,30) END,
+        CASE WHEN MED_LINK@PAT_REL_LINK@EMP_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@EMP_ADDR_2,' '),1,30) END,
+        COALESCE(MED_LINK@PAT_REL_LINK@EMP_ZIP,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@PAT_REL_LINK@EMP_PHONE,'()*- '),' '),  
+        ' ', --NO REL MSC
+        CASE WHEN RSC IS NOT NULL THEN RSC
+             ELSE '9'
+        END AS REL_EMP_STAT1,  
+        ' ', --NO REL STUD STAT
+        ' ', --NO REL RACE CODE
+        CASE WHEN RRC IS NOT NULL THEN RRC
+             ELSE 'C'
+        END AS REL_REL_CD1,
+        CASE WHEN EXTRACT(PHYS_NBR,1) = ';' THEN ' '
+             ELSE PHYS_NBR END,
+        EXTRACT(COALESCE(PHYS_NAME,' '),1,20), 
+        COALESCE(:XUPIN,' '),
+        ProfileID,
+        ' ',   --Billing Rule Code
+--------------------------------------------------------------------------
+-- INSURANCE PAGE 1
+        COALESCE(CAR1CD,' '),
+        EXTRACT(COALESCE(CAR1NAME,' '),1,31),
+        EXTRACT(COALESCE(TRANSLATE(
+            MED_LINK@INS_COB_1_LINK@POLICY_NBR,',-/()#'),' '),1,20),
+        CASE WHEN 
+            MED_LINK@INS_COB_1_LINK@GROUP_NBR [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(
+            MED_LINK@INS_COB_1_LINK@GROUP_NBR,' '),1,20) END,  
+        EXTRACT(COALESCE(
+            MED_LINK@INS_COB_1_LINK@CARRIER_ADDRESS_1,' '),1,40),
+        EXTRACT(COALESCE(
+            MED_LINK@INS_COB_1_LINK@CARRIER_ADDRESS_2,' '),1,30),
+        COALESCE(MED_LINK@INS_COB_1_LINK@CARRIER_ZIPCODE,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@INS_COB_1_LINK@CARRIER_PHONE_NBR,'()*- '),' '),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_1_LINK@APPROVAL_NBR,' '),1,15),
+        EXTRACT(COALESCE( 
+        PIECE(PIECE(MED_LINK@INS_COB_1_LINK@INSURED_NAME,',',2),';',1),
+             ' '),1,18),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_1_LINK@INSURED_NAME,',',1),' '),1,25),
+        EXTRACT(COALESCE(PIECE(
+            MED_LINK@INS_COB_1_LINK@INSURED_NAME,';',2),' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@INS_COB_1_LINK@INSURED_BIRTHDATE,
+                'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@INS_COB_1_LINK@INSURED_SEX,'U'),
+        COALESCE(TRANSLATE(MED_LINK@INS_COB_1_LINK@INSURED_SSN,'-'),' '),
+        COALESCE(REL_TO_PAT1,' '),
+        MED_LINK@INS_COB_1_LINK@SAME_AS_FLAG,
+---------------------------------------------------------------------------
+--INSURANCE PAGE 3
+        COALESCE(MED_LINK@INS_COB_3_LINK@CARRIER_CODE,' '),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_3_LINK@CARRIER_NAME,' '),1,31),
+        EXTRACT(COALESCE(
+        TRANSLATE(MED_LINK@INS_COB_3_LINK@POLICY_NBR,',-/()#'),' '),1,20),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_3_LINK@GROUP_NBR,' '),1,20),  
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_3_LINK@CARRIER_ADDRESS_1,' '),1,40),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_3_LINK@CARRIER_ADDRESS_2,' '),1,30),
+        COALESCE(MED_LINK@INS_COB_3_LINK@CARRIER_ZIPCODE,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@INS_COB_3_LINK@CARRIER_PHONE_NBR,'()*- '),' '),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_3_LINK@APPROVAL_NBR,' '),1,15),
+        EXTRACT(COALESCE( 
+        PIECE(PIECE(MED_LINK@INS_COB_3_LINK@INSURED_NAME,',',2),';',1),
+                ' '),1,18),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_3_LINK@INSURED_NAME,',',1),' '),1,25),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_3_LINK@INSURED_NAME,';',2),' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@INS_COB_3_LINK@INSURED_BIRTHDATE,
+                'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@INS_COB_3_LINK@INSURED_SEX,'U'),
+        COALESCE(TRANSLATE(MED_LINK@INS_COB_3_LINK@INSURED_SSN,'-'),' '),
+        COALESCE(REL_TO_PAT3,' '),
+        MED_LINK@INS_COB_3_LINK@SAME_AS_FLAG, 
+---------------------------------------------------------------------------
+--INSURANCE PAGE 5 
+        COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_CODE,' '),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_NAME,' '),1,31),
+        EXTRACT(COALESCE(
+        TRANSLATE(MED_LINK@INS_COB_5_LINK@POLICY_NBR,',-/()#'),' '),1,20),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_5_LINK@GROUP_NBR,' '),1,20),  
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_5_LINK@CARRIER_ADDRESS_1,' '),1,40),
+        EXTRACT(COALESCE(        
+             MED_LINK@INS_COB_5_LINK@CARRIER_ADDRESS_2,' '),1,30),
+        COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_ZIPCODE,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@INS_COB_5_LINK@CARRIER_PHONE_NBR,'()*- '),' '),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_5_LINK@APPROVAL_NBR,' '),1,15),
+        EXTRACT(COALESCE(  
+        PIECE(PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,',',2),';',1),
+             ' '),1,18),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,',',1),' '),1,25),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,';',2),' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@INS_COB_5_LINK@INSURED_BIRTHDATE,
+                'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@INS_COB_5_LINK@INSURED_SEX,' '),
+        COALESCE(TRANSLATE(MED_LINK@INS_COB_5_LINK@INSURED_SSN,'-'),' '),
+        COALESCE(REL_TO_PAT5,' '),
+        MED_LINK@INS_COB_5_LINK@SAME_AS_FLAG 
+        
+ENDIF  
+
+-- Selects intercompany insurances. 
+IF  MED_LINK@INS_COB_1_LINK@CARRIER_CODE 
+    IN ('711015','711016','711017','711018','711019',
+        '711020','711021','711022')
+            
+        SET :XUPIN = ' '
+        SET :XHPNBR = PHYS_NBR
+        RUN QBC_BJG_DEMOGRAPHIC_GET_UPIN
+ 
+        WRITE
+        MED_LINK@ADM_DT,
+        INTN,
+        AN,
+--Pat Info
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_NAME_FIRST,' '),1,18),
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_NAME_LAST,' '),1,25),
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_NAME_MI,' '),1,18),
+        COALESCE(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),' '),
+        COALESCE(TO_DATE(DEMOG_LINK@EXPIRED_DT, 'YYYYMMDD'),' '),
+        COALESCE(DEMOG_LINK@SEX,'U'),
+        CASE WHEN DEMOG_LINK@PAT_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_ADDR_1,' '),1,30) END,
+        CASE WHEN DEMOG_LINK@PAT_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_ADDR_2,' '),1,30) END,
+--10
+        COALESCE(DEMOG_LINK@PAT_ZIP_CODE,' '),
+        COALESCE(TRANSLATE(DEMOG_LINK@PHONE_NBR,'()*- '),' '),
+        COALESCE(TRANSLATE(PAT_EMP_LINK@EMP_PHONE_NBR,'()*- '),' '), 
+              -- WORK PHONE NBR
+        COALESCE(TRANSLATE(DEMOG_LINK@PAT_SSN,'-'),' '),
+        EXTRACT(COALESCE(TRANSLATE(
+                PAT_EMP_LINK@EMP_NAME,';'),' '),1,33),
+        CASE WHEN PAT_EMP_LINK@EMP_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        COALESCE(EXTRACT(
+                PAT_EMP_LINK@EMP_ADDR_1,1,30),' ') END,
+        CASE WHEN PAT_EMP_LINK@EMP_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        COALESCE(EXTRACT(
+                PAT_EMP_LINK@EMP_ADDR_2,1,30),' ') END,
+        COALESCE(PAT_EMP_LINK@EMP_ZIP,' '),
+        COALESCE(TRANSLATE(PAT_EMP_LINK@EMP_PHONE_NBR,'()*- '),' '),
+        COALESCE(MED_LINK@UNIT_NBR,' '), --MRN 
+--20
+        COALESCE(MED_LINK@PAT_ACCT_NBR,' '),
+        CASE WHEN PMC = 'U' THEN 'U'
+             WHEN PMC = ' ' THEN 'U'
+             WHEN PMC = ''  THEN 'U'
+             ELSE PMC
+        END AS PAT_MAR_CD2,
+        CASE WHEN ESC IS NOT NULL THEN ESC
+             ELSE '9'
+        END AS PAT_EMP_STAT2,
+        ' ', --PSS
+        CASE WHEN PRC IS NOT NULL THEN PRC
+             ELSE '9'
+        END AS P_RC2,
+--Guarantor Info
+        EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_FIRST,' '),1,18),
+        EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_LAST,' '),1,25),
+        EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_MI,' '),1,18),
+        COALESCE(
+             TO_DATE(GUAR_LINK@GUAR_DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),' '), 
+        COALESCE(GUAR_LINK@GUAR_DEMOG_LINK@SEX,'U'),
+--30
+        CASE WHEN GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_1 [ '"" ""' THEN ' '
+        ELSE EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_1,' '),1,30) END,
+        CASE WHEN GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_2 [ '"" ""' THEN ' '
+        ELSE EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_2,' '),1,30) END,
+        COALESCE(GUAR_LINK@GUAR_DEMOG_LINK@PAT_ZIP_CODE,' '),
+        COALESCE(TRANSLATE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PHONE_NBR,'()*- '),' '),
+        COALESCE(TRANSLATE(
+             GUAR_LINK@GUAR_EMPR_LINK@EMP_PHONE,'()*- '),' '),   
+        COALESCE(TRANSLATE(GUAR_LINK@GUAR_DEMOG_LINK@PAT_SSN,'-'),' '),    
+         EXTRACT(COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_NAME,' '),1,33),
+        CASE WHEN GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_1 [ '"" ""' THEN ' '
+             ELSE
+        EXTRACT(COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_1,' '),1,30)
+             END,
+        CASE WHEN GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_2 [ '"" ""' THEN ' '
+             ELSE
+        EXTRACT(COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_2,' '),1,30)
+             END,
+        COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_ZIP,' '),
+        COALESCE(TRANSLATE(
+             GUAR_LINK@GUAR_EMPR_LINK@EMP_PHONE,'()*- '),' '),  
+        ' ', --GUAR STATMT CONTR
+        CASE WHEN GMC = 'U' THEN 'U'
+             WHEN GMC = ' ' THEN 'U'
+             WHEN GMC = ''  THEN 'U'
+             ELSE GMC
+        END AS GUAR_MAR_CD2,
+        CASE WHEN GSC IS NOT NULL THEN GSC
+             ELSE '9'
+        END AS GUAR_EMP_STAT2,  
+        ' ', --GUAR STUD STAT
+        CASE WHEN GRC IS NOT NULL THEN GRC
+             ELSE '9'
+        END AS G_RC2,
+        CASE WHEN GUAR_REL_CD IS NOT NULL THEN GUAR_REL_CD
+             ELSE 'C'
+         END AS GUAR_RELCD2,
+--Next of Kin    
+        EXTRACT(COALESCE(REL_NAME_FIRST,' '),1,18),
+        EXTRACT(COALESCE(REL_NAME_LAST,' '),1,25),
+        EXTRACT(COALESCE(REL_NAME_MI,' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@PAT_REL_LINK@REL_BIRTH,
+                 'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@PAT_REL_LINK@REL_SEX,'U'),
+        CASE WHEN MED_LINK@PAT_REL_LINK@REL_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@REL_ADDR_1,' '),1,30) END,
+        CASE WHEN MED_LINK@PAT_REL_LINK@REL_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@REL_ADDR_2,' '),1,30) END,
+        COALESCE(MED_LINK@PAT_REL_LINK@REL_ZIP,' '),
+        COALESCE(TRANSLATE(MED_LINK@PAT_REL_LINK@REL_PHONE,'()*- '),' '), 
+        COALESCE(TRANSLATE(MED_LINK@PAT_REL_LINK@EMP_PHONE,'()*- '),' '),  
+         COALESCE(TRANSLATE(MED_LINK@PAT_REL_LINK@REL_SSN,'-'),' '),
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@EMP_NAME,' '),1,33),
+        CASE WHEN MED_LINK@PAT_REL_LINK@EMP_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@EMP_ADDR_1,' '),1,30) END,
+        CASE WHEN MED_LINK@PAT_REL_LINK@EMP_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@EMP_ADDR_2,' '),1,30) END,
+        COALESCE(MED_LINK@PAT_REL_LINK@EMP_ZIP,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@PAT_REL_LINK@EMP_PHONE,'()*- '),' '),  
+        ' ', --NO REL MSC
+        CASE WHEN RSC IS NOT NULL THEN RSC
+             ELSE '9'
+        END AS REL_EMP_STAT2,  
+        ' ', --NO REL STUD STAT
+        ' ', --NO REL RACE CODE
+        CASE WHEN RRC IS NOT NULL THEN RRC
+             ELSE 'C'
+        END AS REL_REL_CD2,
+        CASE WHEN EXTRACT(PHYS_NBR,1) = ';' THEN ' '
+             ELSE PHYS_NBR END,
+        EXTRACT(COALESCE(PHYS_NAME,' '),1,20), 
+        COALESCE(:XUPIN,' '),
+        ProfileID,
+        ' ',   --Billing Rule Code
+--------------------------------------------------------------------------
+-- INSURANCE PAGE 1
+        COALESCE(CAR1CD,' '),
+        EXTRACT(COALESCE(CAR1NAME,' '),1,31),
+        EXTRACT(COALESCE(TRANSLATE(
+            MED_LINK@INS_COB_3_LINK@POLICY_NBR,',-/()#'),' '),1,20),
+        CASE WHEN 
+            MED_LINK@INS_COB_3_LINK@GROUP_NBR [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(
+            MED_LINK@INS_COB_3_LINK@GROUP_NBR,' '),1,20) END,  
+        EXTRACT(COALESCE(
+            MED_LINK@INS_COB_3_LINK@CARRIER_ADDRESS_1,' '),1,40),
+        EXTRACT(COALESCE(
+            MED_LINK@INS_COB_3_LINK@CARRIER_ADDRESS_2,' '),1,30),
+        COALESCE(MED_LINK@INS_COB_3_LINK@CARRIER_ZIPCODE,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@INS_COB_3_LINK@CARRIER_PHONE_NBR,'()*- '),' '),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_3_LINK@APPROVAL_NBR,' '),1,15),
+        EXTRACT(COALESCE( 
+        PIECE(PIECE(MED_LINK@INS_COB_3_LINK@INSURED_NAME,',',2),';',1),
+             ' '),1,18),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_3_LINK@INSURED_NAME,',',1),' '),1,25),
+        EXTRACT(COALESCE(PIECE(
+            MED_LINK@INS_COB_3_LINK@INSURED_NAME,';',2),' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@INS_COB_3_LINK@INSURED_BIRTHDATE,
+                'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@INS_COB_3_LINK@INSURED_SEX,'U'),
+        COALESCE(TRANSLATE(MED_LINK@INS_COB_3_LINK@INSURED_SSN,'-'),' '),
+        COALESCE(REL_TO_PAT1,' '),
+        MED_LINK@INS_COB_3_LINK@SAME_AS_FLAG,
+---------------------------------------------------------------------------
+--INSURANCE PAGE 3
+        COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_CODE,' '),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_NAME,' '),1,31),
+        EXTRACT(COALESCE(
+        TRANSLATE(MED_LINK@INS_COB_5_LINK@POLICY_NBR,',-/()#'),' '),1,20),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_5_LINK@GROUP_NBR,' '),1,20),  
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_5_LINK@CARRIER_ADDRESS_1,' '),1,40),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_5_LINK@CARRIER_ADDRESS_2,' '),1,30),
+        COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_ZIPCODE,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@INS_COB_5_LINK@CARRIER_PHONE_NBR,'()*- '),' '),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_5_LINK@APPROVAL_NBR,' '),1,15),
+        EXTRACT(COALESCE( 
+        PIECE(PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,',',2),';',1),
+                ' '),1,18),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,',',1),' '),1,25),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,';',2),' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@INS_COB_5_LINK@INSURED_BIRTHDATE,
+                'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@INS_COB_5_LINK@INSURED_SEX,'U'),
+        COALESCE(TRANSLATE(MED_LINK@INS_COB_5_LINK@INSURED_SSN,'-'),' '),
+        COALESCE(REL_TO_PAT3,' '),
+        MED_LINK@INS_COB_5_LINK@SAME_AS_FLAG, 
+---------------------------------------------------------------------------
+--INSURANCE PAGE 5 
+        COALESCE(MED_LINK@INS_COB_7_LINK@CARRIER_CODE,' '),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_7_LINK@CARRIER_NAME,' '),1,31),
+        EXTRACT(COALESCE(
+        TRANSLATE(MED_LINK@INS_COB_7_LINK@POLICY_NBR,',-/()#'),' '),1,20),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_7_LINK@GROUP_NBR,' '),1,20),  
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_7_LINK@CARRIER_ADDRESS_1,' '),1,40),
+        EXTRACT(COALESCE(        
+             MED_LINK@INS_COB_7_LINK@CARRIER_ADDRESS_2,' '),1,30),
+        COALESCE(MED_LINK@INS_COB_7_LINK@CARRIER_ZIPCODE,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@INS_COB_7_LINK@CARRIER_PHONE_NBR,'()*- '),' '),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_7_LINK@APPROVAL_NBR,' '),1,15),
+        EXTRACT(COALESCE(  
+        PIECE(PIECE(MED_LINK@INS_COB_7_LINK@INSURED_NAME,',',2),';',1),
+             ' '),1,18),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_7_LINK@INSURED_NAME,',',1),' '),1,25),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_7_LINK@INSURED_NAME,';',2),' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@INS_COB_7_LINK@INSURED_BIRTHDATE,
+                'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@INS_COB_7_LINK@INSURED_SEX,' '),
+        COALESCE(TRANSLATE(MED_LINK@INS_COB_7_LINK@INSURED_SSN,'-'),' '),
+        COALESCE(REL_TO_PAT5,' '),
+        MED_LINK@INS_COB_7_LINK@SAME_AS_FLAG        
+ENDIF       
+========================================
+SQL: QBC_BJG_AUR_DEMO_DOWNLOAD_M                  SUBQUERY: NO
+DESC: Download for VISTA Radiology computer.
+Last Edit: 09/28/2015    Last Comp: 07/17/2016    Last Run:  09/28/2015
+START:   
+                                                  FILE: "/conv/commondm.tab"
+
+
+--COMMON DEMOGRAPHIC DATA DOWNLOAD QUERY
+--BURTON J. GOODGE, 08/09/2005
+--
+DECLARE VARIABLE
+        :XPHNBR         INTEGER(6),
+        :XUPIN          CHARACTER(15)
+--
+SET FILE = '/conv/commondm.tab',
+    FORMAT = 'TAB', METHOD = HOST_OUT
+--
+--   
+SELECT EXTRACT(MED_LINK@INS_COB_1_LINK@INSURED_RELAT_CODE,1) AS REL_CD1,
+       EXTRACT(MED_LINK@INS_COB_3_LINK@INSURED_RELAT_CODE,1) AS REL_CD3,
+       EXTRACT(MED_LINK@INS_COB_5_LINK@INSURED_RELAT_CODE,1) AS REL_CD5,
+       MED_LINK@PAT_REL_LINK@REL_NAME AS RELL_NAME,
+       EXTRACT(PIECE(PIECE(RELL_NAME,',',2),' ',1),1,12) AS REL_NAME_FIRST,
+       EXTRACT(PIECE(PIECE(RELL_NAME,',',2),' ',2),1) AS REL_NAME_MI,
+       EXTRACT(PIECE(RELL_NAME,',',1),1,33) AS REL_NAME_LAST,
+       DEMOG_LINK@RACE_CD AS PRC,
+       DEMOG_LINK@MARITAL_STATUS_CD AS PMC,
+       PAT_EMP_LINK@EMPLMNT_STAT_CD AS ESC,
+       GUAR_LINK@GUAR_DEMOG_LINK@RACE_CD AS GRC,
+       GUAR_LINK@GUAR_DEMOG_LINK@MARITAL_STATUS_CD AS GMC,
+       GUAR_LINK@GUAR_EMPR_LINK@EMPLMNT_STAT_CD AS GSC,
+       MED_LINK@PAT_REL_LINK@EMPLMNT_STAT_CD AS RSC,
+       MED_LINK@PAT_REL_LINK@REL_CODE AS RRC,
+       CASE WHEN MED_LINK@PAT_TYPE = 'DCM' 
+            THEN 'D'
+                   --Added for Morristown Radiology Diag Center
+            WHEN EXTRACT(MED_LINK@PAT_TYPE,1,2) = 'ED'
+            THEN 'E'
+            WHEN MED_LINK@INPAT_OUTPAT_IND = 'In'
+            THEN 'I'
+            ELSE 'O'
+            END AS IOE,
+       MED_LINK@FAC|' '|IOE|' '|MED_LINK@PAT_TYPE AS LOCATIONX,  
+       CASE WHEN REL_CD1 IS NOT NULL THEN REL_CD1
+            ELSE '9'
+            END AS REL_TO_PAT1,
+ 
+       CASE WHEN REL_CD3 IS NOT NULL THEN REL_CD3
+            ELSE '9'
+            END AS REL_TO_PAT3, 
+ 
+       CASE WHEN REL_CD5 IS NOT NULL THEN REL_CD5
+            ELSE '9'
+            END AS REL_TO_PAT5,
+       COALESCE(VISIT_LINK@REF_PHY_CD, MED_LINK@ATTEND_PHY,' ')
+             AS PHYS_NBR,
+       COALESCE(VISIT_LINK@REF_PHY_NM, MED_LINK@ATTEND_PHY_NM, ' ')
+                AS PHYS_NAME,
+       GUAR_LINK@GUAR_REL_CODE AS GUAR_REL_CD,
+       GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_FIRST|' '|
+       EXTRACT(GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_MI,1)|' '|
+       GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_LAST
+               AS GUAR_NAME,
+       CASE WHEN
+       (SELECT CONTR_CD FROM CC_CONTR_PAT_IDX C
+        WHERE C.INTN = I.INTN AND C.AN = I.AN
+          AND CONTR_CD = '7022') 
+            THEN '999999'
+            ELSE
+       MED_LINK@INS_COB_1_LINK@CARRIER_CODE 
+       END AS CAR1CD, 
+
+       CASE WHEN
+       (SELECT CONTR_CD FROM CC_CONTR_PAT_IDX C
+        WHERE C.INTN = I.INTN AND C.AN = I.AN
+          AND CONTR_CD = '7022') 
+            THEN 'TCSC Cares 4 Breast Hlth'
+            ELSE
+       MED_LINK@INS_COB_1_LINK@CARRIER_NAME 
+       END AS CAR1NAME,
+       ' ' AS PROFILEID 
+       
+ 
+FROM    BC_AUR_PTS  I
+
+WHERE   LOAD_DT = TODAY-7
+
+--
+DETAIL 
+        SET :XUPIN = ' '
+        SET :XHPNBR = PHYS_NBR
+        RUN QBC_BJG_DEMOGRAPHIC_GET_UPIN
+ 
+        WRITE
+        MED_LINK@ADM_DT,
+        INTN,
+        AN,
+--Pat Info
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_NAME_FIRST,' '),1,18),
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_NAME_LAST,' '),1,25),
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_NAME_MI,' '),1,18),
+        COALESCE(TO_DATE(DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),' '),
+        COALESCE(TO_DATE(DEMOG_LINK@EXPIRED_DT, 'YYYYMMDD'),' '),
+        COALESCE(DEMOG_LINK@SEX,'U'),
+        CASE WHEN DEMOG_LINK@PAT_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_ADDR_1,' '),1,30) END,
+        CASE WHEN DEMOG_LINK@PAT_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(DEMOG_LINK@PAT_ADDR_2,' '),1,30) END,
+--10
+        COALESCE(DEMOG_LINK@PAT_ZIP_CODE,' '),
+        COALESCE(TRANSLATE(DEMOG_LINK@PHONE_NBR,'()*- '),' '),
+        COALESCE(TRANSLATE(PAT_EMP_LINK@EMP_PHONE_NBR,'()*- '),' '), 
+              -- WORK PHONE NBR
+        COALESCE(TRANSLATE(DEMOG_LINK@PAT_SSN,'-'),' '),
+        EXTRACT(COALESCE(TRANSLATE(
+                PAT_EMP_LINK@EMP_NAME,';'),' '),1,33),
+        CASE WHEN PAT_EMP_LINK@EMP_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        COALESCE(EXTRACT(
+                PAT_EMP_LINK@EMP_ADDR_1,1,30),' ') END,
+        CASE WHEN PAT_EMP_LINK@EMP_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        COALESCE(EXTRACT(
+                PAT_EMP_LINK@EMP_ADDR_2,1,30),' ') END,
+        COALESCE(PAT_EMP_LINK@EMP_ZIP,' '),
+        COALESCE(TRANSLATE(PAT_EMP_LINK@EMP_PHONE_NBR,'()*- '),' '),
+        COALESCE(MED_LINK@UNIT_NBR,' '), --MRN 
+--20
+        COALESCE(MED_LINK@PAT_ACCT_NBR,' '),
+        CASE WHEN PMC = 'U' THEN 'U'
+             WHEN PMC = ' ' THEN 'U'
+             WHEN PMC = ''  THEN 'U'
+             ELSE PMC
+        END AS PAT_MAR_CD,
+        CASE WHEN ESC IS NOT NULL THEN ESC
+             ELSE '9'
+        END AS PAT_EMP_STAT,
+        ' ', --PSS
+        CASE WHEN PRC IS NOT NULL THEN PRC
+             ELSE '9'
+        END AS P_RC,
+--Guarantor Info
+        EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_FIRST,' '),1,18),
+        EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_LAST,' '),1,25),
+        EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_NAME_MI,' '),1,18),
+        COALESCE(
+             TO_DATE(GUAR_LINK@GUAR_DEMOG_LINK@BIRTHDATE,'YYYYMMDD'),' '), 
+        COALESCE(GUAR_LINK@GUAR_DEMOG_LINK@SEX,'U'),
+--30
+        CASE WHEN GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_1 [ '"" ""' THEN ' '
+        ELSE EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_1,' '),1,30) END,
+        CASE WHEN GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_2 [ '"" ""' THEN ' '
+        ELSE EXTRACT(COALESCE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PAT_ADDR_2,' '),1,30) END,
+        COALESCE(GUAR_LINK@GUAR_DEMOG_LINK@PAT_ZIP_CODE,' '),
+        COALESCE(TRANSLATE(
+             GUAR_LINK@GUAR_DEMOG_LINK@PHONE_NBR,'()*- '),' '),
+        COALESCE(TRANSLATE(
+             GUAR_LINK@GUAR_EMPR_LINK@EMP_PHONE,'()*- '),' '),   
+        COALESCE(TRANSLATE(GUAR_LINK@GUAR_DEMOG_LINK@PAT_SSN,'-'),' '),    
+         EXTRACT(COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_NAME,' '),1,33),
+        CASE WHEN GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_1 [ '"" ""' THEN ' '
+             ELSE
+        EXTRACT(COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_1,' '),1,30)
+             END,
+        CASE WHEN GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_2 [ '"" ""' THEN ' '
+             ELSE
+        EXTRACT(COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_ADDR_2,' '),1,30)
+             END,
+        COALESCE(GUAR_LINK@GUAR_EMPR_LINK@EMP_ZIP,' '),
+        COALESCE(TRANSLATE(
+             GUAR_LINK@GUAR_EMPR_LINK@EMP_PHONE,'()*- '),' '),  
+        ' ', --GUAR STATMT CONTR
+        CASE WHEN GMC = 'U' THEN 'U'
+             WHEN GMC = ' ' THEN 'U'
+             WHEN GMC = ''  THEN 'U'
+             ELSE GMC
+        END AS GUAR_MAR_CD,
+        CASE WHEN GSC IS NOT NULL THEN GSC
+             ELSE '9'
+        END AS GUAR_EMP_STAT,  
+        ' ', --GUAR STUD STAT
+        CASE WHEN GRC IS NOT NULL THEN GRC
+             ELSE '9'
+        END AS G_RC,
+        CASE WHEN GUAR_REL_CD IS NOT NULL THEN GUAR_REL_CD
+             ELSE 'C'
+         END AS GUAR_RELCD,
+--Next of Kin    
+        EXTRACT(COALESCE(REL_NAME_FIRST,' '),1,18),
+        EXTRACT(COALESCE(REL_NAME_LAST,' '),1,25),
+        EXTRACT(COALESCE(REL_NAME_MI,' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@PAT_REL_LINK@REL_BIRTH,
+                 'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@PAT_REL_LINK@REL_SEX,'U'),
+        CASE WHEN MED_LINK@PAT_REL_LINK@REL_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@REL_ADDR_1,' '),1,30) END,
+        CASE WHEN MED_LINK@PAT_REL_LINK@REL_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@REL_ADDR_2,' '),1,30) END,
+        COALESCE(MED_LINK@PAT_REL_LINK@REL_ZIP,' '),
+        COALESCE(TRANSLATE(MED_LINK@PAT_REL_LINK@REL_PHONE,'()*- '),' '), 
+        COALESCE(TRANSLATE(MED_LINK@PAT_REL_LINK@EMP_PHONE,'()*- '),' '),  
+         COALESCE(TRANSLATE(MED_LINK@PAT_REL_LINK@REL_SSN,'-'),' '),
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@EMP_NAME,' '),1,33),
+        CASE WHEN MED_LINK@PAT_REL_LINK@EMP_ADDR_1 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@EMP_ADDR_1,' '),1,30) END,
+        CASE WHEN MED_LINK@PAT_REL_LINK@EMP_ADDR_2 [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(MED_LINK@PAT_REL_LINK@EMP_ADDR_2,' '),1,30) END,
+        COALESCE(MED_LINK@PAT_REL_LINK@EMP_ZIP,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@PAT_REL_LINK@EMP_PHONE,'()*- '),' '),  
+        ' ', --NO REL MSC
+        CASE WHEN RSC IS NOT NULL THEN RSC
+             ELSE '9'
+        END AS REL_EMP_STAT,  
+        ' ', --NO REL STUD STAT
+        ' ', --NO REL RACE CODE
+        CASE WHEN RRC IS NOT NULL THEN RRC
+             ELSE 'C'
+        END AS REL_REL_CD,
+        CASE WHEN EXTRACT(PHYS_NBR,1) = ';' THEN ' '
+             ELSE PHYS_NBR END,
+        EXTRACT(COALESCE(PHYS_NAME,' '),1,20), 
+        COALESCE(:XUPIN,' '),
+        ProfileID,
+        ' ',   --Billing Rule Code
+--------------------------------------------------------------------------
+-- INSURANCE PAGE 1
+        COALESCE(CAR1CD,' '),
+        EXTRACT(COALESCE(CAR1NAME,' '),1,31),
+        EXTRACT(COALESCE(TRANSLATE(
+            MED_LINK@INS_COB_1_LINK@POLICY_NBR,',-/()#'),' '),1,20),
+        CASE WHEN 
+            MED_LINK@INS_COB_1_LINK@GROUP_NBR [ '"" ""' THEN ' ' ELSE
+        EXTRACT(COALESCE(
+            MED_LINK@INS_COB_1_LINK@GROUP_NBR,' '),1,20) END,  
+        EXTRACT(COALESCE(
+            MED_LINK@INS_COB_1_LINK@CARRIER_ADDRESS_1,' '),1,40),
+        EXTRACT(COALESCE(
+            MED_LINK@INS_COB_1_LINK@CARRIER_ADDRESS_2,' '),1,30),
+        COALESCE(MED_LINK@INS_COB_1_LINK@CARRIER_ZIPCODE,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@INS_COB_1_LINK@CARRIER_PHONE_NBR,'()*- '),' '),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_1_LINK@APPROVAL_NBR,' '),1,15),
+        EXTRACT(COALESCE( 
+        PIECE(PIECE(MED_LINK@INS_COB_1_LINK@INSURED_NAME,',',2),';',1),
+             ' '),1,18),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_1_LINK@INSURED_NAME,',',1),' '),1,25),
+        EXTRACT(COALESCE(PIECE(
+            MED_LINK@INS_COB_1_LINK@INSURED_NAME,';',2),' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@INS_COB_1_LINK@INSURED_BIRTHDATE,
+                'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@INS_COB_1_LINK@INSURED_SEX,'U'),
+        COALESCE(TRANSLATE(MED_LINK@INS_COB_1_LINK@INSURED_SSN,'-'),' '),
+        COALESCE(REL_TO_PAT1,' '),
+        MED_LINK@INS_COB_1_LINK@SAME_AS_FLAG,
+---------------------------------------------------------------------------
+--INSURANCE PAGE 3
+        COALESCE(MED_LINK@INS_COB_3_LINK@CARRIER_CODE,' '),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_3_LINK@CARRIER_NAME,' '),1,31),
+        EXTRACT(COALESCE(
+        TRANSLATE(MED_LINK@INS_COB_3_LINK@POLICY_NBR,',-/()#'),' '),1,20),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_3_LINK@GROUP_NBR,' '),1,20),  
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_3_LINK@CARRIER_ADDRESS_1,' '),1,40),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_3_LINK@CARRIER_ADDRESS_2,' '),1,30),
+        COALESCE(MED_LINK@INS_COB_3_LINK@CARRIER_ZIPCODE,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@INS_COB_3_LINK@CARRIER_PHONE_NBR,'()*- '),' '),
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_3_LINK@APPROVAL_NBR,' '),1,15),
+        EXTRACT(COALESCE( 
+        PIECE(PIECE(MED_LINK@INS_COB_3_LINK@INSURED_NAME,',',2),';',1),
+                ' '),1,18),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_3_LINK@INSURED_NAME,',',1),' '),1,25),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_3_LINK@INSURED_NAME,';',2),' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@INS_COB_3_LINK@INSURED_BIRTHDATE,
+                'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@INS_COB_3_LINK@INSURED_SEX,'U'),
+        COALESCE(TRANSLATE(MED_LINK@INS_COB_3_LINK@INSURED_SSN,'-'),' '),
+        COALESCE(REL_TO_PAT3,' '),
+        MED_LINK@INS_COB_3_LINK@SAME_AS_FLAG, 
+---------------------------------------------------------------------------
+--INSURANCE PAGE 5 
+        COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_CODE,' '),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_NAME,' '),1,31),
+        EXTRACT(COALESCE(
+        TRANSLATE(MED_LINK@INS_COB_5_LINK@POLICY_NBR,',-/()#'),' '),1,20),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_5_LINK@GROUP_NBR,' '),1,20),  
+        EXTRACT(COALESCE(
+             MED_LINK@INS_COB_5_LINK@CARRIER_ADDRESS_1,' '),1,40),
+        EXTRACT(COALESCE(        
+             MED_LINK@INS_COB_5_LINK@CARRIER_ADDRESS_2,' '),1,30),
+        COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_ZIPCODE,' '),
+        COALESCE(TRANSLATE(
+             MED_LINK@INS_COB_5_LINK@CARRIER_PHONE_NBR,'()*- '),' '),
+        EXTRACT(COALESCE(MED_LINK@INS_COB_5_LINK@APPROVAL_NBR,' '),1,15),
+        EXTRACT(COALESCE(  
+        PIECE(PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,',',2),';',1),
+             ' '),1,18),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,',',1),' '),1,25),
+        EXTRACT(COALESCE(
+             PIECE(MED_LINK@INS_COB_5_LINK@INSURED_NAME,';',2),' '),1,18),
+        COALESCE(TO_DATE(MED_LINK@INS_COB_5_LINK@INSURED_BIRTHDATE,
+                'YYYYMMDD'),' '),
+        COALESCE(MED_LINK@INS_COB_5_LINK@INSURED_SEX,' '),
+        COALESCE(TRANSLATE(MED_LINK@INS_COB_5_LINK@INSURED_SSN,'-'),' '),
+        COALESCE(REL_TO_PAT5,' '),
+        MED_LINK@INS_COB_5_LINK@SAME_AS_FLAG 
+========================================
+SQL: QBC_BJG_AUR_DEMO_UPLOADFILE                  SUBQUERY: NO
+DESC: Download for VISTA Radiology computer.
+Last Edit: 02/02/2011    Last Comp: 08/13/2017    Last Run:  08/01/2018
+START:   
+                                                  FILE: "/conv/commondm.tab"
+
+--COMMON DEMOGRAPHIC DATA MAIN DOWNLOAD QUERY
+--THIS QUERY WILL CREATE A TEMP TABLE TO LOAD DATA FOR FURTHER PROCESISNG
+--BURTON J. GOODGE, 08/09/2005
+
+INSERT INTO BC_DEMOGRAPHIC_TEMPM(
+        ADM_DT,        
+        INTN,
+        AN,
+        PFN,
+        PLN,
+        PMN,
+        PBD,
+        PED,
+        PSEX,
+        PAD1,
+        PAD2,
+        PZIP,
+        PHP,
+        PWP,
+        PSSN,
+        PEN,
+        PEAD1,
+        PEAD2,
+        PEZIP,
+        PEPH,
+        PMRN,
+        PPAT,
+        PMS,
+        PEMS,
+        PSST,
+        PREC,
+        GFN,
+        GLN,
+        GMN,
+        GBD,
+        GSEX,
+        GAD1,
+        GAD2,
+        GZIP,
+        GHP,
+        GWP,
+        GSSN,
+        GEN,
+        GEAD1,
+        GEAD2,
+        GEZIP,
+        GEPH,
+        GSC,
+        GMS,
+        GEMS,
+        GSST,
+        GREC,
+        GPRC,
+        RFN,
+        RLN,
+        RMN,
+        RBD,
+        RSEX,
+        RAD1,
+        RAD2,
+        RZIP,
+        RHP,
+        RWP,
+        RSSN,
+        REN,
+        READ1,
+        READ2,
+        REZIP,
+        REPH,
+        RMS,
+        REMS,
+        RSST,
+        RREC,
+        RPRC,
+        PHNBR,
+        PHNAME,
+        UPIN,
+        PROF_ID,
+        BR_CD,
+        INS1CC,
+        INS1CN,
+        INS1PN,
+        INS1GN,
+        INS1AD1,
+        INS1AD2,
+        INS1ZIP,
+        INS1CPH,
+        INS1PAN,
+        INS1OFN,
+        INS1OLN,
+        INS1OMN,
+        INS1OBD,
+        INS1OSEX,
+        INS1OSSN,
+        INS1ORLC,
+        INS1SAF,
+
+        INS3CC,
+        INS3CN,
+        INS3PN,
+        INS3GN,
+        INS3AD1,
+        INS3AD2,
+        INS3ZIP,
+        INS3CPH,
+        INS3PAN,
+        INS3OFN,
+        INS3OLN,
+        INS3OMN,
+        INS3OBD,
+        INS3OSEX,
+        INS3OSSN,
+        INS3ORLC,
+        INS3SAF,
+
+        INS5CC,
+        INS5CN,
+        INS5PN,
+        INS5GN,
+        INS5AD1,
+        INS5AD2,
+        INS5ZIP,
+        INS5CPH,
+        INS5PAN,
+        INS5OFN,
+        INS5OLN,
+        INS5OMN,
+        INS5OBD,
+        INS5OSEX,
+        INS5OSSN,
+        INS5ORLC,
+        INS5SAF)
+FROM '/conv/commondm.tab' FORMAT 'TAB' METHOD 'HOST_IN'
+========================================
+SQL: QBC_BJG_AUR_DICTATE_S1                       SUBQUERY: YES
+DESC: test
+Last Edit: 12/28/2010    Last Comp: 08/13/2017    Last Run:  07/31/2018
+START:   
+                                                  
+
+--Created and converted on 12/28/2010 by Burton Goodge
+--
+SET SUBQUERY = YES
+
+--
+DECLARE VARIABLE
+        :XEXAM1 CHARACTER(150),
+        :XEXAM2 CHARACTER(150),
+        :XEXAM3 CHARACTER(150),
+        :XEXAM4 CHARACTER(150),
+        :XEXAM5 CHARACTER(150),
+        :XEXAM6 CHARACTER(150),
+        :XEXAM7 CHARACTER(150),
+        :XEXAM8 CHARACTER(150),
+        :XEXAM9 CHARACTER(150),
+        :XEXAM10 CHARACTER(150),
+        :XDPT   CHARACTER(3),
+        :XLINK  NUMERIC(10),
+        :XPROC  INTEGER(6)
+------
+
+SELECT (SELECT FIM_LINK@HCPCS_CD FROM AG_SIM S
+        WHERE S.SIM_DPT = :XDPT AND S.SIM_CD = I.EXAM_CD) AS HPS,
+--
+       (SELECT X.INT_ORD_NBR FROM RADIOLOGY.XC_CK_IN_INFO X
+        WHERE I.DPT = X.DPT AND I.CK_IN_NBR = X.CK_IN_NBR
+        AND I.LINK_IND = X.FIN_RPT_LIN_IND) AS ACC_ID
+------       
+FROM   XC_LIST_LK_CK_IN I          
+--
+WHERE  I.DPT = :XDPT
+       AND I.LINK_IND = :XLINK
+--
+ORDER BY I.LINK_IND, I.LK_CK_IN_CTR  
+--
+DETAIL
+IF LK_CK_IN_CTR = 1 AND I.DPT = :XDPT AND I.LINK_IND = :XLINK
+   SET :XEXAM1 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 2 AND I.DPT = :XDPT AND I.LINK_IND = :XLINK
+   SET :XEXAM2 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 3 AND I.DPT = :XDPT AND I.LINK_IND = :XLINK
+   SET :XEXAM3 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 4 AND I.DPT = :XDPT AND I.LINK_IND = :XLINK
+   SET :XEXAM4 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 5 AND I.DPT = :XDPT
+   SET :XEXAM5 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 6 AND I.DPT = :XDPT
+   SET :XEXAM6 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 7 AND I.DPT = :XDPT
+   SET :XEXAM7 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 8 AND I.DPT = :XDPT
+   SET :XEXAM8 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 9 AND I.DPT = :XDPT
+   SET :XEXAM9 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 10 AND I.DPT = :XDPT
+   SET :XEXAM10 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+========================================
+SQL: QBC_BJG_AUR_DICTATE_S1Z                      SUBQUERY: NO
+DESC: test
+Last Edit: 03/10/2011    Last Comp:               Last Run:  
+START:   
+                                                  
+
+--Created and converted on 12/28/2010 by Burton Goodge
+--
+SET SUBQUERY = YES
+
+--
+DECLARE VARIABLE
+        :XEXAM1 CHARACTER(150),
+        :XEXAM2 CHARACTER(150),
+        :XEXAM3 CHARACTER(150),
+        :XEXAM4 CHARACTER(150),
+        :XEXAM5 CHARACTER(150),
+        :XEXAM6 CHARACTER(150),
+        :XEXAM7 CHARACTER(150),
+        :XEXAM8 CHARACTER(150),
+        :XEXAM9 CHARACTER(150),
+        :XEXAM10 CHARACTER(150),
+        :XDPT   CHARACTER(3),
+        :XLINK  NUMERIC(10),
+        :XPROC  INTEGER(6)
+------
+
+SELECT (SELECT FIM_LINK@HCPCS_CD FROM AG_SIM S
+        WHERE S.SIM_DPT = :XDPT AND S.SIM_CD = I.EXAM_CD) AS HPS,
+--
+       (SELECT X.INT_ORD_NBR FROM RADIOLOGY.XC_CK_IN_INFO X
+        WHERE I.DPT = X.DPT AND I.CK_IN_NBR = X.CK_IN_NBR
+        AND I.LINK_IND = X.FIN_RPT_LIN_IND) AS ACC_ID
+------       
+FROM   XC_LIST_LK_CK_IN I          
+--
+WHERE  I.DPT = :XDPT
+       AND I.LINK_IND = :XLINK
+--
+ORDER BY I.LINK_IND, I.LK_CK_IN_CTR  
+--
+DETAIL
+IF LK_CK_IN_CTR = 1 AND I.DPT = :XDPT AND I.LINK_IND = :XLINK
+   SET :XEXAM1 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 2 AND I.DPT = :XDPT AND I.LINK_IND = :XLINK
+   SET :XEXAM2 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 3 AND I.DPT = :XDPT AND I.LINK_IND = :XLINK
+   SET :XEXAM3 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 4 AND I.DPT = :XDPT AND I.LINK_IND = :XLINK
+   SET :XEXAM4 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 5 AND I.DPT = :XDPT
+   SET :XEXAM5 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 6 AND I.DPT = :XDPT
+   SET :XEXAM6 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 7 AND I.DPT = :XDPT
+   SET :XEXAM7 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 8 AND I.DPT = :XDPT
+   SET :XEXAM8 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 9 AND I.DPT = :XDPT
+   SET :XEXAM9 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+IF LK_CK_IN_CTR = 10 AND I.DPT = :XDPT
+   SET :XEXAM10 = CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HPS|'~'|ACC_ID
+   SET :XPROC = :XPROC + 1
+ENDIF
+========================================
+SQL: QBC_BJG_AUR_DICTATIONZ                       SUBQUERY: NO
+DESC: test
+Last Edit: 03/10/2011    Last Comp:               Last Run:  
+START:   
+                                                  
+
+--Created on 06-27-03 by Burton Goodge
+--
+--SET SHOW_PLAN = YES
+--SET START_DATE = 'ALL', START_TIME = '0429'
+--
+SET FILE = '/export/outgoing/aur/aur_code$.txt',
+format = tab, method = host_out
+--
+DECLARE VARIABLE
+        :XEXAM1 CHARACTER(150),
+        :XEXAM2 CHARACTER(150),
+        :XEXAM3 CHARACTER(150),
+        :XEXAM4 CHARACTER(150),
+        :XEXAM5 CHARACTER(150),
+        :XEXAM6 CHARACTER(150),
+        :XEXAM7 CHARACTER(150),
+        :XEXAM8 CHARACTER(150),
+        :XEXAM9 CHARACTER(150),
+        :XEXAM10 CHARACTER(150),
+        :XDPT   CHARACTER(3),
+        :XLINK  NUMERIC(10),
+        :XCKIN  NUMERIC(10),
+        :XION   CHARACTER(13),
+        :XGRPBY CHARACTER(30)
+------
+SELECT R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD RAD_NBR,
+       IDNAME('X', R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD)
+       AS DR_RAD,
+       PIECE(PIECE(DR_RAD,',',2),' ',1) AS RAD_FIRST,
+       PIECE(DR_RAD,',',1) AS RAD_LAST,
+       PIECE(PIECE(I.ORD_PHY,',',2),' ',1) AS ORD_FIRST,
+       PIECE(I.ORD_PHY,',',1) AS ORD_LAST,
+       
+       CASE WHEN FAC = 'F' AND MED_LINK@PAT_TYPE = 'DCF'
+            THEN 'W'
+            WHEN FAC = 'F' AND (MED_LINK@PAT_TYPE = 'CNF'
+                           AND D.DPT = 'XRD')
+            THEN '#'
+            WHEN FAC = 'A' AND MED_LINK@PAT_TYPE = 'MSA'
+            THEN 'M'
+            WHEN FAC = 'A' AND EXTRACT(R.EXAM_NAME,1,4) = 'APET'
+            THEN 'T'
+            WHEN FAC = 'S' AND (MED_LINK@PAT_TYPE = 'COS'
+                           AND D.DPT = 'XRS')
+            THEN '$'
+            ELSE FAC
+       END AS SPECIAL_FAC,
+       
+       MED_LINK@PAT_NAME AS PN,
+       CASE WHEN EXTRACT(MED_LINK@PAT_TYPE,1,2) = 'ED'
+            THEN 'E'
+            WHEN MED_LINK@INPAT_OUTPAT_IND = 'In'
+            THEN 'I'
+            ELSE 'O'
+            END AS IOE,
+       ((SELECT DOC_DT
+           FROM XC_CK_IN_RES S
+          WHERE S.DPT = D.DPT
+            AND S.CK_IN_NBR = D.CK_IN_NBR
+            AND S.EXAM_CD_KEY = I.EXAM_CD_KEY            
+            AND RES_NBR = 26)\1) AS RPT_DT, -- ZK_DATE COMPARE
+       ((TODAY - 1)\1) AS TODAY_MINUS_1,    -- ZK_DATE COMPARE   
+       CASE WHEN I.EXAM_CD_KEY BETWEEN 70000 AND 79999
+            THEN 'INVA' ELSE 'DIAG' END AS PROC_TYPE,
+       COALESCE(I.FIN_RPT_LIN_IND, 0) AS RPT_LINK,        
+       (SELECT FIM_LINK@HCPCS_CD FROM AG_SIM G
+        WHERE G.SIM_DPT = I.DPT AND I.EXAM_CD = G.SIM_CD) AS HCD,
+       I.PAT_ACCT_NBR|
+       COALESCE(I.FIN_RPT_LIN_IND,I.CK_IN_NBR) AS GRP_RPTS
+
+------       
+FROM RADIOLOGY.XC_CK_IN_INFO_DATE D,
+               XC_CK_IN_INFO I,
+               XC_CK_IN_RES R,
+               XW_EXAM_RESULT_DTL E                     
+--
+WHERE D.CK_IN_DATE BETWEEN TODAY - 40 AND TODAY
+      AND D.DPT IN ('XRM', 'XRN')
+      AND E.DPT = D.DPT
+      AND I.DPT = D.DPT
+      AND R.DPT = D.DPT
+      AND D.CK_IN_NBR = I.CK_IN_NBR
+      AND D.CK_IN_NBR = R.CK_IN_NBR
+      AND I.EXAM_CD_KEY NOT BETWEEN 30000 AND 39999
+      AND I.EXAM_CD_KEY =  R.EXAM_CD_KEY
+      AND R.DOC_NBR IS NOT NULL
+      AND R.DOC_NBR = E.DOC_NBR
+--
+HAVING
+      RPT_DT = TODAY_MINUS_1  -- DOCUMENTS WITH TODAY-1 AS DATE
+--ALLOW ONLY AUR PHYSICIANS TO PASS TO DOWNLOAD
+      AND 
+          RAD_NBR IN (212, 1441, 3493, 12225, 12232, 12242, 12271, 12282, 
+          12286, 12287, 12289, 12290, 12299, 12338, 12354, 12369, 12375, 
+          12384, 12498, 12499, 12513, 12515, 12556, 12573, 12587, 12617, 
+          12621, 12626, 12627, 12635, 12655, 12686, 12703, 12719, 12752,
+          12798, 12810, 12813, 'RAD')
+--
+ORDER BY D.DPT,MED_LINK@UNIT_NBR|I.PAT_ACCT_NBR|I.CK_IN_NBR
+--
+INITIAL
+        SET :XCKIN = -1, :XGRPBY = ''
+--
+DETAIL
+IF :XGRPBY <> GRP_RPTS
+--
+     IF :XCKIN = I.CK_IN_NBR
+         IF EXTRACT(LINE_TEXT,1,10) <> '          '                        
+           
+         WRITE                                                            
+         LINE_TEXT|CHR(13)
+         ENDIF
+     ENDIF
+ENDIF
+--         
+BREAK AT 2
+--
+        SET :XEXAM1 = '', :XEXAM2 = '', :XEXAM3 = '', :XEXAM4 = ''
+        SET :XEXAM5 = '', :XEXAM6 = '', :XEXAM7 = '', :XEXAM8 = ''
+        SET :XEXAM9 = '', :XEXAM10 = ''
+--
+IF :XGRPBY <> GRP_RPTS
+--
+IF RPT_LINK = 0
+        SET :XEXAM1 =                             
+CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HCD|'~'|I.INT_ORD_NBR
+ELSE
+        SET :XDPT = I.DPT
+        SET :XLINK = FIN_RPT_LIN_IND 
+        RUN QBC_BJG_AUR_DICTATE_S1
+ENDIF
+--
+IF :XCKIN = -1
+SET :XCKIN = I.CK_IN_NBR
+ENDIF
+IF :XCKIN = I.CK_IN_NBR 
+WRITE
+       SPECIAL_FAC |'~'|
+       I.PAT_ACCT_NBR|'~'|
+       SUBSTRING(TO_DATE(I.CK_IN_DT, 'YYYYMMDD'),1,4)|'-'|
+       SUBSTRING(TO_DATE(I.CK_IN_DT, 'YYYYMMDD'),5,2)|'-'|
+       SUBSTRING(TO_DATE(I.CK_IN_DT, 'YYYYMMDD'),7,2)|'~'|
+       TO_TIME(I.CK_IN_TM, 'HHMM24')|'~'|  
+       EXTRACT(R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD,1,20)|'~'|
+       RAD_FIRST|'~'|
+       RAD_LAST|'~'|
+       ORD_PHY_CD|'~'|
+       ORD_FIRST|'~'| --
+       ORD_LAST|'~'|
+       IOE|'~'|
+       PROC_TYPE|'|'|CHR(13)
+WRITE
+       MED_LINK@UNIT_NBR|'~'|                                              
+       PIECE(PIECE(PN,',',2),' ',1)|'~'|
+       EXTRACT(PIECE(PIECE(PN,',',2),' ',2))|'~'|
+       PIECE(PN,',',1)|'~'|
+       SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE, 'YYYYMMDD'),1,4)|'-'|
+       SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE, 'YYYYMMDD'),5,2)|'-'|
+       SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE, 'YYYYMMDD'),7,2)|'~'|
+       EXTRACT(DEMOG_LINK@SEX)|'~'|
+       MED_LINK@INS_COB_1_LINK@CARRIER_NAME|'~'|
+       MED_LINK@INS_COB_1_LINK@CARRIER_CODE|'|'|CHR(13)
+WRITE     
+       'Procedure Ordered: '|:XEXAM1|CHR(13)
+--
+     IF :XEXAM2 IS NOT NULL
+     WRITE  '                   '|:XEXAM2|CHR(13)
+     ENDIF
+--
+     IF :XEXAM3 IS NOT NULL
+     WRITE  '                   '|:XEXAM3|CHR(13)
+     ENDIF
+--
+     IF :XEXAM4 IS NOT NULL
+     WRITE  '                   '|:XEXAM4|CHR(13)
+     ENDIF
+--
+     IF :XEXAM5 IS NOT NULL
+     WRITE  '                   '|:XEXAM5|CHR(13)
+     ENDIF
+--
+     IF :XEXAM6 IS NOT NULL
+     WRITE  '                   '|:XEXAM6|CHR(13)
+     ENDIF
+--
+     IF :XEXAM7 IS NOT NULL
+     WRITE  '                   '|:XEXAM7|CHR(13)
+     ENDIF
+--
+     IF :XEXAM8 IS NOT NULL
+     WRITE  '                   '|:XEXAM8|CHR(13)
+     ENDIF
+--
+     IF :XEXAM9 IS NOT NULL
+     WRITE  '                   '|:XEXAM9|CHR(13)
+     ENDIF
+--
+     IF :XEXAM10 IS NOT NULL
+     WRITE  '                   '|:XEXAM10|CHR(13)
+     ENDIF
+
+WRITE                                                  
+       'Admitting DX: '|MED_LINK@ADM_DIAG_DESC|CHR(13)
+WRITE
+       'Working DX: '|MED_LINK@WK_DIAG|CHR(13)
+WRITE  ' '|CHR(13)
+--
+ENDIF       
+--
+ENDIF
+----------
+
+BREAK AFTER 2
+--
+IF :XGRPBY <> GRP_RPTS
+WRITE 'END OF REPORT'|CHR(13)
+ENDIF          
+                                    
+SET :XCKIN = -1
+SET :XGRPBY = GRP_RPTS 
+========================================
+SQL: QBC_BJG_AUR_DICTATION_CATCHUP                SUBQUERY: NO
+DESC: Dictation for AUR Report
+Last Edit: 07/28/2011    Last Comp: 04/22/2012    Last Run:  07/28/2011
+START:   
+                                                  FILE: "/export/outgoing/aur/catchup_7353_aur_code$.txt"
+
+--Created on 06-27-03 by Burton Goodge
+--
+--SET SHOW_PLAN = YES
+--SET START_DATE = 'ALL', START_TIME = '0429'
+--
+SET FILE = '/export/outgoing/aur/catchup_7353_aur_code$.txt',
+format = tab, method = host_out
+--
+DECLARE VARIABLE
+        :XEXAM1 CHARACTER(150),
+        :XEXAM2 CHARACTER(150),
+        :XEXAM3 CHARACTER(150),
+        :XEXAM4 CHARACTER(150),
+        :XEXAM5 CHARACTER(150),
+        :XEXAM6 CHARACTER(150),
+        :XEXAM7 CHARACTER(150),
+        :XEXAM8 CHARACTER(150),
+        :XEXAM9 CHARACTER(150),
+        :XEXAM10 CHARACTER(150),
+        :XDPT   CHARACTER(3),
+        :XLINK  NUMERIC(10),
+        :XCKIN  NUMERIC(10),
+        :XION   CHARACTER(13),
+        :XGRPBY CHARACTER(30),
+        :XINTN  INTEGER(13),
+        :XAN    CHARACTER(13)
+------
+SELECT 
+       (SELECT FIM_LINK@HCPCS_CD FROM AG_SIM G
+        WHERE G.SIM_DPT = I.DPT AND I.EXAM_CD = G.SIM_CD) AS HCD,
+  
+       (SELECT  CTR|':'|
+                PNL_SIM_CD|':'|
+                PNL_SIM_DESC|':'|
+                PNL_SIM_LINK@FIM_LINK@HCPCS_CD 
+        FROM    AG_SIM_CHG_PNL P
+        WHERE   P.SIM_DPT = I.DPT AND
+                P.CTR = 1 AND 
+                I.EXAM_CD = P.SIM_CD) AS PNL1,
+        PIECE(PNL1,':',1) AS PCTR1,
+        PIECE(PNL1,':',2) AS PSIM1,
+        PIECE(PNL1,':',3) AS PSIMD1,
+        PIECE(PNL1,':',4) AS HCP1,
+
+       (SELECT  CTR|':'|
+                PNL_SIM_CD|':'|
+                PNL_SIM_DESC|':'|
+                PNL_SIM_LINK@FIM_LINK@HCPCS_CD 
+        FROM    AG_SIM_CHG_PNL P
+        WHERE   P.SIM_DPT = I.DPT AND
+                P.CTR = 2 AND 
+                I.EXAM_CD = P.SIM_CD) AS PNL2,
+        PIECE(PNL2,':',1) AS PCTR2,
+        PIECE(PNL2,':',2) AS PSIM2,
+        PIECE(PNL2,':',3) AS PSIMD2,
+        PIECE(PNL2,':',4) AS HCP2,
+
+       R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD RAD_NBR,
+       IDNAME('X', R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD)
+       AS DR_RAD,
+       PIECE(PIECE(DR_RAD,',',2),' ',1) AS RAD_FIRST,
+       PIECE(DR_RAD,',',1) AS RAD_LAST,
+       PIECE(PIECE(I.ORD_PHY,',',2),' ',1) AS ORD_FIRST,
+       PIECE(I.ORD_PHY,',',1) AS ORD_LAST,
+       
+       CASE WHEN FAC = 'F' AND MED_LINK@PAT_TYPE = 'DCF'
+            THEN 'W'
+            WHEN FAC = 'F' AND (MED_LINK@PAT_TYPE = 'CNF'
+                           AND D.DPT = 'XRD')
+            THEN '#'
+            WHEN FAC = 'A' AND MED_LINK@PAT_TYPE = 'MSA'
+            THEN 'M'
+            WHEN FAC = 'A' AND EXTRACT(R.EXAM_NAME,1,4) = 'APET'
+            THEN 'T'
+            WHEN FAC = 'S' AND (MED_LINK@PAT_TYPE = 'COS'
+                           AND D.DPT = 'XRS')
+            THEN '$'
+            ELSE FAC
+       END AS SPECIAL_FAC,
+       
+       MED_LINK@PAT_NAME AS PN,
+       CASE WHEN EXTRACT(MED_LINK@PAT_TYPE,1,2) = 'ED'
+            THEN 'E'
+            WHEN MED_LINK@INPAT_OUTPAT_IND = 'In'
+            THEN 'I'
+            ELSE 'O'
+            END AS IOE,
+       ((SELECT DOC_DT
+           FROM XC_CK_IN_RES S
+          WHERE S.DPT = D.DPT
+            AND S.CK_IN_NBR = D.CK_IN_NBR
+            AND S.EXAM_CD_KEY = I.EXAM_CD_KEY            
+            AND RES_NBR = 26)\1) AS RPT_DT, -- ZK_DATE COMPARE
+       ((TODAY - 3)\1) AS TODAY_MINUS_1,    -- ZK_DATE COMPARE   
+       CASE WHEN I.EXAM_CD_KEY BETWEEN 70000 AND 79999
+            THEN 'INVA' ELSE 'DIAG' END AS PROC_TYPE,
+       COALESCE(I.FIN_RPT_LIN_IND, 0) AS RPT_LINK,        
+
+       I.PAT_ACCT_NBR|
+       COALESCE(I.FIN_RPT_LIN_IND,I.CK_IN_NBR) AS GRP_RPTS
+
+------       
+FROM RADIOLOGY.XC_CK_IN_INFO_DATE D,
+               XC_CK_IN_INFO I,
+               XC_CK_IN_RES R,
+               XW_EXAM_RESULT_DTL E                     
+--
+WHERE D.CK_IN_DATE BETWEEN TODAY - 58 AND TODAY
+      AND D.DPT IN ('XRM', 'XRN')
+      AND E.DPT = D.DPT
+      AND I.DPT = D.DPT
+      AND R.DPT = D.DPT
+      AND D.CK_IN_NBR = I.CK_IN_NBR
+      AND D.CK_IN_NBR = R.CK_IN_NBR
+      AND I.EXAM_CD_KEY NOT BETWEEN 30000 AND 39999
+      AND I.EXAM_CD_KEY =  R.EXAM_CD_KEY
+      AND R.DOC_NBR IS NOT NULL
+      AND R.DOC_NBR = E.DOC_NBR
+--
+
+HAVING
+      RPT_DT between (today - 58/1) and  TODAY_MINUS_1  
+-- DOCUMENTS WITH TODAY-58 AS DATE
+--ALLOW ONLY AUR PHYSICIANS TO PASS TO DOWNLOAD
+      AND 
+          RAD_NBR = 7353
+
+--
+ORDER BY D.DPT,MED_LINK@UNIT_NBR|I.PAT_ACCT_NBR|I.CK_IN_NBR
+--
+INITIAL
+        SET :XCKIN = -1, :XGRPBY = ''
+--
+DETAIL
+IF :XGRPBY <> GRP_RPTS
+--
+     IF :XCKIN = I.CK_IN_NBR
+         IF EXTRACT(LINE_TEXT,1,10) <> '          '                        
+           
+         WRITE                                                            
+         LINE_TEXT|CHR(13)
+         ENDIF
+     ENDIF
+ENDIF
+--         
+BREAK AT 2
+--
+        SET :XEXAM1 = '', :XEXAM2 = '', :XEXAM3 = '', :XEXAM4 = ''
+        SET :XEXAM5 = '', :XEXAM6 = '', :XEXAM7 = '', :XEXAM8 = ''
+        SET :XEXAM9 = '', :XEXAM10 = ''
+--
+IF :XGRPBY <> GRP_RPTS
+--
+IF RPT_LINK = 0
+
+IF PCTR1 IS NULL
+        SET :XEXAM1 =                             
+CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HCD|'~'|I.INT_ORD_NBR
+
+ELSEIF PCTR1 = 1 AND HCD IS NOT NULL
+        SET :XEXAM1 =
+CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HCD|'~'|I.INT_ORD_NBR
+        SET :XEXAM2 = 
+CK_IN_NBR|'~'|PSIM1|'~'|PSIMD1|'~'|HCP1|'~'|I.INT_ORD_NBR
+
+ELSEIF PCTR1 = 1 AND HCD IS NULL
+        SET :XEXAM1 = 
+CK_IN_NBR|'~'|PSIM1|'~'|PSIMD1|'~'|HCP1|'~'|I.INT_ORD_NBR
+        SET :XEXAM2 = 
+CK_IN_NBR|'~'|PSIM2|'~'|PSIMD2|'~'|HCP2|'~'|I.INT_ORD_NBR
+ENDIF
+
+--        SET :XEXAM1 =                             
+--CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HCD|'~'|I.INT_ORD_NBR
+ELSE
+        SET :XDPT = I.DPT
+        SET :XLINK = FIN_RPT_LIN_IND 
+        RUN QBC_BJG_AUR_DICTATE_S1
+ENDIF
+--
+IF :XCKIN = -1
+SET :XCKIN = I.CK_IN_NBR
+ENDIF
+IF :XCKIN = I.CK_IN_NBR 
+WRITE
+       SPECIAL_FAC |'~'|
+       I.PAT_ACCT_NBR|'~'|
+       SUBSTRING(TO_DATE(I.CK_IN_DT, 'YYYYMMDD'),1,4)|'-'|
+       SUBSTRING(TO_DATE(I.CK_IN_DT, 'YYYYMMDD'),5,2)|'-'|
+       SUBSTRING(TO_DATE(I.CK_IN_DT, 'YYYYMMDD'),7,2)|'~'|
+       TO_TIME(I.CK_IN_TM, 'HHMM24')|'~'|  
+       EXTRACT(R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD,1,20)|'~'|
+       RAD_FIRST|'~'|
+       RAD_LAST|'~'|
+       ORD_PHY_CD|'~'|
+       ORD_FIRST|'~'| --
+       ORD_LAST|'~'|
+       IOE|'~'|
+       PROC_TYPE|'|'|CHR(13)
+WRITE
+       MED_LINK@UNIT_NBR|'~'|                                              
+       PIECE(PIECE(PN,',',2),' ',1)|'~'|
+       EXTRACT(PIECE(PIECE(PN,',',2),' ',2))|'~'|
+       PIECE(PN,',',1)|'~'|
+       SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE, 'YYYYMMDD'),1,4)|'-'|
+       SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE, 'YYYYMMDD'),5,2)|'-'|
+       SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE, 'YYYYMMDD'),7,2)|'~'|
+       EXTRACT(DEMOG_LINK@SEX)|'~'|
+       MED_LINK@INS_COB_1_LINK@CARRIER_NAME|'~'|
+       MED_LINK@INS_COB_1_LINK@CARRIER_CODE|'|'|CHR(13)
+WRITE     
+       'Procedure Ordered: '|:XEXAM1|CHR(13)
+--
+     IF :XEXAM2 IS NOT NULL
+     WRITE  '                   '|:XEXAM2|CHR(13)
+     ENDIF
+--
+     IF :XEXAM3 IS NOT NULL
+     WRITE  '                   '|:XEXAM3|CHR(13)
+     ENDIF
+--
+     IF :XEXAM4 IS NOT NULL
+     WRITE  '                   '|:XEXAM4|CHR(13)
+     ENDIF
+--
+     IF :XEXAM5 IS NOT NULL
+     WRITE  '                   '|:XEXAM5|CHR(13)
+     ENDIF
+--
+     IF :XEXAM6 IS NOT NULL
+     WRITE  '                   '|:XEXAM6|CHR(13)
+     ENDIF
+--
+     IF :XEXAM7 IS NOT NULL
+     WRITE  '                   '|:XEXAM7|CHR(13)
+     ENDIF
+--
+     IF :XEXAM8 IS NOT NULL
+     WRITE  '                   '|:XEXAM8|CHR(13)
+     ENDIF
+--
+     IF :XEXAM9 IS NOT NULL
+     WRITE  '                   '|:XEXAM9|CHR(13)
+     ENDIF
+--
+     IF :XEXAM10 IS NOT NULL
+     WRITE  '                   '|:XEXAM10|CHR(13)
+     ENDIF
+
+WRITE                                                  
+
+
+       'Admitting DX: '|MED_LINK@ADM_DIAG_DESC|CHR(13)
+WRITE
+       'Working DX: '|MED_LINK@WK_DIAG|CHR(13)
+WRITE  ' '|CHR(13)
+--
+ENDIF       
+--
+ENDIF
+----------
+
+BREAK AFTER 2
+--
+IF :XGRPBY <> GRP_RPTS
+WRITE 'END OF REPORT'|CHR(13)
+SET :XINTN = INTN
+SET :XAN = AN
+RUN QBC_BJG_AUR_INSERT_PATS
+ENDIF          
+                                    
+SET :XCKIN = -1
+SET :XGRPBY = GRP_RPTS 
+========================================
+SQL: QBC_BJG_AUR_DICTATION_TEST                   SUBQUERY: NO
+DESC: Dictation for AUR Report
+Last Edit: 05/03/2011    Last Comp: 09/16/2014    Last Run:  09/19/2013
+START:   
+                                                  FILE: "/export/outgoing/aur/catchup_aur_code$.txt"
+
+--Created on 06-27-03 by Burton Goodge
+--
+--SET SHOW_PLAN = YES
+--SET START_DATE = 'ALL', START_TIME = '0429'
+--
+SET FILE = '/export/outgoing/aur/catchup_aur_code$.txt',
+format = tab, method = host_out
+--
+DECLARE VARIABLE
+        :XEXAM1 CHARACTER(150),
+        :XEXAM2 CHARACTER(150),
+        :XEXAM3 CHARACTER(150),
+        :XEXAM4 CHARACTER(150),
+        :XEXAM5 CHARACTER(150),
+        :XEXAM6 CHARACTER(150),
+        :XEXAM7 CHARACTER(150),
+        :XEXAM8 CHARACTER(150),
+        :XEXAM9 CHARACTER(150),
+        :XEXAM10 CHARACTER(150),
+        :XDPT   CHARACTER(3),
+        :XLINK  NUMERIC(10),
+        :XCKIN  NUMERIC(10),
+        :XION   CHARACTER(13),
+        :XGRPBY CHARACTER(30),
+        :XINTN  INTEGER(13),
+        :XAN    CHARACTER(13)
+------
+SELECT
+       (SELECT FIM_LINK@HCPCS_CD FROM AG_SIM G
+        WHERE G.SIM_DPT = I.DPT AND I.EXAM_CD = G.SIM_CD) AS HCD,
+  
+       (SELECT  CTR|':'|
+                PNL_SIM_CD|':'|
+                PNL_SIM_DESC|':'|
+                PNL_SIM_LINK@FIM_LINK@HCPCS_CD 
+        FROM    AG_SIM_CHG_PNL P
+        WHERE   P.SIM_DPT = I.DPT AND
+                P.CTR = 1 AND 
+                I.EXAM_CD = P.SIM_CD) AS PNL1,
+        PIECE(PNL1,':',1) AS PCTR1,
+        PIECE(PNL1,':',2) AS PSIM1,
+        PIECE(PNL1,':',3) AS PSIMD1,
+        PIECE(PNL1,':',4) AS HCP1,
+
+       (SELECT  CTR|':'|
+                PNL_SIM_CD|':'|
+                PNL_SIM_DESC|':'|
+                PNL_SIM_LINK@FIM_LINK@HCPCS_CD 
+        FROM    AG_SIM_CHG_PNL P
+        WHERE   P.SIM_DPT = I.DPT AND
+                P.CTR = 2 AND 
+                I.EXAM_CD = P.SIM_CD) AS PNL2,
+        PIECE(PNL2,':',1) AS PCTR2,
+        PIECE(PNL2,':',2) AS PSIM2,
+        PIECE(PNL2,':',3) AS PSIMD2,
+        PIECE(PNL2,':',4) AS HCP2,
+
+        R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD RAD_NBR,
+       IDNAME('X', R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD)
+       AS DR_RAD,
+       PIECE(PIECE(DR_RAD,',',2),' ',1) AS RAD_FIRST,
+       PIECE(DR_RAD,',',1) AS RAD_LAST,
+       PIECE(PIECE(I.ORD_PHY,',',2),' ',1) AS ORD_FIRST,
+       PIECE(I.ORD_PHY,',',1) AS ORD_LAST,
+       
+       CASE WHEN FAC = 'F' AND MED_LINK@PAT_TYPE = 'DCF'
+            THEN 'W'
+            WHEN FAC = 'F' AND (MED_LINK@PAT_TYPE = 'CNF'
+                           AND D.DPT = 'XRD')
+            THEN '#'
+            WHEN FAC = 'A' AND MED_LINK@PAT_TYPE = 'MSA'
+            THEN 'M'
+            WHEN FAC = 'A' AND EXTRACT(R.EXAM_NAME,1,4) = 'APET'
+            THEN 'T'
+            WHEN FAC = 'S' AND (MED_LINK@PAT_TYPE = 'COS'
+                           AND D.DPT = 'XRS')
+            THEN '$'
+            ELSE FAC
+       END AS SPECIAL_FAC,
+       
+       MED_LINK@PAT_NAME AS PN,
+       CASE WHEN EXTRACT(MED_LINK@PAT_TYPE,1,2) = 'ED'
+            THEN 'E'
+            WHEN MED_LINK@INPAT_OUTPAT_IND = 'In'
+            THEN 'I'
+            ELSE 'O'
+            END AS IOE,
+       ((SELECT DOC_DT
+           FROM XC_CK_IN_RES S
+          WHERE S.DPT = D.DPT
+            AND S.CK_IN_NBR = D.CK_IN_NBR
+            AND S.EXAM_CD_KEY = I.EXAM_CD_KEY            
+            AND RES_NBR = 26)\1) AS RPT_DT, -- ZK_DATE COMPARE
+       ((TODAY - 4)\1) AS TODAY_MINUS_1,    -- ZK_DATE COMPARE   
+       CASE WHEN I.EXAM_CD_KEY BETWEEN 70000 AND 79999
+            THEN 'INVA' ELSE 'DIAG' END AS PROC_TYPE,
+       COALESCE(I.FIN_RPT_LIN_IND, 0) AS RPT_LINK,        
+
+       I.PAT_ACCT_NBR|
+       COALESCE(I.FIN_RPT_LIN_IND,I.CK_IN_NBR) AS GRP_RPTS
+
+------       
+FROM RADIOLOGY.XC_CK_IN_INFO_DATE D,
+               XC_CK_IN_INFO I,
+               XC_CK_IN_RES R,
+               XW_EXAM_RESULT_DTL E                     
+--
+WHERE D.CK_IN_DATE BETWEEN TODAY - 35 AND TODAY -1
+      AND D.DPT IN ('XRM', 'XRN')
+      AND E.DPT = D.DPT
+      AND I.DPT = D.DPT
+      AND R.DPT = D.DPT
+      AND D.CK_IN_NBR = I.CK_IN_NBR
+      AND D.CK_IN_NBR = R.CK_IN_NBR    
+      AND I.EXAM_CD_KEY NOT BETWEEN 30000 AND 39999
+      AND I.EXAM_CD_KEY =  R.EXAM_CD_KEY
+      AND R.DOC_NBR IS NOT NULL
+      AND R.DOC_NBR = E.DOC_NBR
+--
+
+HAVING
+        rpt_dt between ((TODAY - 33)\1)  and ((TODAY - 7)\1) 
+
+     -- RPT_DT = TODAY_MINUS_1  -- DOCUMENTS WITH TODAY-3 AS DATE
+--ALLOW ONLY AUR PHYSICIANS TO PASS TO DOWNLOAD
+      AND
+/* 
+          RAD_NBR IN (212, 1441, 3493, 12225, 12232, 12242, 12271, 12282, 
+          12286, 12287, 12289, 12290, 12299, 12338, 12354, 12369, 12375, 
+          12384, 12498, 12499, 12513, 12515, 12556, 12573, 12587, 12617, 
+          12621, 12626, 12627, 12635, 12655, 12686, 12703, 12719, 12752,
+          12742, 12281, 9392,
+          12798, 12810, 12813, 'RAD')
+*/
+          RAD_NBR IN (12742, 12281, 9392)
+
+--
+ORDER BY D.DPT,MED_LINK@UNIT_NBR|I.PAT_ACCT_NBR|I.CK_IN_NBR
+--
+INITIAL
+        SET :XCKIN = -1, :XGRPBY = ''
+--
+DETAIL
+IF :XGRPBY <> GRP_RPTS
+--
+     IF :XCKIN = I.CK_IN_NBR
+         IF EXTRACT(LINE_TEXT,1,10) <> '          '                        
+           
+         WRITE                                                            
+         LINE_TEXT|CHR(13)
+         ENDIF
+     ENDIF
+ENDIF
+--         
+BREAK AT 2
+--
+        SET :XEXAM1 = '', :XEXAM2 = '', :XEXAM3 = '', :XEXAM4 = ''
+        SET :XEXAM5 = '', :XEXAM6 = '', :XEXAM7 = '', :XEXAM8 = ''
+        SET :XEXAM9 = '', :XEXAM10 = ''
+--
+IF :XGRPBY <> GRP_RPTS
+--
+IF RPT_LINK = 0
+IF PCTR1 IS NULL
+        SET :XEXAM1 =                             
+CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HCD|'~'|I.INT_ORD_NBR
+
+ELSEIF PCTR1 = 1 AND HCD IS NOT NULL
+        SET :XEXAM1 =
+CK_IN_NBR|'~'|EXAM_CD|'~'|EXAM_NAME|'~'|HCD|'~'|I.INT_ORD_NBR
+        SET :XEXAM2 = 
+CK_IN_NBR|'~'|PSIM1|'~'|PSIMD1|'~'|HCP1|'~'|I.INT_ORD_NBR
+
+ELSEIF PCTR1 = 1 AND HCD IS NULL
+        SET :XEXAM1 = 
+CK_IN_NBR|'~'|PSIM1|'~'|PSIMD1|'~'|HCP1|'~'|I.INT_ORD_NBR
+        SET :XEXAM2 = 
+CK_IN_NBR|'~'|PSIM2|'~'|PSIMD2|'~'|HCP2|'~'|I.INT_ORD_NBR
+ENDIF
+
+ELSE
+        SET :XDPT = I.DPT
+        SET :XLINK = FIN_RPT_LIN_IND 
+        RUN QBC_BJG_AUR_DICTATE_S1
+ENDIF
+--
+IF :XCKIN = -1
+SET :XCKIN = I.CK_IN_NBR
+ENDIF
+IF :XCKIN = I.CK_IN_NBR 
+WRITE
+       SPECIAL_FAC |'~'|
+       I.PAT_ACCT_NBR|'~'|
+       SUBSTRING(TO_DATE(I.CK_IN_DT, 'YYYYMMDD'),1,4)|'-'|
+       SUBSTRING(TO_DATE(I.CK_IN_DT, 'YYYYMMDD'),5,2)|'-'|
+       SUBSTRING(TO_DATE(I.CK_IN_DT, 'YYYYMMDD'),7,2)|'~'|
+       TO_TIME(I.CK_IN_TM, 'HHMM24')|'~'|  
+       EXTRACT(R.ACT_TRACK_LINK@CHG_INFO_LINK@CHG_PERF_PHY_CD,1,20)|'~'|
+       RAD_FIRST|'~'|
+       RAD_LAST|'~'|
+       ORD_PHY_CD|'~'|
+       ORD_FIRST|'~'| --
+       ORD_LAST|'~'|
+       IOE|'~'|
+       PROC_TYPE|'|'|CHR(13)
+WRITE
+       MED_LINK@UNIT_NBR|'~'|                                              
+       PIECE(PIECE(PN,',',2),' ',1)|'~'|
+       EXTRACT(PIECE(PIECE(PN,',',2),' ',2))|'~'|
+       PIECE(PN,',',1)|'~'|
+       SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE, 'YYYYMMDD'),1,4)|'-'|
+       SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE, 'YYYYMMDD'),5,2)|'-'|
+       SUBSTRING(TO_DATE(DEMOG_LINK@BIRTHDATE, 'YYYYMMDD'),7,2)|'~'|
+       EXTRACT(DEMOG_LINK@SEX)|'~'|
+       MED_LINK@INS_COB_1_LINK@CARRIER_NAME|'~'|
+       MED_LINK@INS_COB_1_LINK@CARRIER_CODE|'|'|CHR(13)
+WRITE     
+       'Procedure Ordered: '|:XEXAM1|CHR(13)
+--
+     IF :XEXAM2 IS NOT NULL
+     WRITE  '                   '|:XEXAM2|CHR(13)
+     ENDIF
+--
+     IF :XEXAM3 IS NOT NULL
+     WRITE  '                   '|:XEXAM3|CHR(13)
+     ENDIF
+--
+     IF :XEXAM4 IS NOT NULL
+     WRITE  '                   '|:XEXAM4|CHR(13)
+     ENDIF
+--
+     IF :XEXAM5 IS NOT NULL
+     WRITE  '                   '|:XEXAM5|CHR(13)
+     ENDIF
+--
+     IF :XEXAM6 IS NOT NULL
+     WRITE  '                   '|:XEXAM6|CHR(13)
+     ENDIF
+--
+     IF :XEXAM7 IS NOT NULL
+     WRITE  '                   '|:XEXAM7|CHR(13)
+     ENDIF
+--
+     IF :XEXAM8 IS NOT NULL
+     WRITE  '                   '|:XEXAM8|CHR(13)
+     ENDIF
+--
+     IF :XEXAM9 IS NOT NULL
+     WRITE  '                   '|:XEXAM9|CHR(13)
+     ENDIF
+--
+     IF :XEXAM10 IS NOT NULL
+     WRITE  '                   '|:XEXAM10|CHR(13)
+     ENDIF
+
+WRITE                                                  
+       'Admitting DX: '|MED_LINK@ADM_DIAG_DESC|CHR(13)
+WRITE
+       'Working DX: '|MED_LINK@WK_DIAG|CHR(13)
+WRITE  ' '|CHR(13)
+--
+ENDIF       
+--
+ENDIF
+----------
+
+BREAK AFTER 2
+--
+IF :XGRPBY <> GRP_RPTS
+WRITE 'END OF REPORT'|CHR(13)
+SET :XINTN = INTN
+SET :XAN = AN
+RUN QBC_BJG_AUR_INSERT_PATS
+ENDIF          
+                                    
+SET :XCKIN = -1
+SET :XGRPBY = GRP_RPTS 
+========================================
+SQL: QBC_BJG_AUR_DLY_ACTIVITY_MAN                 SUBQUERY: NO
+DESC: test
+Last Edit: 09/24/2015    Last Comp: 07/17/2016    Last Run:  09/24/2015
+START:   
+                                                  FILE: "/export/outgoing/aur/aur_daily_activity20150922.tab"
+
+--Created on 01-31-2014 by Burton Goodge
+ 
+--SET SHOW_PLAN = YES
+
+SET FILE = '/export/outgoing/aur/aur_daily_activity20150922.tab',
+           format = tab, method = host_out
+------
+SELECT 
+       
+       CASE WHEN EXTRACT(MED_LINK@PAT_TYPE,1,2) = 'ED'
+            THEN 'E'
+            WHEN MED_LINK@INPAT_OUTPAT_IND = 'In'
+            THEN 'I'
+            ELSE 'O'
+            END AS IOE,
+       (SELECT FIM_LINK@HCPCS_CD
+        FROM AG_SIM  S
+        WHERE SIM_DPT IN ('XRM', 'XRN')
+              AND S.SIM_CD = I.EXAM_CD_KEY) AS HPIX
+
+    
+       
+------       
+FROM RADIOLOGY.XC_CK_IN_INFO_DATE D,
+               XC_CK_IN_INFO I          
+--
+WHERE D.CK_IN_DATE = TODAY - 3
+      AND D.DPT IN ('XRM', 'XRN') 
+      AND I.DPT = D.DPT
+      AND D.CK_IN_NBR = I.CK_IN_NBR
+      AND I.EXAM_CD_KEY NOT BETWEEN 30000 AND 39999
+
+--
+ORDER BY D.DPT, IOE, I.PAT_TYPE_ACTUAL,MED_LINK@UNIT_NBR|I.PAT_ACCT_NBR,
+         CK_IN_DATE
+--
+DETAIL
+ WRITE   
+        I.PAT_ACCT_NBR,
+        I.PAT_NAME, 
+        I.MED_LINK@UNIT_NBR,
+        IOE,
+        I.EXAM_NAME,
+        I.CK_IN_NBR,
+        I.EXAM_STATUS,
+        I.ORD_PHY,
+        I.PAT_TYPE_ACTUAL,
+        I.CK_IN_DT,
+        HPIX HEADING 'HCPCS CD'
+        
+========================================
+SQL: QBC_BJG_AUR_DLY_ACTIVITY_RPT                 SUBQUERY: NO
+DESC: test
+Last Edit: 04/28/2011    Last Comp: 08/13/2017    Last Run:  07/30/2018
+START: MONDAY  0429
+                                                  FILE: "/export/outgoing/aur/aur_activity$.tab"
+
+--Created on 06-27-03 by Burton Goodge
+ 
+--SET SHOW_PLAN = YES
+
+SET START_DATE = 'MONDAY', START_TIME = '0429'
+--
+SET FILE = '/export/outgoing/aur/aur_activity$.tab',
+           format = tab, method = host_out
+------
+SELECT 
+       
+       CASE WHEN EXTRACT(MED_LINK@PAT_TYPE,1,2) = 'ED'
+            THEN 'E'
+            WHEN MED_LINK@INPAT_OUTPAT_IND = 'In'
+            THEN 'I'
+            ELSE 'O'
+            END AS IOE,
+       (SELECT FIM_LINK@HCPCS_CD
+        FROM AG_SIM  S
+        WHERE SIM_DPT IN ('XRM', 'XRN')
+              AND S.SIM_CD = I.EXAM_CD_KEY) AS HPIX
+
+    
+       
+------       
+FROM RADIOLOGY.XC_CK_IN_INFO_DATE D,
+               XC_CK_IN_INFO I          
+--
+WHERE D.CK_IN_DATE BETWEEN TODAY - 14 AND TODAY - 8
+      AND D.DPT IN ('XRM', 'XRN') 
+      AND I.DPT = D.DPT
+      AND D.CK_IN_NBR = I.CK_IN_NBR
+      AND I.EXAM_CD_KEY NOT BETWEEN 30000 AND 39999
+--ALLOW ONLY MMP PHYSICIANS TO PASS TO DOWNLOAD
+--
+ORDER BY D.DPT, IOE, I.PAT_TYPE_ACTUAL,MED_LINK@UNIT_NBR|I.PAT_ACCT_NBR,
+         CK_IN_DATE
+--
+DETAIL
+ WRITE   
+        I.PAT_ACCT_NBR,
+        I.PAT_NAME, 
+        I.MED_LINK@UNIT_NBR,
+        IOE,
+        I.EXAM_NAME,
+        I.CK_IN_NBR,
+        I.EXAM_STATUS,
+        I.ORD_PHY,
+        I.PAT_TYPE_ACTUAL,
+        I.CK_IN_DT,
+        HPIX HEADING 'HCPCS CD'
+        
+========================================
+SQL: QBC_BJG_AUR_DLY_ACTIVITY_RPTCU               SUBQUERY: NO
+DESC: test
+Last Edit: 09/22/2016    Last Comp: 08/13/2017    Last Run:  08/01/2018
+START: ALL  0429
+                                                  FILE: "/export/outgoing/aur/aur_daily_activity$.tab"
+
+--Created on 01-31-2014 by Burton Goodge
+ 
+--SET SHOW_PLAN = YES
+
+SET START_DATE = 'ALL', START_TIME = '0429'
+--
+SET FILE = '/export/outgoing/aur/aur_daily_activity$.tab',
+           format = tab, method = host_out
+------
+SELECT 
+       
+       CASE WHEN EXTRACT(MED_LINK@PAT_TYPE,1,2) = 'ED'
+            THEN 'E'
+            WHEN MED_LINK@INPAT_OUTPAT_IND = 'In'
+            THEN 'I'
+            ELSE 'O'
+            END AS IOE,
+       (SELECT FIM_LINK@HCPCS_CD
+        FROM AG_SIM  S
+        WHERE SIM_DPT IN ('XRM', 'XRN')
+              AND S.SIM_CD = I.EXAM_CD_KEY) AS HPIX
+
+    
+       
+------       
+FROM RADIOLOGY.XC_CK_IN_INFO_DATE D,
+               XC_CK_IN_INFO I          
+--
+WHERE D.CK_IN_DATE = TODAY - 1
+      AND D.DPT IN ('XRM', 'XRN') 
+      AND I.DPT = D.DPT
+      AND D.CK_IN_NBR = I.CK_IN_NBR
+      AND I.EXAM_CD_KEY NOT BETWEEN 30000 AND 39999
+
+--
+ORDER BY D.DPT, IOE, I.PAT_TYPE_ACTUAL,MED_LINK@UNIT_NBR|I.PAT_ACCT_NBR,
+         CK_IN_DATE
+--
+DETAIL
+ WRITE   
+        I.PAT_ACCT_NBR,
+        I.PAT_NAME, 
+        I.MED_LINK@UNIT_NBR,
+        IOE,
+        I.EXAM_NAME,
+        I.CK_IN_NBR,
+        I.EXAM_STATUS,
+        I.ORD_PHY,
+        I.PAT_TYPE_ACTUAL,
+        I.CK_IN_DT,
+        HPIX HEADING 'HCPCS CD'
+        
+========================================
+SQL: QBC_BJG_AUR_INSERT_PATS                      SUBQUERY: YES
+DESC: test
+Last Edit: 08/13/2013    Last Comp: 08/13/2017    Last Run:  08/01/2018
+START:   
+                                                  
+
+--Created on 02-02-11 by Burton Goodge
+-- 
+SET SUBQUERY = 'YES'
+DECLARE VARIABLE
+:XINTN   INTEGER(13),
+:XAN     CHARACTER(13)
+
+
+INSERT INTO BC_AUR_PTS(
+INTN,
+AN,
+LOAD_DT)
+
+SELECT INTN, AN, TODAY
+FROM AG_MEDICAL
+WHERE INTN = :XINTN
+      AND AN = :XAN
+========================================
+SQL: QBC_BJG_AUR_INSERT_PATS_M                    SUBQUERY: YES
+DESC: test
+Last Edit: 09/28/2015    Last Comp: 11/15/2017    Last Run:  09/28/2015
+START:   
+                                                  
+
+--Created on 02-02-11 by Burton Goodge
+-- 
+SET SUBQUERY = 'YES'
+DECLARE VARIABLE
+:XINTN   INTEGER(13),
+:XAN     CHARACTER(13)
+
+
+INSERT INTO BC_AUR_PTS(
+INTN,
+AN,
+LOAD_DT)
+
+SELECT INTN, AN, TODAY-7
+FROM AG_MEDICAL
+WHERE INTN = :XINTN
+      AND AN = :XAN
+========================================
+SQL: QBC_BJG_AUR_PHYSICIAN_LIST                   SUBQUERY: NO
+DESC: 
+Last Edit: 02/07/2011    Last Comp: 11/15/2017    Last Run:  02/07/2011
+START:   
+                                                  
+
+
+
+SELECT PHYS_NBR,PROF_TITLE_DESC,  PHY_NAME,
+TITLE, PRI_SPEC_CD, PRI_SPEC_DESC
+
+FROM   AG_PHYSICIAN
+
+WHERE  FAC = 'M'
+       AND ACTIVE_IND <> '*'
+ORDER BY PHYS_NBR
+========================================
+SQL: QBC_BJG_AUR_VIEW_PATS                        SUBQUERY: NO
+DESC: test
+Last Edit: 09/19/2013    Last Comp: 09/16/2014    Last Run:  09/19/2013
+START:   
+                                                  
+
+--Created on 02-02-11 by Burton Goodge
+-- 
+SELECT *
+FROM  BC_AUR_PTS
+ 
+========================================
+SQL: QBMC_AUR_DEMOGRAPHICS_EXT                    SUBQUERY: NO
+DESC: 
+Last Edit: 04/20/2016    Last Comp: 08/13/2017    Last Run:  08/01/2018
+START:   
+                                                  FILE: "/export/outgoing/aur/aur_covhlth_demog$.txt"
+
+ /***********************************************************************  
+Query:  QBMC_AUR_DEMOGRAPHICS_EXT
+
+Description:  COMMON DEMOGRAPHIC DATA BUILD DOWNLOAD FINAL FILE
+QUERY FOR MHHS
+
+Requestor/Department:
+
+Date Created:  08/09/2005
+
+Created By:  BURTON J. GOODGE
+
+Output:  Ext
+
+MODIFICATION LOG                            
+  ----------------------------------------------------------------------- 
+   Name                 DATE        Project/Ticket   Reason 
+NEIL R. TREMAINE    08/25/2011              
+  ----------------------------------------------------------------------- 
+Wendy Welch         04/20/2016     Modified for Intercompany Implementation
+                                   by replacing 
+                                   QBC_BJG_AUR_DEMO_CREATE_FLB.  
+ ---------------------------------------------------------------------*/
+
+SET FILE = '/export/outgoing/aur/aur_covhlth_demog$.txt',
+    FORMAT = 'TAB', METHOD = HOST_OUT
+--
+--   
+SELECT  CASE WHEN MED_LINK@PAT_TYPE = 'DCM'
+             THEN 'D'
+             WHEN EXTRACT(MED_LINK@PAT_TYPE,1,2) = 'ED'                   
+             THEN 'E'                                                     
+             WHEN MED_LINK@INPAT_OUTPAT_IND = 'In'                        
+             THEN 'I'                                                     
+             ELSE 'O'                                                     
+             END AS IOE,
+        MED_LINK@FAC AS FAC,
+(SELECT OCCUR_CD FROM PATIENT_CARE.CU_UB82_OCC C
+        WHERE C.INTN = T.INTN AND C.AN = T.AN AND CTR = 1) AS OCC1,
+(SELECT OCCUR_CD FROM PATIENT_CARE.CU_UB82_OCC C
+        WHERE C.INTN = T.INTN AND C.AN = T.AN AND CTR = 2) AS OCC2,
+CASE WHEN PROF_ID = 'CT' THEN '999999' ELSE INS1CC  END INS1CCD,
+CASE WHEN PROF_ID = 'CT' THEN 'TCSC Cares 4 Breast Hlth'
+     ELSE INS1CN
+     END AS INS1CND
+
+
+FROM    BC_DEMOGRAPHIC_TEMPM T
+--
+WHERE   FAC = 'M'
+--
+DETAIL 
+
+-- Selects non-intercompany insurances. 
+IF  MED_LINK@INS_COB_1_LINK@CARRIER_CODE 
+    NOT IN ('711015','711016','711017','711018','711019',
+            '711020','711021','711022') 
+--  
+        WRITE
+--Pat Info
+        FAC,
+        IOE,
+        MED_LINK@PAT_TYPE,
+        COALESCE(TO_DATE(MED_LINK@ADM_DT,'YYYYMMDD'),' '),
+        COALESCE(TO_DATE(MED_LINK@DSCHRG_DT,'YYYYMMDD'),' '),   
+        COALESCE(TO_DATE(MED_LINK@VISIT_LINK@ACDT_DATE,'YYYYMMDD'),' '),
+        PFN,
+        PLN,
+        PMN,
+        PBD,
+        PED,
+        PSEX,
+        PAD1,
+        PAD2,
+        COALESCE(MED_LINK@DEMOG_LINK@PAT_CITY,' ') AS PCTY1,
+        COALESCE(MED_LINK@DEMOG_LINK@PAT_STATE,' ') AS PST1,
+        PZIP,
+        PHP,
+        PWP,
+        PSSN,
+        PEN,
+        PEAD1,
+        PEAD2,
+        COALESCE(MED_LINK@PAT_EMPLOYER_LINK@EMP_CITY,' ') AS PECTY1,
+        COALESCE(MED_LINK@PAT_EMPLOYER_LINK@EMP_ST,' ') AS PEST1,
+        PEZIP,
+        PEPH,
+        PMRN, 
+        PPAT,
+        PMS,
+        PEMS,
+        PREC,
+--Guar Info
+        GFN,
+        GLN,
+        GMN,
+        GBD,
+        GSEX,
+        GAD1,
+        GAD2,
+        COALESCE(MED_LINK@GUARANTOR_LINK@GUAR_DEMOG_LINK@PAT_CITY,' ')
+                AS GCTY1,
+        COALESCE(MED_LINK@GUARANTOR_LINK@GUAR_DEMOG_LINK@PAT_STATE,' ')
+                AS GST1,
+        GZIP,
+        GHP,
+        GWP,
+        GSSN,
+        GEN,
+        GEAD1,
+        GEAD2,
+        COALESCE(MED_LINK@GUARANTOR_LINK@GUAR_EMPR_LINK@EMP_CITY,' ')
+                AS GECTY1,
+        COALESCE(MED_LINK@GUARANTOR_LINK@GUAR_EMPR_LINK@EMP_ST,' ')
+                AS GEST1,
+        GEZIP,
+        GEPH,
+        GSC,
+        GMS,
+        GEMS,
+        GREC,
+        GPRC,
+--Next of Kin    
+        RFN,
+        RLN,
+        RMN,
+        RBD,
+        RSEX,
+        RAD1,
+        RAD2,
+        COALESCE(MED_LINK@PAT_REL_LINK@REL_CITY,' ') AS RCTY1,
+        COALESCE(MED_LINK@PAT_REL_LINK@REL_ST,' ') AS RST1,
+        RZIP,
+        RHP,
+        RWP,
+        RSSN,
+        REN,
+        READ1,
+        READ2,
+        COALESCE(MED_LINK@PAT_REL_LINK@EMP_CITY,' ') AS RECTY1,
+        COALESCE(MED_LINK@PAT_REL_LINK@EMP_ST,' ') AS REST1,
+        REZIP,
+        REPH,
+        RMS,
+        REMS,
+        RREC,
+        RPRC,
+--
+        PHNBR,
+        PHNAME, 
+        UPIN,
+        OCC1,
+        OCC2,
+   
+--------------------------------------------------------------------------
+-- INSURANCE PAGE 1
+        INS1CCD, --D 
+        INS1CND, --D
+        INS1PN,
+        INS1GN,
+        INS1AD1,
+        INS1AD2,
+        COALESCE(MED_LINK@INS_COB_1_LINK@CARRIER_CITY,' '),
+        COALESCE(MED_LINK@INS_COB_1_LINK@CARRIER_STATE,' '),
+        INS1ZIP,
+        INS1CPH,
+        INS1PAN,
+        INS1OFN,
+        INS1OLN,
+        INS1OMN,
+        INS1OBD,
+        INS1OSEX,
+        CASE WHEN INS1SAF = 'P' THEN PAD1
+             WHEN INS1SAF = 'G' THEN GAD1
+             WHEN INS1SAF = 'R' THEN RAD1
+        ELSE ' ' --NO ADDR1
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PAD2
+             WHEN INS1SAF = 'G' THEN GAD2
+             WHEN INS1SAF = 'R' THEN RAD2
+        ELSE ' ' --NO ADDR2
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PCTY1
+             WHEN INS1SAF = 'G' THEN GCTY1
+             WHEN INS1SAF = 'R' THEN RCTY1
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PST1
+             WHEN INS1SAF = 'G' THEN GST1
+             WHEN INS1SAF = 'R' THEN RST1
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PZIP
+             WHEN INS1SAF = 'G' THEN GZIP
+             WHEN INS1SAF = 'R' THEN RZIP
+        ELSE ' ' --NO PZIP
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PHP
+             WHEN INS1SAF = 'G' THEN GHP
+             WHEN INS1SAF = 'R' THEN RHP
+        ELSE ' ' --NO HOME PHONE
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PWP
+             WHEN INS1SAF = 'G' THEN GWP
+             WHEN INS1SAF = 'R' THEN RWP
+        ELSE ' ' --NO WORK PHONE
+        END,
+        INS1OSSN,
+        CASE WHEN INS1SAF = 'P' THEN PEN
+             WHEN INS1SAF = 'G' THEN GEN
+             WHEN INS1SAF = 'R' THEN REN
+        ELSE ' ' --NO EN
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEAD1
+             WHEN INS1SAF = 'G' THEN GEAD1
+             WHEN INS1SAF = 'R' THEN READ1
+        ELSE ' ' --NO EA1
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEAD2
+             WHEN INS1SAF = 'G' THEN GEAD2
+             WHEN INS1SAF = 'R' THEN READ2
+        ELSE ' ' --NO EA2
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PECTY1
+             WHEN INS1SAF = 'G' THEN GECTY1
+             WHEN INS1SAF = 'R' THEN RECTY1
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEST1
+             WHEN INS1SAF = 'G' THEN GEST1
+             WHEN INS1SAF = 'R' THEN REST1
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEZIP
+             WHEN INS1SAF = 'G' THEN GEZIP
+             WHEN INS1SAF = 'R' THEN REZIP
+        ELSE ' ' --NO EZ
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEPH
+             WHEN INS1SAF = 'G' THEN GEPH
+             WHEN INS1SAF = 'R' THEN REPH
+        ELSE ' ' --NO EPH
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PMS
+             WHEN INS1SAF = 'G' THEN GMS
+             WHEN INS1SAF = 'R' THEN RMS
+        ELSE ' ' --NO MS
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEMS
+             WHEN INS1SAF = 'G' THEN GEMS
+             WHEN INS1SAF = 'R' THEN REMS
+        ELSE ' ' --NO EMS
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PREC
+             WHEN INS1SAF = 'G' THEN GREC
+             WHEN INS1SAF = 'R' THEN RREC
+        ELSE ' ' --NO REC
+        END,
+        INS1ORLC,
+        
+---------------------------------------------------------------------------
+--INSURANCE PAGE 3
+        INS3CC,
+        INS3CN,
+        INS3PN,
+        INS3GN,
+        INS3AD1,
+        INS3AD2,
+        COALESCE(MED_LINK@INS_COB_3_LINK@CARRIER_CITY,' '),
+        COALESCE(MED_LINK@INS_COB_3_LINK@CARRIER_STATE,' '),
+        INS3ZIP,
+        INS3CPH,
+        INS3PAN,
+        INS3OFN,
+        INS3OLN,
+        INS3OMN,
+        INS3OBD,
+        INS3OSEX,
+        CASE WHEN INS3SAF = 'P' THEN PAD1
+             WHEN INS3SAF = 'G' THEN GAD1
+             WHEN INS3SAF = 'R' THEN RAD1
+        ELSE ' ' --NO ADDR1
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PAD2
+             WHEN INS3SAF = 'G' THEN GAD2
+             WHEN INS3SAF = 'R' THEN RAD2
+        ELSE ' ' --NO ADDR2
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PCTY1
+             WHEN INS3SAF = 'G' THEN GCTY1
+             WHEN INS3SAF = 'R' THEN RCTY1
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PST1
+             WHEN INS3SAF = 'G' THEN GST1
+             WHEN INS3SAF = 'R' THEN RST1
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PZIP
+             WHEN INS3SAF = 'G' THEN GZIP
+             WHEN INS3SAF = 'R' THEN RZIP
+        ELSE ' ' --NO ZIP
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PHP
+             WHEN INS3SAF = 'G' THEN GHP
+             WHEN INS3SAF = 'R' THEN RHP
+        ELSE ' ' --NO HOME PHONE
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PWP
+             WHEN INS3SAF = 'G' THEN GWP
+             WHEN INS3SAF = 'R' THEN RWP
+        ELSE ' ' --NO WORK PHONE
+        END,
+        INS3OSSN,
+        CASE WHEN INS3SAF = 'P' THEN PEN
+             WHEN INS3SAF = 'G' THEN GEN
+             WHEN INS3SAF = 'R' THEN REN
+        ELSE ' ' --NO EN
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEAD1
+             WHEN INS3SAF = 'G' THEN GEAD1
+             WHEN INS3SAF = 'R' THEN READ1
+        ELSE ' ' --NO EA1
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEAD2
+             WHEN INS3SAF = 'G' THEN GEAD2
+             WHEN INS3SAF = 'R' THEN READ2
+        ELSE ' ' --NO EA2
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PECTY1
+             WHEN INS3SAF = 'G' THEN GECTY1
+             WHEN INS3SAF = 'R' THEN RECTY1
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEST1
+             WHEN INS3SAF = 'G' THEN GEST1
+             WHEN INS3SAF = 'R' THEN REST1
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEZIP
+             WHEN INS3SAF = 'G' THEN GEZIP
+             WHEN INS3SAF = 'R' THEN REZIP
+        ELSE ' ' --NO EZ
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEPH
+             WHEN INS3SAF = 'G' THEN GEPH
+             WHEN INS3SAF = 'R' THEN REPH
+        ELSE ' ' --NO EPH
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PMS
+             WHEN INS3SAF = 'G' THEN GMS
+             WHEN INS3SAF = 'R' THEN RMS
+        ELSE ' ' --NO MS
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEMS
+             WHEN INS3SAF = 'G' THEN GEMS
+             WHEN INS3SAF = 'R' THEN REMS
+        ELSE ' ' --NO EMS
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PREC
+             WHEN INS3SAF = 'G' THEN GREC
+             WHEN INS3SAF = 'R' THEN RREC
+        ELSE ' ' --NO REC
+        END,
+        INS3ORLC,   
+---------------------------------------------------------------------------
+--INSURANCE PAGE 5 
+        INS5CC,
+        INS5CN,
+        INS5PN,
+        INS5GN,
+        INS5AD1,
+        INS5AD2,
+        COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_CITY,' '),
+        COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_STATE,' '),
+        INS5ZIP,
+        INS5CPH,
+        INS5PAN,
+        INS5OFN,
+        INS5OLN,
+        INS5OMN,
+        INS5OBD,
+        INS5OSEX,
+        CASE WHEN INS5SAF = 'P' THEN PAD1
+             WHEN INS5SAF = 'G' THEN GAD1
+             WHEN INS5SAF = 'R' THEN RAD1
+        ELSE ' ' --NO ADDR1
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PAD2
+             WHEN INS5SAF = 'G' THEN GAD2
+             WHEN INS5SAF = 'R' THEN RAD2
+        ELSE ' ' --NO ADDR2
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PCTY1
+             WHEN INS5SAF = 'G' THEN GCTY1
+             WHEN INS5SAF = 'R' THEN RCTY1
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PST1
+             WHEN INS5SAF = 'G' THEN GST1
+             WHEN INS5SAF = 'R' THEN RST1
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PZIP
+             WHEN INS5SAF = 'G' THEN GZIP
+             WHEN INS5SAF = 'R' THEN RZIP
+        ELSE ' ' --NO ZIP
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PHP
+             WHEN INS5SAF = 'G' THEN GHP
+             WHEN INS5SAF = 'R' THEN RHP
+        ELSE ' ' --NO HOME PHONE
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PWP
+             WHEN INS5SAF = 'G' THEN GWP
+             WHEN INS5SAF = 'R' THEN RWP
+        ELSE ' ' --NO WORK PHONE
+        END,
+        INS5OSSN,
+        CASE WHEN INS5SAF = 'P' THEN PEN
+             WHEN INS5SAF = 'G' THEN GEN
+             WHEN INS5SAF = 'R' THEN REN
+        ELSE ' ' --NO EN
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEAD1
+             WHEN INS5SAF = 'G' THEN GEAD1
+             WHEN INS5SAF = 'R' THEN READ1
+        ELSE ' ' --NO EA1
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEAD2
+             WHEN INS5SAF = 'G' THEN GEAD2
+             WHEN INS5SAF = 'R' THEN READ2
+        ELSE ' ' --NO EA2
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PECTY1
+             WHEN INS5SAF = 'G' THEN GECTY1
+             WHEN INS5SAF = 'R' THEN RECTY1
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEST1
+             WHEN INS5SAF = 'G' THEN GEST1
+             WHEN INS5SAF = 'R' THEN REST1
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEZIP
+             WHEN INS5SAF = 'G' THEN GEZIP
+             WHEN INS5SAF = 'R' THEN REZIP
+        ELSE ' ' --NO EZ
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEPH
+             WHEN INS5SAF = 'G' THEN GEPH
+             WHEN INS5SAF = 'R' THEN REPH
+        ELSE ' ' --NO EPH
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PMS
+             WHEN INS5SAF = 'G' THEN GMS
+             WHEN INS5SAF = 'R' THEN RMS
+        ELSE ' ' --NO MS
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEMS
+             WHEN INS5SAF = 'G' THEN GEMS
+             WHEN INS5SAF = 'R' THEN REMS
+        ELSE ' ' --NO EMS
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PREC
+             WHEN INS5SAF = 'G' THEN GREC
+             WHEN INS5SAF = 'R' THEN RREC
+        ELSE ' ' --NO REC
+        END,
+        INS5ORLC     
+ENDIF     
+
+-- Selects intercompany insurances. 
+IF  MED_LINK@INS_COB_1_LINK@CARRIER_CODE 
+    IN ('711015','711016','711017','711018','711019',
+        '711020','711021','711022') 
+--  
+        WRITE
+--Pat Info
+        FAC,
+        IOE,
+        MED_LINK@PAT_TYPE,
+        COALESCE(TO_DATE(MED_LINK@ADM_DT,'YYYYMMDD'),' '),
+        COALESCE(TO_DATE(MED_LINK@DSCHRG_DT,'YYYYMMDD'),' '),   
+        COALESCE(TO_DATE(MED_LINK@VISIT_LINK@ACDT_DATE,'YYYYMMDD'),' '),
+        PFN,
+        PLN,
+        PMN,
+        PBD,
+        PED,
+        PSEX,
+        PAD1,
+        PAD2,
+        COALESCE(MED_LINK@DEMOG_LINK@PAT_CITY,' ') AS PCTY2,
+        COALESCE(MED_LINK@DEMOG_LINK@PAT_STATE,' ') AS PST2,
+        PZIP,
+        PHP,
+        PWP,
+        PSSN,
+        PEN,
+        PEAD1,
+        PEAD2,
+        COALESCE(MED_LINK@PAT_EMPLOYER_LINK@EMP_CITY,' ') AS PECTY2,
+        COALESCE(MED_LINK@PAT_EMPLOYER_LINK@EMP_ST,' ') AS PEST2,
+        PEZIP,
+        PEPH,
+        PMRN, 
+        PPAT,
+        PMS,
+        PEMS,
+        PREC,
+--Guar Info
+        GFN,
+        GLN,
+        GMN,
+        GBD,
+        GSEX,
+        GAD1,
+        GAD2,
+        COALESCE(MED_LINK@GUARANTOR_LINK@GUAR_DEMOG_LINK@PAT_CITY,' ')
+                AS GCTY2,
+        COALESCE(MED_LINK@GUARANTOR_LINK@GUAR_DEMOG_LINK@PAT_STATE,' ')
+                AS GST2,
+        GZIP,
+        GHP,
+        GWP,
+        GSSN,
+        GEN,
+        GEAD1,
+        GEAD2,
+        COALESCE(MED_LINK@GUARANTOR_LINK@GUAR_EMPR_LINK@EMP_CITY,' ')
+                AS GECTY2,
+        COALESCE(MED_LINK@GUARANTOR_LINK@GUAR_EMPR_LINK@EMP_ST,' ')
+                AS GEST2,
+        GEZIP,
+        GEPH,
+        GSC,
+        GMS,
+        GEMS,
+        GREC,
+        GPRC,
+--Next of Kin    
+        RFN,
+        RLN,
+        RMN,
+        RBD,
+        RSEX,
+        RAD1,
+        RAD2,
+        COALESCE(MED_LINK@PAT_REL_LINK@REL_CITY,' ') AS RCTY2,
+        COALESCE(MED_LINK@PAT_REL_LINK@REL_ST,' ') AS RST2,
+        RZIP,
+        RHP,
+        RWP,
+        RSSN,
+        REN,
+        READ1,
+        READ2,
+        COALESCE(MED_LINK@PAT_REL_LINK@EMP_CITY,' ') AS RECTY2,
+        COALESCE(MED_LINK@PAT_REL_LINK@EMP_ST,' ') AS REST2,
+        REZIP,
+        REPH,
+        RMS,
+        REMS,
+        RREC,
+        RPRC,
+--
+        PHNBR,
+        PHNAME, 
+        UPIN,
+        OCC1,
+        OCC2,
+   
+--------------------------------------------------------------------------
+-- INSURANCE PAGE 1
+        INS1CCD, --D 
+        INS1CND, --D
+        INS1PN,
+        INS1GN,
+        INS1AD1,
+        INS1AD2,
+        COALESCE(MED_LINK@INS_COB_3_LINK@CARRIER_CITY,' '),
+        COALESCE(MED_LINK@INS_COB_3_LINK@CARRIER_STATE,' '),
+        INS1ZIP,
+        INS1CPH,
+        INS1PAN,
+        INS1OFN,
+        INS1OLN,
+        INS1OMN,
+        INS1OBD,
+        INS1OSEX,
+        CASE WHEN INS1SAF = 'P' THEN PAD1
+             WHEN INS1SAF = 'G' THEN GAD1
+             WHEN INS1SAF = 'R' THEN RAD1
+        ELSE ' ' --NO ADDR1
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PAD2
+             WHEN INS1SAF = 'G' THEN GAD2
+             WHEN INS1SAF = 'R' THEN RAD2
+        ELSE ' ' --NO ADDR2
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PCTY2
+             WHEN INS1SAF = 'G' THEN GCTY2
+             WHEN INS1SAF = 'R' THEN RCTY2
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PST2
+             WHEN INS1SAF = 'G' THEN GST2
+             WHEN INS1SAF = 'R' THEN RST2
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PZIP
+             WHEN INS1SAF = 'G' THEN GZIP
+             WHEN INS1SAF = 'R' THEN RZIP
+        ELSE ' ' --NO PZIP
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PHP
+             WHEN INS1SAF = 'G' THEN GHP
+             WHEN INS1SAF = 'R' THEN RHP
+        ELSE ' ' --NO HOME PHONE
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PWP
+             WHEN INS1SAF = 'G' THEN GWP
+             WHEN INS1SAF = 'R' THEN RWP
+        ELSE ' ' --NO WORK PHONE
+        END,
+        INS1OSSN,
+        CASE WHEN INS1SAF = 'P' THEN PEN
+             WHEN INS1SAF = 'G' THEN GEN
+             WHEN INS1SAF = 'R' THEN REN
+        ELSE ' ' --NO EN
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEAD1
+             WHEN INS1SAF = 'G' THEN GEAD1
+             WHEN INS1SAF = 'R' THEN READ1
+        ELSE ' ' --NO EA1
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEAD2
+             WHEN INS1SAF = 'G' THEN GEAD2
+             WHEN INS1SAF = 'R' THEN READ2
+        ELSE ' ' --NO EA2
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PECTY2
+             WHEN INS1SAF = 'G' THEN GECTY2
+             WHEN INS1SAF = 'R' THEN RECTY2
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEST2
+             WHEN INS1SAF = 'G' THEN GEST2
+             WHEN INS1SAF = 'R' THEN REST2
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEZIP
+             WHEN INS1SAF = 'G' THEN GEZIP
+             WHEN INS1SAF = 'R' THEN REZIP
+        ELSE ' ' --NO EZ
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEPH
+             WHEN INS1SAF = 'G' THEN GEPH
+             WHEN INS1SAF = 'R' THEN REPH
+        ELSE ' ' --NO EPH
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PMS
+             WHEN INS1SAF = 'G' THEN GMS
+             WHEN INS1SAF = 'R' THEN RMS
+        ELSE ' ' --NO MS
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PEMS
+             WHEN INS1SAF = 'G' THEN GEMS
+             WHEN INS1SAF = 'R' THEN REMS
+        ELSE ' ' --NO EMS
+        END,
+        CASE WHEN INS1SAF = 'P' THEN PREC
+             WHEN INS1SAF = 'G' THEN GREC
+             WHEN INS1SAF = 'R' THEN RREC
+        ELSE ' ' --NO REC
+        END,
+        INS1ORLC,
+        
+---------------------------------------------------------------------------
+--INSURANCE PAGE 3
+        INS3CC,
+        INS3CN,
+        INS3PN,
+        INS3GN,
+        INS3AD1,
+        INS3AD2,
+        COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_CITY,' '),
+        COALESCE(MED_LINK@INS_COB_5_LINK@CARRIER_STATE,' '),
+        INS3ZIP,
+        INS3CPH,
+        INS3PAN,
+        INS3OFN,
+        INS3OLN,
+        INS3OMN,
+        INS3OBD,
+        INS3OSEX,
+        CASE WHEN INS3SAF = 'P' THEN PAD1
+             WHEN INS3SAF = 'G' THEN GAD1
+             WHEN INS3SAF = 'R' THEN RAD1
+        ELSE ' ' --NO ADDR1
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PAD2
+             WHEN INS3SAF = 'G' THEN GAD2
+             WHEN INS3SAF = 'R' THEN RAD2
+        ELSE ' ' --NO ADDR2
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PCTY2
+             WHEN INS3SAF = 'G' THEN GCTY2
+             WHEN INS3SAF = 'R' THEN RCTY2
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PST2
+             WHEN INS3SAF = 'G' THEN GST2
+             WHEN INS3SAF = 'R' THEN RST2
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PZIP
+             WHEN INS3SAF = 'G' THEN GZIP
+             WHEN INS3SAF = 'R' THEN RZIP
+        ELSE ' ' --NO ZIP
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PHP
+             WHEN INS3SAF = 'G' THEN GHP
+             WHEN INS3SAF = 'R' THEN RHP
+        ELSE ' ' --NO HOME PHONE
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PWP
+             WHEN INS3SAF = 'G' THEN GWP
+             WHEN INS3SAF = 'R' THEN RWP
+        ELSE ' ' --NO WORK PHONE
+        END,
+        INS3OSSN,
+        CASE WHEN INS3SAF = 'P' THEN PEN
+             WHEN INS3SAF = 'G' THEN GEN
+             WHEN INS3SAF = 'R' THEN REN
+        ELSE ' ' --NO EN
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEAD1
+             WHEN INS3SAF = 'G' THEN GEAD1
+             WHEN INS3SAF = 'R' THEN READ1
+        ELSE ' ' --NO EA1
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEAD2
+             WHEN INS3SAF = 'G' THEN GEAD2
+             WHEN INS3SAF = 'R' THEN READ2
+        ELSE ' ' --NO EA2
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PECTY2
+             WHEN INS3SAF = 'G' THEN GECTY2
+             WHEN INS3SAF = 'R' THEN RECTY2
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEST2
+             WHEN INS3SAF = 'G' THEN GEST2
+             WHEN INS3SAF = 'R' THEN REST2
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEZIP
+             WHEN INS3SAF = 'G' THEN GEZIP
+             WHEN INS3SAF = 'R' THEN REZIP
+        ELSE ' ' --NO EZ
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEPH
+             WHEN INS3SAF = 'G' THEN GEPH
+             WHEN INS3SAF = 'R' THEN REPH
+        ELSE ' ' --NO EPH
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PMS
+             WHEN INS3SAF = 'G' THEN GMS
+             WHEN INS3SAF = 'R' THEN RMS
+        ELSE ' ' --NO MS
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PEMS
+             WHEN INS3SAF = 'G' THEN GEMS
+             WHEN INS3SAF = 'R' THEN REMS
+        ELSE ' ' --NO EMS
+        END,
+        CASE WHEN INS3SAF = 'P' THEN PREC
+             WHEN INS3SAF = 'G' THEN GREC
+             WHEN INS3SAF = 'R' THEN RREC
+        ELSE ' ' --NO REC
+        END,
+        INS3ORLC,   
+---------------------------------------------------------------------------
+--INSURANCE PAGE 5 
+        INS5CC,
+        INS5CN,
+        INS5PN,
+        INS5GN,
+        INS5AD1,
+        INS5AD2,
+        COALESCE(MED_LINK@INS_COB_7_LINK@CARRIER_CITY,' '),
+        COALESCE(MED_LINK@INS_COB_7_LINK@CARRIER_STATE,' '),
+        INS5ZIP,
+        INS5CPH,
+        INS5PAN,
+        INS5OFN,
+        INS5OLN,
+        INS5OMN,
+        INS5OBD,
+        INS5OSEX,
+        CASE WHEN INS5SAF = 'P' THEN PAD1
+             WHEN INS5SAF = 'G' THEN GAD1
+             WHEN INS5SAF = 'R' THEN RAD1
+        ELSE ' ' --NO ADDR1
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PAD2
+             WHEN INS5SAF = 'G' THEN GAD2
+             WHEN INS5SAF = 'R' THEN RAD2
+        ELSE ' ' --NO ADDR2
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PCTY2
+             WHEN INS5SAF = 'G' THEN GCTY2
+             WHEN INS5SAF = 'R' THEN RCTY2
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PST2
+             WHEN INS5SAF = 'G' THEN GST2
+             WHEN INS5SAF = 'R' THEN RST2
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PZIP
+             WHEN INS5SAF = 'G' THEN GZIP
+             WHEN INS5SAF = 'R' THEN RZIP
+        ELSE ' ' --NO ZIP
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PHP
+             WHEN INS5SAF = 'G' THEN GHP
+             WHEN INS5SAF = 'R' THEN RHP
+        ELSE ' ' --NO HOME PHONE
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PWP
+             WHEN INS5SAF = 'G' THEN GWP
+             WHEN INS5SAF = 'R' THEN RWP
+        ELSE ' ' --NO WORK PHONE
+        END,
+        INS5OSSN,
+        CASE WHEN INS5SAF = 'P' THEN PEN
+             WHEN INS5SAF = 'G' THEN GEN
+             WHEN INS5SAF = 'R' THEN REN
+        ELSE ' ' --NO EN
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEAD1
+             WHEN INS5SAF = 'G' THEN GEAD1
+             WHEN INS5SAF = 'R' THEN READ1
+        ELSE ' ' --NO EA1
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEAD2
+             WHEN INS5SAF = 'G' THEN GEAD2
+             WHEN INS5SAF = 'R' THEN READ2
+        ELSE ' ' --NO EA2
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PECTY2
+             WHEN INS5SAF = 'G' THEN GECTY2
+             WHEN INS5SAF = 'R' THEN RECTY2
+        ELSE ' ' --NO CITY
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEST2
+             WHEN INS5SAF = 'G' THEN GEST2
+             WHEN INS5SAF = 'R' THEN REST2
+        ELSE ' ' --NO STATE
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEZIP
+             WHEN INS5SAF = 'G' THEN GEZIP
+             WHEN INS5SAF = 'R' THEN REZIP
+        ELSE ' ' --NO EZ
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEPH
+             WHEN INS5SAF = 'G' THEN GEPH
+             WHEN INS5SAF = 'R' THEN REPH
+        ELSE ' ' --NO EPH
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PMS
+             WHEN INS5SAF = 'G' THEN GMS
+             WHEN INS5SAF = 'R' THEN RMS
+        ELSE ' ' --NO MS
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PEMS
+             WHEN INS5SAF = 'G' THEN GEMS
+             WHEN INS5SAF = 'R' THEN REMS
+        ELSE ' ' --NO EMS
+        END,
+        CASE WHEN INS5SAF = 'P' THEN PREC
+             WHEN INS5SAF = 'G' THEN GREC
+             WHEN INS5SAF = 'R' THEN RREC
+        ELSE ' ' --NO REC
+        END,
+        INS5ORLC      
+ENDIF            
+---------------------------------------------------------------------------
+========================================

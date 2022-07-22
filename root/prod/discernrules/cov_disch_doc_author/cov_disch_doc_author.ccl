@@ -1,0 +1,69 @@
+select *
+from orders o where o.order_id=596909201
+ 
+ 
+select
+	 ea.alias
+	,encntr_type=uar_get_code_display(e.encntr_type_cd)
+	,encntr_status_cd=uar_get_code_display(e.encntr_status_cd)
+	,p.name_full_formatted
+	,o.order_mnemonic
+	,order_status=uar_get_code_display(o.order_status_cd)
+	,task_status=uar_get_code_display(ta.task_status_cd)
+	,discharge_order=o2.order_mnemonic
+from
+	 orders o
+	,order_catalog oc
+	,encntr_alias ea
+	,encounter e
+	,person p
+	,task_activity ta
+	,orders o2
+plan oc
+	where oc.primary_mnemonic 	= "influenza virus vaccine*"
+join o
+	where o.catalog_cd 			= oc.catalog_cd
+join e
+	where e.encntr_id			= o.encntr_id
+join p
+	where p.person_id			= e.person_id
+join ea
+	where ea.encntr_id				= e.encntr_id
+	and   ea.beg_effective_dt_tm 	<= cnvtdatetime(curdate,curtime3)
+	and   ea.end_effective_dt_tm 	>= cnvtdatetime(curdate,curtime3)
+	and   ea.active_ind				= 1
+	and   ea.encntr_alias_type_cd 	= 1077
+join ta
+	where ta.order_id = o.order_id
+join o2
+	where o2.encntr_id		= outerjoin(e.encntr_id)
+	and   o2.order_mnemonic = outerjoin("Discharge Patient")
+with time=10
+ 
+select
+	 ea.alias
+	,ce.event_id
+	,ce.clinical_event_id
+	,event_cd = uar_get_code_display(ce.event_cd)
+	,ce.valid_from_dt_tm ";;q"
+	,ce.event_title_text
+	,ce.event_cd
+from
+	 clinical_event ce
+	,encntr_alias ea
+	,encounter e
+plan  ea
+	where ea.alias					= "3000007116"
+	and   ea.beg_effective_dt_tm 	<= cnvtdatetime(curdate,curtime3)
+	and   ea.end_effective_dt_tm 	>= cnvtdatetime(curdate,curtime3)
+	and   ea.active_ind				= 1
+	and   ea.encntr_alias_type_cd 	= 1077
+join e
+	where e.encntr_id 				= ea.encntr_id
+join ce
+	where ce.encntr_id				= e.encntr_id
+order by
+	ce.event_end_dt_tm desc
+ 
+ 
+select * from code_Value cv where cv.code_value=    4189666.00

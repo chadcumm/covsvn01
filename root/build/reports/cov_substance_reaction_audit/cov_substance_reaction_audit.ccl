@@ -1,0 +1,23 @@
+
+
+select
+	 n.source_string)
+	,count(r.reaction_id)
+from
+	 reaction r
+	,nomenclature n
+plan r
+	where r.active_ind = 1
+	and   r.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   r.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join n
+	where n.nomenclature_id = r.reaction_nom_id
+group by
+	n.source_string
+order by
+	1 desc
+
+
+
+
+select n.source_string, * from nomenclature n where n.nomenclature_id = 0

@@ -1,0 +1,183 @@
+<!--
+/************************************************************************
+*                                                                      *
+*  Copyright Notice:  (c) 1983 Laboratory Information Systems &        *
+*                              Technology, Inc.                        *
+*       Revision      (c) 1984-2000 Cerner Corporation                 *
+*                                                                      *
+*  Cerner (R) Proprietary Rights Notice:  All rights reserved.         *
+*  This material contains the valuable properties and trade secrets of *
+*  Cerner Corporation of Kansas City, Missouri, United States of       *
+*  America (Cerner), embodying substantial creative efforts and        *
+*  confidential information, ideas and expressions, no part of which   *
+*  may be reproduced or transmitted in any form or by any means, or    *
+*  retained in any storage or retrieval system without the express     *
+*  written permission of Cerner.                                       *
+*                                                                      *
+*  Cerner is a registered mark of Cerner Corporation.                  *
+*                                                                      *
+************************************************************************
+ 
+   Source file name:      CODE_STATUS_NOTIFY.html
+ 
+   Product:                Sepsis
+   Product Team:           Performance Excellence
+ 
+   File purpose:           Alerts the user on open chart that the patient has a SIRS or Sepsis alert and provides link to Sepsis
+   						Advisor.
+ 
+   Special Notes:          <add any special notes here>
+ *****************************************************************************
+*                  GENERATED MODIFICATION CONTROL LOG                       *
+*****************************************************************************
+*                                                                           *
+*Mod Date        Engineer           Feature    Comment                      *
+*--- ----------  ---------------    ---------  -----------------------------*
+ 
+*****************************************************************************
+ 
+ ******************  END OF ALL MODCONTROL BLOCKS  ***************************/
+-->
+<html>
+<head>
+<meta name="discern" content="CCLLINK,CCLNEWWINDOW,CCLEVENT,MPAGES_EVENT,APPLINK,XMLCCLREQUEST,CCLEKSREPLYOBJECT" >
+<script language="Javascript">
+ 
+var patientDataSplit = "@MESSAGE:[PATIENTDATA]";
+var patientData = patientDataSplit.split("|");
+var patientID = patientData[0];
+var encounterID = patientData[1];
+var patientName = patientData[2];
+var patientNurseUnit = patientData[3];
+var patientRoom = patientData[4];
+var medicalNumber = patientData[5];
+var patientAge = patientData[6];
+var patientFacility = patientData[7];
+var patientBirthDate = patientData[8];
+var currentDate = patientData[9];
+ 
+var testmessage = "@MESSAGE:[TEXT]";
+var criteria = "@MESSAGE:[CRITERIA]";
+var provider_id = "@MESSAGE:[PRSNL_ID]";
+var alert_text = "@MESSAGE:[ALERT_TYPE]";
+var dismiss_alert = "pe_sepsis_dismiss_advisor";
+var delay_alert = "pe_sepsis_delay_advisor";
+ 
+function stringForClinicalEvent(patId, enctrId, pID, alert_type, synch_rule){
+        var ceString = '^COMMITRULE^,^';
+        ceString += (patId + "^,");
+        ceString += ("^" + enctrId + "^,");
+        ceString += ("^0.0^,^" + synch_rule + "^,^");
+        ceString += ("<P>ID=");
+        ceString += pID;
+        ceString += ("<P>ALERT=");
+        ceString += alert_type + "";
+        ceString += '^';
+        return ceString;
+    }
+ 
+/*****************************************************************************************************************
+   *  DismissCE()
+   *
+   *  Arguments: n/a
+   *  Return: n/a
+   *  Purpose: calls SynchEvent rule PE_SEPSIS_DISMISS_ALERT which creates a CE of who dismissed Sepsis alert
+   *  Executed From: Openchart alert
+   ******************************************************************************************************************/
+function DismissCE(){
+    CCLLINK("eks_call_synch_event", stringForClinicalEvent(patientID, encounterID, provider_id, alert_text, dismiss_alert), 1);
+	CCLEVENT("EVENT_EKS_OK", "");
+    }
+ 
+ 
+/*****************************************************************************************************************
+   *  SepsisAdvisor()
+   *
+   *  Arguments: n/a
+   *  Return: n/a
+   *  Purpose:Calls sync rule OT_OPEN_CHART_TREAT_SYNC and places Sepsis Advisor Guidelines order
+   *  Executed From: Various places
+   ******************************************************************************************************************/
+function SepsisAdvisor(){
+                     var order_params = patientID+"|"+encounterID+"|"+"{ORDER|271709613.00|0|0|0|0}|24|{2|127}|32|0";
+                              MPAGES_EVENT("ORDERS",order_params);
+                              CCLEVENT("EVENT_EKS_OK", "");
+                             }//close
+/*****************************************************************************************************************
+   *  NotSeptic()
+   *
+   *  Arguments: n/a
+   *  Return: n/a
+   *  Purpose:Calls SYNC Event rule SEPSIS_ADVSR_NOT_USED
+   *  Executed From: LH_SEP_GLOBAL_OPEN_3 Open Chart rule
+   ******************************************************************************************************************/
+ 
+function NotSeptic( ){
+	CCLLINK("eks_call_synch_event", stringForClinicalEvent(patientID, encounterID, provider_id, alert_text, delay_alert), 1);
+	CCLEVENT("EVENT_EKS_OK", "");
+    }
+ 
+ 
+/*fillInPatientBanner fills in patient information sent from the rule and checks to see if it exists and then assigns it to an
+element */
+function fillInPatientBanner() {
+ 
+                                if (patientName.substring(0,1) != "@"){
+                                                document.getElementById('patient').innerHTML = patientName;
+                                }
+ 
+                                if (patientAge.substring(0,1) != "@"){
+                                                document.getElementById('age').innerHTML = patientAge;
+                                }
+ 
+                                if (patientBirthDate.substring(0,1) != "@") {
+                                                document.getElementById('birthDate').innerHTML = patientBirthDate;
+                                }
+ 
+                                if (patientNurseUnit.substring(0,1) != "@") {
+                                                document.getElementById('loc').innerHTML = patientNurseUnit + " ; " + patientRoom;
+                                }
+ 
+                                if (medicalNumber.substring(0,1) != "@") {
+                                                document.getElementById('mrn').innerHTML = medicalNumber;
+                                }
+ document.getElementById('demo').innerHTML = testmessage;
+ document.getElementById('sepsiscriteria').innerHTML = criteria;
+}//close fillPatientBanner
+ 
+</script>
+</head>
+ 
+<BODY style='overflow:hidden;' onload="javascript:fillInPatientBanner();">
+ 
+<table width='100%' height='10%' style='background-color:gainsboro;border-collapse:collapse;'>
+                <tr>
+                                <td width='33.00%'><b>NAME:  </b><span id='patient'></span></td>
+                                <td width='33.00%'><b>DOB:  </b><span id='birthDate'></span></td>
+                                <td width='33.00%'><b>MRN:  </b><span id='mrn'></span></td>
+                </tr>
+                <tr>
+                                <td width='33.00%'><b>LOCATION:  </b><span id='loc'></span>
+                                <td width='33.00%'><b>AGE:  </b><span id='age'></span></td>
+                </tr>
+</table>
+ 
+ 
+<div id="message1">
+ 
+<p id="demo"></p>
+<br>
+<p id="sepsiscriteria"></p>
+<br>
+</p>
+ 
+<div id='AdmitI' width='50.00%' height='5.00%' style='display:inline;visibility:visible;'>
+<input style='left: 0%; position: relative;' type="button" id= "CloseBut"  value="Open Chart" onclick="DismissCE();" />
+<input style='left: 20%; position: relative;' type="button" id= "NoIndBut"  value="Sepsis Not Indicated" onclick="NotSeptic();" />
+<input style='left: 40%; position: relative;' type="button" id= "LaunchBut"  value="Launch Sepsis Advisor" onclick="SepsisAdvisor();" />
+ 
+</div> <!---Close noAdmitOrder--->
+ 
+</body>
+ 
+</html>

@@ -1,0 +1,102 @@
+;000 - 10/15/18 - ccummin4 - initial release
+
+DROP PROGRAM cov_cust_col_order_new_eq :dba GO
+CREATE PROGRAM cov_cust_col_order_new_eq :dba
+ DECLARE PUBLIC::main (null ) = null WITH private
+ DECLARE PUBLIC::determineorderrenewalrequest (null ) = null WITH protect
+ CALL main (null )
+ SUBROUTINE  PUBLIC::main (null )
+  CALL determineorderrenewalrequest (null )
+  SET reply->status_data.status = "S"
+ END ;Subroutine
+ SUBROUTINE  PUBLIC::determineorderrenewalrequest (null )
+  DECLARE person_cnt 					= i4 WITH protect 	,constant (size (reply->person ,5 ) )
+  DECLARE current_date_time 			= dq8 WITH protect 	,constant (cnvtdatetime (curdate ,curtime3 ) )
+  DECLARE beg_time_period				= dq8 with protect	,noconstant (0.0)	
+  DECLARE end_time_period				= dq8 with protect	,noconstant (0.0)	
+  DECLARE exp_idx 						= i4 WITH protect 	,noconstant (0 )
+  DECLARE enc_idx 						= i4 WITH protect 	,noconstant (0 )  
+  DECLARE loc_idx 						= i4 WITH protect 	,noconstant (0 )
+  DECLARE pnrc_renew 					= f8 WITH protect 	,noconstant (0.0) 
+  DECLARE rest_renew 					= f8 WITH protect 	,noconstant (0.0) 
+  DECLARE rest_monitor 					= f8 WITH protect 	,noconstant (0.0) 
+  DECLARE rest_init						= f8 WITH protect 	,noconstant (0.0) 
+  DECLARE order_dt_check				= dq8 with protect	,noconstant (0.0)	
+  DECLARE order_cancel_cd	 			= f8 WITH protect 	,constant (uar_get_code_by ("MEANING" ,6004  ,"CANCELED" ))			
+  DECLARE order_order_cd	 			= f8 WITH protect 	,constant (uar_get_code_by ("MEANING" ,6004  ,"ORDERED" ))
+  DECLARE order_dc_cd		 			= f8 WITH protect 	,constant (uar_get_code_by ("MEANING" ,6004  ,"DISCONTINUED" ))		
+  DECLARE order_void_cd		 			= f8 WITH protect 	,constant (uar_get_code_by ("MEANING" ,6004  ,"DELETED" ))			
+  DECLARE auth_cd						= f8 WITH protect 	,constant (uar_get_code_by ("MEANING" ,8  	 ,"AUTH" ))				
+  DECLARE modified_cd					= f8 WITH protect 	,constant (uar_get_code_by ("MEANING" ,8  	 ,"MODIFIED" ))			
+  DECLARE altered_cd					= f8 WITH protect 	,constant (uar_get_code_by ("MEANING" ,8  	 ,"ALTERED" ))			
+  DECLARE renewal_status_icon 			= vc WITH protect 	,constant ("images/renewal.png" )
+  DECLARE other_renewal_status_icon 	= vc WITH protect 	,constant ("images/hourglass-plus-icon.png" )	
+  
+  IF ((((reqdata->loglevel >= 4 ) ) OR ((validate (debug_ind ,0 ) > 0 ) )) )
+  	set dmode = 1
+  ENDIF
+
+   SELECT INTO "nl:"
+   	 o.person_id
+   	,o.catalog_cd
+   FROM 
+   	orders o
+   ,order_notification onot
+   PLAN o 
+   	where 	expand(
+	   					 exp_idx
+	   					,1
+	   					,person_cnt
+	   					,o.person_id
+	   					,reply->person[exp_idx].person_id
+   					)
+   	and 	expand(
+	   					 enc_idx
+	   					,1
+	   					,person_cnt
+	   					,o.encntr_id
+	   					,reply->person[enc_idx].encntr_id
+   					)
+    /* and		o.order_status_cd	not	in(
+										 order_dc_cd
+    									,order_void_cd
+    									,order_cancel_cd
+    									) */
+    and		o.order_status_cd		in(
+										 order_order_cd
+    									)
+    									
+   join onot
+   	where	onot.order_id				= o.order_id
+   	and onot.notification_type_flag 	= 1
+ 	and onot.notification_status_flag 	= 1
+ 	and onot.notification_display_dt_tm <= cnvtdatetime(curdate,curtime3)
+   ORDER BY 
+   	 o.person_id
+   	,o.order_id
+   HEAD REPORT
+    	 cnt 			= 0
+   HEAD o.person_id
+   		person_idx		= 0
+ 		,person_idx		= locateval(
+     									 loc_idx
+     									,1 
+     									,person_cnt 
+     									,o.person_id 
+     									,reply->person[loc_idx].person_id 
+     								)
+   head o.order_id
+     	stat 				= alterlist(reply->person[person_idx ].contents ,1 )
+    	reply->person[person_idx ].icon = other_renewal_status_icon
+   FOOT  o.person_id
+   	person_idx		= 0
+   WITH nocounter, outerjoin = d1
+   /* end 001 */
+   
+  ;end select
+ END ;Subroutine
+#exit_script
+ IF ((((reqdata->loglevel >= 4 ) ) OR ((validate (debug_ind ,0 ) > 0 ) )) )
+  CALL echorecord (reply )
+ ENDIF
+END GO

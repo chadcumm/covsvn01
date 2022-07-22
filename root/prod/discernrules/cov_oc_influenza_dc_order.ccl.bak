@@ -1,0 +1,118 @@
+select distinct
+     ea.alias
+     ,e.encntr_id
+     ,ce.task_assay_cd
+    ,facility=uar_get_code_display(e.loc_facility_cd)
+    ,building=uar_get_code_display(e.loc_building_cd)
+    ,unit=uar_get_code_display(e.loc_nurse_unit_cd)
+    ,room=uar_get_code_display(e.loc_room_cd)
+    ,bed=uar_get_code_display(e.loc_bed_cd)
+    ,encntr_type=uar_get_code_display(e.encntr_type_cd)
+    ,encntr_type_class=uar_get_code_display(e.encntr_type_class_cd)
+    ,encntr_status=uar_get_code_display(e.encntr_status_cd)
+    ,e.reg_dt_tm ";;q"
+    ,e.disch_dt_tm ";;q"
+    ,patient_name=p.name_full_formatted
+    ,adult_patient_history=ce.event_title_text
+    ,ce.result_val
+    ,vaccine=o.order_mnemonic
+    ,vaccine_status=uar_get_code_display(o.order_status_cd)
+    ,vaccine_order_dt_tm=o.orig_order_dt_tm ";;q"
+    ,discharge=o1.order_mnemonic
+    ,discharge_status=uar_get_code_display(o1.order_status_cd)
+    ,discharge_order_dt_tm=o1.orig_order_dt_tm ";;q"
+from
+     encntr_domain ed
+    ,encounter e
+    ,person p
+    ,clinical_event ce
+    ,encntr_alias ea
+    ,orders o
+    ,orders o1
+    ,dummyt d1
+plan ed
+    where   ed.end_effective_dt_tm = cnvtdatetime("31-DEC-2100 00:00:00.00")  
+    and 	ed.encntr_id			=     111457753                 
+    ;where     ed.active_ind           = 1
+join e
+    where   e.encntr_id             = ed.encntr_id
+    and     e.active_ind            = 1
+join p
+    where   p.person_id             = e.person_id
+    and     p.active_ind            = 1
+join ea
+    where   ea.encntr_id            = e.encntr_id
+    and     ea.beg_effective_dt_tm  <= cnvtdatetime(curdate,curtime3)
+    and     ea.end_effective_dt_tm  >= cnvtdatetime(curdate,curtime3)
+    and     ea.active_ind           = 1
+    and     ea.encntr_alias_type_cd = 1077; FIN
+join o
+
+                    where   o.encntr_id = e.encntr_id
+                    and     o.person_id = e.person_id
+                    and     o.catalog_cd in(
+                                             2760930.00 ;influenza virus vaccine, inactivated
+                                            ,2760946.00 ;influenza virus vaccine, live 
+                                            )
+                    and     o.order_status_cd in(
+                                                    0.0
+                                                   ;,2542.00    ;Canceled
+                                                  ; ,2543.00     ;Completed
+                                                   ;,2544.00    ;Voided
+                                                   ;,2545.00    ;Discontinued
+                                                   ;,2546.00    ;Future
+                                                   ;,2547.00    ;Incomplete
+                                                   ;,2548.00    ;InProcess
+                                                   ;,2549.00    ;On Hold, Med Student
+                                                   ,2550.00     ;Ordered
+                                                 ;,643466.00    ;Pending Complete
+                                                   ;,2551.00    ;Pending Review
+                                                   ;,2552.00    ;Suspended
+                                                 ;,614538.00    ;Transfer/Canceled
+                                                   ;,2553.00    ;Unscheduled
+                                                 ;,643467.00    ;Voided With Results
+                                                )
+                                           
+join d1
+join ce
+    where   ce.person_id            = p.person_id
+    ;and     ce.event_cd             = 2555026041.00 ;Influenza Vaccine Indicated
+    and		ce.task_assay_cd		= 2555026049
+    ;and     ce.encntr_id            = e.encntr_id
+join o1
+
+                    where   o1.encntr_id = e.encntr_id
+                    and     o1.person_id = e.person_id
+                    and     o1.catalog_cd in(
+                                                 3224545.00	;Discharge Patient
+ 
+                                            )       
+                    and     o1.order_status_cd in(
+                                                    0.0
+                                                   ;,2542.00    ;Canceled
+                                                   ,2543.00     ;Completed
+                                                   ;,2544.00    ;Voided
+                                                   ;,2545.00    ;Discontinued
+                                                   ;,2546.00    ;Future
+                                                   ;,2547.00    ;Incomplete
+                                                   ;,2548.00    ;InProcess
+                                                   ;,2549.00    ;On Hold, Med Student
+                                                   ,2550.00     ;Ordered
+                                                 ;,643466.00    ;Pending Complete
+                                                   ;,2551.00    ;Pending Review
+                                                   ;,2552.00    ;Suspended
+                                                 ;,614538.00    ;Transfer/Canceled
+                                                   ;,2553.00    ;Unscheduled
+                                                 ;,643467.00    ;Voided With Results
+                                                )         
+
+order by
+     facility
+    ,encntr_type_class
+    ,unit
+    ,room
+    ,e.reg_dt_tm
+with time=60,outerjoin = d1, dontcare = ce
+go
+
+;select * from clinical_event ce where ce.encntr_id =   111457753.00 and ce.task_assay_cd = 2555026049

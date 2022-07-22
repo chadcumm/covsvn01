@@ -1,0 +1,167 @@
+/* select
+     dfr.definition
+    ,dfr.description
+    ,*
+from
+    dcp_forms_activity dfa
+    ,dcp_forms_ref dfr
+plan dfa
+    ;where dfa.dcp_forms_ref_id =      18325999.00; BH OP Therapy Progress Note
+    where dfa.dcp_forms_ref_id =       9680869.00 ;BH Psych OP Progress Note Form
+    and dfa.beg_activity_dt_tm >= cnvtdatetime(curdate,0)
+join dfr
+    where dfr.dcp_forms_ref_id = dfa.dcp_forms_ref_id
+ 
+with format(date,";;q")
+ 
+ 
+select *
+from
+    ce_Event_prsnl cep
+plan cep
+    where cep.event_id in( select event_id from clinical_event where encntr_id =   110457929.00)
+ 
+ 
+    select distinct
+     author=p1.name_full_formatted
+    ,assignee=p2.name_full_formatted
+    ,patient=p.name_full_formatted
+    ,facility=uar_get_code_display(e.loc_facility_cd)
+    ,ta.task_id
+    ,ta.msg_subject
+    ,ta.task_create_dt_tm
+    ,ta.task_class_cd
+    ,uar_get_code_display(ta.task_activity_cd)
+    ,uar_get_code_Display(ta.task_status_cd)
+    ,ta.task_type_cd
+ 
+from
+     task_activity ta
+    ,task_activity_assignment taa
+    ,prsnl p1
+    ,prsnl p2
+    ,clinical_event ce
+    ,encounter e
+    ,person p
+plan ta
+    where ta.encntr_id =    110457929.00
+join taa
+    where taa.task_id = ta.task_id
+join ce
+    where ce.event_id = ta.event_id
+    and   ce.view_level = 1
+join p1
+    where p1.person_id = ce.performed_prsnl_id
+join p2
+    where p2.person_id = taa.assign_prsnl_id
+join e
+    where e.encntr_id = ta.encntr_id
+join p
+    where p.person_id = e.person_id
+ 
+select * from discrete_task_assay dta where dta.description="*for MD Review*"
+ 
+select * from code_value cv where cv.code_set = 88 and cv.active_ind = 1
+order by cv.display
+;   31767941.00
+*/
+ 
+ 
+select distinct
+	 sending_position=uar_get_code_display(p1.position_cd)
+	,sending_prsnl=p1.name_full_formatted
+	,assigned_position=uar_get_code_display(p2.position_cd)
+	,assigned_prsnl=p2.name_full_formatted
+	,date_sent=ta.task_dt_tm ";;q"
+	,task_type=uar_get_code_display(ta.task_type_cd)
+	,task_status=uar_get_code_display(ta.task_status_cd)
+	,activity_updt_dt_tm=taa.updt_dt_tm ";;q"
+	,ta.msg_subject
+	,ea.alias
+	,p.name_full_formatted
+	,facility=uar_get_code_display(e.loc_facility_cd)
+	,unit=uar_get_code_display(e.loc_nurse_unit_cd)
+	,relationship=uar_get_code_display(epr.encntr_prsnl_r_cd)
+	,event=uar_get_code_display(ce.event_cd)
+	,ce.performed_dt_tm ";;q"
+	,e.reg_dt_tm ";;q"
+	,e.disch_dt_tm ";;q"
+	,ta.*
+	,taa.*
+ 
+from
+	task_activity_assignment taa
+	,task_activity ta
+	,code_value cv1
+	,prsnl p1
+	,prsnl p2
+	,clinical_event ce
+	,encounter e
+	,person p
+	,encntr_alias ea
+	,encntr_prsnl_reltn epr
+plan cv1
+	where cv1.code_set = 88
+	and   cv1.display = "BH - Family Nurse Practitioner"
+	and   cv1.active_ind = 1
+join p1
+	where p1.position_cd = cv1.code_value
+	and   p1.active_ind = 1
+join ta
+	where ta.msg_sender_id = p1.person_id
+	and   ta.task_type_cd = value(uar_get_code_by("MEANING",6026,"ENDORSE"))
+	and   ta.active_ind = 1
+join taa
+	where taa.task_id = ta.task_id
+	and   taa.beg_eff_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   taa.end_eff_dt_tm >= cnvtdatetime(curdate,curtime3)
+join p2
+	where p2.person_id = taa.assign_prsnl_id
+join ce
+	where ce.event_id = ta.event_id
+	and	  ce.result_status_cd in(
+									  value(uar_get_code_by("MEANING",8,"AUTH"))
+									 ,value(uar_get_code_by("MEANING",8,"MODIFIED"))
+									 ,value(uar_get_code_by("MEANING",8,"ALTERED"))
+								)
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   ce.event_tag        != "Date\Time Correction"
+	;wand   ce.result_val        >  " "
+join e
+	where e.encntr_id = ce.encntr_id
+join p
+	where p.person_id = e.person_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+	and   ea.active_ind = 1
+	and   ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join epr
+	where epr.prsnl_person_id = outerjoin(p1.person_id)
+	and   epr.encntr_id =e.encntr_id
+order by
+	 p1.name_full_formatted
+	,p2.name_full_formatted
+	,ea.alias
+go
+ 
+;urn:cerner:mid:object.task:p0665:taskIds=1161541493:1160068111,eventIds=1181877064,ownerId=12407331,enum=4,poolInd=0
+SELECT
+	p1.NAME_FULL_FORMATTED
+	,p2.name_full_formatted
+,ta.*
+ 
+FROM
+	task_activity   ta
+	, prsnl   p1
+	, task_activity_assignment   tac
+	,prsnl p2
+ 
+where ta.task_id in( 1160068111.00
+,1161541493.00 )
+and p1.person_id = ta.active_status_prsnl_id
+and tac.task_id = ta.task_id
+and p2.person_id = tac.updt_id
+ 
+WITH format(date,";;q")

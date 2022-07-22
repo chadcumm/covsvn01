@@ -1,0 +1,431 @@
+ 
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+	Author:			Geetha Paramasivam
+	Date Written:		Dec'2020
+	Solution:			Quality
+	Source file name:		cov_phq_ltc_staff_covid.prg
+	Object name:		cov_phq_ltc_staff_covid
+ 	Request#:			9181
+	Program purpose:		COVID-19 data submission to NHSN/CDC
+	Executing from:		DA2/AUTO SUN SCHEDULE
+ 	Special Notes:
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+Mod Date	Developer			Comment
+-------------------------------------------------------------------------------
+01/31/22    Geetha Paramasivam  CR#12100  Covid test name change update
+
+ 
+******************************************************************************/
+ 
+drop program cov_phq_ltc_staff_covid:DBA go
+create program cov_phq_ltc_staff_covid:DBA
+ 
+prompt 
+	"Output to File/Printer/MINE" = "MINE"               ;* Enter or select the printer or file name to send this report to.
+	, "Start Specimen Collected Date/Time" = "SYSDATE"
+	, "End Specimen Collected Date/Time" = "SYSDATE"
+	, "Facility" = 0
+	, "Report Type" = 2 
+
+with OUTDEV, start_datetime, end_datetime, facility, repo_type
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+ 
+;---- Covid -----------------------
+;Orders
+declare covid_ref_lab_var     = f8 with constant(uar_get_code_by("DISPLAY", 200, 'COVID19 Reference Lab')), protect
+declare covid_mpl_ref_lab_var = f8 with constant(uar_get_code_by("DISPLAY", 200, 'COVID19 PCR MPL Reference Lab')), protect ;'COVID19 MPL Reference Lab'
+declare covid_respiratory_var = f8 with constant(uar_get_code_by("DISPLAY", 200, 'Respiratory Panel')), protect ;'Respiratory Panel (incl COVID19)'
+declare covid_in_house_var    = f8 with constant(uar_get_code_by("DISPLAY", 200, 'COVID19 In-House')), protect
+declare covid_SARS_var        = f8 with constant(uar_get_code_by("DISPLAY", 200, 'SARS-CoV-2 RNA Qual RT-PCR')), protect
+declare covid_CDC_var         = f8 with constant(uar_get_code_by("DISPLAY", 200, 'CDC COVID19 HR RT PCR')), protect
+declare covid_ref_mayo_var    = f8 with constant(uar_get_code_by("DISPLAY", 200, 'COVID19 Reference Lab Mayo')), protect
+declare covid_repid_resp_var  = f8 with constant(uar_get_code_by("DISPLAY", 200, 'Rapid Resp (COVID19+Flu A/B) Panel+')), protect
+declare covid_repid_anti_var  = f8 with constant(uar_get_code_by("DISPLAY", 200, 'COVID19 Rapid Antigen')), protect
+ 
+;Events
+declare sars_rna_var       = f8 with constant(uar_get_code_by("DISPLAY", 72, 'SARS CoV2 RNA, RT PCR')), protect
+declare covid_report_var   = f8 with constant(uar_get_code_by("DISPLAY", 72, 'COVID19 See Report')), protect
+declare covid_result_var   = f8 with constant(uar_get_code_by("DISPLAY", 72, 'COVID19 Result')), protect
+declare sars_cov2_var      = f8 with constant(uar_get_code_by("DISPLAY", 72, 'SARS-CoV-2')), protect
+declare sars_cov2_anti_var = f8 with constant(uar_get_code_by("DISPLAY", 72, 'SARS-CoV-2 Antigen')), protect
+declare sars_cov2_naa1_var = f8 with constant(uar_get_code_by("DISPLAY", 72, 'SARS-CoV-2, NAA')), protect
+declare sars_cov2_naa2_var = f8 with constant(uar_get_code_by("DISPLAY", 72, 'SARS-CoV-2, NAA.')), protect
+declare pan_sars_var       = f8 with constant(uar_get_code_by("DISPLAY", 72, 'PAN-SARS RNA')), protect
+declare covid_overall_var  = f8 with constant(uar_get_code_by("DISPLAY", 72, 'COVID19 Overall Result')), protect
+declare covid_reflab_var   = f8 with constant(uar_get_code_by("DISPLAY", 72, 'COVID19 Reference Lab')), protect
+ 
+ 
+declare op_ltc_facility_var = vc with noconstant("")
+declare num  = i4 with noconstant(0)
+declare cnt  = i4 with noconstant(0)
+ 
+declare start_date_var = vc
+declare end_date_var   = vc
+declare start_date1 = f8
+declare end_date1   = f8
+ 
+;---------------------------------------------------------------------------------------------------------
+;Set default date for DA2 schedule
+set start_date1 = cnvtlookbehind("7,D")
+set start_date1 = datetimefind(start_date1,"D","B","B")
+set end_date1   = cnvtlookahead("7,D",start_date1)
+set end_date1   = cnvtlookbehind("1,SEC", end_date1)
+ 
+;call echo(build('start_date = ',format(cnvtdatetime(start_date), 'dd-mmm-yyyy hh:mm:ss;;d'), '-- end_date = ',
+;		format(cnvtdatetime(end_date), 'dd-mmm-yyyy hh:mm:ss;;d')))
+ 
+if($start_datetime = "THURSDAY")
+	set start_date_var = format(cnvtdatetime(start_date1), 'dd-mmm-yyyy hh:mm:ss;;d')
+ 	set end_date_var = format(cnvtdatetime(end_date1), 'dd-mmm-yyyy hh:mm:ss;;d')
+else
+	set start_date_var = $start_datetime
+ 	set end_date_var = $end_datetime
+endif
+ 
+call echo(build('start_date_var = ', start_date_var, '--- end_date_var = ',end_date_var))
+ 
+;-------------------------------------------------------------------------------------
+ 
+;Set Facility variable Operator
+if(substring(1,1,reflect(parameter(parameter2($facility),0))) = "l");multiple values were selected
+	set op_ltc_facility_var = "in"
+elseif(parameter(parameter2($facility),1)= 0.0) ;all[*] values were selected
+	set op_ltc_facility_var = "!="
+else								;a single value was selected
+	set op_ltc_facility_var = "="
+endif
+ 
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+free set tot
+Record tot(
+	1 rec_cnt = i4
+	1 flist[*]
+		2 nhsn_facility_id = i4
+		2 ccn_number = i4 ;CMS certification no.
+		2 facility_name = vc
+		2 facility_type = vc
+		2 collection_date = vc ;specimen_dt(drawn_dt)
+		2 num_staff_tested = i4
+		2 num_staff_positive_result = i4
+		2 num_staff_positive_naat = i4
+		2 num_staff_positive_antigen = i4
+		2 num_staff_reinfected = i4
+)with persistscript
+ 
+ 
+Record staff(
+	1 rec_cnt = i4
+	1 slist[*]
+		2 facility = vc
+		2 facility_type = vc
+		2 reporting_facility_id = f8
+		2 reporting_facility_ccn = f8
+		2 organization = vc
+		2 encntrid = f8
+		2 personid = f8
+		2 staff_name = vc
+		2 fin = vc
+		2 orderid = f8
+		2 reporting_dt = dq8
+		2 covid_result = vc
+		2 covid_positive_result = vc
+		2 sars_cov_2 = vc
+		2 sars_cov_2_antigen = vc
+		2 sars_cov_2_naa = vc
+		2 reinfected = vc
+		2 previous_infect_dt = vc
+	)
+ 
+;----------------------------------------------------------------------------------------------------
+ 
+;Staff Covid tested and Positive result
+select into $outdev
+e.encntr_id, e.person_id, contract_name = org.org_name, staff_name = p.name_full_formatted
+, e.encntr_type_cd, ce.order_id
+,encounter_type = uar_get_code_display(e.encntr_type_cd),test = uar_get_code_display(ce.event_cd)
+,result = ce.result_val, drawn_dt = format(c.drawn_dt_tm, 'mm-dd-yyyy ;;d' )
+,fac = if(e.loc_facility_cd = 21250403.00)'FSR TCU' elseif(e.loc_facility_cd = 2552503653.00)'LCMC LTC' endif
+ 
+from
+	person p,
+	encntr_alias ea,
+	encounter e,
+	organization org,
+	orders o,
+	order_container_r ocr,
+	container c,
+	clinical_event ce
+ 
+plan e where operator(e.loc_facility_cd, op_ltc_facility_var, $facility)
+	and e.encntr_type_cd =  2555137099.00 ;Contract
+ 	and e.active_ind = 1
+ 
+join p where p.person_id = e.person_id
+	and p.active_ind = 1
+ 
+join ea where ea.encntr_id = e.encntr_id
+	and ea.encntr_alias_type_cd = 1077
+	and ea.active_ind = 1
+ 
+join org where org.organization_id = e.organization_id
+	and trim(org.org_name) in('FSRC TCU NURSING HOME LAB', 'LCMCC FSSNH COVID')
+	and org.active_ind = 1
+ 
+join ce where ce.encntr_id = e.encntr_id
+	and ce.person_id = e.person_id
+	and ce.event_cd in(sars_rna_var, covid_report_var, covid_result_var, sars_cov2_var,sars_cov2_anti_var
+				,sars_cov2_naa1_var, sars_cov2_naa2_var, pan_sars_var, covid_overall_var, covid_reflab_var)
+	and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+	and ce.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
+	and ce.event_id = (select max(ce1.event_id) from clinical_event ce1 where ce1.encntr_id = ce.encntr_id
+		and ce1.order_id = ce.order_id
+		and ce1.event_cd = ce.event_cd
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+		and ce1.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
+		group by ce1.encntr_id, ce1.order_id, ce1.event_cd)
+ 
+join o where o.encntr_id = ce.encntr_id
+	and o.order_id = ce.order_id
+	and o.active_ind = 1
+ 
+join ocr where ocr.order_id = o.order_id
+ 
+join c where c.container_id = ocr.container_id
+	and (c.drawn_dt_tm between cnvtdatetime($start_datetime) and cnvtdatetime($end_datetime))
+	;and (c.drawn_dt_tm between cnvtdatetime(start_date_var) and cnvtdatetime(end_date_var)) ;to schedule
+ 
+order by drawn_dt, e.encntr_id, ce.event_cd
+ 
+Head report
+	cnt = 0
+Head e.encntr_id
+	;if(trim(ce.result_val) = 'Presumptive Positive' or trim(ce.result_val) = 'Positive'
+;		or trim(ce.result_val) = 'Presumptive Pos' or trim(ce.result_val) = 'Detected')
+		cnt += 1
+		call alterlist(staff->slist, cnt)
+		staff->rec_cnt = cnt
+		staff->slist[cnt].facility = fac
+		staff->slist[cnt].facility_type = 'LTC-SKILLNURS'
+		staff->slist[cnt].reporting_facility_id =
+			if(fac = 'FSR TCU') 68897
+			elseif(fac ='LCMC LTC') 60886
+			endif
+		staff->slist[cnt].reporting_facility_ccn =
+			if(fac = 'FSR TCU') 445328
+			elseif(fac ='LCMC LTC') 445129
+			endif
+ 
+		staff->slist[cnt].organization = org.org_name
+		staff->slist[cnt].staff_name = p.name_full_formatted
+		staff->slist[cnt].fin = trim(ea.alias)
+		staff->slist[cnt].encntrid = ce.encntr_id
+		staff->slist[cnt].personid = ce.person_id
+		staff->slist[cnt].orderid = ce.order_id
+		staff->slist[cnt].reporting_dt = c.drawn_dt_tm
+		staff->slist[cnt].covid_result = ce.result_val
+ 
+		if(trim(ce.result_val) = 'Presumptive Positive' or trim(ce.result_val) = 'Positive'
+			or trim(ce.result_val) = 'Presumptive Pos' or trim(ce.result_val) = 'Detected')
+			staff->slist[cnt].covid_positive_result = 'Yes'
+			case(ce.event_cd)
+				of sars_cov2_var: ;charted on this until Nov'3rd week, 2020
+					staff->slist[cnt].sars_cov_2 = 'Yes'
+				of sars_cov2_anti_var: ;Mostly after Nov'3rd week, 2020
+					staff->slist[cnt].sars_cov_2_antigen = 'Yes'
+				of sars_cov2_naa1_var:
+					staff->slist[cnt].sars_cov_2_naa = 'Yes'
+				of sars_cov2_naa2_var:
+					staff->slist[cnt].sars_cov_2_naa = 'Yes'
+			endcase
+		endif
+ 
+with nocounter
+ 
+;-----------------------------------------------------------------------------------------
+;Re-infection
+select into $outdev
+ 
+pat = staff->slist[d.seq].staff_name, ce.person_id, ce.encntr_id, result = ce.result_val
+,drawn_dt = format(c.drawn_dt_tm, 'mm-dd-yyyy ;;d'), report_dt = format(staff->slist[d.seq].reporting_dt, 'mm/dd/yy;;d')
+,diff = datetimecmp(cnvtdatetime(staff->slist[d.seq].reporting_dt), c.drawn_dt_tm)
+ 
+from (dummyt d with seq = staff->rec_cnt)
+	,clinical_event ce
+	,orders o
+	,order_container_r ocr
+	,container c
+ 
+plan d
+ 
+join ce where ce.person_id = staff->slist[d.seq].personid
+	and staff->slist[d.seq].covid_positive_result = 'Yes'
+	and ce.event_cd in(sars_rna_var, covid_report_var, covid_result_var, sars_cov2_var,sars_cov2_anti_var
+				,sars_cov2_naa1_var, sars_cov2_naa2_var, pan_sars_var, covid_overall_var, covid_reflab_var)
+	and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+	and ce.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
+	and(trim(ce.result_val) = 'Presumptive Positive' or trim(ce.result_val) = 'Positive'
+		or trim(ce.result_val) = 'Presumptive Pos' or trim(ce.result_val) = 'Detected')
+	and ce.event_id = (select max(ce1.event_id) from clinical_event ce1 where ce1.person_id = ce.person_id
+		and ce1.order_id = ce.order_id
+		and ce1.event_cd = ce.event_cd
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+		and ce1.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
+		group by ce1.encntr_id, ce1.order_id, ce1.event_cd)
+ 
+join o where o.person_id = ce.person_id
+	and o.order_id = ce.order_id
+	and o.active_ind = 1
+ 
+join ocr where ocr.order_id = o.order_id
+ 
+join c where c.container_id = ocr.container_id
+	and datetimecmp(cnvtdatetime(staff->slist[d.seq].reporting_dt), c.drawn_dt_tm) >= 90
+ 
+order by ce.person_id, ce.encntr_id
+ 
+Head ce.person_id
+	icnt = 0
+	idx = 0
+      idx = locateval(icnt ,1 ,staff->rec_cnt ,ce.person_id, staff->slist[icnt].personid)
+      if(idx > 0)
+		staff->slist[idx].reinfected = 'Yes'
+		staff->slist[idx].previous_infect_dt = format(c.drawn_dt_tm, 'mm/dd/yyyy hh:mm:ss ;;q')
+	endif
+ 
+with nocounter
+ 
+;call echorecord(staff)
+ 
+;---------------------------------------------------------------------------------------
+;Set the final count
+select into $outdev
+ 
+fac = staff->slist[d.seq].facility, enc = staff->slist[d.seq].encntrid
+ 
+from (dummyt d with seq = staff->rec_cnt)
+ 
+plan d
+ 
+order by fac, enc
+ 
+Head report
+	fcnt = 0
+Head fac
+	fcnt += 1
+	call alterlist(tot->flist, fcnt)
+	tot->flist[fcnt].nhsn_facility_id = staff->slist[d.seq].reporting_facility_id
+	tot->flist[fcnt].ccn_number = staff->slist[d.seq].reporting_facility_ccn
+	tot->flist[fcnt].facility_name = staff->slist[d.seq].facility
+	tot->flist[fcnt].facility_type = staff->slist[d.seq].facility_type
+	ecnt = 0, num_pos = 0, num_pos_anti = 0, num_pos_naa = 0, reinf_cnt = 0
+Head enc
+	ecnt += 1
+	if(staff->slist[d.seq].covid_positive_result = 'Yes')
+		num_pos += 1
+	endif
+ 
+ 	if(staff->slist[d.seq].sars_cov_2 = 'Yes' or staff->slist[d.seq].sars_cov_2_antigen = 'Yes')
+		num_pos_anti += 1
+	endif
+ 
+	if(staff->slist[d.seq].sars_cov_2_naa = 'Yes')
+		num_pos_naa += 1
+	endif
+ 
+	if(staff->slist[d.seq].reinfected = 'Yes')
+		reinf_cnt += 1
+	endif
+ 
+Foot fac
+	tot->flist[fcnt].collection_date = build2($start_datetime,'- TO -', $end_datetime)
+	tot->flist[fcnt].num_staff_tested = ecnt
+	tot->flist[fcnt].num_staff_positive_result = num_pos
+	tot->flist[fcnt].num_staff_positive_antigen = num_pos_anti
+	tot->flist[fcnt].num_staff_positive_naat = num_pos_naa
+	tot->flist[fcnt].num_staff_reinfected = reinf_cnt
+ 
+with nocounter
+ 
+;---------------------------------------------------------------------------------------
+;Final output
+ 
+if($repo_type = 1);Summary
+ 
+select into $outdev
+	facility_name = trim(substring(1, 30, tot->flist[d1.seq].facility_name))
+	, nhsn_facility_id = tot->flist[d1.seq].nhsn_facility_id
+	, ccn_number = tot->flist[d1.seq].ccn_number
+	, facility_type = trim(substring(1, 30, tot->flist[d1.seq].facility_type))
+	, collection_date = trim(substring(1, 100, tot->flist[d1.seq].collection_date))
+	;, tested = tot->flist[d1.seq].num_staff_tested
+	, numstaffc19died = ''
+	, shortnurse = ''
+	, shortclin = ''
+	, shortaide = ''
+	, shortothstaff = ''
+	, numstaffpostest = tot->flist[d1.seq].num_staff_positive_result
+	, numstaffpostestposag = tot->flist[d1.seq].num_staff_positive_antigen
+	, numstaffpostestposnaat = tot->flist[d1.seq].num_staff_positive_naat
+	, numstaffpostestposagnegnaat = ''
+	, numstaffpostestother = ''
+	, numstaffpostestreinf = tot->flist[d1.seq].num_staff_reinfected
+	, numstaffpostestreinfsymp = ''
+	, numstaffpostestreinfasymp = ''
+	, numstaffconfflu = ''
+	, numstaffothresp = ''
+	, numstaffconffluc19 = ''
+ 
+from
+	(dummyt   d1  with seq = size(tot->flist, 5))
+ 
+plan d1
+ 
+order by facility_name
+ 
+with nocounter, separator=" ", format
+ 
+elseif($repo_type = 2);Detail
+ 
+select into $outdev
+	facility_name = trim(substring(1, 30, staff->slist[d1.seq].facility))
+	, nhsn_facility_id = staff->slist[d1.seq].reporting_facility_id
+	, facility_ccn = staff->slist[d1.seq].reporting_facility_ccn
+	, facility_type = trim(substring(1, 30, staff->slist[d1.seq].facility_type))
+	, collection_dt = format(staff->slist[d1.seq].reporting_dt, 'mm/dd/yyyy ;;d')
+	, staff_name = trim(substring(1, 50, staff->slist[d1.seq].staff_name))
+	, fin = trim(substring(1, 10, staff->slist[d1.seq].fin))
+	, covid_result = trim(substring(1, 30, staff->slist[d1.seq].covid_result))
+	, sars_cov_2 = trim(substring(1, 30, staff->slist[d1.seq].sars_cov_2))
+	, sars_cov_2_antigen = trim(substring(1, 30, staff->slist[d1.seq].sars_cov_2_antigen))
+	, sars_cov_2_naa = trim(substring(1, 30, staff->slist[d1.seq].sars_cov_2_naa))
+	, reinfected = trim(substring(1, 30, staff->slist[d1.seq].reinfected))
+	, previous_infection_dt = trim(substring(1, 30, staff->slist[d1.seq].previous_infect_dt))
+ 
+FROM
+	(dummyt   d1  with seq = size(staff->slist, 5))
+ 
+plan d1
+ 
+order by collection_dt,facility_name
+ 
+with nocounter, separator=" ", format
+ 
+endif
+ 
+ 
+#exitscript
+end go
+ 

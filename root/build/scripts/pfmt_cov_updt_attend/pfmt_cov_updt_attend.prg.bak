@@ -1,0 +1,333 @@
+drop program pfmt_cov_updt_attend:dba go
+create program pfmt_cov_updt_attend:dba
+
+/*~BB~************************************************************************
+      *                                                                      *
+      *  Copyright Notice:  (c) 1983 Laboratory Information Systems &        *
+      *                              Technology, Inc.                        *
+      *       Revision      (c) 1984-1995 Cerner Corporation                 *
+      *                                                                      *
+      *  Cerner (R) Proprietary Rights Notice:  All rights reserved.         *
+      *  This material contains the valuable properties and trade secrets of *
+      *  Cerner Corporation of Kansas City, Missouri, United States of       *
+      *  America (Cerner), embodying substantial creative efforts and        *
+      *  confidential information, ideas and expressions, no part of which   *
+      *  may be reproduced or transmitted in any form or by any means, or    *
+      *  retained in any storage or retrieval system without the express     *
+      *  written permission of Cerner.                                       *
+      *                                                                      *
+      *  Cerner is a registered mark of Cerner Corporation.                  *
+      *                                                                      *
+  ~BE~***********************************************************************/
+
+/****************************************************************************
+        Source file name:       pfmt_cov_updt_attend.prg
+        Object name:            pfmt_cov_updt_attend
+        Request #:
+        Product:
+        Product Team:           
+        HNA Version:
+        CCL Version:
+
+        Program purpose:
+
+        Tables read:
+        Tables updated:
+        Executing from:		600312 - pts_add_prsnl_reltn
+        					600313 - pts_chg_prsnl_reltn
+        					101305 - PM_ENS_ENCNTR_PRSNL_RELTN
+        					??600319 - pts_add_mult_prsnl_reltn
+        					        					        				
+
+        Special Notes:
+
+****************************************************************************/
+
+;~DB~************************************************************************
+;    *                      GENERATED MODIFICATION CONTROL LOG              *
+;    ************************************************************************
+;    *                                                                      *
+;    *Mod Date     Engineer             Comment                             *
+;    *--- -------- -------------------- ----------------------------------- *
+;     *000 05/2008     			 Initial Release                    *
+;~DE~************************************************************************
+
+;~END~ ******************  END OF ALL MODCONTROL BLOCKS  ********************
+
+%i ccluserdir:cov_script_logging.inc  
+
+set filename = concat("cer_temp:attend_",trim(cnvtstring(reqinfo->updt_req)),"_"
+			,trim(format(sysdate,"yyyy_mm_dd_hh_mm_ss;;q")),".dat")
+
+
+call log_message("pfmt_cov_updt_attend debug execution...", log_level_debug)
+
+if ( ( validate ( last_mod ,  "NOMOD" ) = "NOMOD" ) )
+ declare  last_mod  =  c100  with  noconstant ( " " ), private
+endif
+
+set  last_mod  =  "000"
+
+record EKSOPSRequest (
+   1 expert_trigger	= vc
+   1 qual[*]
+	2 person_id	= f8
+	2 sex_cd	= f8
+	2 birth_dt_tm	= dq8
+	2 encntr_id	= f8
+	2 accession_id	= f8
+	2 order_id	= f8
+	2 data[*]
+	     3 vc_var		= vc
+	     3 double_var	= f8
+	     3 long_var		= i4
+	     3 short_var	= i2
+)
+
+%i cclsource:eks_rprq3091001.inc
+
+/* Request from pm_ens_encntr_prsnl_reltn (101305)
+record request (
+  1 encntr_prsnl_reltn_qual = i4
+  1 esi_ensure_type = vc
+  1 encntr_prsnl_reltn[*]
+    2 action_type = vc
+    2 new_person = vc
+    2 encntr_prsnl_reltn_id = f8
+    2 prsnl_person_id = f8
+    2 encntr_prsnl_r_cd = f8
+    2 encntr_id = f8
+    2 active_ind_ind = i2
+    2 active_ind = i2
+    2 active_status_cd = f8
+    2 active_status_dt_tm = dq8
+    2 active_status_prsnl_id = f8
+    2 beg_effective_dt_tm = dq8
+    2 end_effective_dt_tm = dq8
+    2 data_status_cd = f8
+    2 data_status_dt_tm = dq8
+    2 data_status_prsnl_id = f8
+    2 contributor_system_cd = f8
+    2 free_text_cd = f8
+    2 ft_prsnl_name = vc
+    2 priority_seq = i4
+    2 internal_seq = i4
+    2 updt_cnt = i4
+    2 expiration_ind_ind = i2
+    2 expiration_ind = i2
+    2 manual_create_by_id = f8
+    2 manual_inact_by_id = f8
+    2 manual_create_dt_tm = dq8
+    2 manual_inact_dt_tm = dq8
+    2 manual_create_ind_ind = i2
+    2 manual_create_ind = i2
+    2 manual_inact_ind_ind = i2
+    2 manual_inact_ind = i2
+    2 notification_cd = f8
+    2 transaction_dt_tm = dq8
+    2 pm_hist_tracking_id = f8
+    2 expire_dt_tm = dq8
+    2 activity_dt_tm = dq8
+    2 demog_reltn_id = f8
+    2 encntr_type_cd = f8
+    2 phys_override_prsnl_id = f8
+    2 phys_override_comments = vc
+    2 phys_override_ind = i2
+  1 mode = i2
+)
+
+;Request from 600312 - pts_add_prsnl_reltn
+record REQUEST (
+  1 prsnl_person_id = f8   
+  1 person_prsnl_reltn_cd = f8   
+  1 person_id = f8   
+  1 encntr_prsnl_reltn_cd = f8   
+  1 encntr_id = f8   
+  1 beg_effective_dt_tm = dq8   
+  1 end_effective_dt_tm = dq8   
+) 
+
+;Request from 600313 - pts_chg_prsnl_reltn
+record REQUEST (
+  1 prsnl_person_id = f8   
+  1 person_qual [*]   
+    2 person_prsnl_reltn_id = f8   
+  1 encntr_qual [*]   
+    2 encntr_prsnl_reltn_id = f8   
+) 
+
+;600319 - pts_add_mult_prsnl_reltn
+record request
+( 1 plist[*]
+    2 prsnl_person_id = F8
+    2 person_prsnl_reltn_cd     = f8
+    2 person_id                 = f8
+    2 beg_effective_dt_tm	      = dq8
+    2 end_effective_dt_tm       = dq8
+  1 elist[*]
+    2 prsnl_person_id = F8
+    2 encntr_prsnl_reltn_cd     = f8
+    2 encntr_id                 = f8
+    2 beg_effective_dt_tm	      = dq8
+    2 end_effective_dt_tm       = dq8
+)
+*/
+
+;114001 - PM_POST_TRANSACTION
+
+free record encounters
+record encounters
+(
+1 list[*]
+  2 encounter_id  = f8
+  2 patient_id    = f8
+  2 status_cd     = f8
+  2 type_cd       = f8
+  2 updt_dt_tm    = f8
+  2 send_ind	  = i2
+  2 prsnl_iid	  = f8
+  2 prsnl_name	  = vc
+)
+
+declare 333_attenddoc_cd = f8 with constant(uar_get_code_by("MEANING",333,"ATTENDDOC"))
+
+declare reportText = vc with noconstant(" ")
+
+call log_message("pfmt_cov_updt_attend validating 101305 request...", log_level_debug)
+if(validate(requestin->request->encntr_prsnl_reltn_qual))
+	call log_message("pfmt_cov_updt_attend inside 101305 validate(requestin->request->encntr_prsnl_reltn_qual)", log_level_debug)
+  	if(size(requestin->request->encntr_prsnl_reltn,5) > 0)
+    	call log_message("pfmt_cov_updt_attend inside request->encntr_prsnl_reltn,5) > 0", log_level_debug)
+    	set stat = alterlist(encounters->list, size(requestin->request->encntr_prsnl_reltn,5))
+    	for(count = 1 to size(requestin->request->encntr_prsnl_reltn,5))
+      		set reportText = concat("EncounterID: ", cnvtstring(requestin->request->encntr_prsnl_reltn[count].encntr_id))
+      		set reportText = concat(reportText, " type_cd: ", 
+      								cnvtstring(requestin->request->encntr_prsnl_reltn[count].encntr_prsnl_r_cd))
+      		call log_message(reportText, log_level_debug)
+      		if (requestin->request->encntr_prsnl_reltn[count].encntr_prsnl_r_cd = 333_attenddoc_cd)
+      			set encounters->list[count].encounter_id = requestin->request->encntr_prsnl_reltn[count].encntr_id
+      			set encounters->list[count].send_ind = 1
+      			call log_message("pfmt_cov_updt_attend INCLUDING encounter", log_level_debug)
+      		endif
+    	endfor
+  	endif
+endif
+
+if(size(encounters->list,5) = 0)
+	call log_message("pfmt_cov_updt_attend validating 114001 request...", log_level_debug)
+	if(validate(requestin->request->n_encntr_id))
+		call log_message("pfmt_cov_updt_attend 114001 inside validate(requestin->request->transaction_id )", log_level_debug)
+	    set stat = alterlist(encounters->list,1)
+	    set reportText = concat("EncounterID: ", cnvtstring(requestin->request->n_encntr_id))
+      	call log_message(reportText, log_level_debug)
+      	if (
+      			(requestin->request->O_ATTEND_DOC_ID = 0.0) or 
+      			(requestin->request->O_ATTEND_DOC_ID != requestin->request->N_ATTEND_DOC_ID)
+      		)
+      		set encounters->list[1].encounter_id = requestin->request->n_encntr_id
+      		set encounters->list[1].send_ind = 1
+      		call log_message("pfmt_cov_updt_attend INCLUDING encounter", log_level_debug)
+      	endif
+	endif
+endif
+
+if(size(encounters->list,5) = 0)
+	call log_message("pfmt_cov_updt_attend validating 600312 request...", log_level_debug)
+	if(validate(requestin->request->encntr_id))
+		call log_message("pfmt_cov_updt_attend 600312 inside validate(requestin->request->encntr_id)", log_level_debug)
+	    set stat = alterlist(encounters->list,1)
+	    set reportText = concat("EncounterID: ", cnvtstring(requestin->request->encntr_id))
+      	set reportText = concat(reportText, " type_cd: ", 
+      								cnvtstring(requestin->request->encntr_prsnl_reltn_cd ))
+      	call log_message(reportText, log_level_debug)
+      	if (requestin->request->encntr_prsnl_reltn_cd = 333_attenddoc_cd)
+      		set encounters->list[1].encounter_id = requestin->request->encntr_id
+      		set encounters->list[1].send_ind = 1
+      		call log_message("pfmt_cov_updt_attend INCLUDING encounter", log_level_debug)
+      	endif
+	endif
+endif
+
+if(size(encounters->list,5) = 0)
+	call log_message("pfmt_cov_updt_attend validating 600319 request...", log_level_debug)
+	if(validate(requestin->request->elist[1].encntr_id))
+		call log_message("pfmt_cov_updt_attend inside 600319 validate(requestin->request->elist[1].encntr_id)", log_level_debug)
+  		if(size(requestin->request->elist,5) > 0)
+    		call log_message("pfmt_cov_updt_attend inside requestin->request->elist,5) > 0", log_level_debug)
+    		set stat = alterlist(encounters->list, size(requestin->request->elist,5))
+    		for(count = 1 to size(requestin->request->elist,5))
+      			set reportText = concat("EncounterID: ", cnvtstring(requestin->request->elist[count].encntr_id))
+      			set reportText = concat(reportText, " type_cd: ", 
+      									cnvtstring(requestin->request->elist[count].encntr_prsnl_reltn_cd))
+      			call log_message(reportText, log_level_debug)
+      			if (requestin->request->elist[count].encntr_prsnl_reltn_cd = 333_attenddoc_cd)
+      				set encounters->list[count].encounter_id = requestin->request->elist[count].encntr_id
+      				set encounters->list[count].send_ind = 1
+      				call log_message("pfmt_cov_updt_attend INCLUDING encounter", log_level_debug)
+      			endif
+    		endfor
+  		endif
+  	endif
+endif
+
+
+
+if (validate(requestin) = 1)
+		call echojson(requestin,filename)
+endif
+
+if (validate(encounters) = 1)
+	call echojson(encounters,filename,1)
+endif
+
+call log_message("pfmt_cov_updt_attend validating encounters->list...", log_level_debug)
+if(size(encounters->list,5) = 0)
+	call log_message("pfmt_cov_updt_attend encounters->list empty exit_script", log_level_debug)
+  go to exit_script
+endif
+
+
+
+%i cclsource:eks_run3091001.inc
+
+for(count = 1 to size(encounters->list,5))
+	if (encounters->list[count].send_ind = 1)
+		call log_message(build2("pfmt_cov_updt_attend calling ",cnvtstring(count)," of ",
+			cnvtstring(size(encounters->list,5))),log_level_debug)
+
+		set stat = initrec(EKSOPSRequest)
+		select into "NL:"
+			e.encntr_id,
+			e.person_id,
+			e.reg_dt_tm,
+			p.birth_dt_tm,
+			p.sex_cd
+		from
+			person p,
+			encounter e
+		plan e
+			where e.encntr_id = encounters->list[count].encounter_id
+		join p where p.person_id= e.person_id
+		head report
+			cnt = 0
+			EKSOPSRequest->expert_trigger = "COV_EE_UPDT_ATTEND"
+		detail
+			cnt = cnt +1
+			stat = alterlist(EKSOPSRequest->qual, cnt)
+			EKSOPSRequest->qual[cnt].person_id = p.person_id
+			EKSOPSRequest->qual[cnt].sex_cd  = p.sex_cd
+			EKSOPSRequest->qual[cnt].birth_dt_tm  = p.birth_dt_tm
+			EKSOPSRequest->qual[cnt].encntr_id  = e.encntr_id
+
+		with nocounter
+		set dparam = 0
+		call srvRequest(dparam)
+	endif
+endfor
+call log_message("pfmt_cov_updt_attend finished processing...", log_level_debug)
+
+#exit_script
+
+call log_message("pfmt_cov_updt_attend exiting...", log_level_debug)
+
+end go

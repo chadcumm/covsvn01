@@ -1,0 +1,537 @@
+/*********************************************************************************************************************************
+Copyright Notice:  (c) 1983 Laboratory Information Systems & Technology, Inc.
+Revision:          (c) 1984-2009 Cerner Corporation
+ 
+ Cerner (R) Proprietary Rights Notice:  All rights reserved.  This material contains the valuable properties and trade secrets of
+ Cerner Corporation of Kansas City, Missouri, United States of America (Cerner), embodying substantial creative efforts and
+ confidential information, ideas and expressions, no part of which may be reproduced or transmitted in any form or by any means,
+ or retained in any storage or retrieval system without the express written permission of Cerner.
+ 
+ Cerner is a registered mark of Cerner Corporation.
+**********************************************************************************************************************************
+Date Written:       01/28/2009
+Source file name:   sc_cps_get_prompt_list.inc
+Object name:        not a stand alone prg.  Must be used as an include file
+Program purpose:    Parse the prompts entered by a user.
+ 
+**********************************************************************************************************************************
+MODIFICATION CONTROL LOG
+**********************************************************************************************************************************
+Mod Date     Engineer             Comment
+--- -------- -------------------- ------------------------------------------------------------------------------------------------
+000 02/19/09 ma010032             initial development credit to CH014093
+001 12/21/09 MW017700             Declare _value, and count variable
+002 01/25/10 ML011047             Added which_option parameter - optional
+003 01/03/11 CH014039             Correct issue w/ blank being passed to prompt allowing Any (*).  SCINT-238
+004 02/07/11 md8090               SCINT-248: refactor into separate subroutines, allow any data type,
+                                      assume 0 is valid input to GetPromptList, added more unit tests
+005 06/15/12 ML011047             SCINT-316: Added the %#ifndef directive to prevent the subroutines from
+                                             being declared multiple times when compiled
+006 07/27/12 md8090               SCINT-367: Break in-clause into batches of 1000 to avoid ORA-01795 error
+007 11/02/12 ML011047             SCINT-367: Added GetPromptExpand(), GetPromptRecord(), CreateExpandParser(), and CreateRecord()
+**********************************************************************************************************************************
+END OF ALL MODCONTROL BLOCKS
+*********************************************************************************************************************************/
+%#ifndef SC_CPS_GET_PROMPT_LIST_INC
+%#def SC_CPS_GET_PROMPT_LIST_INC
+ 
+%i ccluserdir:ccps_script_logging.inc
+ 
+if(not validate(LIST_IN))
+    declare LIST_IN         = i2 with protect, constant(1)
+endif
+ 
+if(not validate(LIST_NOT_IN))
+    declare LIST_NOT_IN     = i2 with protect, constant(2)
+endif
+ 
+if(not validate(ccps_records))
+    record ccps_records
+    (1 cnt          = i4
+     1 list[*]
+       2 name       = vc
+     1 num          = i4
+    ) with persistscript
+endif
+ 
+/*********************************************************************************************************************************
+Subroutines
+*********************************************************************************************************************************/
+ 
+/**
+ * Checks if a prompt contains the "Any(*)" value.
+ *
+ * @param which_prompt the prompt number to check
+ * @returns true (1) if the prompt contains "*", false (0) otherwise
+ */
+declare IsPromptAny(which_prompt = i2) = i2
+subroutine IsPromptAny(which_prompt)
+    declare prompt_reflect = vc with private, noconstant(reflect(parameter(which_prompt, 0)))
+    declare return_val = i2 with private, noconstant(0)
+ 
+    if (prompt_reflect = "C1")  ;Selected Any(*)
+        if (ichar(value(parameter(which_prompt, 1))) = 42)  ;char(42) = *
+            set return_val = 1
+        endif
+    endif
+ 
+    return (return_val)
+end  ;subroutine IsPromptAny
+ 
+ 
+/**
+ * Checks if a prompt contains a list of values.
+ *
+ * @param which_prompt the prompt number to check
+ * @returns true (1) if the prompt contains multiple values, false (0) otherwise
+ */
+declare IsPromptList(which_prompt = i2) = i2
+subroutine IsPromptList(which_prompt)
+    declare prompt_reflect = vc with private, noconstant(reflect(parameter(which_prompt, 0)))
+    declare return_val = i2 with private, noconstant(0)
+ 
+    if (substring(1, 1, prompt_reflect) = "L")
+        set return_val = 1
+    endif
+ 
+    return (return_val)
+end  ;subroutine IsPromptList
+ 
+ 
+/**
+ * Checks if a prompt is a single value.
+ *
+ * Prompts not filled out on the command line or from the ops batch selection will be empty/null
+ * and will not be considered a single value.  Prompts with zero and/or empty strings (" ") will
+ * be considered a valid single value.
+ *
+ * @param which_prompt the prompt number to check
+ * @returns true (1) if the prompt contains a single value, false (0) otherwise
+ */
+declare IsPromptSingle(which_prompt = i2) = i2
+subroutine IsPromptSingle(which_prompt)
+    declare prompt_reflect = vc with private, noconstant(reflect(parameter(which_prompt, 0)))
+    declare return_val = i2 with private, noconstant(0)
+ 
+    ;Check if the prompt was not given at all (ie: left off the batch selection in ops)
+    ;Otherwise if it's not "Any" and not a list then it must be a single value
+    if (textlen(trim(prompt_reflect, 3)) > 0 and not IsPromptAny(which_prompt) and not IsPromptList(which_prompt))
+        set return_val = 1
+    endif
+ 
+    return (return_val)
+end  ;subroutine IsPromptSingle
+ 
+ 
+/**
+ * Checks if a prompt is empty or left blank by the user.
+ *
+ * Prompts not filled out on the command line or from the ops batch selection will be empty/null
+ * and will be considered empty.  String prompts that contain only spaces and numeric prompts
+ * that are zero will also be considered empty
+ *
+ * @param which_prompt the prompt number to check
+ * @returns true (1) if the prompt is empty, false (0) otherwise
+ */
+declare IsPromptEmpty(which_prompt = i2) = i2
+subroutine IsPromptEmpty(which_prompt)
+    declare prompt_reflect = vc with private, noconstant(reflect(parameter(which_prompt, 0)))
+    declare return_val = i2 with private, noconstant(0)
+ 
+    ;Check if the prompt was not given at all (ie: left off the batch selection in ops)
+    if (textlen(trim(prompt_reflect, 3)) = 0)
+        set return_val = 1
+    elseif (IsPromptSingle(which_prompt))
+        ;If it's a single value (not "Any" or a list) then check the actual value
+        ;Use textlen for strings, cnvtreal for numbers
+        if (substring(1, 1, prompt_reflect) = "C")
+            if (textlen(trim(value(parameter(which_prompt, 0)), 3)) = 0)
+                set return_val = 1
+            endif
+        else
+            if (cnvtreal(value(parameter(which_prompt, 1))) = 0)
+                set return_val = 1
+            endif
+        endif
+    endif
+ 
+    return (return_val)
+end  ;subroutine IsPromptEmpty
+ 
+ 
+/**
+ * Generates a parser string of prompt values to be used in queries.
+ *
+ * Zeros and empty strings are considered valid input.
+ * Use IsPromptEmpty(i2) to validate optional prompts before calling GetPromptList
+ *
+ * @param which_prompt the prompt number to check
+ * @param which_column the table prefix and column (t.field) to be used in the parser string returned
+ * @param which_option (optional) the type of qualification to create, "t.field IN" or "t.fild NOT IN"
+ *                     The constants LIST_IN and LIST_NOT_IN are defined in the reusable and should
+ *                     be used for this parameter.  Defaults to LIST_IN if not specified.
+ *                     Note: optional subroutine parameters were introduced in CCL 8.4.3 (See CCLNEWS).
+ *                     If your code needs to run on previous versions of CCL you will need
+ *                     to explicitly pass the which_option parameter.
+ * @returns             "0=1" for prompts with invalid input (ie: empty/null)
+ *                     "1=1" for prompts with the "Any(*)" value
+ *                     "t.field IN/NOT IN (value1, value2, ..., valuen)" for prompts with single or multiple values
+ */
+declare GetPromptList(which_prompt = i2, which_column = vc, which_option = i2 (value, LIST_IN)) = vc
+subroutine GetPromptList(which_prompt, which_column, which_option)
+    declare prompt_reflect = vc with noconstant(reflect(parameter(which_prompt, 0))), private
+    declare count          = i4 with noconstant(0), private
+    declare item_num       = i4 with noconstant(0), private
+    declare option_str     = vc with noconstant(""), private
+    declare return_val     = vc with noconstant("0=1"), private
+ 
+    if (which_option = LIST_NOT_IN)
+        set option_str = " NOT IN ("
+    else
+        set option_str = " IN ("
+    endif
+ 
+    if (IsPromptAny(which_prompt))  ;Selected Any(*)
+        set return_val = "1=1"
+    elseif (IsPromptList(which_prompt))  ;Select Multiple Items
+        set count = cnvtint(substring(2, textlen(prompt_reflect) - 1, prompt_reflect))
+    elseif (IsPromptSingle(which_prompt))  ;Selected a Single Item
+        set count = 1
+    endif
+ 
+    if (count > 0)
+        set return_val = concat("(", which_column, option_str)
+ 
+        for (item_num = 1 to count)
+            ;Oracle only allows 1000 items in a single IN-clause,
+            ;so if we hit 1000 or more then split this into multiple IN-clauses
+            if (mod(item_num, 1000) = 1 and item_num > 1)
+                ;The for-loop will add a comma on the end of the string the last time through the loop.
+                ;This will replace that last comma with a right parentheses to close out the last IN / NOT IN
+                set return_val = replace(return_val, ",", ")", 2)
+ 
+                set return_val = concat(return_val, " or ", which_column, option_str)
+            endif
+ 
+            if (substring(1, 1, reflect(parameter(which_prompt, item_num))) = "C")
+                set return_val = concat(return_val, "'", value(parameter(which_prompt, item_num)), "'", ",")
+            else
+                set return_val = build(return_val, value(parameter(which_prompt, item_num)), ",")
+            endif
+        endfor
+ 
+        ;The for-loop will add a comma on the end of the string the last time through the loop.
+        ;This will replace that last comma with a right parentheses to close out the last IN / NOT IN
+        set return_val = replace(return_val, ",", ")", 2)
+ 
+        ;Close out the parentheses that wraps the entire string that is returned
+        set return_val = concat(return_val, ")")
+    endif
+ 
+    return (return_val)
+end ;subroutine GetPromptList
+ 
+ 
+/**
+ * Generates a parser string (expand) of prompt values to be used in queries.
+ *
+ * Zeros and empty strings are considered valid input.
+ *
+ * @param which_prompt    the prompt number to check
+ * @param which_column    the table prefix and column (t.field) to be used in the parser string returned
+ * @param which_option    (optional) the type of qualification to create, "t.field IN" or "t.fild NOT IN"
+ *                        The constants LIST_IN and LIST_NOT_IN are defined in the reusable and should
+ *                        be used for this parameter.  Defaults to LIST_IN if not specified.
+ *                        Note: optional subroutine parameters were introduced in CCL 8.4.3 (See CCLNEWS).
+ *                        If your code needs to run on previous versions of CCL you will need
+ *                        to explicitly pass the which_option parameter.
+ * @returns               "0=1" for prompts with invalid input (ie: empty/null)
+ *                        "1=1" for prompts with the "Any(*)" value
+ *                        "expand(num,<index start>,<index end>,<which_column>,<string,number>)"
+ *                        "NOT expand(num,<index start>,<index end>,<which_column>,<string,number>)"
+*/
+declare GetPromptExpand(which_prompt = i2, which_column = vc, which_option = i2 (value, LIST_IN)) = vc
+subroutine GetPromptExpand(which_prompt, which_column, which_option)
+    declare record_name = vc with private, noconstant(" ")
+    declare return_val  = vc with private, noconstant("0=1")
+ 
+    if(IsPromptAny(which_prompt))
+        set return_val = "1=1"
+    elseif(IsPromptList(which_prompt) OR IsPromptSingle(which_prompt))
+        ;add the prompt values to a record
+        set record_name = GetPromptRecord(which_prompt, which_column)
+ 
+        if(textlen(trim(record_name,3)) > 0)
+            ;build an expand clause
+            set return_val = CreateExpandParser(which_column, record_name, which_option)
+        endif
+    endif
+ 
+    call logMsg(concat("GetPromptExpand: return value = ", return_val))
+ 
+    return(return_val)
+end
+ 
+ 
+/**
+ * Loads the prompts values into a record structure.
+ *
+ * Zeros and empty strings are considered valid input
+ *
+ * @param which_prompt    the prompt number to check
+ * @param which_rec       the name of the record structure the values are to be added to
+ * @returns               " " if the prompt is any or empty
+ *                        a record name if successful
+*/
+declare GetPromptRecord(which_prompt = i2, which_rec = vc) = vc
+subroutine GetPromptRecord(which_prompt, which_rec)
+    declare record_name         = vc with private, noconstant(" ")
+    declare prompt_reflect      = vc with private, noconstant(reflect(parameter(which_prompt, 0))), private
+    declare count               = i4 with private, noconstant(0)
+    declare item_num            = i4 with private, noconstant(0)
+    declare idx                 = i4 with private, noconstant(0)
+    declare data_type           = vc with private, noconstant(" ")
+    declare alias_parser        = vc with private, noconstant(" ")
+    declare cnt_parser          = vc with private, noconstant(" ")
+    declare alterlist_parser    = vc with private, noconstant(" ")
+    declare data_type_parser    = vc with private, noconstant(" ")
+    declare return_val          = vc with private, noconstant(" ")
+ 
+    ;verify the prompt is not any(*) or empty
+    if((NOT IsPromptAny(which_prompt)) OR (NOT IsPromptEmpty(which_prompt)))
+        ;create a new record
+        set record_name = CreateRecord(which_rec)
+ 
+        if(textlen(trim(record_name,3)) > 0)
+            if (IsPromptList(which_prompt))
+                set count = cnvtint(substring(2, textlen(prompt_reflect) - 1, prompt_reflect))
+            elseif (IsPromptSingle(which_prompt))
+                set count = 1
+            endif
+ 
+            if (count > 0)
+                ;create an alias
+                set alias_parser        = concat("set curalias = which_rec_alias ", record_name, "->list[idx] go")
+ 
+                ;initialize the size of the record
+                set cnt_parser          = build2("set ", record_name, "->cnt = ", count, " go")
+                set alterlist_parser    = build2("set stat = alterlist(", record_name, "->list,", record_name,"->cnt) go")
+ 
+                ;save the data type of the FIRST value
+                set data_type = cnvtupper(substring(1, 1, reflect(parameter(which_prompt, 1))))
+                set data_type_parser = concat("set ", record_name, "->data_type = '", data_type, "' go")
+ 
+                ;execute each parser command
+                call parser(alias_parser)
+                call parser(cnt_parser)
+                call parser(alterlist_parser)
+                call parser(data_type_parser)
+ 
+                call logMsg(concat("GetPromptRecord: alias_parser = ", alias_parser))
+                call logMsg(concat("GetPromptRecord: cnt_parser = ", cnt_parser))
+                call logMsg(concat("GetPromptRecord: alterlist_parser = ", alterlist_parser))
+                call logMsg(concat("GetPromptRecord: data_type_parser = ", data_type_parser))
+ 
+                ;add the prompt values to the record
+                for (item_num = 1 to count)
+                    set idx = idx + 1
+ 
+                    case(data_type)
+                        of "I":
+                            set which_rec_alias->number = cnvtreal(value(parameter(which_prompt, item_num)))
+                        of "F":
+                            set which_rec_alias->number = cnvtreal(value(parameter(which_prompt, item_num)))
+                        of "C":
+                            set which_rec_alias->string = value(parameter(which_prompt, item_num))
+                    endcase
+                endfor
+ 
+                ;verify the list count is greater than 0
+                set cnt_parser = concat(record_name, "->cnt")
+                if(validate(parser(cnt_parser),0) > 0)
+                    set return_val = record_name
+                else
+                    call cclException(999, "E", "GetPromptRecord: failed to add the prompt values to the new record")
+                endif
+ 
+                ;clear the alias
+                set alias_parser = concat("set curalias which_rec_alias off go")
+                call parser(alias_parser)
+ 
+                call logMsg(concat("GetPromptRecord: cnt_parser = ", cnt_parser))
+                call logMsg(concat("GetPromptRecord: alias_parser = ", alias_parser))
+            else
+                call logMsg("GetPromptRecord: zero records found")
+            endif ;if (count > 0)
+        endif ;if(textlen(trim(record_name,3)) > 0)
+    else
+        call logMsg("GetPromptRecord: prompt value is any(*) or empty")
+    endif ;IsPromptAny OR IsPromptEmpty
+ 
+    if(textlen(trim(record_name,3)) > 0)
+        call parser(concat("call logRecord(", record_name, ") go"))
+    endif
+ 
+    call logMsg(concat("GetPromptRecord: return value = ", return_val))
+ 
+    call catchErrors("An error occurred in GetPromptRecord()")
+ 
+    return(return_val)
+end ;subroutine GetPromptRecord
+ 
+ 
+/**
+ * Creates a new record structure with the following format:
+ *                          free record <which_rec>
+ *                          record <which_rec>
+ *                          (1 cnt              = i4
+ *                           1 list[*]
+ *                             2 string         = vc
+ *                             2 number         = f8
+ *                           1 data_type        = c1
+ *                           1 num              = i4)
+ * @param which_rec       the name of the record structure to be created
+ * @returns               " " if the subroutine failed to create the record
+ *                        a record name if successfull
+*/
+declare CreateRecord(which_rec = vc (value, "")) = vc
+subroutine CreateRecord(which_rec)
+    declare record_name     = vc with private, noconstant(" ")
+    declare record_parser   = vc with private, noconstant(" ")
+    declare new_record_ind  = i2 with private, noconstant(0)
+    declare return_val      = vc with private, noconstant(" ")
+ 
+    if(textlen(trim(which_rec,3)) > 0)
+        ;check for a table.field_name (GetPromptExpand)
+        if(findstring(".", which_rec, 1, 0) > 0) ;p.person_id
+            set record_name = concat("ccps_", trim(which_rec,3), "_rec") ;ccps_p.person_id_rec
+        else
+            set record_name = trim(which_rec,3)
+        endif
+    else
+        ;use default
+        set record_name = build("ccps_temp_", ccps_records->cnt+1, "_rec") ;ccps_temp_1_rec
+    endif
+ 
+    ;replace special characters with an underscore
+    set record_name = concat(trim(replace(record_name, ;ccps_p.person_id_rec -> ccps_p_person_id_rec
+            concat('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890 !"#$%&', "'()*+,-./:;<=>?@[\]^_`{|}~"),
+            concat('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_______', "__________________________"),3),3))
+ 
+    call logMsg(concat("CreateRecord: record_name = ", record_name))
+ 
+    ;create a new record
+    if(NOT validate(parser(record_name))) ;parser enables you to reference the name of the record
+        set record_parser = concat("record ", record_name,
+                                   " (1 cnt = i4",
+                                   " 1 list[*] 2 string = vc 2 number = f8",
+                                   " 1 data_type = c1 1 num = i4)",
+                                   " with persistscript go")
+ 
+        call logMsg(concat("CreateRecord: record parser = ", record_parser))
+ 
+        call parser(record_parser)
+ 
+        ;verify the record was created
+        if(validate(parser(record_name)))
+            set return_val = record_name
+ 
+            ;add the record name to the public record list
+            set ccps_records->cnt = ccps_records->cnt + 1
+            set stat = alterlist(ccps_records->list, ccps_records->cnt)
+            set ccps_records->list[ccps_records->cnt].name = record_name
+        else
+            call cclException(999, "E", "CreateRecord: failed to create record")
+        endif
+    else
+        call cclException(999, "E", "CreateRecord: record already exists")
+        call parser(concat("call logRecord(", record_name, ") go"))
+    endif ;if(NOT validate(parser(record_name)))
+ 
+    call logRecord(ccps_records)
+ 
+    call logMsg(concat("CreateRecord: return value = ", return_val))
+ 
+    call catchErrors("An error occurred in CreateRecord()")
+ 
+    return(return_val)
+end ;CreateRecord()
+ 
+ 
+/**
+ * Generates a parser string (expand) of prompt values to be used in queries.
+ *
+ * @param which_column    the table prefix and column (t.field) to be used in the parser string returned
+ * @param which_rec       the name of the record structure to be referenced
+ *                        the record must contain the following fields
+ *                          free record <which_rec>
+ *                          record <which_rec>
+ *                          (1 cnt              = i4
+ *                           1 list[*]
+ *                             2 string         = vc
+ *                             2 number         = f8
+ *                           1 data_type        = c1
+ *                           1 num              = i4)
+ * @param which_option    (optional) the type of qualification to create, "t.field IN" or "t.fild NOT IN"
+ *                        The constants LIST_IN and LIST_NOT_IN are defined in the reusable and should
+ *                        be used for this parameter.  Defaults to LIST_IN if not specified.
+ *                        Note: optional subroutine parameters were introduced in CCL 8.4.3 (See CCLNEWS).
+ *                        If your code needs to run on previous versions of CCL you will need
+ *                        to explicitly pass the which_option parameter.
+ * @returns               "0=1" the "which_rec" record does not exist
+ *                        "expand(num,<index start>,<index end>,<which_column>,<string,number>)"
+ *                        "NOT expand(num,<index start>,<index end>,<which_column>,<string,number>)"
+*/
+declare CreateExpandParser(which_column = vc, which_rec = vc, which_option = i2 (value, LIST_IN)) = vc
+subroutine CreateExpandParser(which_column, which_rec, which_option)
+    declare return_val          = vc with private, noconstant("0=1")
+    declare option_str          = vc with private, noconstant(" ")
+    declare record_member       = vc with private, noconstant(" ")
+    declare data_type           = vc with private, noconstant(" ")
+    declare data_type_parser    = vc with private, noconstant(" ")
+ 
+    ;verify the record exists
+    if(validate(parser(which_rec)))
+        if (which_option = LIST_NOT_IN)
+            set option_str = " NOT"
+        endif
+ 
+        ;get the data type
+        set data_type_parser = concat("set data_type = ", which_rec, "->data_type go")
+        call parser(data_type_parser)
+ 
+        ;determine the record member
+        case(data_type)
+            of "I":
+                set record_member = "number"
+            of "F":
+                set record_member = "number"
+            of "C":
+                set record_member = "string"
+        endcase
+ 
+        ;build the expand
+        set return_val = build(option_str, " expand(", which_rec, "->num",",",
+                                                    "1,",
+                                                    which_rec, "->cnt,",
+                                                    which_column, ",",
+                                                    which_rec, "->list[", which_rec, "->num].", record_member, ")")
+    else
+        call logMsg(concat("CreateExpandParser: ", which_rec, " does not exist"))
+    endif ;if(validate(parser(which_rec)))
+ 
+    call logMsg(concat("CreateExpandParser: return value = ", return_val))
+ 
+    call catchErrors("An error occurred in CreateExpandParser()")
+ 
+    return(return_val)
+end ;CreateExpandParser()
+ 
+call logMsg("sc_cps_get_prompt_list 007 11/02/2012 ML011047")
+ 
+%#endif SC_CPS_GET_PROMPT_LIST_INC
+ 
+ 
+ 
+ 
+

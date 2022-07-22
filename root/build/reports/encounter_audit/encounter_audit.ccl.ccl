@@ -1,0 +1,46 @@
+select
+	 fin = cnvtalias(ea.alias,ea.alias_pool_cd)
+	,patient = p.name_full_formatted
+	,facility = uar_get_code_display(e.loc_facility_cd)
+	,e.reg_dt_tm ";;q"
+	,e.disch_dt_tm ";;q"
+	,med_service = uar_get_code_display(e.med_service_cd)
+	,encntr_type = uar_get_code_display(e.encntr_type_cd)
+	,e.encntr_id
+from
+	encounter e
+	,encntr_alias ea
+	,person p
+	
+plan e
+	where 	e.encntr_status_cd in(
+									value(uar_get_code_by("MEANING",261,"DISCHARGED"))
+								)
+	and		e.med_service_cd not in(
+									 value(uar_get_code_by("DISPLAY",34,"Outpatient Diagnostic"))
+									,value(uar_get_code_by("DISPLAY",34,"Infusion"))
+									,value(uar_get_code_by("DISPLAY",34,"Laboratory"))
+									,value(uar_get_code_by("DISPLAY",34,"Laboratory Non-Patient"))
+									,value(uar_get_code_by("DISPLAY",34,"Mammo/Bone Density"))
+									,value(uar_get_code_by("DISPLAY",34,"Medicine-General"))
+									,value(uar_get_code_by("DISPLAY",34,"PET"))
+									,value(uar_get_code_by("DISPLAY",34,"Pulmonary"))
+									,value(uar_get_code_by("DISPLAY",34,"Radiation Oncology"))
+									,value(uar_get_code_by("DISPLAY",34,"Sleep Disorders"))
+									)
+	and		e.encntr_type_cd	in(
+									 value(uar_get_code_by("MEANING",71,"OBSERVATION"))
+									,value(uar_get_code_by("MEANING",71,"OUTPATIENT"))
+									)
+join p
+	where   p.person_id				= e.person_id
+join ea
+	where 	ea.encntr_id			= e.encntr_id
+	and 	ea.encntr_alias_type_cd	= value(uar_get_code_by("MEANING",319,"FIN NBR"))
+	and  	ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+	and 	ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3) 	
+	and		ea.active_ind 			= 1
+order by
+	 facility
+	,e.reg_dt_tm
+with nocounter, orahint("index(e xie24encounter)"),format,separator=" "

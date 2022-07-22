@@ -1,0 +1,272 @@
+CREATE PROCEDURE cov_Humana_Lab_Export_Data_Crossville_sp              
+----------------------------------------------------------------------------------------------------------                                            
+---                                            
+--- Name: cov_Humana_Lab_Export_Data_Crossville_sp                       
+---                                            
+--- Customer: Covenant                                            
+--- Created by: Dawn Greer, DBA                                            
+--- Date: 7/15/2016                          
+---                                            
+--- Purpose: To pull Lab Export data to send to Humana.                                            
+---                                            
+--- Database Server: NGSQLR05, CMGREPORTDB1                                              
+--- Databases Used: NGPROD, Cov_NextGen_Integration                                              
+--- File Share for Export: \\ngfs01\nextgenroot\Humana_Extracts                                          
+---                                          
+--- Modifications:                                          
+---   4/4/2017 - DG - Moved from NGSQL02DB to NGSQLR05 and changed the Database from NGPROD to NGPROD_Snapshot                          
+---   4/11/2017 - DG - Added practice_id criteria to the patient join.                        
+---   7/10/2017 - DG - Changed payer from one payer (Medicare Humana Gold) to this list ('Medicare Humana Gold',                       
+---  'Medicare Humana Advantage','Medicare Humana Gold Plus HMO')                      
+---  11/2/2017 - DG - Changed to the new Payer view and added code for excluding expired patient and fixed                  
+---  issue with missing labs                   
+---  2/20/2018 - DG - Changed to Cov_NextGen_Integration.cov_NextGen_Patient_Ins_Payers_Covenant_vw              
+---  and changed name to cov_Humana_Lab_Export_Data_sp              
+---  7/15/2018 - DG - Setup for Crossville         
+---  7/27/2018 - DG - Added C in front of the pa.med_rec_nbr            
+-----------------------------------------------------------------------------------------------------------                               
+AS                            
+--- Humana Lab Data Query                 
+DECLARE @StartDate DATETIME, @EndDate DATETIME                                      
+SET @StartDate = DATEADD(mm, DATEDIFF(mm, 0, GETDATE())-18, 0)                                          
+SET @EndDate = DATEADD(ms, -2, DATEADD(mm, 18, @StartDate)) ;                     
+                            
+SELECT DISTINCT '02' AS RECORD_TYPE_D,                             
+REPLACE(CAST(RTRIM(ISNULL(pe.enc_timestamp,'')) AS DATE),'-','') AS SERVICE_DATE,                             
+RTRIM(ISNULL(lrop.req_accession,'')) AS ACCESSION_NUMBER,                             
+'C' + RTRIM(ISNULL(pa.med_rec_nbr,'')) AS MEDICAL_RECORD_NBR,                            
+RTRIM(ISNULL(p.first_name,'')) AS PATIENT_FIRST_NAME,                             
+RTRIM(ISNULL(p.middle_name,'')) AS PATIENT_MIDDLE_NAME,                            
+RTRIM(ISNULL(p.last_name,'')) AS PATIENT_LAST_NAME,                            
+RTRIM(ISNULL(p.address_line_1,'')) AS PATIENT_ADDRESS_LINE1,                             
+RTRIM(ISNULL(p.address_line_2,'')) AS PATIENT_ADDRESS_LINE2,                             
+RTRIM(ISNULL(p.city,'')) AS PATIENT_CITY_NAME,                            
+RTRIM(ISNULL(p.state,'')) AS PATIENT_STATE,                             
+RTRIM(ISNULL(p.zip,'')) AS PATIENT_ZIP_CODE,                             
+SUBSTRING(p.home_phone,1,3) + '-' + SUBSTRING(p.home_phone,4,3) + '-' + SUBSTRING(p.home_phone,7,4) AS PATIENT_PHONE_NUMBER,                             
+CASE WHEN ISNULL(p.date_of_birth, '') = '' THEN '00000000' ELSE p.date_of_birth END AS PATIENT_BIRTH_DATE,                            
+CASE WHEN ISNULL(p.sex,'') = '' OR p.sex = 'O' THEN 'U' ELSE p.sex END AS PATIENT_GENDER,                            
+RTRIM(ISNULL(p.ssn,'')) AS PATIENT_SSN,                             
+RTRIM(ISNULL(paym.policy_nbr,'')) AS PATIENT_IDCARD_MEMBER_ID,                            
+'' AS PATIENT_MEDICARE_ID,                            
+'' AS PATIENT_MEDICAID_ID,                            
+RTRIM(ISNULL(paym.group_nbr,'')) AS GROUP_NUMBER,                            
+REPLACE(CAST(RTRIM(ISNULL(lrop.coll_date_time,'')) AS DATE),'-','') AS COLLECTION_DATE,                            
+RTRIM(ISNULL(c.phys_tax_id,'')) AS ORDERING_PHYSICIAN_TIN,                            
+RTRIM(ISNULL(c.rendering_upin,'')) AS ORDERING_PHYSICIAN_UPIN,                            
+RTRIM(ISNULL(c.rend_phys_npi_nbr,'')) AS ORDERING_PHYSICIAN_NPI,                            
+RTRIM(ISNULL(c.diagnosis_code_id_1,'')) AS DIAGNOSIS_CODE_1,                            
+RTRIM(ISNULL(c.diagnosis_code_id_2,'')) AS DIAGNOSIS_CODE_2,                            
+RTRIM(ISNULL(c.diagnosis_code_id_3,'')) AS DIAGNOSIS_CODE_3,                            
+RTRIM(ISNULL(c.diagnosis_code_id_4,'')) AS DIAGNOSIS_CODE_4,                            
+RTRIM(ISNULL(c.diagnosis_code_id_5,'')) AS DIAGNOSIS_CODE_5,                            
+RTRIM(ISNULL(SUBSTRING(lro.obs_id,1, CHARINDEX('^',lro.obs_id,1)-1),''))  AS VENDOR_LAB_TEST_ID,                            
+RTRIM(ISNULL(lro.result_desc,''))  AS VENDOR_LAB_TEST_NAME,                            
+RTRIM(ISNULL(lot.test_code_id,'')) AS ALT_VENDOR_CD,                            
+RTRIM(ISNULL(lrop.ng_test_desc,'')) AS ALT_VENDOR_RESULT_NAME,                            
+RTRIM(ISNULL(ln.lab_id,'')) AS LOCAL_LAB_CODE,                            
+RTRIM(ISNULL(lot.spec_src_code,'')) AS SPECIMEN_SOURCE,                            
+RTRIM(ISNULL(spec_src_desc,'')) AS TEST_METHOD,                            
+'' AS EQUIPMENT_ID,                            
+RTRIM(ISNULL(lrop.loinc_code,'')) AS LOINC_CD,                            
+RTRIM(ISNULL(lro.observ_value,'')) AS LAB_RESULTS,                            
+RTRIM(ISNULL(lro.units,'')) AS RESULT_UNITS,                            
+CASE -- Colon or SLASH or words display blank                            
+  WHEN CHARINDEX(':',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) > 0             
+ OR CHARINDEX('/',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) > 0                            
+ OR PATINDEX('%[a-z]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))> 0             
+ OR PATINDEX('%[A-Z]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ','')) > 0                  
+ THEN ''                             
+ -- Less than/No colon                            
+  WHEN CHARINDEX('<',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 1             
+ AND CHARINDEX(':',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                             
+  THEN '       0.0000'                             
+ -- Greater than equal/No colon/No decimal add '.0000'                              
+  WHEN CHARINDEX('>=',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 1             
+ AND CHARINDEX(':',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                             
+ AND CHARINDEX('.',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                               
+ THEN REPLICATE(' ', 8 -(LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))            
+  - PATINDEX('%[0-9]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))+1))                            
+  + LTRIM(SUBSTRING(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),            
+  PATINDEX('%[0-9]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ','')),                        
+  LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))))+ '.0000'                             
+ -- Greater than equal/No colon/No decimal add '.0000'                            
+  WHEN CHARINDEX('>',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 1             
+ AND CHARINDEX(':',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                             
+ AND CHARINDEX('.',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0             
+ THEN REPLICATE(' ', 8 -(LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))            
+  -PATINDEX('%[0-9]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))+1))                            
+  + LTRIM(SUBSTRING(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),            
+  PATINDEX('%[0-9]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ','')),                        
+  LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))))+ '.0000'                            
+  -- Greater than equal/No colon/decimal                            
+  WHEN CHARINDEX('>',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 1             
+ AND CHARINDEX(':',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                             
+ AND CHARINDEX('.',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) > 1                              
+ THEN REPLICATE(' ', 8 -(PATINDEX('%.%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))      - PATINDEX('%[0-9]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))))                            
+  + LTRIM(SUBSTRING(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),            
+  PATINDEX('%[0-9]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ','')),LEN(lro.ref_range)))                            
+  + REPLICATE('0', 4 -(LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))            
+  - PATINDEX('%.%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))))                                   
+  -- Dash/No colon/No decimal add '.0000'                            
+  WHEN CHARINDEX('-',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) > 0            
+ AND CHARINDEX(':',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                             
+ AND CHARINDEX('.',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                               
+ THEN REPLICATE(' ', 8 -(PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))-1))                            
+  + LTRIM(SUBSTRING(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1,            
+  PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))-1))                       
+  + '.0000'                               
+  -- Dash/No colon/Decimal value                            
+  WHEN CHARINDEX('-',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) > 0             
+ AND CHARINDEX(':',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                             
+ AND CHARINDEX('.',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) > 1                              
+ THEN REPLICATE(' ', 8 -(PATINDEX('%.%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))             
+ - PATINDEX('%[0-9]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))))                            
+ + LTRIM(SUBSTRING(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1,             
+ PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))-1))                      
+ + REPLICATE('0', 4 - (PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))            
+ - PATINDEX('%.%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))-1))                            
+ ELSE ' '                            
+ END AS NORMALS_LOW,                             
+CASE -- Colon and Slash or words display blank                              
+  WHEN CHARINDEX(':',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) > 0             
+ OR CHARINDEX('/',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) > 0                            
+ OR PATINDEX('%[A-Z]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ','')) > 0             
+ OR PATINDEX('%[a-z]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ','')) > 0                              
+ THEN ''                            
+  -- Less than equal/No colon/No decimal add '.0000'                            
+  WHEN CHARINDEX('<=',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 1             
+ AND CHARINDEX(':',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                             
+ AND CHARINDEX('.',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                               
+ THEN REPLICATE(' ', 8-(LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))            
+ - PATINDEX('%[0-9]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))+1))                            
+ + LTRIM(SUBSTRING(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),            
+ PATINDEX('%[0-9]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ','')),                        
+    LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))))+ '.0000'                            
+  -- Less than/No colon/No decimal add '.0000'                            
+  WHEN CHARINDEX('<',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 1             
+ AND CHARINDEX(':',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0       
+ AND CHARINDEX('.',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                               
+ THEN REPLICATE(' ', 8-(LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))            
+ - PATINDEX('%[0-9]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))+1))                            
+    + LTRIM(SUBSTRING(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),            
+    PATINDEX('%[0-9]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ','')),                        
+    LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))))+ '.0000'                            
+  -- Less than equal/No colon/Decimal value                            
+  WHEN CHARINDEX('<=',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 1             
+ AND CHARINDEX(':',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                             
+ AND CHARINDEX('.',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) > 1                              
+ THEN REPLICATE(' ', 8-(PATINDEX('%.%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))            
+ - PATINDEX('%[0-9]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))))                            
+ + LTRIM(SUBSTRING(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),            
+ PATINDEX('%[0-9]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ','')),LEN(lro.ref_range)))                            
+ + REPLICATE('0', 4-(LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))             
+ - PATINDEX('%.%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))))                            
+  -- Less than/No colon/Decimal value                            
+  WHEN CHARINDEX('<',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 1             
+ AND CHARINDEX(':',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                             
+ AND CHARINDEX('.',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) > 1                              
+ THEN REPLICATE(' ', 8-(PATINDEX('%.%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))            
+ - PATINDEX('%[0-9]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))))                            
+ + LTRIM(SUBSTRING(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),            
+ PATINDEX('%[0-9]%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ','')),LEN(lro.ref_range)))                            
+ + REPLICATE('0', 4-(LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))             
+ - PATINDEX('%.%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))))                            
+  -- Greater Than/No Colon/No decimal add '.0000'                            
+  WHEN CHARINDEX('>',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 1             
+ AND CHARINDEX(':',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                            
+ AND CHARINDEX(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                              
+ THEN ''                            
+  -- Dash/No colon/No decimal add '.0000'                            
+  WHEN CHARINDEX('-',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) > 0             
+ AND CHARINDEX(':',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                             
+ AND CHARINDEX('.',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                               
+ THEN REPLICATE(' ', 8-(LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))             
+ - PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))))     
+ + LTRIM(SUBSTRING(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),            
+ PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))+1,                          
+    LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))             
+    - PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ','')))) + '.0000'                          
+  -- Dash/No colon/Decimal value                            
+  WHEN CHARINDEX('-',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) > 0             
+ AND CHARINDEX(':',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) = 0                             
+ AND CHARINDEX('.',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),1) > 1                              
+ THEN REPLICATE(' ', 8-(((LEN(SUBSTRING(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),            
+ PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))+1,                            
+    LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))             
+    - PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ','')))))                            
+ - (LEN(SUBSTRING(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),            
+ PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))+1,                            
+    LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))             
+    - PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))))                            
+    - PATINDEX('%.%',SUBSTRING(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),            
+    PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))+1,                            
+    LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))             
+    - PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))))))-1))                            
+ + LTRIM(SUBSTRING(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),            
+ PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))+1,                            
+    LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))             
+    - PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))))                            
+ + REPLICATE('0', 4-(LEN(SUBSTRING(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),            
+ PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))+1,                            
+    LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))             
+    - PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))))                            
+    - PATINDEX('%.%',SUBSTRING(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''),            
+    PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))+1,                            
+    LEN(REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))             
+    - PATINDEX('%-%',REPLACE(REPLACE(lro.ref_range,'OR',''),' ',''))))))                            
+ ELSE ''                             
+ END  AS NORMALS_HIGH,                            
+RTRIM(ISNULL(lro.ref_range,'')) AS NORMALS_ALPHA,                            
+RTRIM(ISNULL(lro.abnorm_flags,'')) AS ABNORMAL_IND,                            
+RTRIM(ISNULL(lc.cpt4_code_id,'')) AS COMPONENT_CPT,                            
+RTRIM(ISNULL('N','')) AS CHANGED_IND,                            
+RTRIM(ISNULL('N','')) AS INPATIENT_IND,                            
+RTRIM(ISNULL(p.race,'')) AS RACE_CD,                            
+RTRIM(ISNULL(ltaa.test_data_value,'')) AS FASTING_IND,                            
+RTRIM(ISNULL(es.external_system_name,'')) AS LAB_PARTNER_NAME,                            
+SUBSTRING(REPLACE(SUBSTRING(lro.result_comment,1,8000), CHAR(10),''),1,75) AS COMMENT1,                            
+CASE WHEN DATALENGTH(lro.result_comment) > 75                     
+ THEN SUBSTRING(REPLACE(SUBSTRING(lro.result_comment,1,8000), CHAR(10),''),76,75) END AS COMMENT2,                            
+CASE WHEN DATALENGTH(lro.result_comment) > 151                     
+ THEN SUBSTRING(REPLACE(SUBSTRING(lro.result_comment,1,8000), CHAR(10),''),151,75) END AS COMMENT3,                            
+CASE WHEN DATALENGTH(lro.result_comment) > 226                     
+ THEN SUBSTRING(REPLACE(SUBSTRING(lro.result_comment,1,8000), CHAR(10),''),226,75) END AS COMMENT4,                            
+CASE WHEN DATALENGTH(lro.result_comment) > 301                     
+ THEN SUBSTRING(REPLACE(SUBSTRING(lro.result_comment,1,8000), CHAR(10),''),301,75) END AS COMMENT5,                            
+CASE WHEN DATALENGTH(lro.result_comment) > 376                     
+ THEN SUBSTRING(REPLACE(SUBSTRING(lro.result_comment,1,8000), CHAR(10),''),376,75) END AS COMMENT6,                            
+CASE WHEN DATALENGTH(lro.result_comment) > 451                     
+ THEN SUBSTRING(REPLACE(SUBSTRING(lro.result_comment,1,8000), CHAR(10),''),451,75) END AS COMMENT7                      
+FROM CMGREPORTDB1.NGPROD.dbo.claims c (NOLOCK) JOIN CMGREPORTDB1.NGPROD.dbo.provider_mstr pm (NOLOCK)             
+ ON c.rend_phys_npi_nbr = pm.national_provider_id AND pm.delete_ind = 'N'                            
+JOIN CMGREPORTDB1.NGPROD.dbo.person p (NOLOCK) ON c.person_id = p.person_id                            
+ AND (p.expired_ind = 'N' OR p.expired_date IS NULL OR p.expired_date = '')                   
+JOIN CMGREPORTDB1.NGPROD.dbo.patient pa (NOLOCK) ON c.person_id = pa.person_id AND c.practice_id = pa.practice_id                          
+JOIN CMGREPORTDB1.NGPROD.dbo.patient_encounter pe (NOLOCK) ON c.enc_id = pe.enc_id                            
+JOIN CMGREPORTDB1.Cov_NextGen_Integration.dbo.cov_NextGen_Patient_Ins_Payers_Covenant_vw paym (NOLOCK)             
+ ON pe.enc_id = paym.enc_id                             
+ AND paym.payer_name IN ('Medicare Humana Gold','Medicare Humana Advantage','Medicare Humana Gold Plus HMO')                   
+JOIN CMGREPORTDB1.NGPROD.dbo.lab_nor ln (NOLOCK) ON ln.person_id = c.person_id AND ln.enc_id = pe.enc_id             
+ AND ln.order_type = 'L'                            
+JOIN CMGREPORTDB1.NGPROD.dbo.external_system es (NOLOCK) ON ln.lab_id = es.external_system_id                            
+JOIN CMGREPORTDB1.NGPROD.dbo.lab_order_tests lot (NOLOCK) ON ln.order_num = lot.order_num                             
+JOIN CMGREPORTDB1.NGPROD.dbo.lab_results_obr_p lrop (NOLOCK) ON c.person_id = lrop.person_id             
+ AND ln.order_num = lrop.ngn_order_num                             
+ AND lrop.order_test_id = lot.order_test_id                  
+JOIN CMGREPORTDB1.NGPROD.dbo.lab_results_obx lro (NOLOCK) ON lrop.person_id = lro.person_id             
+ AND lrop.unique_obr_num = lro.unique_obr_num                  
+LEFT JOIN CMGREPORTDB1.NGPROD.dbo.lab_test_aoe_answer ltaa (NOLOCK) ON ltaa.order_num = ln.order_num                           
+ AND ltaa.order_test_id = lot.order_test_id AND ltaa.aoe_question_code = 'FASTIN'                            
+LEFT JOIN CMGREPORTDB1.NGPROD.dbo.lab_tests_xref ltx (NOLOCK) ON ltx.labtest_key = lot.test_code_id             
+ AND ltx.system_id = es.external_system_id                         
+LEFT JOIN CMGREPORTDB1.NGPROD.dbo.lab_test_cpt4_xref lc (NOLOCK) ON lc.labtest_key =             
+ SUBSTRING(lro.obs_id,1, CHARINDEX('^',lro.obs_id,1)-1)                          
+WHERE p.last_name NOT LIKE 'COVTEST%'                            
+AND p.last_name NOT LIKE 'cov_ng_app_dev%'                    
+AND ln.ngn_status IN ('Signed-Off')                            
+AND CONVERT(DATE,pe.enc_timestamp) BETWEEN @StartDate AND @EndDate                            
+AND ISNULL(lro.ref_range,'') <> ''                            
+ORDER BY REPLACE(CAST(RTRIM(ISNULL(pe.enc_timestamp,'')) AS DATE),'-',''),             
+ RTRIM(ISNULL(lrop.req_accession,'')), RTRIM(ISNULL(lrop.ng_test_desc,'')),                  
+ RTRIM(ISNULL(lro.result_desc,'')) 

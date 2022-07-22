@@ -1,0 +1,38 @@
+
+
+select 	o.order_mnemonic
+		,cpt_back =  bim.key6
+		,save_bi_id = bim.bill_item_id
+		,retval = 100
+		,bim.*
+		,*
+	from orders 		o
+		, bill_item  	bi
+		, bill_item_modifier bim
+plan o where o.order_id = 399324593
+		and	o.active_ind 		= 1
+		and o.catalog_type_cd 	= 2517   ;  Radiology
+join bi where bi.ext_description = o.order_mnemonic
+		and bi.ext_parent_reference_id = o.catalog_cd
+		and bi.active_ind 		= 1
+		and bi.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
+join bim where bim.bill_item_id = bi.bill_item_id
+		and bim.active_ind		= 1
+		and bim.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
+		and bim.key3_entity_name 	= "NOMENCLATURE"
+ 
+ 
+ select 
+ cpt_back = concat("test", bim.key6),
+  *
+		from bill_item_modifier bim
+ 
+	plan bim where bim.bill_item_id 	=    7957366
+				and bim.active_ind 		= 1
+				and bim.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
+				;and bim.key1_id			 = 3692   ;  cpt modifier
+				;and bim.key5_entity_name = "CODE_VALUE"
+ 
+
+ 
+		select * from code_value cv where cv.code_value =        2557504389.00

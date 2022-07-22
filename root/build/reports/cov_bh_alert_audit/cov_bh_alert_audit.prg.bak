@@ -1,0 +1,233 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+	Author:				Chad Cummings
+	Date Written:		
+	Solution:			
+	Source file name:	cov_bh_alert_audit.prg
+	Object name:		cov_bh_alert_audit
+	Request #:
+
+	Program purpose:
+
+	Executing from:		CCL
+
+ 	Special Notes:		Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod 	Mod Date	  Developer				      Comment
+--- 	----------	--------------------	----------------------------------
+000 	08/12/2021  Chad Cummings			Initial Release
+******************************************************************************/
+
+drop program cov_bh_alert_audit:dba go
+create program cov_bh_alert_audit:dba
+
+prompt 
+	"Output to File/Printer/MINE (MINE):" = "MINE"   ;* Enter or select the printer or file name to send this report to
+	, "Begin Date, mmddyy (today):" = "CURDATE"      ;* Enter the begin date for this report
+	, "End Date, mmddyy (today):" = "CURDATE"        ;* Enter the end date for this report
+	;<<hidden>>"Select Facility" = 0
+	;<<hidden>>"Select All" = ""
+	, "Select Nurse Unit" = 0
+	, "FIN (optional):" = "" 
+
+with outdev, begindate, enddate, nurse_unit, FIN
+
+
+call echo(build("loading script:",curprog))
+set nologvar = 0	;do not create log = 1		, create log = 0
+set noaudvar = 0	;do not create audit = 1	, create audit = 0
+%i ccluserdir:cov_custom_ccl_common.inc
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom Section  ************************************"))
+
+if (not(validate(reply,0)))
+record  reply
+(
+	1 text = vc
+	1 status_data
+	 2 status = c1
+	 2 subeventstatus[1]
+	  3 operationname = c15
+	  3 operationstatus = c1
+	  3 targetobjectname = c15
+	  3 targetobjectvalue = c100
+)
+endif
+
+call set_codevalues(null)
+call check_ops(null)
+
+free set t_rec
+record t_rec
+(
+	1 cnt			= i4
+	1 prompts
+	 2 outdev		= vc
+	 2 begindate    = vc
+	 2 begintime	= vc
+	 2 enddate		= vc
+	 2 endtime		= vc
+	 2 fin			= vc
+	1 cons
+	 2 encntr_id	= f8
+	1 qual[*]
+     2 person_id = f8
+	 2 encntr_id = f8
+	 2 name_full_formatted = vc
+	 2 prsnl_id = f8
+	 2 prsnl_name = vc
+	 2 module = vc
+	 2 action_flag = i2
+	 2 action = vc
+	 2 dlg_event_id = f8
+	 2 prsnl_pos = vc
+	 2 facility = vc
+	 2 facility_cd = f8
+	 2 unit_cd = f8
+	 2 unit = vc
+	 2 fin = vc
+	 2 dlg_dt_tm = dq8 
+	 2 fin_class = vc
+)
+
+set t_rec->prompts.outdev 		= $OUTDEV
+set t_rec->prompts.begindate 	= $BEGINDATE
+set t_rec->prompts.begintime	= "0000"
+set t_rec->prompts.enddate 		= $ENDDATE
+set t_rec->prompts.endtime		= "2359"
+set t_rec->prompts.fin			= $FIN
+
+;call addEmailLog("chad.cummings@covhlth.com")
+
+if (t_rec->prompts.fin > " ")
+	select into "nl:"
+	from
+		encntr_alias ea
+	plan ea
+		where ea.alias = t_rec->prompts.fin
+		and   ea.active_ind = 1
+		and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+	detail
+		t_rec->cons.encntr_id = ea.encntr_id
+	with nocounter
+endif
+
+execute 
+	cov_eks_dlg_audit_rec
+	 t_rec->prompts.outdev
+	,t_rec->prompts.begindate
+	,t_rec->prompts.begintime
+	,t_rec->prompts.enddate
+	,t_rec->prompts.endtime
+	,"*PSO*CERT_*"
+	,"F "
+	,"D "
+	,"A "
+
+;execute TEST_EKS_DLG_AUDIT "MINE", "110921", "0000", "110921", "2359", "*CERT*", "F ", "D ", "A " go
+;"MINE", "092721", "0000", "092721", "2359", "*RECERT*", "F ", "D ", "M "
+
+call writeLog(build2("* END   Custom Section  ************************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom   *******************************************"))
+
+select into "nl:"
+from
+	(dummyt d1 with seq=t_rec->cnt)
+plan d1
+detail
+	case (t_rec->qual[d1.seq].module)
+		of "PSO_INPT_CERT_CHECK":	t_rec->qual[d1.seq].module = "Open Chart: Certification Check"
+		of "PSO_INPT_RECERT_CHECK_2":	t_rec->qual[d1.seq].module = "Open Chart: Recertification Check"
+		of "PSO_INPT_CERTIFICATION":	t_rec->qual[d1.seq].module = "PSO: Certification Check"
+		;else
+		;		t_rec->qual[d1.seq].action = "unknown"
+	endcase
+with nocounter
+
+call writeLog(build2("* END   Custom   *******************************************"))
+call writeLog(build2("************************************************************"))
+
+
+
+select into "nl:"
+from
+	 encounter e
+	,encntr_plan_reltn epr
+	,health_plan hp
+	,code_value cv1
+	,(dummyt d1 with seq=t_rec->cnt)
+plan d1
+join e
+	where e.encntr_id = t_rec->qual[d1.seq].encntr_id               
+join epr
+	where epr.encntr_id = e.encntr_id
+	and   epr.active_ind = 1
+	and   epr.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   epr.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+	and   epr.priority_seq in(1,2)
+join hp
+	where hp.health_plan_id = epr.health_plan_id
+	and   hp.active_ind = 1
+	and   hp.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   hp.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join cv1
+	where cv1.code_value = hp.financial_class_cd
+;	and   cv1.cdf_meaning = "MEDICARE"
+detail
+	t_rec->qual[d1.seq].fin_class = concat(hp.plan_name, "(",cv1.cdf_meaning,")")
+with nocounter
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom   *******************************************"))
+
+select into $OUTDEV
+	 facility 			 = substring(1,100,t_rec->qual[d1.seq].facility						) 
+	,unit				 = substring(1,100,t_rec->qual[d1.seq].unit                 		)
+	,fin 				 = substring(1,100,t_rec->qual[d1.seq].fin                  		)
+	,patient_name  		 = substring(1,100,t_rec->qual[d1.seq].name_full_formatted  		)
+	,prsnl_name			 = substring(1,100,t_rec->qual[d1.seq].prsnl_name           		)
+	,prsnl_pos			 = substring(1,100,t_rec->qual[d1.seq].prsnl_pos            		)
+	,module			 	 = substring(1,100,t_rec->qual[d1.seq].module	            		)
+	,dlg_dt_tm 			 = format(t_rec->qual[d1.seq].dlg_dt_tm,"dd-mmm-yyyy hh:mm:ss;;q"	)
+	,action			 	 = substring(1,100,t_rec->qual[d1.seq].action	            		)
+	,dlg_event_id		 = t_rec->qual[d1.seq].dlg_event_id
+from
+	(dummyt d1 with seq=t_rec->cnt)
+plan d1
+	where t_rec->qual[d1.seq].unit_cd = $nurse_unit
+with nocounter, seperator = " ",format
+
+call writeLog(build2("* END   Custom   *******************************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom   *******************************************"))
+call writeLog(build2("* END   Custom   *******************************************"))
+call writeLog(build2("************************************************************"))
+
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom   *******************************************"))
+call writeLog(build2("* END   Custom   *******************************************"))
+call writeLog(build2("************************************************************"))
+
+#exit_script
+call exitScript(null)
+call echorecord(t_rec)
+call echorecord(code_values)
+call echorecord(program_log)
+
+
+end
+go

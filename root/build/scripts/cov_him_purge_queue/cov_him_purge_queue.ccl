@@ -1,0 +1,28 @@
+select 
+	 p1.username
+	,p2.username
+	,cep.action_status_cd
+	,cep.action_type_cd
+	,cep.event_id
+	,cep.action_dt_tm ";;q"
+from
+	 prsnl p1
+	,prsnl p2
+	,ce_event_prsnl cep
+plan p1
+	where p1.username = "HIMPURGE"
+	and   p1.active_ind = 1
+join cep
+	where cep.action_prsnl_id = p1.person_id
+join p2
+	where p2.person_id = cep.request_prsnl_id
+	and   p2.username = "HIMREFUSAL"
+with format(date,";;q"),uar_code(d) go
+
+
+
+select * from code_Value cv where cv.code_value in(      2946684617    657.00, 106 )
+
+
+select * from task_activity ta where ta.event_id =  1573181377.00
+with format(date,";;q"),uar_code(d)

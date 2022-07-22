@@ -1,0 +1,7 @@
+
+;{"PATIENT_BANNER":{"PERSON_ID":20589246.000000,"ENCNTR_ID":110424148.000000,"NAME_FULL":"CSTPDF, TESTDOT","DOB":"27\/01\/87","AGE":" 33 Years","SEX":"Unknown","ENCNTR_TYPE":"Recurring","LOC_FACILITY":"SPH St Pauls","LOC_UNIT":"SPH MSSU OPAT","LOC_ROOM_BED":"IV Check Out-","MRN":"740011902","FIN":"7400000025219"}} 
+
+
+;{"RESULTDATA":{"CLINICAL_EVENT_ID":230684064.000000,"EVENT_ID":230684065.000000,"PARENT_EVENT_ID":230684063.000000,"CMV_URL":"http://phsacdeanp.cerncd.com/camm/b0783.phsa_cd.cerncd.com/service/mediaContent/{92-7c-83-96-aa-f1-43-b9-ac-2e-6b-ed-36-83-9c-ee}","CMV_BASE":"http://phsacdeanp.cerncd.com/camm/b0783.phsa_cd.cerncd.com/service/mediaContent/","IDENTIFIER":"{92-7c-83-96-aa-f1-43-b9-ac-2e-6b-ed-36-83-9c-ee}","ACTION_LIST_CNT":0,"ACTION_LIST":[]}} 
+
+execute bc_all_mp_pdf_viewer "MINE",448058608 go

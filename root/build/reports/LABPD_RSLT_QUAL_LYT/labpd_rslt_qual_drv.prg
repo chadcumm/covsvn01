@@ -1,0 +1,728 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+	Author:				Chad Cummings
+	Date Written:		03/30/2020
+	Solution:			
+	Source file name:	labpd_rslt_qual_drv.prg
+	Object name:		labpd_rslt_qual_drv
+	Request #:
+
+	Program purpose:
+
+	Executing from:		CCL
+
+ 	Special Notes:		Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod 	Mod Date	  Developer				      Comment
+--- 	----------	--------------------	----------------------------------
+000 	03/30/2020  Chad Cummings			Initial Copy from https://wiki.cerner.com/x/CIiAAQ
+001     08/03/2020  Chad Cummings			Added Covenant Custom routines
+******************************************************************************/
+drop program labpd_rslt_qual_drv:dba go
+create program labpd_rslt_qual_drv:dba
+
+;001: remove SSN logic
+
+prompt
+	"Output to File/Printer/MINE" = "MINE"
+	, "Facility" = 0
+	, "Nurse Unit" = 0
+	, "From Date" = CURDATE
+	, "To Date" = CURDATE
+	, "Sort By:" = ""
+	, "Assay" = ""
+	, "Equality" = ""
+	, "Condition" = ""
+ 
+with OUTDEV, FACILITY, NURSE_UNIT_CD, FROM_DT_TM, TO_DT_TM, SORT_BY, ASSAY,
+	EQUALITY, CONDITION
+
+call echo(build("loading script:",curprog))
+set nologvar = 1	;do not create log = 1		, create log = 0
+set noaudvar = 1	;do not create audit = 1	, create audit = 0
+%i ccluserdir:cov_custom_ccl_common.inc
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom Section  ************************************"))
+
+if (not(validate(reply,0)))
+record  reply
+(
+	1 text = vc
+	1 status_data
+	 2 status = c1
+	 2 subeventstatus[1]
+	  3 operationname = c15
+	  3 operationstatus = c1
+	  3 targetobjectname = c15
+	  3 targetobjectvalue = c100
+)
+endif
+
+call set_codevalues(null)
+call check_ops(null)
+
+;call addEmailLog("chad.cummings@covhlth.com")
+
+%i labpd_rslt_qual.inc
+ 
+if ($facility != NULL)
+  if ($nurse_unit_cd != NULL)
+    set loc_parser_string = 2
+  else
+    set loc_parser_string = 1
+  endif
+else
+  set loc_parser_string = 0
+endif
+ 
+free record qualifier
+record qualifier (
+  1 qual = i4
+  1 rec [3]
+    2 assay_cd  = f8
+    2 dta_name  = vc
+    2 equality  = c1
+    2 condition = vc
+)
+free record qual_orders
+record qual_orders (
+  1 qual = i4
+  1 rec [*]
+    2 dta_cd           = f8
+    2 order_action_id  = f8
+    2 order_id         = f8
+    2 result_flagstr   = vc
+    2 result_id        = f8
+    2 result_raw       = f8
+    2 result_status    = vc
+)
+declare alp_abnormal_cd   = f8
+declare alp_critical_cd   = f8
+declare alp_notify_cd     = f8
+declare alp_review_cd     = f8
+declare autov_status_cd   = f8
+declare bflag             = i4 with noconstant(0)
+declare ce_child_cd       = f8
+declare ce_result_ctr     = i4
+declare ce_root_cd        = f8
+declare comp_action_cd    = f8
+declare corr_status_cd    = f8
+declare critical_cd       = f8
+declare delta_fail_cd     = f8
+declare feasible_cd       = f8
+declare inbuffer          = vc
+declare inbuflen          = i4
+declare is_number         = i4
+declare linear_cd         = f8
+declare mrn_cd            = f8
+declare normal_high_cd    = f8
+declare normal_low_cd     = f8
+declare notify_cd         = f8
+declare num               = i4
+declare oa_rec_ctr        = i4
+declare order_action_cd   = f8
+declare outbuffer         = c1000 with noconstant("")
+declare outbuflen         = i4 with noconstant(1000)
+declare parser_string     = c500
+declare pssn_cd           = f8
+declare qc_override_cd    = f8
+declare quote             = c1
+declare result_ctr        = i4
+declare result_idx        = i4
+declare result_num        = i4
+declare retbuflen         = i4 with noconstant(0)
+declare review_cd         = f8
+declare ssn_cd            = f8
+declare verf_status_cd    = f8
+declare xx                = i4
+ 
+set qualifier->rec[1].assay_cd  = cnvtreal($assay)
+set qualifier->rec[1].dta_name  = uar_get_code_display(cnvtreal($assay))
+set qualifier->rec[1].equality  = $equality
+set qualifier->rec[1].condition = $condition
+ 
+set comp_action_cd    = uar_get_code_by("MEANING", 6003, "COMPLETE" )
+set order_action_cd   = uar_get_code_by("MEANING", 6003, "ORDER" )
+set quote             = char(34)
+set ssn_cd            = uar_get_code_by("DISPLAYKEY",  263, "SSN" )
+set pssn_cd           = uar_get_code_by("DISPLAYKEY",  263, "PSEUDOSSN" )
+set mrn_cd            = uar_get_code_by("MEANING",       4, "MRN")
+set ce_child_cd       = uar_get_code_by("DISPLAYKEY",   24, "C" )
+set ce_root_cd        = uar_get_code_by("DISPLAYKEY",   24, "R" )
+set oa_rec_ctr        = 0
+set ce_result_ctr     = 0
+set verf_status_cd    = uar_get_code_by("MEANING", 1901, "VERIFIED")
+set autov_status_cd   = uar_get_code_by("MEANING", 1901, "AUTOVERIFIED")
+set corr_status_cd    = uar_get_code_by("MEANING", 1901, "CORRECTED")
+set normal_high_cd    = uar_get_code_by("MEANING", 1902, "NORMAL_HIGH")
+set normal_low_cd     = uar_get_code_by("MEANING", 1902, "NORMAL_LOW")
+set alp_abnormal_cd   = uar_get_code_by("MEANING", 1902, "ALP_ABNORMAL")
+set critical_cd       = uar_get_code_by("MEANING", 1902, "CRITICAL")
+set alp_critical_cd   = uar_get_code_by("MEANING", 1902, "ALP_CRITICAL")
+set review_cd         = uar_get_code_by("MEANING", 1902, "REVIEW")
+set alp_review_cd     = uar_get_code_by("MEANING", 1902, "ALP_REVIEW")
+set linear_cd         = uar_get_code_by("MEANING", 1902, "LINEAR")
+set feasible_cd       = uar_get_code_by("MEANING", 1902, "FEASIBLE")
+set delta_fail_cd     = uar_get_code_by("MEANING", 1902, "DELTA_FAIL")
+set qc_override_cd    = uar_get_code_by("MEANING", 1902, "QC_OVERRIDE")
+set notify_cd         = uar_get_code_by("MEANING", 1902, "NOTIFY")
+set alp_notify_cd     = uar_get_code_by("MEANING", 1902, "ALP_NOTIFY")
+set qualifier->qual   = 1
+set parser_string     = fillstring(500, " ")
+set is_number         = isnumeric(qualifier->rec[1].condition)
+ 
+/***********************************************************************
+* Build Result Flags String Subroutine                                 *
+***********************************************************************/
+   ;* Build a string of result flags to follow a result on a report.
+   ;* Prints only the 1st char of each result flag.
+   ;* When calling this function, remember that the contents of the
+   ;* display field for the 1902 codeset can be an empty string.
+   ;* This routine will check to see whether the display flag = " ",
+   ;* and if not, will look at the 1st character in the string.
+ 
+declare bldresultflagstr(fnorm, fcrit, frevw, flin, ffeas, fdelta, fcomment,
+                          fnote, fcorr, fqcoverride, fnotify, finterp) = vc
+ 
+subroutine bldresultflagstr(fnorm, fcrit, frevw, flin, ffeas, fdelta, fcomment,
+                             fnote, fcorr, fqcoverride, fnotify, finterp)
+ 
+  declare flagstr = vc with protect, noconstant(" ")
+  ;* Add abnormal flag
+  if (fnorm != " ")
+    set flagstr = fnorm
+  endif
+  ;* Add critical flag
+  if (fcrit != " ")
+    set flagstr = concat(flagstr, fcrit)
+  endif
+  ;* Add interp flag
+  if (textlen(trim(finterp, 3)) > 0)
+    set flagstr = concat(flagstr, finterp)
+  endif
+  ;* Add review flag
+  if (frevw != " ")
+    set flagstr = concat(flagstr, frevw)
+  endif
+  ;* Add linear flag
+  if (flin != " ")
+    set flagstr = concat(flagstr, flin)
+  endif
+  ;* Add feasible flag
+  if (ffeas != " ")
+    set flagstr = concat(flagstr, ffeas)
+  endif
+  ;* Add delta flag
+  if (fdelta != " ")
+    set flagstr = concat(flagstr, fdelta)
+  endif
+  ;* Add corrected flag
+  if (fcorr = "Y")
+    set flagstr = concat(flagstr, "c")
+  endif
+  ; add notify flag
+  if(fnotify != " ")
+    set flagstr = concat(flagstr, fnotify)
+   endif
+  ; add footnote flag
+  if ((fcomment = "Y") or (fnote = "Y"))
+     set flagstr = concat(flagstr, "f")
+  endif
+  ; add qc override flag
+  if (fqcoverride != " ")
+    set flagstr = concat(flagstr, fqcoverride)
+  endif
+  return(flagstr)
+end
+/*********************************************
+* check condition from prompt for type, if   *
+* numeric, search the perform_result table   *
+* for numbers, otherwise search for          *
+* ascii_text or alpha text. if non-numeric,  *
+* also pad with quotes                       *
+*********************************************/
+if (is_number > 0)
+  set condition_value = cnvtreal(qualifier->rec[1].condition)
+  set parser_string = build("pr.result_id = r.result_id", " and pr.result_value_numeric ",
+      qualifier->rec[1].equality, " ", condition_value)
+else
+  set condition_value = concat("*", qualifier->rec[1].condition, "*")
+  set parser_string = build("pr.result_id = r.result_id ", " and (pr.ascii_text ",
+      qualifier->rec[1].equality, " patstring(", quote, condition_value, quote, ")",
+      " or pr.result_value_alpha ", qualifier->rec[1].equality,
+      " patstring(", quote, condition_value, quote, "))")
+endif
+ 
+/*******************************************************************************
+* if non-numeric, should come out looking something like this:                 *
+* and (pr.ascii_text = "PROMPT TEXT" or pr.result_value_alpha = "PROMPT TEXT") *
+********************************************************************************/
+ 
+/*******************************************
+**  search for results matching qualifier **
+********************************************/
+
+
+call writeLog(build2("* END   Custom Section  ************************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom   *******************************************"))
+call writeLog(build2("* END   Custom   *******************************************"))
+call writeLog(build2("************************************************************"))
+ 
+  
+select into "nl:"
+  from order_action oa,
+        result r,
+        perform_result pr
+  plan (oa
+    where (oa.action_dt_tm
+	  between cnvtdatetime($from_dt_tm)
+	      and cnvtdatetime($to_dt_tm))
+      and (oa.action_type_cd = comp_action_cd))
+    and (r
+      where (r.order_id = oa.order_id) and (r.task_assay_cd = qualifier->rec[1].assay_cd))
+    and (pr
+      where parser (parser_string)
+      and pr.result_status_cd in (verf_status_cd,autov_status_cd,corr_status_cd))
+ 
+  detail
+    oa_rec_ctr = (oa_rec_ctr + 1),
+    if ((mod(oa_rec_ctr, 100) = 1))
+      stat = alterlist (qual_orders->rec, (oa_rec_ctr + 99))
+    endif
+    ,
+    qual_orders->rec[oa_rec_ctr].order_action_id = oa.order_action_id,
+    qual_orders->rec[oa_rec_ctr].result_id       = r.result_id,
+    qual_orders->rec[oa_rec_ctr].result_raw      = pr.result_value_numeric,
+    qual_orders->rec[oa_rec_ctr].order_id        = oa.order_id,
+    qual_orders->rec[oa_rec_ctr].dta_cd          = r.task_assay_cd
+    qual_orders->rec[oa_rec_ctr].result_status   = uar_get_code_display(pr.result_status_cd)
+ 
+  /****************************************
+  **      create result flag string      **
+  ****************************************/
+  if (pr.result_status_cd in (corr_status_cd))
+    correction_flag = "Y"
+  else
+    correction_flag = "N"
+  endif
+  if (pr.normal_cd in(normal_high_cd, normal_low_cd, alp_abnormal_cd))
+     cv_normflag = uar_get_code_display(pr.normal_cd)
+  else
+     cv_normflag = " "
+  endif
+  if (pr.critical_cd in(critical_cd, alp_critical_cd))
+     cv_critflag = uar_get_code_display(pr.critical_cd)
+  else
+     cv_critflag = " "
+  endif
+  if (pr.review_cd in(review_cd, alp_review_cd))
+     cv_revwflag = uar_get_code_display(pr.review_cd)
+  else
+     cv_revwflag = " "
+  endif
+  if (pr.linear_cd = linear_cd)
+     cv_linflag = uar_get_code_display(pr.linear_cd)
+  else
+     cv_linflag = " "
+  endif
+  if (pr.feasible_cd = feasible_cd)
+     cv_feasflag = uar_get_code_display(pr.feasible_cd)
+  else
+     cv_feasflag = " "
+  endif
+  if (pr.delta_cd = delta_fail_cd)
+     cv_deltaflag = uar_get_code_display(pr.delta_cd)
+  else
+     cv_deltaflag = " "
+  endif
+  if (pr.qc_override_cd = qc_override_cd)
+     sQCOverride = uar_get_code_display(pr.qc_override_cd)
+  else
+     sQCOverride = " "
+  endif
+  if(pr.notify_cd in(notify_cd, alp_notify_cd))
+    cv_notifyflag = uar_get_code_display(pr.notify_cd)
+  else
+    cv_notifyflag = " "
+  endif
+  interp_flag = ""
+  rc_exists = ""
+  rn_exists = ""
+  qual_orders->rec[oa_rec_ctr].result_flagstr =
+    bldresultflagstr(cv_normflag, cv_critflag, cv_revwflag, cv_linflag, cv_feasflag, cv_deltaflag,
+                     rc_exists, rn_exists, correction_flag, sQCOverride, cv_notifyflag, interp_flag)
+with nocounter
+ 
+set qual_orders->qual = oa_rec_ctr
+set stat = alterlist(qual_orders->rec, oa_rec_ctr)
+/****************************************
+**       get parent level details      **
+****************************************/
+select distinct  into "nl:"
+  oa.action_dt_tm,
+  o.catalog_cd,
+  pat_name    = p.name_full_formatted,
+;001
+;  ssn         = pa.alias,
+;  mrn         = pa.alias,
+  age         = cnvtage(p.birth_dt_tm),
+  dob         = p.birth_dt_tm,
+  location    = build(uar_get_code_display(e.loc_facility_cd), "/",
+                      uar_get_code_display(e.loc_building_cd), "/",
+                      uar_get_code_display(e.loc_nurse_unit_cd), "/",
+                      uar_get_code_display(e.loc_room_cd), "/",
+                      uar_get_code_display(e.loc_bed_cd)),
+  accession   = cnvtacc (a.accession),
+  priority    = uar_get_code_display (ol.report_priority_cd),
+  order_doc   = p2.name_full_formatted,
+  order_dt_tm = o.orig_order_dt_tm,
+  test        = uar_get_code_display (o.catalog_cd),
+  coll_dt_tm  = c.drawn_dt_tm,
+  inlab_dt_tm = c.received_dt_tm,
+  spec_type   = uar_get_code_display (c.specimen_type_cd),
+  comp_dt_tm  = oa.action_dt_tm,
+  service_resource = uar_get_code_display (osrc.service_resource_cd)
+  from order_action oa,
+    orders o,
+    order_serv_res_container osrc,
+    container c,
+    order_laboratory ol,
+    person p,
+;001
+;    person_alias pa,
+    encounter e,
+    accession_order_r aor,
+    accession a,
+    person p2,
+    clinical_event ce,
+    (dummyt d1 with seq = value(qual_orders->qual))
+  plan (d1)
+  and (oa
+    where (oa.order_action_id = qual_orders->rec[d1.seq].order_action_id))
+  and (o
+    where (o.order_id = oa.order_id))
+  and (osrc
+    where (osrc.order_id = oa.order_id) and
+; ADDED THIS LINE TO FIX MULTIPLE CONTAINER ORDERS
+      (osrc.container_id=(
+        select max (osrc.container_id)
+          from (order_serv_res_container osrc)
+          where (osrc.order_id = oa.order_id))))
+  and (c
+    where (c.container_id=osrc.container_id))
+  and (ol
+    where (ol.order_id=oa.order_id))
+  and (p
+    where (p.person_id=o.person_id))
+;001
+;  and (pa
+;  where (p.person_id=pa.person_id)
+;    and (pa.alias_pool_cd in (ssn_cd, pssn_cd))
+;	and (pa.active_ind= 1)
+;gets the most recently updated SSN or pseudo SSN
+;	and (pa.updt_dt_tm=(
+;      select max (pa2.updt_dt_tm)
+;        from (person_alias pa2)
+;        where (pa2.person_id = p.person_id)
+;		  and (pa2.active_ind = 1)
+;		  and (pa2.alias_pool_cd in (ssn_cd, pssn_cd)))))
+  and (e
+    where (e.encntr_id = o.encntr_id)
+    and ((loc_parser_string = 1 and e.organization_id = $facility)
+         or
+         (loc_parser_string = 2 and e.loc_nurse_unit_cd = $nurse_unit_cd)
+         or
+         (loc_parser_string = 0 and 1 = 1)))
+  and (aor
+    where (aor.order_id = oa.order_id))
+  and (a
+    where (a.accession_id = aor.accession_id))
+  and (p2
+    where (p2.person_id = oa.order_provider_id))
+  and (ce
+    where (ce.order_id = oa.order_id)
+	  and (ce.valid_until_dt_tm > cnvtdatetime(curdate, curtime3))
+      and (ce.publish_flag = 1)
+	  and (ce.event_reltn_cd = ce_root_cd)
+	  and (ce.view_level = 0))
+  head report
+    rec_ctr = 0
+  detail
+    rec_ctr =(rec_ctr + 1),
+    if((mod(rec_ctr, 100) = 1))
+      stat = alterlist(lab_records->rec, (rec_ctr + 99))
+    endif
+    ,
+;001
+;    if (pa.alias_pool_cd = ssn_cd)
+;      lab_records->rec[rec_ctr].ssn = ssn
+;    else
+;      lab_records->rec[rec_ctr].ssn = substring((findstring(":", ssn, 1)+ 1), 10, ssn)
+;    endif
+;    ,
+    lab_records->rec[rec_ctr].catalog_cd   = o.catalog_cd,
+    lab_records->rec[rec_ctr].order_id     = o.order_id,
+    lab_records->rec[rec_ctr].patient_name = pat_name,
+    lab_records->rec[rec_ctr].person_id    = p.person_id,
+    lab_records->rec[rec_ctr].age          = age,
+    lab_records->rec[rec_ctr].dob          = dob,
+    lab_records->rec[rec_ctr].location     = location,
+    lab_records->rec[rec_ctr].accession    = accession,
+    lab_records->rec[rec_ctr].priority     = priority,
+    lab_records->rec[rec_ctr].order_doc    = order_doc,
+    lab_records->rec[rec_ctr].order_doc_id = p2.person_id,
+    lab_records->rec[rec_ctr].order_dt_tm  = order_dt_tm,
+    lab_records->rec[rec_ctr].test         = test,
+    lab_records->rec[rec_ctr].coll_dt_tm   = coll_dt_tm,
+    lab_records->rec[rec_ctr].inlab_dt_tm  = inlab_dt_tm,
+    lab_records->rec[rec_ctr].spec_type    = spec_type,
+    lab_records->rec[rec_ctr].comp_dt_tm   = comp_dt_tm,
+    lab_records->rec[rec_ctr].order_loc    = 0.0,
+    lab_records->rec[rec_ctr].service_resource    = service_resource,
+    lab_records->rec[rec_ctr].service_resource_cd = osrc.service_resource_cd
+  foot report
+    lab_records->qual = rec_ctr,
+    stat = alterlist(lab_records->rec, rec_ctr)
+with nocounter, separator =" ", format
+/****************************************
+**                get 	              **
+****************************************/
+; this gets the most recent MRN
+; should probably update to the go to the
+; encntr_alias table instead...
+select into "nl:"
+  from
+    person_alias pa,
+    (dummyt d1 with seq = value(lab_records->qual))
+  plan d1
+    and (pa where (pa.person_id = lab_records->rec[d1.seq].person_id)
+              and (pa.person_alias_type_cd = mrn_cd)
+	          and (pa.active_ind = 1)
+	          and (pa.updt_dt_tm =(
+                select max (pa2.updt_dt_tm)
+                  from (person_alias  pa2)
+                  where (pa2.person_id = lab_records->rec[d1.seq].person_id)
+                    and (pa2.active_ind = 1)
+                    and (pa2.person_alias_type_cd = mrn_cd))))
+  detail
+    lab_records->rec[d1.seq].mrn = cnvtalias(pa.alias,pa.alias_pool_cd)
+with nocounter
+/****************************************
+**    get ordering location details    **
+****************************************/
+ 
+select into "nl:"
+  l.location_cd,
+  order_loc_name = cnvtupper(uar_get_code_display(l.location_cd))
+  from order_action oa,
+  location l,
+  (dummyt d1 with seq = value (lab_records->qual))
+  plan (d1)
+    and (oa
+      where (oa.order_id = lab_records->rec[d1.seq].order_id)
+	    and (oa.action_type_cd = order_action_cd))
+    and (l
+      where (l.location_cd = oa.order_locn_cd)
+	    and ((loc_parser_string > 0 and l.organization_id = $facility)
+	       or (loc_parser_string = 0 and l.organization_id > 0)))
+  detail
+    lab_records->rec[d1.seq].order_loc      = oa.order_locn_cd,
+    lab_records->rec[d1.seq].order_loc_name = order_loc_name
+with nocounter
+ 
+/****************************************
+* loop back through to get result level *
+* details                               *
+****************************************/
+ 
+for (xx = 1 to qual_orders->qual)
+  select distinct into "nl:"
+    ce.task_assay_cd,
+    ce.result_val,
+    normal_high    = ce.normal_high,
+    normal_low     = ce.normal_low,
+    normalcy_cd    = uar_get_code_display(ce.normalcy_cd),
+    result_display = uar_get_code_display (ce.task_assay_cd),
+    result_units   = uar_get_code_display(ce.result_units_cd),
+    verified_by    = p.name_full_formatted
+    from
+      clinical_event ce,
+      result r,
+      person p,
+      profile_task_r ptr
+    plan (ce
+      where expand(num, 1, lab_records->qual, ce.order_id, lab_records->rec[num].order_id )
+        and (ce.valid_until_dt_tm > cnvtdatetime(curdate, curtime3))
+        and (ce.publish_flag = 1)
+        and (ce.view_level = 1)
+        and (ce.event_reltn_cd = ce_child_cd)
+        and (ce.task_assay_cd = qual_orders->rec[xx].dta_cd)
+        and (ce.order_id = qual_orders->rec[xx].order_id))
+    and (ptr
+      where (ptr.catalog_cd = outerjoin (ce.catalog_cd))
+        and (ptr.task_assay_cd = outerjoin(ce.task_assay_cd))
+        and (ptr.active_ind = outerjoin(1)))
+    and (r
+      where (r.order_id = ce.order_id)
+        and (r.task_assay_cd = ce.task_assay_cd)
+        and (r.result_id = qual_orders->rec[xx].result_id))
+    and (p
+      where (p.person_id = ce.verified_prsnl_id))
+    order by ce.order_id, ptr.sequence
+    head report
+      tsize = lab_records->qual,
+      li = 0
+    head ce.order_id
+      ce_result_ctr = 0
+    detail
+      index = locateval(li, 1, tsize, ce.order_id, lab_records->rec[li].order_id ),
+      if (index > 0)
+        lab_records->rec[index].dta_cd         = ce.task_assay_cd,
+        lab_records->rec[index].normal_hi      = normal_high,
+        lab_records->rec[index].normal_lo      = normal_low,
+        lab_records->rec[index].result_display = result_display,
+        lab_records->rec[index].result_flg     = qual_orders->rec[xx].result_flagstr,
+        lab_records->rec[index].result_id      = r.result_id,
+        lab_records->rec[index].result_status  = qual_orders->rec[xx].result_status,
+        lab_records->rec[index].result_val     = ce.event_tag,
+        lab_records->rec[index].units          = result_units,
+        lab_records->rec[index].verified_dt_tm = ce.verified_dt_tm,
+        lab_records->rec[index].verified_by    = verified_by,
+        if (qual_orders->rec[xx].result_raw = NULL)
+          lab_records->rec[index].result_sort = 0
+        else
+          lab_records->rec[index].result_sort = qual_orders->rec[xx].result_raw
+        endif
+      endif
+  with nocounter, separator =" ", format
+endfor
+
+/****************************************
+**         get LOINC codes             **
+****************************************/
+ 
+select into "nl:"
+  from
+    clinical_event ce,
+    ref_cd_map_header mh,
+    ref_cd_map_detail md,
+    nomenclature n
+  plan (ce
+    where expand (num,  1, lab_records->qual, ce.order_id, lab_records->rec[num].order_id))
+  join mh where mh.event_id = ce.event_id
+  join md where md.ref_cd_map_header_id = mh.ref_cd_map_header_id
+  join n where n.nomenclature_id = md.nomenclature_id 
+  head report
+    tsize = lab_records->qual,
+    li = 0
+    result_idx = 0
+    interp_idx = 0
+  detail
+   index = locateval(li, 1, tsize, ce.order_id, lab_records->rec[li].order_id),
+   if (index > 0)
+     result_idx = locateval(result_num, 1, 1, ce.task_assay_cd,lab_records->rec[index].dta_cd)
+     if (result_idx > 0)
+       lab_records->rec[index].loinc_cd = n.source_identifier
+     endif
+   endif
+with nocounter, separator =" ", format
+
+
+/****************************************
+**         get result comments         **
+****************************************/
+ 
+select into "nl:"
+  r.order_id,
+  rc.result_id,
+  lt.long_text_id
+  from
+    result r,
+    result_comment rc,
+    long_text lt,
+    dummyt d1
+  plan (r
+    where expand (num,  1, lab_records->qual, r.order_id, lab_records->rec[num].order_id))
+  and d1
+  and (rc
+    where (rc.result_id = r.result_id))
+  and (lt
+    where (lt.long_text_id = rc.long_text_id))
+ 
+  head report
+    tsize = lab_records->qual,
+    li = 0
+  head r.result_id
+    result_idx = 0,
+    interp_idx = 0
+  detail
+   index = locateval(li, 1, tsize, r.order_id, lab_records->rec[li].order_id),
+   if (index > 0)
+     result_idx = locateval(result_num, 1, 1, rc.result_id,
+        lab_records->rec[index].result_id),
+    if (result_idx > 0)
+      inbuffer = lt.long_text,
+      inbuflen = size(trim(inbuffer)),
+      stat     = uar_rtf (inbuffer, inbuflen, outbuffer, outbuflen, retbuflen, bflag),
+      lab_records->rec[index].comment = build(lab_records->rec[index].comment,
+        " ", substring(1, retbuflen, outbuffer))
+    endif
+  endif
+with outerjoin = d1, nocounter, separator =" ", format
+ 
+/****************************************
+**         get interp data text        **
+****************************************/
+ 
+select into "nl:"
+  r.order_id,
+  rc.result_id,
+  lt.long_text_id
+  from
+    result r,
+    perform_result pr,
+    interp_data id,
+    long_text lt2
+  plan (r
+    where expand(num, 1, lab_records->qual, r.order_id, lab_records->rec[num].order_id))
+  and (pr
+    where (pr.result_id = r.result_id))
+  and (id
+    where (id.interp_data_id = pr.interp_data_id))
+  and (lt2
+    where (lt2.long_text_id = id.long_text_id))
+  head report
+    tsize = lab_records->qual,
+    li = 0,
+    i = 0
+  head r.result_id
+    result_idx = 0,
+    interp_idx = 0
+  detail
+    index = locateval(li, 1, tsize, r.order_id, lab_records->rec[li].order_id),
+    if (index > 0)
+        if (r.result_id = lab_records->rec[index].result_id)
+          inbuffer = lt2.long_text,
+          inbuflen = size(trim(inbuffer)),
+          stat     = uar_rtf(inbuffer, inbuflen, outbuffer, outbuflen, retbuflen, bflag),
+          lab_records->rec[index].interp = substring(1, retbuflen, outbuffer)
+        endif
+    endif
+with nocounter, separator =" ", format
+# end_program
+
+#exit_script
+call exitScript(null)
+
+end go

@@ -1,0 +1,58 @@
+select
+	 e.encntr_id
+	,ce.event_id
+	,ce.event_cd
+	,ce.series_ref_nbr
+	,ce.reference_nbr
+	,ce.updt_dt_tm
+	,ce.event_end_dt_tm
+	,ce.result_status_cd
+	,ce.valid_until_dt_tm
+from
+	 clinical_event ce
+	,encounter e
+	,encntr_alias ea
+plan ea
+	where ea.alias = "7400000025196"
+join e
+	where e.encntr_id = ea.encntr_id
+join ce
+	where ce.person_id = e.person_id
+	and   ce.encntr_id = e.encntr_id
+	and   ce.event_cd = value(uar_get_code_by("DISPLAY",72,"Print to PDF Requisition"))
+	and   ce.updt_dt_tm >= cnvtdatetime(curdate-1,0)
+order by
+	 ea.alias
+	,ea.encntr_id
+	,ce.updt_dt_tm desc
+with format(date,";;q"),uar_code(d)
+
+select 
+	 cv.code_value
+	,cv.cdf_meaning
+	,cv.description
+	,cv.definition
+	,cve.field_value
+from
+	 code_value cv
+	,code_value_extension cve
+plan cv
+	where cv.code_set 		= 103507
+	and   cv.active_ind 	= 1
+	and   cv.cdf_meaning	= "VALIDATION"
+join cve
+	where cve.code_value	= outerjoin(cv.code_value)
+	and   cve.field_name	= outerjoin("SCRIPT")
+	and   cve.field_value	= outerjoin(cnvtupper("pfmt_TEST_print_to_pdf_req"))
+order by
+		 cv.begin_effective_dt_tm desc
+		,cve.field_value
+		,cv.description
+		,cv.cdf_meaning	
+		
+select 
+	*
+from
+	request_processing rp
+plan rp
+	where rp.active_ind = 1

@@ -1,0 +1,172 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+	Author:				Chad Cummings
+	Date Written:		03/30/2020
+	Solution:			Discern
+	Source file name:	cov_rpt_def_rec.prg
+	Object name:		cov_rpt_def_rec
+	Request #:
+
+	Program purpose:
+
+	Executing from:		CCL
+
+ 	Special Notes:		Called by ccl program(s) to establish record structures
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod 	Mod Date	  Developer				      Comment
+--- 	----------	--------------------	----------------------------------
+000 	03/30/2020  Chad Cummings			Initial Release
+******************************************************************************/
+drop program cov_rpt_def_rec go
+create program cov_rpt_def_rec
+
+prompt 
+	"Create Test Data" = 0   ;* Populate Record Structures with Test Data 
+
+with TEST_DATA
+
+if (not(validate(l_rec,0)))
+	record l_rec
+	(
+		1 test_data_ind 	= i2
+		1 debug_ind			= i2
+		1 facility
+		 2 cnt				= i2
+		 2 qual[*]
+		  3 loc_facility_cd	= f8
+		  3 display			= vc
+		  3 description		= vc
+		  3 inpatient_ind	= i2
+	)
+endif
+
+
+if (not(validate(reply,0)))
+	record  reply
+	(
+		1 text = vc
+		1 status_data
+		 2 status = c1
+		 2 subeventstatus[1]
+		  3 operationname = c15
+		  3 operationstatus = c1
+		  3 targetobjectname = c15
+		  3 targetobjectvalue = c100
+	) with persistscript
+endif
+
+
+if (not(validate(hrts_covid19,0)))
+	record hrts_covid19
+	(
+		1 summary_cnt					= i2
+		1 summary_qual[*]           
+		 2 facility						= vc
+		 2 q1_total_pos_inp				= i2
+		 2 q1_1_icu_pos_inp				= i2
+		 2 q1_2_pos_inp_vent			= i2
+		 2 q2_total_pend_inp			= i2
+		 2 q2_1_icu_pend_inp			= i2
+		 2 q2_2_pend_inp_vent			= i2
+	) with persistscript
+endif
+
+if (not(validate(community_covid19,0)))
+	record community_covid19
+	(
+		1 summary_cnt					= i2
+		1 summary_qual[*]           
+		 2 facility						= vc
+		 2 confirmed_inpatient			= i2
+		 2 confirmed_ventilator			= i2
+		 2 confirmed_icu				= i2
+		 2 suspected_inpatient			= i2
+		 2 suspected_ventilator			= i2
+		 2 suspected_icu				= i2
+		1 totals
+		 2 confirmed_inpatient			= i2
+		 2 confirmed_ventilator			= i2
+		 2 confirmed_icu				= i2
+	) with persistscript
+endif
+
+set l_rec->debug_ind = 1
+set l_rec->test_data_ind = $TEST_DATA
+
+if (l_rec->test_data_ind = 1)
+	call facility_test_data(null)
+	call community_covid19_test_data(null)
+endif
+
+subroutine (facility_test_data(null) = vc)
+	select into "nl:"
+	from 
+		 location l
+		,code_value cv1
+	plan l
+		where l.location_type_cd = value(uar_get_code_by("MEANING",222,"FACILITY"))
+		and   l.active_ind = 1
+		and   cnvtdatetime(curdate,curtime3) between l.beg_effective_dt_tm and l.end_effective_dt_tm
+	join cv1
+		where cv1.code_value = l.location_cd
+		and   cv1.active_ind = 1
+		and   cnvtdatetime(curdate,curtime3) between cv1.begin_effective_dt_tm and cv1.end_effective_dt_tm
+	order by
+		 cv1.display
+		,l.location_cd
+	head report
+		row +0
+	head l.location_cd
+		l_rec->facility.cnt = (l_rec->facility.cnt + 1)
+		stat = alterlist(l_rec->facility.qual,l_rec->facility.cnt)
+		l_rec->facility.qual[l_rec->facility.cnt].loc_facility_cd 	= cv1.code_value
+		l_rec->facility.qual[l_rec->facility.cnt].display			= cv1.display
+		l_rec->facility.qual[l_rec->facility.cnt].description		= cv1.description
+		if (cv1.display in("FLMC","RMC","FSR","MMC","MHHS","LCMC","PW"))
+			l_rec->facility.qual[l_rec->facility.cnt].inpatient_ind = 1
+		endif
+	foot report
+		row +0
+	with nocounter
+end ;facility_test_data
+
+subroutine (community_covid19_test_data(null) = vc)
+	for (i=1 to l_rec->facility.cnt)
+		if (l_rec->facility.qual[i].inpatient_ind = 1)
+			set community_covid19->summary_cnt = (community_covid19->summary_cnt + 1)
+			set stat = alterlist(community_covid19->summary_qual,community_covid19->summary_cnt)
+			set community_covid19->summary_qual[community_covid19->summary_cnt].facility = l_rec->facility.qual[i].display
+		endif
+	endfor
+end ;community_covid19_test_data
+
+%i ccluserdir:atg_cps_email_attachment.inc
+
+#exit_script
+
+if (l_rec->debug_ind = 1)
+
+	if (validate(reply,0))
+		call echorecord(l_rec)
+		call echojson(l_rec,"cclscratch:test.csv",0)
+	endif
+	
+	if (validate(community_covid19,0))
+		call echorecord(community_covid19)
+		call echojson(community_covid19,"cclscratch:test2.csv",0)
+	endif
+	
+	call ATGEmailAttachment("DA2_Admin@cerner.com"
+		,"ccummin4@covhlth.com","test email","testing email","ccluserdir:test.csv"
+		,5)
+	
+endif
+end
+go

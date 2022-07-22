@@ -1,0 +1,171 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Todd A. Blanchard
+	Date Written:		12/10/2019
+	Solution:			Revenue Cycle - Acute Care Management
+	Source file name:	cov_him_Defic_Review.prg
+	Object name:		cov_him_Defic_Review
+	Request #:			6683
+ 
+	Program purpose:	Lists patient populations for BPCI bundles.
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:		Called by mPages.
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+ 	Mod Date	Developer				Comment
+ 	----------	--------------------	--------------------------------------
+
+ 
+******************************************************************************/
+
+drop program cov_mpage_svc_bpci:dba go
+create program cov_mpage_svc_bpci:dba
+ 
+prompt 
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to. 
+
+with OUTDEV
+ 
+ 
+/**************************************************************
+; DVDev DECLARED SUBROUTINES
+**************************************************************/
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+
+
+declare cmrn_var			= f8 with constant(uar_get_code_by("MEANING", 4, "CMRN"))
+declare ssn_var				= f8 with constant(uar_get_code_by("MEANING", 4, "SSN"))
+declare fin_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 319, "FINNBR"))
+declare inpatient_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 321, "INPATIENT"))
+declare discharged_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 261, "DISCHARGED"))
+declare covenant_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 73, "COVENANT"))
+ 
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/ 
+ 
+/**************************************************************/
+; select data
+select into $OUTDEV
+	cmrn					= pa.alias
+	, patient_name_last		= p.name_last
+	, patient_name_first	= p.name_first
+	, patient_name_middle	= p.name_middle
+	, gender				= cva.alias
+	, dob					= format(cnvtdatetimeutc(datetimezone(p.birth_dt_tm, p.birth_tz), 1), "mm/dd/yyyy;;d")
+	, ssn					= pa2.alias
+	, marital_status		= uar_get_code_display(p.marital_type_cd)
+	, nationality			= uar_get_code_display(p.nationality_cd)
+	, language				= uar_get_code_display(p.language_cd)
+	
+from
+	ENCOUNTER e
+		 
+	, (inner join ENCNTR_ALIAS eaf on eaf.encntr_id = e.encntr_id
+		and eaf.encntr_alias_type_cd = fin_var
+		and eaf.end_effective_dt_tm > sysdate
+		and eaf.active_ind = 1)
+ 
+	, (inner join DRG d on d.encntr_id = e.encntr_id
+		and d.end_effective_dt_tm > sysdate
+		and d.active_ind = 1)
+ 
+	, (inner join NOMENCLATURE n on n.nomenclature_id = d.nomenclature_id
+		and n.source_identifier in (
+			"280", "281", "282",						; ACUTE MI
+			"291", "292", "293",						; CHF
+			"308", "309", "310",						; CARDIAC ARRHYTHMIA
+			"377", "378", "379",						; GI HEMORRHAGE
+			"388", "389", "390",						; GI OBSTRUCTION
+			"480", "481", "482",						; HIP/FEMUR PROCEDURE EXCEPT MAJOR JOINT
+			"469", "470",								; MAJOR JOINT REPLACEMENT OF LE -NO FRACTURE
+			"682", "683", "684",						; RENAL FAILURE
+			"177", "178", "179", "193", "194", "195",	; SIMPLE PNEUMONIA & RESPIRATORY INFECTIONS
+			"689", "690"								; UTI
+		))
+ 
+	, (inner join PERSON p on p.person_id = e.person_id
+		and p.end_effective_dt_tm > sysdate
+		and p.active_ind = 1)
+	
+	, (left join CODE_VALUE_ALIAS cva on cva.code_value = p.sex_cd
+		and cva.code_set = 57
+		and cva.contributor_source_cd = covenant_var)
+ 
+	, (left join PERSON_ALIAS pa on pa.person_id = p.person_id
+		and pa.person_alias_type_cd = cmrn_var
+		and pa.end_effective_dt_tm > sysdate
+		and pa.active_ind = 1)
+ 
+	, (left join PERSON_ALIAS pa2 on pa2.person_id = p.person_id
+		and pa2.person_alias_type_cd = ssn_var
+		and pa2.end_effective_dt_tm > sysdate
+		and pa2.active_ind = 1)
+ 
+	, (inner join ENCNTR_PLAN_RELTN epr on epr.encntr_id = e.encntr_id
+		and epr.priority_seq = 1
+		and epr.beg_effective_dt_tm <= e.reg_dt_tm
+		and epr.end_effective_dt_tm >= e.reg_dt_tm
+		and epr.active_ind = 1)
+ 
+	, (inner join HEALTH_PLAN hp on hp.health_plan_id = epr.health_plan_id
+		and (
+			hp.plan_type_cd in (
+			select cv.code_value
+			from CODE_VALUE cv
+			where
+				cv.code_set = 367
+				and cv.cdf_meaning = "MEDICARE"
+				and cv.active_ind = 1
+			)
+		or
+			hp.financial_class_cd in (
+			select cv.code_value
+			from CODE_VALUE cv
+			where
+				cv.code_set = 354
+				and cv.cdf_meaning = "MEDICARE"
+				and cv.active_ind = 1
+			))
+		and hp.beg_effective_dt_tm <= e.reg_dt_tm
+		and hp.end_effective_dt_tm >= e.reg_dt_tm
+		and hp.active_ind = 1)
+
+where
+	e.encntr_class_cd = inpatient_var
+	and e.encntr_status_cd != discharged_var
+	and e.loc_facility_cd in (
+		2552503635.00,	; FLMC
+		2552503653.00,	; LCMC
+		2552503639.00,	; MHHS
+		2552503613.00,	; MMC
+		2552503649.00	; RMC
+	)
+		
+order by
+	p.name_full_formatted
+	, p.person_id
+
+;WITH nocounter, format, separator = " ", time = 60
+WITH nocounter, format, separator = "|", noheading, time = 60
+ 
+ 
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+ 
+end
+go
+

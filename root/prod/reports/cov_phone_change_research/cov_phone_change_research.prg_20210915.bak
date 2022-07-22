@@ -1,0 +1,375 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Dawn Greer
+	Date Written:		09/09/2021
+	Solution:			Ambulatory
+	Source file name:	cov_phone_change_research.prg
+	Object name:		cov_phone_change_research
+	Request #:
+ 
+	Program purpose:	Display phone changes.
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+Mod  Date       Developer				Comment
+---- ----------	--------------------	--------------------------------------
+ 001 09/09/2021 Dawn Greer, DBA         CR XXXX - Created
+******************************************************************************/
+drop program cov_phone_change_research:DBA go
+create program cov_phone_change_research:DBA
+ 
+prompt
+	"Output to File/Printer/MINE" = "MINE"
+	, "Output To File" = 0
+ 
+with OUTDEV, OUTPUT_FILE
+ 
+/**************************************************************
+; DECLARED VARIABLES
+**************************************************************/
+DECLARE cov_crlf 			= vc WITH constant(build(char(13),char(10)))
+DECLARE cov_lf              = vc WITH constant(char(10))
+DECLARE cov_pipe			= vc WITH constant(char(124))
+DECLARE cov_space			= vc WITH constant(char(32))
+ 
+DECLARE file_var			= vc WITH noconstant("cov_phone_change_research_")
+DECLARE cur_date_var  		= vc WITH noconstant(build(YEAR(curdate),FORMAT(MONTH(curdate),"##;P0"),FORMAT(DAY(curdate),"##;P0")))
+DECLARE filepath_var		= vc WITH noconstant("")
+DECLARE temppath_var  		= vc WITH noconstant("cer_temp:")
+DECLARE temppath2_var		= vc WITH noconstant("$cer_temp/")
+DECLARE output_var			= vc WITH noconstant("")
+DECLARE output_rec  		= vc WITH noconstant("")
+ 
+DECLARE cmd					= vc WITH noconstant("")
+DECLARE len					= i4 WITH noconstant(0)
+DECLARE stat				= i4 WITH noconstant(0)
+ 
+;  Set astream path
+SET filepath_var = "/cerner/w_custom/p0665_cust/to_client_site/Extracts/"
+SET file_var = cnvtlower(build(file_var,cur_date_var,".txt"))
+SET filepath_var = build(filepath_var, file_var)
+SET temppath_var = build(temppath_var, file_var)
+SET temppath2_var = build(temppath2_var, file_var)
+ 
+IF (validate(request->batch_selection) = 1 or $output_file = 1)
+	SET output_var = value(temppath_var)
+ELSE
+	SET output_var = value($OUTDEV)
+ENDIF
+ 
+RECORD phone (
+	1	ph_cnt = i4
+	1	list[*]
+		2 domain = C20
+		2 CMRN = C20
+		2 phone_hist_id = F8
+		2 phone_id = F8
+		2 parent_entity_id = F8
+		2 phone_num = c100
+		2 phone_type_cd = F8
+		2 phone_type_desc = c20
+		2 phone_type_seq = I4
+		2 updated_by = c100
+		2 updt_dt_tm = dq8
+)
+ 
+RECORD phone_list (
+	1	ph_cnt = i4
+	1	list[*]
+		2 domain = C20
+		2 CMRN = C20
+		2 phone_hist_id = F8
+		2 phone_id = F8
+		2 parent_entity_id = F8
+		2 phone_num = c100
+		2 phone_type_cd = F8
+		2 phone_type_desc = c20
+		2 phone_type_seq = I4
+		2 updated_by = c100
+		2 updt_dt_tm = dq8
+		2 phone_hist_id2 = F8
+		2 phone_id2 = F8
+		2 parent_entity_id2 = F8
+		2 phone_num2 = c100
+		2 phone_type_cd2 = F8
+		2 phone_type_desc2 = c20
+		2 phone_type_seq2 = I4
+		2 updated_by2 = c100
+		2 updt_dt_tm2 = dq8
+)
+ 
+/***************************************************************
+Get Active Phone Hist List
+****************************************************************/
+ 
+SELECT DOMAIN = CURDOMAIN,
+CMRN = cmrn.alias,
+updt_dt_tm = ph_hist.updt_dt_tm,
+updated_by = TRIM(pr.name_full_formatted,3),
+phone_hist_id = ph_hist.phone_hist_id,
+parent_entity_id = ph_hist.parent_entity_id,
+phone_id = ph_hist.phone_id,
+phone_num = ph_hist.phone_Num,
+phone_type_cd = ph_hist.phone_type_cd,
+phone_type_desc = UAR_GET_CODE_DISPLAY(ph_hist.phone_type_cd),
+phone_type_seq = ph_hist.phone_type_seq
+FROM phone ph, phone_hist ph_hist, person_alias cmrn, prsnl pr
+WHERE ph.phone_id = ph_hist.phone_id
+AND ph.parent_entity_id = ph_hist.parent_entity_id
+AND ph.parent_entity_id = cmrn.person_id
+AND cmrn.person_alias_type_cd = 2 /*CMRN*/
+AND ph.parent_entity_name = 'PERSON'
+AND ph.active_ind = 1
+AND ph_hist.updt_id = pr.person_id
+AND ph.phone_type_cd =         163.00 /*Business*/
+;AND ph.parent_entity_id = 15025741.00
+AND ph.updt_dt_tm >= CNVTDATETIME(CURDATE-1,0)
+ORDER ph.phone_id, ph_hist.phone_hist_id
+ 
+HEAD REPORT
+	cnt = 0
+ 
+	CALL ALTERLIST(phone->list, 100)
+ 
+DETAIL
+	cnt = cnt + 1
+ 
+	IF(mod(cnt, 10) = 1 AND cnt > 100)
+		CALL ALTERLIST(phone->list, cnt + 9)
+	ENDIF
+ 
+	phone->list[cnt].domain = domain
+	phone->list[cnt].CMRN = CMRN
+	phone->list[cnt].phone_id = phone_id
+	phone->list[cnt].parent_entity_id = parent_entity_id
+	phone->list[cnt].phone_num = phone_num
+	phone->list[cnt].phone_type_cd = phone_type_cd
+	phone->list[cnt].phone_type_desc = phone_type_desc
+	phone->list[cnt].phone_type_seq = phone_type_seq
+	phone->list[cnt].updt_dt_tm = updt_dt_tm
+	phone->list[cnt].updated_by = updated_by
+	phone->list[cnt].phone_hist_id = phone_hist_id
+ 
+FOOT REPORT
+	phone->ph_cnt = cnt
+	CALL ALTERLIST(phone->list, cnt)
+ 
+WITH MAXREC = 100000, nocounter, separator=" ", format
+ 
+/***************************************************************
+Get Active Phone List Copy
+****************************************************************/
+ 
+SELECT DOMAIN = phone->list[d.seq].Domain,
+CMRN = phone->list[d.seq].CMRN,
+updt_dt_tm = phone->list[d.seq].updt_dt_tm,
+updated_by = phone->list[d.seq].updated_by,
+phone_hist_id = phone->list[d.seq].phone_hist_id,
+parent_entity_id = phone->list[d.seq].parent_entity_id,
+phone_id = phone->list[d.seq].phone_id,
+phone_num = phone->list[d.seq].phone_num,
+phone_type_cd = phone->list[d.seq].phone_type_cd,
+phone_type_desc = phone->list[d.seq].phone_type_desc,
+phone_type_seq = phone->list[d.seq].phone_type_seq
+FROM (dummyt d WITH seq = phone->ph_cnt)
+PLAN d
+ORDER phone_id, phone_hist_id
+ 
+HEAD REPORT
+	cnt = 0
+ 
+	CALL ALTERLIST(phone_list->list, 100)
+ 
+DETAIL
+	cnt = cnt + 1
+ 
+	IF(mod(cnt, 10) = 1 AND cnt > 100)
+		CALL ALTERLIST(phone_list->list, cnt + 9)
+	ENDIF
+ 
+	phone_list->list[cnt].domain = domain
+	phone_list->list[cnt].CMRN = CMRN
+	phone_list->list[cnt].phone_id = phone_id
+	phone_list->list[cnt].parent_entity_id = parent_entity_id
+	phone_list->list[cnt].phone_num = phone_num
+	phone_list->list[cnt].phone_type_cd = phone_type_cd
+	phone_list->list[cnt].phone_type_desc = phone_type_desc
+	phone_list->list[cnt].phone_type_seq = phone_type_seq
+	phone_list->list[cnt].updt_dt_tm = updt_dt_tm
+	phone_list->list[cnt].updated_by = updated_by
+	phone_list->list[cnt].phone_hist_id = phone_hist_id
+ 
+FOOT REPORT
+	phone_list->ph_cnt = cnt
+	CALL ALTERLIST(phone_list->list, cnt)
+ 
+WITH nocounter, separator=" ", format
+ 
+/***************************************************************
+Get Active Phone List Compare
+****************************************************************/
+ 
+SELECT DOMAIN = phone->list[d.seq].Domain,
+CMRN = phone->list[d.seq].CMRN,
+updt_dt_tm = phone->list[d.seq].updt_dt_tm,
+updated_by = phone->list[d.seq].updated_by,
+phone_hist_id = phone->list[d.seq].phone_hist_id,
+parent_entity_id = phone->list[d.seq].parent_entity_id,
+phone_id = phone->list[d.seq].phone_id,
+phone_num = phone->list[d.seq].phone_num,
+phone_type_cd = phone->list[d.seq].phone_type_cd,
+phone_type_desc = phone->list[d.seq].phone_type_desc,
+phone_type_seq = phone->list[d.seq].phone_type_seq
+FROM (dummyt d WITH seq = phone_list->ph_cnt)
+PLAN d
+ORDER phone_id, phone_hist_id
+ 
+DETAIL
+ 
+	FOR (p2cnt = 1 TO phone->ph_cnt)
+		IF (phone->list[p2cnt].phone_id = phone_list->list[d.seq].phone_id
+			AND phone->list[p2cnt].phone_num != phone_list->list[d.seq].phone_num
+			AND phone->list[p2cnt].phone_hist_id > phone_list->list[d.seq].phone_hist_id)
+ 
+				phone_list->list[p2cnt].phone_id2 = phone_id
+				phone_list->list[p2cnt].parent_entity_id2 = parent_entity_id
+				phone_list->list[p2cnt].phone_num2 = phone_num
+				phone_list->list[p2cnt].phone_type_cd2 = phone_type_cd
+				phone_list->list[p2cnt].phone_type_desc2 = phone_type_desc
+				phone_list->list[p2cnt].phone_type_seq2 = phone_type_seq
+				phone_list->list[p2cnt].updt_dt_tm2 = updt_dt_tm
+				phone_list->list[p2cnt].updated_by2 = updated_by
+				phone_list->list[p2cnt].phone_hist_id2 = phone_hist_id
+ 
+				p2cnt = phone->ph_cnt + 1
+		ENDIF
+	ENDFOR
+ 
+WITH nocounter, separator=" ", format
+ 
+/****************************************************************************
+	Build Output
+*****************************************************************************/
+IF (phone_list->ph_cnt > 0)
+	IF (validate(request->batch_selection) = 1 OR $output_file = 1)	;If output to File
+	 	CALL ECHO ("******* Build Output *******")
+ 
+	 	SET output_rec = ""
+ 
+		SELECT DISTINCT INTO VALUE(output_var)
+		FROM (DUMMYT dt with seq = phone_list->ph_cnt)
+		WHERE phone_list->list[dt.seq].phone_hist_id2 != 0
+		ORDER BY dt.seq
+ 
+		HEAD REPORT
+			output_rec = build("Domain", cov_pipe,
+					"CMRN", cov_pipe,
+					"From_Phone_Hist_id", cov_pipe,
+					"From_Phone_id", cov_pipe,
+					"From_Parent_Entity_id", cov_pipe,
+					"From_Phone_Num", cov_pipe,
+					"From_Phone_Type_cd", cov_pipe,
+					"From_Phone_Type_Desc", cov_pipe,
+					"From_Phone_Type_Seq", cov_pipe,
+					"From_Update_By", cov_pipe,
+					"From_Update_Date", cov_pipe,
+					"Blank_Column", cov_pipe,
+					"To_Phone_Hist_id", cov_pipe,
+					"To_Phone_id", cov_pipe,
+					"To_Parent_Entity_id", cov_pipe,
+					"To_Phone_Num", cov_pipe,
+					"To_Phone_Type_cd", cov_pipe,
+					"To_Phone_Type_Desc", cov_pipe,
+					"To_Phone_Type_Seq", cov_pipe,
+					"To_Update_By", cov_pipe,
+					"Tod_Update_Date")
+			col 0 output_rec
+			row + 1
+ 
+		HEAD dt.seq
+			output_rec = ""
+			output_rec = build(output_rec,
+							phone_list->list[dt.seq].Domain, cov_pipe,
+							phone_list->list[dt.seq].CMRN, cov_pipe,
+							phone_list->list[dt.seq].phone_hist_id2, cov_pipe,
+							phone_list->list[dt.seq].phone_id2, cov_pipe,
+							phone_list->list[dt.seq].parent_entity_id2, cov_pipe,
+							phone_list->list[dt.seq].phone_num2, cov_pipe,
+							phone_list->list[dt.seq].phone_type_cd2, cov_pipe,
+							phone_list->list[dt.seq].phone_type_desc2, cov_pipe,
+							phone_list->list[dt.seq].phone_type_seq2, cov_pipe,
+							phone_list->list[dt.seq].updated_by2, cov_pipe,
+							FORMAT(phone_list->list[dt.seq].updt_dt_tm2, "MM/DD/YYYY hh:mm:ss;;d"), cov_pipe,
+							cov_space,cov_pipe,
+							phone_list->list[dt.seq].phone_hist_id, cov_pipe,
+							phone_list->list[dt.seq].phone_id, cov_pipe,
+							phone_list->list[dt.seq].parent_entity_id, cov_pipe,
+							phone_list->list[dt.seq].phone_num, cov_pipe,
+							phone_list->list[dt.seq].phone_type_cd, cov_pipe,
+							phone_list->list[dt.seq].phone_type_desc, cov_pipe,
+							phone_list->list[dt.seq].phone_type_seq, cov_pipe,
+							phone_list->list[dt.seq].updated_by, cov_pipe,
+							FORMAT(phone_list->list[dt.seq].updt_dt_tm,"MM/DD/YYYY hh:mm:ss;;d"))
+			output_rec = trim(output_rec,3)
+ 
+		FOOT dt.seq
+			col 0 output_rec
+			IF (dt.seq < phone_list->ph_cnt) row + 1 ELSE row + 0 ENDIF
+ 
+		WITH nocounter, maxcol = 32000, FORMAT=STREAM, formfeed = none, maxrow=1, NOHEADING, NOFORMFEED
+ 
+		SET cmd = build2("cp ", temppath2_var, " ", filepath_var)
+		SET len = size(trim(cmd))
+ 
+		CALL dcl(cmd, len, stat)
+		;CALL echo(build2(cmd, " : ", stat))
+ 
+	ELSE
+		/***************************************************************
+		Get Output to Grid
+		****************************************************************/
+ 
+		SELECT INTO $OUTDEV
+			Domain = phone_list->list[d.seq].domain,
+			CMRN = phone_list->list[d.seq].CMRN,
+			From_Phone_Hist_id = phone_list->list[d.seq].phone_hist_id2,
+			From_Phone_id = phone_list->list[d.seq].phone_id2,
+			From_Parent_Entity_id = phone_list->list[d.seq].parent_entity_id2,
+			From_Phone_Num = phone_list->list[d.seq].phone_num2,
+			From_Phone_Type_cd = phone_list->list[d.seq].phone_type_cd2,
+			From_Phone_Type_Desc = phone_list->list[d.seq].phone_type_desc2,
+			From_Phone_Type_seq = phone_list->list[d.seq].phone_type_seq2,
+			From_Updated_By = phone_list->list[d.seq].updated_by2,
+			From_Update_Date = FORMAT(phone_list->list[d.seq].updt_dt_tm2, "MM/DD/YYYY hh:mm:ss;;d"),
+			"",
+			To_Phone_Hist_id = phone_list->list[d.seq].phone_hist_id,
+			To_Phone_id = phone_list->list[d.seq].phone_id,
+			To_Parent_Entity_id = phone_list->list[d.seq].parent_entity_id,
+			To_Phone_Num = phone_list->list[d.seq].phone_num,
+			To_Phone_Type_cd = phone_list->list[d.seq].phone_type_cd,
+			To_Phone_Type_Desc = phone_list->list[d.seq].phone_type_desc,
+			To_Phone_Type_Seq = phone_list->list[d.seq].phone_type_seq,
+			To_Updated_By = phone_list->list[d.seq].updated_by,
+			To_Update_Date = FORMAT(phone_list->list[d.seq].updt_dt_tm, "MM/DD/YYYY hh:mm:ss;;d")
+		FROM (dummyt d WITH seq = phone_list->ph_cnt)
+		WHERE phone_list->list[d.seq].phone_hist_id2 != 0
+		ORDER BY From_Phone_id, From_Phone_Hist_id
+		WITH MAXREC= 1000, nocounter, format, separator = ' ', memsort
+	ENDIF
+ENDIF
+;CALL ECHORECORD(phone)
+;CALL ECHORECORD(phone_list)
+ 
+END
+GO
+ 
+ 

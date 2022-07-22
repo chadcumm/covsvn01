@@ -1,0 +1,24 @@
+select * from ccl_report_audit cra where cra.object_name = "COV_TOG_PROV_DOC_AUDIT:DBA"
+
+select * from code_value cv where cv.code_value=2553766379
+
+select * from sch_appt sa where sa.appt_location_cd=  2553766379 and sa.end_dt_tm > cnvtdatetime(Curdate,curtime3)
+ ;cnvtdatetime("31-DEC-2100 00:00:00")
+ 
+ select distinct 
+ 	p.name_full_formatted 
+ from 
+ 	 sch_appt sa
+ 	,sch_resource sr
+ 	,prsnl p
+ plan sa
+ 	where sa.appt_location_cd=  2553766379 ;2553766379
+ 	and sa.resource_cd > 0.0
+ join sr
+ 	where sr.resource_cd = sa.resource_cd
+ 	and   sr.person_id > 0.0
+ join p
+ 	where p.person_id = sr.person_id
+ order by
+ 	p.name_full_formatted
+

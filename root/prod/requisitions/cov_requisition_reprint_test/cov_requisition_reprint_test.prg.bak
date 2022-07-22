@@ -1,0 +1,82 @@
+drop program cov_requisition_reprint_test go
+create program cov_requisition_reprint_test 
+
+prompt 
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "Order ID" = 0 
+
+with OUTDEV, ORDER_ID
+
+set trace savepoint  	        ;Save TRACE settings
+set trace timer            		;To get timing and statistics for script
+set trace echoinput2         	;To see PARSER calls
+set trace deprecated          	;Warn about deprecated features
+set trace truncatecheck       	;display warning message for string truncations
+set trace rdbplan            	;To get plan from CCLORAPLAN - always turn this on for parser scripts!
+set trace rdbdebug           	;To see SQL statements being built
+set trace rdbbind            	;To see bindings of data to select variables
+set trace echosub            	;To see subroutines called
+
+free record 560601_request				;DCP.OutputReprint
+record 560601_request         		 	;DCP.OutputReprint
+(
+  1 personId = f8   
+  1 consFormInd = i2   
+  1 reqInd = i2   
+  1 osInd = i2   
+  1 orderList [*]   
+    2 encntrId = f8   
+    2 orderId = f8   
+    2 consFormInd = i2   
+    2 consFormPrinterName = vc  
+    2 reqInd = i2   
+    2 reqPrinterName = vc  
+    2 osInd = i2   
+    2 osPrinterName = vc  
+)
+
+free record 560601_reply				;DCP.OutputReprint
+record 560601_reply         		 	;DCP.OutputReprint
+(
+%i cclsource:status_block.inc
+)
+
+set stat = initrec(560601_request)
+ 
+select into "nl:"
+from
+	 orders o
+	,order_action oa
+plan o
+	where o.order_id = $ORDER_ID
+join oa
+	where oa.order_id = o.order_id
+order by
+	 oa.action_dt_tm desc
+	,o.order_id
+head report
+	cnt = 0
+head o.order_id
+	cnt 	= (cnt + 1)
+	stat 	= alterlist(560601_request->orderList,cnt)
+	560601_request->personId						= o.person_id
+	560601_request->reqInd							= 1
+	560601_request->orderList[cnt].encntrId			= o.encntr_id
+	560601_request->orderList[cnt].orderId			= o.order_id
+	560601_request->orderList[cnt].reqInd			= 1
+	560601_request->orderList[cnt].reqPrinterName	= "cpt_b_revcycl_a_mfp"
+foot report
+	cnt = 0
+with nocounter 
+
+call echorecord(560601_request)
+set stat = tdbexecute(600005, 500196, 560601, "REC", 560601_request, "REC", 560601_reply)
+call echorecord(560601_reply)
+
+
+end go
+
+
+
+
+

@@ -1,0 +1,210 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+	Author:				Chad Cummings
+	Date Written:		03/30/2020
+	Solution:			
+	Source file name:	cov_rpt_discern_audit.prg
+	Object name:		cov_rpt_discern_audit
+	Request #:
+
+	Program purpose:
+
+	Executing from:		CCL
+
+ 	Special Notes:		Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod 	Mod Date	  Developer				      Comment
+--- 	----------	--------------------	----------------------------------
+000 	03/30/2020  Chad Cummings			Initial Release
+******************************************************************************/
+
+drop program cov_rpt_discern_audit:dba go
+create program cov_rpt_discern_audit:dba
+
+prompt
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+
+with OUTDEV
+
+
+call echo(build("loading script:",curprog))
+set nologvar = 0	;do not create log = 1		, create log = 0
+set noaudvar = 0	;do not create audit = 1	, create audit = 0
+%i ccluserdir:cov_custom_ccl_common.inc
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom Section  ************************************"))
+
+if (not(validate(reply,0)))
+record  reply
+(
+	1 text = vc
+	1 status_data
+	 2 status = c1
+	 2 subeventstatus[1]
+	  3 operationname = c15
+	  3 operationstatus = c1
+	  3 targetobjectname = c15
+	  3 targetobjectvalue = c100
+)
+endif
+
+call set_codevalues(null)
+call check_ops(null)
+
+free set t_rec
+record t_rec
+(
+	1 ccl_cnt			= i4
+	1 ccl_qual[*]
+	 2 object			= vc
+	 2 object_name		= vc
+	 2 username			= vc
+	 2 source			= vc
+	 2 date				= vc
+	 2 time				= vc
+	1 report_name_1 = vc
+	1 dminfo
+	 2 info_domain		= vc
+	 2 info_name		= vc
+	 2 info_date		= dq8
+	1 dates
+	 2 start_dt_tm		= dq8
+	 2 end_dt_tm		= dq8
+	 2 date_format		= vc
+	 2 time_format		= vc
+)
+
+if (reqinfo->updt_req = 3050002)
+	set program_log->display_on_exit = 1
+	if (reqinfo->updt_task = 3202004)
+		set program_log->run_from_ops = 1
+		call addEmailLog("chad.cummings@covhlth.com")
+	endif
+endif
+
+if (program_log->run_from_ops = 1)
+	set t_rec->dminfo.info_domain	= "COV_DEV_OPS"
+	set t_rec->dminfo.info_name		= concat(trim(cnvtupper(curprog)),":","start_dt_tm")
+	set t_rec->dminfo.info_date		= get_dminfo_date(t_rec->dminfo.info_domain,t_rec->dminfo.info_name)
+	
+	if (t_rec->dminfo.info_date = 0.0)
+		call writeLog(build2("->No start date and time found, setting to go live date"))
+		set t_rec->dates.start_dt_tm = cnvtdatetime("11-MAY-2020 00:00:00")
+	else
+		set t_rec->dates.start_dt_tm = t_rec->dminfo.info_date
+	endif
+	set t_rec->dates.end_dt_tm = cnvtdatetime(curdate,curtime3)
+else
+	set t_rec->dates.start_dt_tm = datetimefind(cnvtlookbehind("1,D",cnvtdatetime(curdate,curtime3)), 'D', 'B', 'B') 
+	set t_rec->dates.end_dt_tm	 = datetimefind(cnvtlookbehind("1,D",cnvtdatetime(curdate,curtime3)), 'D', 'E', 'E') 
+	call addEmailLog("chad.cummings@covhlth.com")
+endif
+
+set t_rec->dates.date_format = format(cnvtdate(cnvtdatetime(t_rec->dates.start_dt_tm)),"mm/dd/yyyy;;d")
+set t_rec->dates.time_format = 	format(cnvttime(cnvtdatetime(t_rec->dates.start_dt_tm)),"hh:mm:ss;;s")
+
+call writeLog(build2("* END   Custom Section  ************************************"))
+call writeLog(build2("************************************************************"))
+
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Finding Discern Explorer Changes *******************"))
+
+select into "nl:"
+from
+	dprotect d
+plan d
+	where d.object = "P"
+	and   d.datestamp >= cnvtdate(t_rec->dates.start_dt_tm)
+	and   d.timestamp >= cnvttime(t_rec->dates.start_dt_tm)
+order by
+	 d.user_name
+	,d.datestamp
+	,d.timestamp
+head report	
+	t_rec->ccl_cnt = 0
+detail
+	t_rec->ccl_cnt = (t_rec->ccl_cnt + 1)
+	stat = alterlist(t_rec->ccl_qual,t_rec->ccl_cnt)
+	t_rec->ccl_qual[t_rec->ccl_cnt].object 		= d.object
+	t_rec->ccl_qual[t_rec->ccl_cnt].object_name = d.object_name
+	t_rec->ccl_qual[t_rec->ccl_cnt].source 		= replace(d.source_name,char(3),"")
+	t_rec->ccl_qual[t_rec->ccl_cnt].username 	= d.user_name
+	t_rec->ccl_qual[t_rec->ccl_cnt].date		= format(d.datestamp,"mm/dd/yyyy;;q")
+	t_rec->ccl_qual[t_rec->ccl_cnt].time		= format(d.timestamp,"hh:mm:ss;;s")
+foot report
+	row +0
+with nocounter
+
+call writeLog(build2("* END   Finding Discern Explorer Changes *******************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom   *******************************************"))
+call writeLog(build2("* END   Custom   *******************************************"))
+call writeLog(build2("************************************************************"))
+
+
+call writeLog(build2("* START Creating Discern Explorer Audit ********************"))
+set audit_header	= build2(
+								char(34),		"Object Type",			char(34),char(44),		
+								char(34),		"Object Name",			char(34),char(44),
+								char(34),		"Author",				char(34),char(44),
+								char(34),		"Date and Time",		char(34),char(44),
+								char(34),		"Source",				char(34),char(44)
+							)
+call writeLog(audit_header)
+call writeAudit(audit_header)
+
+for (i=1 to t_rec->ccl_cnt)
+	set audit_line = ""
+	set audit_line	= build2(
+								char(34),		t_rec->ccl_qual[i].object,								char(34),char(44),		
+								char(34),		t_rec->ccl_qual[i].object_name,							char(34),char(44),
+								char(34),		t_rec->ccl_qual[i].username,							char(34),char(44),
+								char(34),		t_rec->ccl_qual[i].date," ",t_rec->ccl_qual[i].time,	char(34),char(44),
+								char(34),		t_rec->ccl_qual[i].source,								char(34),char(44)
+							)
+	
+	call writeLog(audit_line)
+	call writeAudit(audit_line)
+endfor
+
+call writeLog(build2("* END   Creating Discern Explorer Audit ********************"))
+
+;audit_header
+
+set reply->status_data.status = "S"
+
+#exit_script
+
+if (reply->status_data.status in("Z","S"))
+	if (program_log->run_from_ops = 1)
+		call writeLog(build2("* START Set Date Range ************************************"))
+		call set_dminfo_date(t_rec->dminfo.info_domain,t_rec->dminfo.info_name,t_rec->dates.end_dt_tm)
+		call writeLog(build2("* END Set Date Range ************************************v1"))
+	endif
+endif
+
+call writeLog(build2(cnvtrectojson(t_rec))) 
+call writeLog(build2(cnvtrectojson(request))) 
+call writeLog(build2(cnvtrectojson(reqinfo))) 
+call writeLog(build2(cnvtrectojson(reply))) 
+call writeLog(build2(cnvtrectojson(program_log)))
+
+call exitScript(null)
+;call echorecord(t_rec)
+;call echorecord(code_values)
+;call echorecord(program_log)
+
+
+end
+go

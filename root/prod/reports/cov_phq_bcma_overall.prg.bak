@@ -1,0 +1,423 @@
+ 
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+	Author:			Geetha Paramasivam
+	Date Written:		May 2019
+	Solution:			Quality/Pharmacy
+	Source file name:	      cov_phq_BCMA_overall.prg
+	Object name:		cov_phq_BCMA_overall
+	Request#:			5015
+	Program purpose:	      BCMA - Overall compliance - By Facility and Nurse unit.
+	Executing from:		DA2
+ 	Special Notes:          Leapfrog section not in use
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+Mod Date	Developer			Comment
+----------	-----------------------------------------------------------------------------------------------------------
+5/29/19     Geetha      CR#5017  - Include all depts/organizations (including Ambulatory locations)
+06/04/19    Geetha      CR#4955  - Dispense category - "Dummy Item COA" excluded
+07/11/19    Geetha      CR 5246  - add nurse unit description
+09/10/19	Geetha	CR#5389  - exclude Template-Non-Formulary intermitent and continuous from BCMA reports
+06/04/20    Geetha      CR#7524  - BCMA - Process to exclude drugs from Scan Rate reports - ongoing special project
+01/11/22    Geetha	CR#11707 - Termed users need to be included in BCMA reports
+05/03/22    Geetha      CR#10558 - Exclude patients own home meds
+
+*************************************************************************************************************************/
+ 
+drop program cov_phq_bcma_overall:DBA go
+create program cov_phq_bcma_overall:DBA
+ 
+prompt
+	"Output to File/Printer/MINe" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "Facility" = 0
+	, "Start Date/Time" = "SYSDATE"
+	, "End Date/Time" = "SYSDATE"
+ 
+with OUTDEV, acute_facilities, start_datetime, end_datetime
+ 
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+ 
+declare inpatient_var = f8 with constant(uar_get_code_by("DISPLAY", 71, "Inpatient")), protect
+;------------------------------------------------------------------------------------
+ 
+RECORD bcma(
+	1 bcma_rec_cnt = i4
+	1 plist[*]
+		2 facility = vc
+		2 nurse_unit_cd = f8
+		2 nurse_unit = vc
+		2 pat_type_flag = vc
+		2 encounter_id = f8
+		2 eventid = f8
+		2 orderid = f8
+		2 catalogcd = f8
+		2 order_mnemonic = vc
+		2 itemid = f8
+		2 charge_number = vc
+		2 non_bcma_med = vc
+		2 med_admin_eventid = f8
+		2 med_scan = vc
+		2 armband_scan = vc
+		2 leapfrog_flag = vc
+		2 med_admin_cnt = i4
+		2 med_admin_dt = vc
+)
+ 
+RECORD bcma_tot(
+	1 tot_rec_cnt = i4
+	1 facility = vc
+	1 fac_tot_admin = f8
+	1 fac_tot_comp_admin = f8
+	1 fac_tot_leap_admin = f8
+	1 fac_tot_leap_comp_admin = f8
+	1 unit[*]
+		2 nurse_unit = vc
+		2 nurse_unit_desc = vc
+		2 nu_tot_admin = f8
+		2 nu_tot_comp_admin = f8
+		2 leapfrog_unit = vc
+		2 lp_nu_tot_admin = f8
+		2 lp_nu_tot_comp_admin = f8
+ 
+	)
+ 
+;------------------------------------------------------------------------------------
+;Get med admins 
+select into $outdev
+
+  e.encntr_id, l.facility_accn_prefix_cd, e.loc_facility_cd, mae.nurse_unit_cd
+  , pat_type = if(e.encntr_type_cd != inpatient_var) 'NB' else ' ' endif
+  , Nurse_unit = uar_get_code_display(mae.nurse_unit_cd)
+  , medication_scanned = if(mae.positive_med_ident_ind = 1) 'Y' else 'N' endif
+  , wristband_scanned = if(mae.positive_patient_ident_ind = 1) 'Y' else 'N' endif
+  , med_admin_count = mae.event_cnt
+  , admin_dt = format(mae.beg_dt_tm, 'mm/dd/yyyy hh:mm;;q')
+ 
+from
+	location l
+	, encounter e
+ 	, clinical_event ce
+	, med_admin_event mae
+	, order_ingredient oi
+	, order_dispense od
+	, orders o
+  	,(left join order_product op on op.order_id = o.order_id)
+ 	,(left join med_identifier mi on mi.item_id = op.item_id
+		and mi.med_identifier_type_cd = 3096.00 ;Charge Number
+		and mi.active_ind = 1)
+ 
+plan l where l.facility_accn_prefix_cd = $acute_facilities
+ 
+join e where e.loc_facility_cd = l.location_cd
+	and e.active_ind = 1
+ 
+join ce where ce.person_id = e.person_id
+	and ce.encntr_id = e.encntr_id
+	and ce.result_status_cd in(25, 34, 35)
+	and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+ 
+join mae where mae.event_id = ce.event_id
+	and mae.beg_dt_tm between cnvtdatetime($start_datetime) and cnvtdatetime($end_datetime)
+	and mae.med_admin_event_id+0 > 0
+	and mae.event_type_cd = 4055412.00	;Administered
+  	and mae.nurse_unit_cd is not null
+ 
+join o where o.order_id = mae.template_order_id
+	and o.active_ind = 1
+
+join op
+join mi 
+ 
+join oi where oi.order_id =  mae.template_order_id
+	and oi.action_sequence = mae.documentation_action_sequence
+	and oi.ingredient_type_flag != 5
+ 
+join od where od.order_id = o.order_id
+	and od.dispense_category_cd != 2561954483.00 ;Dummy Items COA
+ 
+order by mae.event_id
+ 
+Head report
+ 	cnt = 0
+Head mae.event_id ;mae.med_admin_event_id
+ 	cnt += 1
+ 	bcma->bcma_rec_cnt = cnt
+	call alterlist(bcma->plist, cnt)
+Detail
+ 	bcma->plist[cnt].facility = uar_get_code_description(l.facility_accn_prefix_cd)
+ 	bcma->plist[cnt].nurse_unit_cd = mae.nurse_unit_cd
+ 	bcma->plist[cnt].nurse_unit = uar_get_code_display(mae.nurse_unit_cd)
+ 	bcma->plist[cnt].pat_type_flag = pat_type
+ 	bcma->plist[cnt].encounter_id = e.encntr_id
+ 	bcma->plist[cnt].eventid = mae.event_id
+ 	bcma->plist[cnt].orderid = o.order_id
+ 	bcma->plist[cnt].catalogcd = o.catalog_cd
+ 	bcma->plist[cnt].itemid = op.item_id
+ 	bcma->plist[cnt].charge_number = trim(mi.value,3)
+ 	bcma->plist[cnt].order_mnemonic = cnvtlower(o.order_mnemonic)
+ 	bcma->plist[cnt].med_admin_eventid = mae.med_admin_event_id
+ 	bcma->plist[cnt].med_admin_dt = admin_dt
+ 	bcma->plist[cnt].med_admin_cnt = mae.event_cnt
+ 	bcma->plist[cnt].med_scan = medication_scanned
+ 	bcma->plist[cnt].armband_scan = wristband_scanned
+ 
+with nocounter
+ 
+;--------------------------------------------------------------------------------
+/************ Old  ******************************
+
+;Get Item id
+select into 'nl:'
+ 
+from	(dummyt d with seq = value(size(bcma->plist, 5)))
+	, order_product op
+ 
+plan d
+ 
+join op where op.order_id = outerjoin(bcma->plist[d.seq].orderid)
+ 
+order by op.item_id
+ 
+Head op.order_id
+	icnt = 0
+	idx = 0
+      idx = locateval(icnt ,1 ,size(bcma->plist,5), op.order_id ,bcma->plist[icnt].orderid)
+      if(idx > 0)
+		bcma->plist[idx].itemid = op.item_id
+	endif
+ 
+with nocounter
+ 
+;-----------------------------------------------------------------------------------------------
+;Find missing Item_id's
+ 
+select into 'nl:'
+     mair.event_id, mai.item_id, mai.med_product_id
+from
+	(dummyt d WITH seq = value(size(bcma->plist,5)))
+      , ce_med_admin_ident_reltn mair
+	, ce_med_admin_ident mai
+ 
+plan d where bcma->plist[d.seq].itemid = 0
+ 
+join mair where mair.event_id = bcma->plist[d.seq].eventid
+ 
+join mai where mai.ce_med_admin_ident_id = outerjoin(mair.ce_med_admin_ident_id)
+ 
+order by mair.event_id
+ 
+Head mair.event_id
+	icnt = 0
+	idx = 0
+      idx = locateval(icnt ,1 ,size(bcma->plist,5), mair.event_id ,bcma->plist[icnt].eventid)
+      if(idx > 0)
+      	if(bcma->plist[idx].itemid = 0)
+			bcma->plist[idx].itemid = mai.item_id
+		endif
+	endif
+ 
+with nocounter
+ 
+;-----------------------------------------------------------------------------------------------
+;Get Charge numbers
+select into 'nl:'
+ 
+ mi.item_id, value = trim(mi.value ,3), mi.med_identifier_id
+ 
+from	(dummyt d with seq = value(size(bcma->plist, 5)))
+	, med_identifier mi
+ 
+plan d
+ 
+join mi where mi.item_id = bcma->plist[d.seq].itemid
+	and mi.active_ind = 1
+	and mi.med_identifier_type_cd = 3096.00 ;charge_num_var
+ 
+order by mi.item_id
+ 
+Head mi.item_id
+	cnt = 0
+	idx = 0
+      idx = locateval(cnt ,1 ,size(bcma->plist,5), mi.item_id ,bcma->plist[cnt].itemid)
+      while(idx > 0)
+		bcma->plist[idx].charge_number = trim(mi.value, 3)
+	      idx = locateval(cnt,(idx+1), size(bcma->plist,5), mi.item_id ,bcma->plist[cnt].itemid)
+	endwhile
+ 
+with nocounter */
+;------------------------------- End Old -----------------------------------------------------------------------------
+
+;Flag Non-BCMA meds as per pharmacy exclusion list
+select into $outdev
+ 
+charge_num = trim(cv1.display, 3) ;trim(bcma->plist[d.seq].charge_number, 3)
+, cat = bcma->plist[d.seq].catalogcd, item = bcma->plist[d.seq].itemid
+ 
+from	(dummyt d with seq = value(size(bcma->plist, 5)))
+  	, code_value cv1
+  	, code_value_extension cve
+  	, code_value_extension cve1
+ 
+plan cv1 where cv1.code_set = 100499
+	and cv1.cdf_meaning = 'BCMA_RX'
+	and cv1.active_ind = 1
+ 
+join d where trim(bcma->plist[d.seq].charge_number, 3) = trim(cv1.display, 3)
+ 
+join cve where cve.code_set = cv1.code_set
+	and cve.code_value = cv1.code_value
+	and cve.field_name = 'Catalog_cd'
+	and cnvtreal(cve.field_value) = bcma->plist[d.seq].catalogcd
+ 
+join cve1 where cve1.code_set = cv1.code_set
+	and cve1.code_value = cv1.code_value
+	and cve1.field_name = 'Item_id'
+	and cnvtreal(cve1.field_value) = bcma->plist[d.seq].itemid
+ 
+order by charge_num
+ 
+Head charge_num
+	idx = 0
+	cnt = 0
+      idx = locateval(cnt ,1 ,size(bcma->plist,5) ,charge_num ,trim(bcma->plist[cnt].charge_number, 3))
+      while(idx > 0)
+		bcma->plist[idx].non_bcma_med = 'Yes'
+	      idx = locateval(cnt ,(idx+1) ,size(bcma->plist,5) ,charge_num ,trim(bcma->plist[cnt].charge_number, 3))
+	endwhile
+ 
+With nocounter
+ 
+;====================== End of Non-BCMA meds ==========================================================================
+ 
+call echorecord(bcma)
+
+ 
+;---------------------------------------------------------------------------------------------------------------------
+;Flag LeapFrog department's admins
+;This section not used
+/* 
+select into 'nl:'
+ 
+ nunit = bcma->plist[d.seq].nurse_unit
+,encntrid = bcma->plist[d.seq].encounter_id
+,med_admin_id = bcma->plist[d.seq].med_admin_eventid
+ 
+from	(dummyt d  with seq = size(bcma->plist, 5))
+ 
+plan d where bcma->plist[d.seq].nurse_unit in(
+	'MMC 2W', 'MMC 3E', 'MMC 3W', 'MMC 4W', 'MMC 5W', 'MMC Stepdown',	'MMC CCU', 'MMC CVU', 'MMC ICU', 'MMC FBC', 'FSR 2N',
+	'FSR 3N', 'FSR 3W', 'FSR 5N', 'FSR 5W', 'FSR 6E', 'FSR 6N', 'FSR 6W', 'FSR 7N', 'FSR 8N', 'FSR CV ICU', 'FSR CV SD',
+	'FSR  ICU', 'FSR IMC', 'FSR NEURO', 'FSR LD', 'PW 2M', 'PW 3C', 'PW 3M', 'PW 3R', 'PW 4M', 'PW 4R', 'PW C1', 'PW C2',
+	'PW CB', 'MHHS 2S', 'MHHS 3S', 'MHHS 4S', 'MHHS CCU', 'MHHS IMC', 'MHHS LD', 'LCMC 3M', 'LCMC 3S', 'LCMC ICU', 'LCMC IMC',
+	'LCMC OB', 'FLMC CCU', 'FLMC MSU', 'RMC 2N', 'RMC ICU' )
+ 
+order by nunit, encntrid, med_admin_id
+ 
+Head med_admin_id
+	cnt = 0
+	idx = 0
+	idx = locateval(cnt,1,size(bcma->plist,5), med_admin_id, bcma->plist[cnt].med_admin_eventid)
+	bcma->plist[idx].leapfrog_flag = 'Y' ;event belongs to leapfrog dept/nurse unit
+	;bcma->plist[idx].nurse_unit = build2(bcma->plist[idx].nurse_unit, ' *') ;leapfrog units - not needed for this CR
+ 
+Foot med_admin_id
+	null
+ 
+with nocounter
+ 
+;call echorecord(bcma) */
+ 
+;----------------------------------------------------------------------------------------------------------------------
+ 
+select into $outdev
+ 
+	facility = substring(1, 30, bcma->plist[d1.seq].facility)
+	, nurse_unit_cd = bcma->plist[d1.seq].nurse_unit_cd
+	, nurs_unit = substring(1, 30, bcma->plist[d1.seq].nurse_unit)
+	, pat_type = substring(1, 30, bcma->plist[d1.seq].pat_type_flag)
+	, encntrid = bcma->plist[d1.seq].encounter_id
+	, med_event_id = bcma->plist[d1.seq].med_admin_eventid
+	, med_scan = substring(1, 30, bcma->plist[d1.seq].med_scan)
+	, armband_scan = substring(1, 30, bcma->plist[d1.seq].armband_scan)
+	, leapfrog_flag = substring(1, 30, bcma->plist[d1.seq].leapfrog_flag)
+	, med_admin_cnt = bcma->plist[d1.seq].med_admin_cnt
+	, med_admin_dt = substring(1, 30, bcma->plist[d1.seq].med_admin_dt)
+	, med = substring(1, 100, bcma->plist[d1.seq].order_mnemonic)
+	, non_bcma_med = substring(1, 5, bcma->plist[d1.seq].non_bcma_med)
+	, charge = substring(1, 15, bcma->plist[d1.seq].charge_number)
+	, catalog_cd = bcma->plist[d1.seq].catalogcd
+	, item_id =  bcma->plist[d1.seq].itemid
+ 
+from	(dummyt   d1  with seq = size(bcma->plist, 5))
+ 
+plan d1 where substring(1, 3,bcma->plist[d1.seq].non_bcma_med) != 'Yes'
+
+;Non Formulary filter
+/*WHERE SUBSTRING(1,4, trim(SUBSTRING(1, 30, BCMA->plist[D1.SEQ].charge_number ))) != 'NCRX' ;Non Chargeable items
+	and trim(substring(1, 300, bcma->plist[d1.seq].order_mnemonic)) != '*non-formulary*' */
+ 
+order by facility, nurs_unit, encntrid, med_event_id
+
+Head report
+	num = 0
+	ncnt = 0
+Head facility
+	itr = 0
+	num += 1
+	fac_tot_admins = 0
+	bcma_tot->facility = facility
+Head nurs_unit
+	ntr = 0
+	ncnt = ncnt + 1
+	nu_tot_admins = 0
+	lp_nu_tot_admins = 0
+	call alterlist(bcma_tot->unit, 100)
+Head med_event_id
+	itr = 0
+	nu_tot_admins += med_admin_cnt
+	if(pat_type = ' ')
+		lp_nu_tot_admins += med_admin_cnt
+	endif
+	fac_tot_admins += med_admin_cnt
+Detail
+ 	itr += 1
+ 
+Foot nurs_unit
+	bcma_tot->unit[ncnt].nurse_unit = nurs_unit
+	bcma_tot->unit[ncnt].nurse_unit_desc = uar_get_code_description(nurse_unit_cd)
+	bcma_tot->unit[ncnt].nu_tot_admin = nu_tot_admins
+	bcma_tot->unit[ncnt].lp_nu_tot_admin = lp_nu_tot_admins
+ 
+	if(leapfrog_flag = 'Y')
+		bcma_tot->unit[ncnt].leapfrog_unit = 'Y'
+	endif
+ 
+ 	bcma_tot->unit[ncnt].nu_tot_comp_admin = sum(med_admin_cnt where med_scan = 'Y' and armband_scan = 'Y')
+ 	bcma_tot->unit[ncnt].lp_nu_tot_comp_admin = sum(med_admin_cnt where med_scan = 'Y' and armband_scan = 'Y' 
+ 											and pat_type = ' ')
+ 	call alterlist(bcma_tot->unit, ncnt)
+ 
+Foot facility
+	bcma_tot->fac_tot_admin = fac_tot_admins
+	bcma_tot->fac_tot_comp_admin = sum(med_admin_cnt where med_scan = 'Y' and armband_scan = 'Y')
+	bcma_tot->fac_tot_leap_admin = count(med_admin_cnt where leapfrog_flag = 'Y' and pat_type = ' ' )
+	bcma_tot->fac_tot_leap_comp_admin = count(med_admin_cnt where leapfrog_flag = 'Y' and pat_type = ' '
+										 and med_scan = 'Y' and armband_scan = 'Y')
+with nocounter
+ 
+call echorecord(bcma_tot)
+
+ 
+#exitscript
+ 
+end go
+ 
+

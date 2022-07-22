@@ -1,0 +1,378 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+  Author:             Chad Cummings
+  Date Written:       03/01/2019
+  Solution:           
+  Source file name:   cov_eks_malnutrition_parse.prg
+  Object name:        cov_eks_malnutrition_parse
+  Request #:
+
+  Program purpose:
+
+  Executing from:     CCL
+
+  Special Notes:      Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod   Mod Date    Developer              Comment
+---   ----------  --------------------  --------------------------------------
+001   03/01/2019  Chad Cummings			initial build
+******************************************************************************/
+drop program cov_eks_malnutrition_parse:dba go
+create program cov_eks_malnutrition_parse:dba
+
+prompt 
+	"EVENTID" = 0 
+
+with EVENTID
+
+
+set retval = -1
+
+free record t_rec
+record t_rec
+(
+	1 patient
+	 2 encntr_id = f8
+	 2 person_id = f8
+	1 event
+	 2 clinical_event_id = f8
+	 2 event_id = f8
+	1 retval = i2
+	1 log_message =  vc
+	1 log_misc1 = vc
+	1 return_value = vc
+	1 debug_ind		= i2
+	1 active_ind	= i2
+	1 malnut_desc 	= vc
+	1 malnut_desc_start = i4
+	1 malnut_imdesc = vc
+	1 malnut_imdesc_start = i4
+	1 prompts
+	 2 outdev		= vc
+	 2 eventid		= f8
+	1 raw_doc		= vc
+	1 raw_ind		= i2
+	1 diag[*]
+	 2 text 		= vc
+	 2 start_pos	= i4
+	 2 end_pos		= i4
+	 2 code			= vc
+	 2 checked_ind  = i2
+	1 impact[*]
+	 2 text			= vc
+	 2 start_pos	= i4
+	 2 end_pos		= i4
+	 2 checked_ind	= i2
+	1 final_val
+	 2 diag			= vc
+	 2 impact		= vc
+)
+
+set t_rec->retval							= -1
+set t_rec->return_value						= "FAILED"
+set t_rec->patient.encntr_id 				= link_encntrid
+set t_rec->patient.person_id				= link_personid
+set t_rec->event.clinical_event_id			= $EVENTID
+
+if (t_rec->patient.encntr_id <= 0.0)
+	set t_rec->log_message = concat("link_encntrid not found")
+	go to exit_script
+endif
+
+if (t_rec->patient.person_id <= 0.0)
+	set t_rec->log_message = concat("link_personid not found")
+	go to exit_script
+endif
+
+/* Use if parameters are needed
+if(size(trim(reflect(parameter(1,0))),1) > 0)
+  set t_rec->log_message = value(parameter(1,0))
+endif */
+
+set t_rec->return_value = "FALSE"
+
+select into "nl:"
+from
+	code_value_set cvs
+	,code_value cv
+plan cvs
+	where cvs.definition = "COVCUSTOM"
+join cv
+	where cv.code_set = cvs.code_set
+	and   cv.definition = trim(cnvtlower(curprog))
+	and   cv.active_ind = 1
+	and   cv.begin_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   cv.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+order by
+	cv.cdf_meaning
+	,cv.begin_effective_dt_tm desc
+head cv.cdf_meaning
+	case (cv.cdf_meaning)
+		of "DEBUG_IND":		t_rec->debug_ind 	= cnvtint(cv.description)
+		of "ACTIVE_IND":	t_rec->active_ind 	= cnvtint(cv.description)
+		of "MALNUT_DSEC":	t_rec->malnut_desc	= trim(cv.description)
+		of "MALNUT_IMDES":	t_rec->malnut_imdesc	= trim(cv.description)
+	endcase
+with nocounter
+ 
+if (t_rec->active_ind <= 0)
+	go to exit_script_not_active
+endif
+
+if (t_rec->malnut_desc = "")
+	set t_rec->log_message = concat("Diagnosis section not defined")
+	go to exit_script
+endif
+ 
+if (t_rec->malnut_imdesc = "")
+	set t_rec->log_message = concat("Impact section not defined")
+	go to exit_script
+endif
+
+select into "nl:"
+from
+	code_value_set cvs
+	,code_value cv
+plan cvs
+	where cvs.definition = "COVCUSTOM"
+join cv
+	where cv.code_set = cvs.code_set
+	;and   cv.definition = trim(cnvtlower(curprog))
+	and   cv.cdf_meaning in(
+								 "MALNUT_DIAG"
+								,"MALNUT_IM"
+							)
+	and   cv.active_ind = 1
+	and   cv.begin_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   cv.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+order by
+	cv.cdf_meaning
+	,cv.code_value
+head report
+	d = 0
+	i = 0
+head cv.code_value
+	if (cv.cdf_meaning in("MALNUT_IM"))
+		i = (i + 1)
+		stat = alterlist(t_rec->impact,i)
+		t_rec->impact[i].text = cv.description
+	endif
+	if (cv.cdf_meaning in("MALNUT_DIAG"))
+		d = (d + 1)
+		stat = alterlist(t_rec->diag,d)
+		t_rec->diag[d].text = cv.description
+		t_rec->diag[d].code = cv.definition
+	endif
+with nocounter
+
+select into "nl:"
+from 
+	clinical_event ce
+	,code_value cv
+plan ce
+	where ce.clinical_event_id = t_rec->event.clinical_event_id
+join cv
+	where cv.code_set = 72
+	and   cv.display = "Malnutrition Note"
+	and   cv.active_ind = 1
+	and   cv.code_value = ce.event_cd
+detail
+	t_rec->event.event_id = ce.event_id
+with nocounter
+
+if (t_rec->event.event_id <= 0.0)
+	set t_rec->log_message = concat("not a valid note")
+	go to exit_script
+endif
+
+set trace recpersist
+execute mp_doc_preview_pane ^NOFORMS^, t_rec->event.event_id
+
+set stat = copyrec(reply,doc_reply,1)
+set trace norecpersist
+call echo(build2("finished mp_doc_preview_pane"))
+ 
+if (validate(doc_reply->rb_list))
+	for (i=1 to size(doc_reply->rb_list,5))
+		for (j=1 to size(doc_reply->rb_list[i].child_event_list,5))
+			for (k=1 to size(doc_reply->rb_list[i].child_event_list[j].blob_result,5))
+				for (l=1 to size(doc_reply->rb_list[i].child_event_list[j].blob_result[k].blob,5))
+					set t_rec->raw_doc = doc_reply->rb_list[i].child_event_list[j].blob_result[k].blob[l].blob_contents
+					set t_rec->raw_ind = 1
+				endfor
+			endfor
+		endfor
+	endfor
+endif
+ 
+if (t_rec->raw_ind = 1)
+	call echo(t_rec->raw_doc)
+else
+	go to exit_script
+endif
+ 
+set t_rec->malnut_desc_start =  findstring(t_rec->malnut_desc,t_rec->raw_doc,1,1)
+set t_rec->malnut_imdesc_start =  findstring(t_rec->malnut_imdesc,t_rec->raw_doc,1,1)
+
+if (t_rec->malnut_desc_start <= 0.0)
+	set t_rec->log_message = concat(^could not find Diagnosis section in document^,trim(t_rec->malnut_desc))
+	go to exit_script
+endif
+
+for (i=1 to size(t_rec->diag,5))
+	call echo(build2("looking for ",t_rec->diag[i].text))
+	set t_rec->diag[i].start_pos = findstring(t_rec->diag[i].text,t_rec->raw_doc,1,1)
+	set t_rec->diag[i].end_pos = (t_rec->diag[i].start_pos + size(t_rec->diag[i].text))
+endfor
+ 
+for (i=1 to size(t_rec->impact,5))
+	call echo(build2("looking for ",t_rec->impact[i].text))
+	set t_rec->impact[i].start_pos = findstring(t_rec->impact[i].text,t_rec->raw_doc,1,1)
+	set t_rec->impact[i].end_pos = (t_rec->impact[i].start_pos + size(t_rec->impact[i].text))
+endfor
+
+set t_rec->final_val.diag 	= "<not found>"
+set t_rec->final_val.impact = "<not found>"
+
+select into "nl:"
+	 start_pos = t_rec->diag[d1.seq].start_pos
+	,end_pos = t_rec->diag[d1.seq].end_pos 
+from
+	(dummyt d1 with seq=size(t_rec->diag,5))
+plan d1
+order by
+	start_pos
+head report
+	item = 0
+	pos = 0
+	prev_pos = 0
+detail
+	item = (item + 1)
+	pos = 0
+	
+	if (item = 1)
+		prev_pos = t_rec->malnut_desc_start
+	endif
+	
+	call echo(build("item=",item))
+	call echo(build("text=",t_rec->diag[d1.seq].text))
+	call echo(build("start_pos=",start_pos))
+	call echo(build("end_pos=",end_pos))
+	call echo(build("prev_pos=",prev_pos))
+	
+	pos = findstring(^>X<^,substring(prev_pos,(end_pos-prev_pos),t_rec->raw_doc),1,0)
+	
+	call echo(build("pos=",pos))
+	if (pos > 0)
+		t_rec->diag[d1.seq].checked_ind = 1
+	endif
+	
+	prev_pos = end_pos
+with nocounter
+
+select into "nl:"
+	 start_pos = t_rec->impact[d1.seq].start_pos
+	,end_pos = t_rec->impact[d1.seq].end_pos 
+from
+	(dummyt d1 with seq=size(t_rec->impact,5))
+plan d1
+order by
+	start_pos
+head report
+	item = 0
+	pos = 0
+	prev_pos = 0
+detail
+	item = (item + 1)
+	pos = 0
+	
+	if (item = 1)
+		prev_pos = t_rec->malnut_imdesc_start
+	endif
+	
+	call echo(build("item=",item))
+	call echo(build("text=",t_rec->impact[d1.seq].text))
+	call echo(build("start_pos=",start_pos))
+	call echo(build("end_pos=",end_pos))
+	call echo(build("prev_pos=",prev_pos))
+	
+	pos = findstring(^>X<^,substring(prev_pos,(end_pos-prev_pos),t_rec->raw_doc),1,0)
+	
+	call echo(build("pos=",pos))
+	if (pos > 0)
+		t_rec->impact[d1.seq].checked_ind = 1
+	endif
+	
+	prev_pos = end_pos
+with nocounter
+
+for (i=1 to size(t_rec->diag,5))
+	if ((t_rec->diag[i].checked_ind = 1) and (t_rec->final_val.diag = "<not found>"))
+		set t_rec->final_val.diag = t_rec->diag[i].code
+	endif
+endfor	
+
+for (i=1 to size(t_rec->impact,5))
+	if ((t_rec->impact[i].checked_ind = 1) and (t_rec->final_val.impact = "<not found>"))
+		set t_rec->final_val.impact = t_rec->impact[i].text
+	endif
+endfor	
+
+if (t_rec->final_val.impact = "<not found>")
+	set t_rec->final_val.impact = ""
+endif
+
+/*testing only
+set i=3
+;set t_rec->final_val.diag 	= t_rec->diag[i].code
+set t_rec->final_val.impact = concat(t_rec->impact[i].text)
+/*testing only*/
+
+
+set t_rec->return_value = "TRUE"
+set t_rec->log_misc1 = concat(
+								  t_rec->final_val.diag
+								 ,"|"
+								 ,t_rec->final_val.impact
+							)
+#exit_script
+
+#exit_script_not_active
+
+if (trim(cnvtupper(t_rec->return_value)) = "TRUE")
+	set t_rec->retval = 100
+elseif (trim(cnvtupper(t_rec->return_value)) = "FALSE")
+	set t_rec->retval = 0
+else
+	set t_rec->retval = 0
+endif
+
+set t_rec->log_message = concat(
+										trim(t_rec->log_message),";",
+										trim(cnvtupper(t_rec->return_value)),":",
+										trim(cnvtstring(t_rec->patient.person_id)),"|",
+										trim(cnvtstring(t_rec->patient.encntr_id)),"|",
+										trim(cnvtstring(t_rec->event.clinical_event_id)),"|",
+										trim(cnvtstring(t_rec->event.event_id)),"|",
+										trim(t_rec->final_val.diag),"|",
+										trim(t_rec->final_val.impact),"|"
+									)
+call echorecord(t_rec)
+
+set retval									= t_rec->retval
+set log_message 							= t_rec->log_message
+set log_misc1 								= t_rec->log_misc1
+
+call echo(build2("retval=",retval))
+call echo(build2("log_message=",log_message))
+call echo(build2("log_misc1=",log_misc1))
+
+end 
+go

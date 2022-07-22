@@ -1,0 +1,55 @@
+free record request go
+record request
+(
+  1 output_device = vc 
+  1 script_name = vc 
+  1 person_cnt = i4  
+  1 person [*]  
+    2 person_id = f8  
+  1 visit_cnt = i4  
+  1 visit [*]  
+    2 encntr_id = f8  
+  1 prsnl_cnt = i4  
+  1 prsnl [*]  
+    2 prsnl_id = f8  
+  1 nv_cnt = i4  
+  1 nv [*]  
+    2 pvc_name = vc 
+    2 pvc_value = vc 
+  1 batch_selection = vc 
+  1 print_pref = i2
+) go
+ 
+free record reply go
+record reply
+(
+  1 text = vc
+  1 status_data
+    2 status = c1
+    2 subeventstatus[1]
+      3 OperationName = c15
+      3 OperationStatus = c1
+      3 TargetObjectName = c15
+      3 TargetObjectValue = c100
+  1 large_text_qual[*]             
+    2 text_segment = vc            
+) go
+ 
+ 
+set request->script_name = "wh_prenatal_summary_gv" go
+
+select into "nl:"
+from encntr_Alias ea,person p,encounter e
+plan ea where ea.alias = "2002103028"
+join e where e.encntr_id = ea.encntr_id
+join p where p.person_id = e.person_id
+order by p.person_id
+head p.person_id
+	request->person_cnt = (request->person_cnt + 1)
+	stat = alterlist(request->person,request->person_cnt) 
+	request->person[request->person_cnt].person_id = p.person_id 
+with nocounter go
+ 
+call echorecord(request) go
+set debug_ind = 1 go
+execute dcp_rpt_driver go

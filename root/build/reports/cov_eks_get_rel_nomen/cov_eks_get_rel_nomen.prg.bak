@@ -1,0 +1,821 @@
+
+drop program cov_eks_get_rel_nomen:dba go
+create program cov_eks_get_rel_nomen:dba
+ 
+prompt
+	"Output to File/Printer/MINE:" = "MINE"	; Select the output type
+	, "Nomenclature ID, concept CKI or refhelp value: " = ""	; Enter the input value
+	, "Sort by concept CKI (Y/N):" = "Y" ; Sort results by concept CKI or concept name
+	, "Ignore concepts (Y/N):" = "N" ; Ignore concepts and use nomenclature IDs only
+	, "Cross-map to other vocabularies (ALL, NONE or refhelp value):" = "ALL" ; Use CMT_CROSS_MAP table
+	, "Cross-map patient's activity data (Y/N):" = "Y" ; Use CMT_CROSS_MAP table
+	, "Search hierarchy (Y/N):" = "Y" ; Use CMT_CONCEPT_EXPLODE table
+with OUTDEV, inputValue, sortInd, ignoreConceptsYN, crossVocabs, crossPYN, explodeYN
+ 
+declare getConceptCKI(nID=f8) = null
+declare parseRefHelpValue(inputValue=vc) = null
+declare parseCrossVocabs(Vocabs=vc) = i2
+declare flattenRecord(arg = i2) = null
+ 
+declare input_value = vc with protect
+declare cross_vocabs_value = vc with protect
+declare nomen_id = f8 with protect
+declare nStart = i4 with protect
+declare idx = i4 with protect
+declare idx1 = i4 with protect
+declare idx2 = i4 with protect
+declare idx3 = i4 with protect
+declare ccki_sort_ind = i2 with protect
+declare cnt = i4 with protect
+declare cnt1 = i4 with protect
+declare pos = i4 with protect
+declare tmpCCKI = vc with protect
+declare arrow = c8 with protect
+declare crossMapInd = i2 with protect, noconstant(1)
+declare crossMapPInd = i2 with protect, noconstant(1)
+declare explodeInd = i2 with protect, noconstant(1)
+declare ignoreConceptsInd = i2 with protect, noconstant(0)
+ 
+record crossVocabslist
+(	1 cnt = i4
+	1 qual[*]
+		2 value = vc
+		2 display = vc
+) with protect
+ 
+record crossVocabs
+(	1 cnt = i4
+	1 qual[*]
+		2 vocab_cd = f8
+		2 display = vc
+) with protect
+ 
+record nomen(
+	1 ccki_ind = i2
+	1 cnt = i4
+	1 qual[*]
+		2 ccki = vc
+		2 display = vc
+		2 nomenclature_id = f8
+		2 cr_cnt = i4
+		2 cr_qual[*]
+			3 cr_ccki = vc
+			3 cr_display = vc
+			3 nomenclature_id = f8
+			3 cr_flag = i2
+			3 cr_map_flag = i2
+			3 cr_t_cnt = i4
+			3 cr_targets [*]
+				4 cr_t_ccki = vc
+				4 cr_t_display = vc
+			3 ex_cnt = i4
+			3 ex_qual[*]
+				4 ex_ccki = vc
+				4 ex_display = vc
+				4 ex_flag = i2
+				4 ex_t_cnt = i4
+				4 ex_targets [*]
+					5 ex_t_ccki = vc
+					5 ex_t_display = vc
+) with protect
+ 
+record cckiMap(
+	1 cnt = i4
+	1 qual[*]
+		2 ccki = vc
+		2 ix1 = i4
+		2 ix2 = i4
+		2 ix3 = i4
+) with protect
+ 
+record cckis(
+	1 cnt = i4
+	1 qual[*]
+		2 ccki = vc
+		2 ncnt = i4
+		2 nqual[*]
+			3 n_id = f8
+			3 display = vc
+			3 active_ind = i2
+) with protect
+ 
+
+set input_value = trim($inputValue)
+ 
+set cross_vocabs_value = trim($crossVocabs)
+ 
+if (input_value > " ")
+	if (isnumeric(input_value))
+		call echo(concat("Input nomenclature ID = <", build(input_value), ">."))
+		set nomen_id = cnvtreal(input_value)
+		call getConceptCKI(nomen_id)
+	elseif (findstring("<6>",input_value) and findstring("<7>",input_value) )
+		call echo(concat("Input referential help value = <", input_value, ">."))
+		call parseRefHelpValue(input_value)
+	elseif (findstring("!",input_value, 1))
+		call echo(concat("Input concept CKI = <", input_value, ">."))
+		set cnt = 0
+		select into "nl:"
+		from cmt_concept cc
+		where cc.concept_cki = input_value
+		detail
+			nomen->cnt = nomen->cnt + 1
+			stat = alterlist(nomen->qual, nomen->cnt)
+			nomen->qual[nomen->cnt].ccki = trim(cc.concept_cki)
+			nomen->qual[nomen->cnt].display = trim(cc.concept_name)
+			; copy the item to the lower level as a synonym
+			nomen->qual[nomen->cnt].cr_cnt = nomen->qual[nomen->cnt].cr_cnt + 1
+			cnt = nomen->qual[nomen->cnt].cr_cnt
+			stat = alterlist(nomen->qual[nomen->cnt].cr_qual, cnt)
+			nomen->qual[nomen->cnt].cr_qual[cnt].cr_ccki = nomen->qual[nomen->cnt].ccki
+			nomen->qual[nomen->cnt].cr_qual[cnt].cr_display = nomen->qual[nomen->cnt].display
+			nomen->qual[nomen->cnt].cr_qual[cnt].cr_flag = 0
+		with nocounter
+	endif
+endif
+ 
+if (trim(cnvtupper($sortInd)) = "Y")
+	set ccki_sort_ind = 1
+endif
+ 
+if (trim(cnvtupper(cross_vocabs_value)) != "ALL")
+	set stat = parseCrossVocabs(cross_vocabs_value)
+	if (crossVocabs->cnt = -1)
+		set crossMapInd = 0
+	endif
+endif
+ 
+if (trim(cnvtupper($crossPYN)) = "N" or crossMapInd = 0)
+	set crossMapPInd = 0
+endif
+ 
+if (trim(cnvtupper($explodeYN)) = "N")
+	set explodeInd = 0
+endif
+ 
+if (cnvtupper(trim($ignoreConceptsYN)) = "Y")
+ 	set ignoreConceptsInd = 1
+endif
+ 
+ 
+set nomen->ccki_ind = 1
+ 
+if (nomen->cnt > 0)
+ 
+	if (nomen->ccki_ind and not ignoreConceptsInd)
+ 
+ 		if (crossVocabs->cnt >= 0)
+			call echo("Checking cross-mapped items")
+ 
+			select
+				if (crossVocabs->cnt > 0)
+					plan cxm where expand(idx, 1, nomen->cnt, cxm.concept_cki, nomen->qual[idx].ccki)
+						and cxm.map_type_flag in (1,3)
+						and cxm.group_sequence = 0
+						and expand(idx2, 1, crossVocabs->cnt,
+							cxm.source_vocabulary_cd, crossVocabs->qual[idx2].vocab_cd)
+						and trim(cxm.target_concept_cki) > " "
+						and	(cnvtdatetime(curdate, curtime3) between cxm.beg_effective_dt_tm
+							and	cxm.end_effective_dt_tm)
+					join cc where cc.concept_cki = cxm.target_concept_cki
+				else
+					plan cxm where expand(idx, 1, nomen->cnt, cxm.concept_cki, nomen->qual[idx].ccki)
+						and cxm.map_type_flag in (1,3)
+						and cxm.group_sequence = 0
+						and trim(cxm.target_concept_cki) > " "
+						and	(cnvtdatetime(curdate, curtime3) between cxm.beg_effective_dt_tm
+							and	cxm.end_effective_dt_tm)
+					join cc where cc.concept_cki = cxm.target_concept_cki
+				endif
+			into "nl:"
+			from  cmt_cross_map cxm
+				, cmt_concept cc
+			detail
+				pos = locateval(idx1,1,nomen->cnt,cxm.concept_cki,nomen->qual[idx1].ccki)
+				while(pos > 0)
+					if (locateval(idx3,1,nomen->qual[pos].cr_cnt,
+							cxm.target_concept_cki, nomen->qual[pos]->cr_qual[idx3].cr_ccki) <= 0)
+						nomen->qual[pos].cr_cnt = nomen->qual[pos].cr_cnt + 1
+						cnt = nomen->qual[idx1].cr_cnt
+						stat = alterlist(nomen->qual[pos]->cr_qual, cnt)
+						nomen->qual[pos]->cr_qual[cnt].cr_ccki = trim(cxm.target_concept_cki)
+						nomen->qual[pos]->cr_qual[cnt].cr_display = trim(cc.concept_name)
+						nomen->qual[pos]->cr_qual[cnt].cr_flag = 1
+						nomen->qual[pos]->cr_qual[cnt].cr_map_flag = cxm.map_type_flag
+					endif
+					pos = locateval(idx1,pos+1,nomen->cnt,cxm.concept_cki,nomen->qual[idx1].ccki)
+				endwhile
+			with nocounter
+		else
+			call echo("Skip cross-mapped items")
+		endif
+ 
+ 		if (explodeInd)
+			call echo("Checking hierarchy")
+			set cnt = 0
+			select into "nl:"
+			from (dummyt d1 with seq = value(nomen->cnt))
+				, cmt_concept_explode exp
+				, cmt_concept cc
+			plan d1
+			join exp where expand(idx, 1, nomen->qual[d1.seq].cr_cnt,
+				exp.parent_concept_cki, nomen->qual[d1.seq].cr_qual[idx].cr_ccki)
+			join cc where cc.concept_cki = exp.child_concept_cki
+			detail
+				pos = locateval(idx1,1,nomen->qual[d1.seq].cr_cnt,
+					exp.parent_concept_cki, nomen->qual[d1.seq].cr_qual[idx1].cr_ccki)
+				while(pos > 0)
+					if (locateval(idx2,1,nomen->qual[d1.seq].cr_qual[pos].ex_cnt,
+							exp.child_concept_cki, nomen->qual[d1.seq].cr_qual[pos].ex_qual[idx2].ex_ccki) <= 0)
+						nomen->qual[d1.seq].cr_qual[pos].ex_cnt = nomen->qual[d1.seq].cr_qual[pos].ex_cnt + 1
+						cnt = nomen->qual[d1.seq].cr_qual[pos].ex_cnt
+						stat = alterlist(nomen->qual[d1.seq].cr_qual[pos].ex_qual, cnt)
+						nomen->qual[d1.seq].cr_qual[pos].ex_qual[cnt].ex_ccki = trim(exp.child_concept_cki)
+						nomen->qual[d1.seq].cr_qual[pos].ex_qual[cnt].ex_display = trim(cc.concept_name)
+						nomen->qual[d1.seq].cr_qual[pos].ex_qual[cnt].ex_flag = 2
+					endif
+					pos = locateval(idx1,pos+1,nomen->qual[d1.seq].cr_cnt,
+						exp.parent_concept_cki, nomen->qual[d1.seq].cr_qual[idx1].cr_ccki)
+				endwhile
+			with nocounter, expand = 1
+		else
+			call echo("Skip hierarchy check")
+		endif
+ 
+ 		if (crossMapPInd)
+			call flattenRecord(0)
+ 
+			call echo("Checking cross-mapped items in reverse")
+			set cnt = 0
+ 
+ 			select
+				if (crossVocabs->cnt > 0)
+					plan cxm where expand(idx, 1, cckiMap->cnt, cxm.target_concept_cki, cckiMap->qual[idx].ccki)
+							and cxm.map_type_flag in (1,3) ;001
+							and cxm.group_sequence = 0
+							and expand(idx2, 1, crossVocabs->cnt,
+								cxm.source_vocabulary_cd, crossVocabs->qual[idx2].vocab_cd)
+							and trim(cxm.concept_cki) > " "
+							and (cnvtdatetime(curdate, curtime3) between cxm.beg_effective_dt_tm
+								and	cxm.end_effective_dt_tm)
+					join cc where cc.concept_cki = cxm.concept_cki
+				else
+					plan cxm where expand(idx, 1, cckiMap->cnt, cxm.target_concept_cki, cckiMap->qual[idx].ccki)
+							and cxm.map_type_flag in (1,3) ;001
+							and cxm.group_sequence = 0
+							and trim(cxm.concept_cki) > " "
+							and (cnvtdatetime(curdate, curtime3) between cxm.beg_effective_dt_tm
+								and	cxm.end_effective_dt_tm)
+					join cc where cc.concept_cki = cxm.concept_cki
+				endif
+			into "nl:"
+			from  cmt_cross_map cxm
+				, cmt_concept cc
+			detail
+				pos = locateval(idx1, 1, cckiMap->cnt, cxm.target_concept_cki, cckiMap->qual[idx1].ccki)
+				while (pos > 0)
+					ix1 = cckiMap->qual[pos].ix1
+					ix2 = cckiMap->qual[pos].ix2
+					ix3 = cckiMap->qual[pos].ix3
+					tmpCCKI = trim(cxm.concept_cki)
+					if (ix3 > 0)
+						nomen->qual[ix1].cr_qual[ix2].ex_qual[ix3].ex_t_cnt =
+							nomen->qual[ix1].cr_qual[ix2].ex_qual[ix3].ex_t_cnt + 1
+						cnt = nomen->qual[ix1].cr_qual[ix2].ex_qual[ix3].ex_t_cnt
+						stat = alterlist(nomen->qual[ix1].cr_qual[ix2].ex_qual[ix3].ex_targets, cnt)
+						nomen->qual[ix1].cr_qual[ix2].ex_qual[ix3].ex_targets[cnt].ex_t_ccki = tmpCCKI
+						nomen->qual[ix1].cr_qual[ix2].ex_qual[ix3].ex_targets[cnt].ex_t_display =
+							concat(trim(cc.concept_name), " (<--- ", trim(cxm.target_concept_cki), ")")
+					else
+						; do not include input concepts
+						if (tmpCCKI != nomen->qual[ix1].ccki)
+							nomen->qual[ix1].cr_qual[ix2].cr_t_cnt =
+								nomen->qual[ix1].cr_qual[ix2].cr_t_cnt + 1
+							cnt = nomen->qual[ix1].cr_qual[ix2].cr_t_cnt
+							stat = alterlist(nomen->qual[ix1].cr_qual[ix2].cr_targets, cnt)
+							nomen->qual[ix1].cr_qual[ix2].cr_targets[cnt].cr_t_ccki = tmpCCKI
+							nomen->qual[ix1].cr_qual[ix2].cr_targets[cnt].cr_t_display =
+								concat(trim(cc.concept_name), " (<--- ", trim(cxm.target_concept_cki), ")")
+	 					endif
+					endif
+					pos = locateval(idx1, pos+1, cckiMap->cnt, cxm.target_concept_cki, cckiMap->qual[idx1].ccki)
+				endwhile
+			with nocounter, expand = 1
+		else
+			call echo("Skip reverse cross-mapping.")
+		endif
+ 
+		declare cnt_cr = i4
+		declare cnt_ex = i4
+ 
+	 	call flattenRecord(0)
+ 
+	    ; filter out duplicates and retrieve nomenclature IDs
+ 
+	    call echo("query 1")
+	    select distinct into "nl:"
+	    	tmp_ccki = substring(1, 255, cckiMap->qual[d1.seq].ccki)
+	    from (dummyt d1 with seq = value(cckiMap->cnt))
+	    order by tmp_ccki
+	    head report
+	    	stat = alterlist(cckis->qual, cckiMap->cnt)
+	    detail
+	    	cckis->cnt = cckis->cnt + 1
+	    	cckis->qual[cckis->cnt].ccki = cckiMap->qual[d1.seq].ccki
+	    foot report
+	    	stat = alterlist(cckis->qual, cckis->cnt)
+	    with nocounter
+ 
+	 	call echo("query 2")
+	    select into "nl:"
+	    	n.concept_cki
+	    from nomenclature n
+	    where expand(idx, 1, cckis->cnt, n.concept_cki, cckis->qual[idx].ccki)
+	    order by cnvtupper(n.source_string)
+	    detail
+	    	pos = locatevalsort(idx1,1,cckis->cnt,n.concept_cki,cckis->qual[idx1].ccki)
+	    	if (pos > 0)
+	    		cckis->qual[pos].ncnt = cckis->qual[pos].ncnt + 1
+	    		stat = alterlist(cckis->qual[pos].nqual, cckis->qual[pos].ncnt)
+	    		cckis->qual[pos].nqual[cckis->qual[pos].ncnt].n_id = n.nomenclature_id
+	    		cckis->qual[pos].nqual[cckis->qual[pos].ncnt].display = n.source_string
+	    		if (n.active_ind = 0 or not cnvtdatetime(curdate, curtime)
+	    								between n.beg_effective_dt_tm and n.end_effective_dt_tm)
+	    			cckis->qual[pos].nqual[cckis->qual[pos].ncnt].active_ind = 0
+	    		else
+	    			cckis->qual[pos].nqual[cckis->qual[pos].ncnt].active_ind = 1
+	    		endif
+	    	endif
+	    with nocounter, expand=1
+ 
+	else
+		call echo("Concept CKI was not found!")
+	endif
+ 
+	declare txt1 = vc with protect
+ 
+    call echo(build("nomen->cnt = ", nomen->cnt))
+    
+    select into $OUTDEV
+    	 ;code = trim(cnvtstring(cckis->qual[d1.seq].nqual[d2.seq].n_id,25,1))
+    	 code = trim(substring(cckis->qual[d1.seq].ccki,1,50))
+ 		,txt1 = trim(substring(1,100,cckis->qual[d1.seq].nqual[d2.seq].display))
+    from
+    	 (dummyt d1 with seq=cckis->cnt)
+    	, (dummyt   d2  with seq = 1)
+    
+    plan d1 where maxrec(d2, cckis->qual[d1.seq].ncnt)
+    join d2 where cckis->qual[d1.seq].nqual[d2.seq].active_ind = 1
+    with nocounter, format, separator=" "
+    /*
+	select
+		if (ccki_sort_ind)
+				n1 = substring(1,255, nomen->qual[d1.seq].ccki)
+				, n1u = concat(
+					substring(1,255,cnvtupper(nomen->qual[d1.seq].ccki)),
+					substring(1,255,cnvtupper(nomen->qual[d1.seq].display)))
+				, n2 = substring(1,255, nomen->qual[d1.seq].display)
+				, n3 = trim(cnvtstring(nomen->qual[d1.seq].nomenclature_id,25,2))
+				, cr1 = substring(1,255, nomen->qual[d1.seq].cr_qual[d2.seq].cr_ccki)
+				, cr1u = concat(
+					substring(1,255,cnvtupper(nomen->qual[d1.seq].cr_qual[d2.seq].cr_ccki)),
+					substring(1,255,cnvtupper(nomen->qual[d1.seq].cr_qual[d2.seq].cr_display)))
+				, cr2 = substring(1,255, nomen->qual[d1.seq].cr_qual[d2.seq].cr_display)
+				, crf = nomen->qual[d1.seq].cr_qual[d2.seq].cr_flag
+				, cr3 = trim(cnvtstring(nomen->qual[d1.seq].cr_qual[d2.seq].nomenclature_id,25,2))
+				, crmf = nomen->qual[d1.seq].cr_qual[d2.seq].cr_map_flag
+				, ex1 = substring(1,255, nomen->qual[d1.seq].cr_qual[d2.seq].ex_qual[d3.seq].ex_ccki)
+				, ex1u = concat(
+					substring(1,255,cnvtupper(nomen->qual[d1.seq].cr_qual[d2.seq].ex_qual[d3.seq].ex_ccki)),
+					substring(1,255,cnvtupper(nomen->qual[d1.seq].cr_qual[d2.seq].ex_qual[d3.seq].ex_display)))
+				, ex2 = substring(1,255, nomen->qual[d1.seq].cr_qual[d2.seq].ex_qual[d3.seq].ex_display)
+				, exf = nomen->qual[d1.seq].cr_qual[d2.seq].ex_qual[d3.seq].ex_flag
+		else
+				n1 = substring(1,255, nomen->qual[d1.seq].display)
+				, n1u = concat(
+					substring(1,255,cnvtupper(nomen->qual[d1.seq].display)),
+					substring(1,255,cnvtupper(nomen->qual[d1.seq].ccki)))
+				, n2 = substring(1,255, nomen->qual[d1.seq].ccki)
+				, n3 = trim(cnvtstring(nomen->qual[d1.seq].nomenclature_id,25,2))
+				, cr1 = substring(1,255, nomen->qual[d1.seq].cr_qual[d2.seq].cr_display)
+				, cr1u = concat(
+					substring(1,255,cnvtupper(nomen->qual[d1.seq].cr_qual[d2.seq].cr_display)),
+					substring(1,255,cnvtupper(nomen->qual[d1.seq].cr_qual[d2.seq].cr_ccki)))
+				, cr2 = substring(1,255, nomen->qual[d1.seq].cr_qual[d2.seq].cr_ccki)
+				, cr3 = trim(cnvtstring(nomen->qual[d1.seq].cr_qual[d2.seq].nomenclature_id,25,2))
+				, crf = nomen->qual[d1.seq].cr_qual[d2.seq].cr_flag
+				, crmf = nomen->qual[d1.seq].cr_qual[d2.seq].cr_map_flag
+				, ex1 = substring(1,255, nomen->qual[d1.seq].cr_qual[d2.seq].ex_qual[d3.seq].ex_display)
+				, ex1u = concat(
+					substring(1,255,cnvtupper(nomen->qual[d1.seq].cr_qual[d2.seq].ex_qual[d3.seq].ex_display)),
+					substring(1,255,cnvtupper(nomen->qual[d1.seq].cr_qual[d2.seq].ex_qual[d3.seq].ex_ccki)))
+				, ex2 = substring(1,255, nomen->qual[d1.seq].cr_qual[d2.seq].ex_qual[d3.seq].ex_ccki)
+				, exf = nomen->qual[d1.seq].cr_qual[d2.seq].ex_qual[d3.seq].ex_flag
+	endif
+	into $OUTDEV
+	from  (dummyt   d1  with seq = value(nomen->cnt))
+		, (dummyt   d2  with seq = 1)
+		, (dummyt   d3  with seq = 1)
+	plan d1 where maxrec(d2, nomen->qual[d1.seq].cr_cnt)
+	join d2 where maxrec(d3, nomen->qual[d1.seq].cr_qual[d2.seq].ex_cnt)
+	join d3
+	order by n1u, crf, cr1u
+	head report
+		cnt2 = 0
+		linesep = fillstring(100,"=")
+		call center("NOMENCLATURES THAT WILL QUALIFY IN EKS_PROBLEMS_FIND_L OR EKS_DIAGNOSIS_FIND_L LOGIC TEMPLATES",1,112)
+		row + 1
+		col 1 linesep
+		if (ignoreConceptsInd)
+			row + 1
+			col 1 "Ignore concepts. Nomenclature ID search only."
+		else
+			if (explodeInd)
+				row + 1
+				col 1 "Hierarchy search is ON"
+			else
+				row + 1
+				col 1 "Hierarchy search is OFF"
+			endif
+			if (crossMapInd)
+				row + 1
+				col 1 "Concept cross-mapping is ON"
+			else
+				row + 1
+				col 1 "Concept cross-mapping is OFF"
+			endif
+			if (crossMapPInd)
+				row + 1
+				col 1 "Concept cross-mapping for patient's activity data is ON"
+			else
+				row + 1
+				col 1 "Concept cross-mapping for patient's activity data is OFF"
+			endif
+			if (crossVocabs->cnt = 0)
+				row + 1
+				col 1 "Cross-map to ALL concept vocabularies."
+			elseif(crossVocabs->cnt > 0)
+				row + 1
+				col 1 "Cross-map to following concept vocabularies:"
+				for (idx = 1 to crossVocabs->cnt)
+					row + 1
+					col 5 crossVocabs->qual[idx].display
+				endfor
+			endif
+		endif
+		row + 1
+		col 1 linesep
+		row + 1
+		col 1 "INPUT VALUE INCLUDED IN A RULE"
+		row + 1
+		col 1 "========"
+		col 10 "INPUT CONCEPT"
+		if (explodeInd)
+			row + 1
+			col 10 "x------>"
+			col 20 "CHILD CONCEPT FROM CMT_CONCEPT_EXPLODE TABLE"
+		endif
+		if (crossMapInd)
+			if (crossMapPInd)
+				if (explodeInd)
+					row + 1
+					col 15 "<-+"
+					col 20 "CONCEPT REVERSE CROSS-MAPPED TO THE CHILD CONCEPT"
+				endif
+				row + 1
+				col 5 "<-+"
+				col 10 "CONCEPT REVERSE CROSS-MAPPED TO THE INPUT CONCEPT"
+			endif
+			row + 1
+			col 1 "+------="
+			col 10 "EQUAL TARGET CONCEPT FROM CMT_CROSS_MAP TABLE"
+			row + 1
+			col 1 "+------>"
+			col 10 "MORE SPECIFIC TARGET CONCEPT FROM CMT_CROSS_MAP TABLE"
+			if (explodeInd)
+				row + 1
+				col 10 "x------>"
+				col 20 "CHILD CONCEPT FROM CMT_CONCEPT_EXPLODE TABLE"
+				if (crossMapPInd)
+					row + 1
+					col 15 "<-+"
+					col 20 "CONCEPT REVERSE CROSS-MAPPED TO THE CHILD CONCEPT"
+				endif
+			endif
+			if (crossMapPInd)
+				row + 1
+				col 5 "<-+"
+				col 10 "CONCEPT REVERSE CROSS-MAPPED TO THE TARGET CONCEPT"
+			endif
+		endif
+	head n1u
+		cnt_cr = 0
+		cnt_ex = 0
+		row + 1
+		col 1 linesep
+		row + 1
+		if (size(trim(n1),1) > 0 and not ignoreConceptsInd)
+			txt1 = concat(trim(substring(1,100,n1)), " - ", trim(substring(1,100,n2)))
+		else
+			txt1 = concat(trim(n3), " - ", trim(substring(1,100,n2)))
+		endif
+		col 1 txt1
+	head crf
+		cnt1 = 0
+	head cr1u
+		row + 1
+		if (crf = 0)
+			col 1 "========"
+		else
+			if (crmf = 1)
+				col 1 "+------="
+			else
+				col 1 "+------>"
+			endif
+		endif
+ 
+		if (size(trim(cr1),1) > 0 and not ignoreConceptsInd)
+			txt1 = concat(trim(substring(1,100,cr1)), " - ", trim(substring(1,100,cr2)))
+		else
+			txt1 = concat(trim(cr3), " - ", trim(substring(1,100,n2)))
+		endif
+		cnt_cr = cnt_cr + 1
+		col 10 txt1
+	detail
+		cnt2 = cnt2 + 1
+		if (nomen->qual[d1.seq].cr_qual[d2.seq].ex_cnt > 0)
+			row + 1
+			col 10 "x------>"
+			txt1 = concat(trim(substring(1,100,ex1)), " - ", trim(substring(1,100,ex2)))
+			cnt_ex = cnt_ex + 1
+			col 20 txt1
+			if (nomen->qual[d1.seq].cr_qual[d2.seq].ex_qual[d3.seq].ex_t_cnt > 0)
+				for (idx = 1 to nomen->qual[d1.seq].cr_qual[d2.seq].ex_qual[d3.seq].ex_t_cnt)
+					row + 1
+					col 15 "<-+"
+					if (ccki_sort_ind)
+						txt1 = concat(trim(substring(1,100,
+							nomen->qual[d1.seq].cr_qual[d2.seq].ex_qual[d3.seq].ex_targets[idx].ex_t_ccki)),
+					 		" - ", trim(substring(1,100,
+					 		nomen->qual[d1.seq].cr_qual[d2.seq].ex_qual[d3.seq].ex_targets[idx].ex_t_display)))
+					else
+						txt1 = concat(trim(substring(1,100,
+							nomen->qual[d1.seq].cr_qual[d2.seq].ex_qual[d3.seq].ex_targets[idx].ex_t_display)),
+					 		" - ", trim(substring(1,100,
+					 		nomen->qual[d1.seq].cr_qual[d2.seq].ex_qual[d3.seq].ex_targets[idx].ex_t_ccki)))
+					endif
+					cnt_ex = cnt_ex + 1
+					col 20 txt1
+				endfor
+			endif
+		endif
+	foot cr1u
+		if (nomen->qual[d1.seq].cr_qual[d2.seq].cr_t_cnt > 0)
+			for (idx = 1 to nomen->qual[d1.seq].cr_qual[d2.seq].cr_t_cnt)
+				row + 1
+				col 5 "<-+"
+				if (ccki_sort_ind)
+					txt1 = concat(trim(substring(1,100,
+						nomen->qual[d1.seq].cr_qual[d2.seq].cr_targets[idx].cr_t_ccki)),
+				 		" - ", trim(substring(1,100,
+				 		nomen->qual[d1.seq].cr_qual[d2.seq].cr_targets[idx].cr_t_display)))
+				else
+					txt1 = concat(trim(substring(1,100,
+						nomen->qual[d1.seq].cr_qual[d2.seq].cr_targets[idx].cr_t_display)),
+				 		" - ", trim(substring(1,100,
+				 		nomen->qual[d1.seq].cr_qual[d2.seq].cr_targets[idx].cr_t_ccki)))
+				endif
+				cnt_cr = cnt_cr + 1
+				col 10 txt1
+			endfor
+		endif
+	foot n1u
+		row + 2
+		txt1 = concat("Total: ", build(cnt_cr+cnt_ex), " related nomenclatures (",
+			 build(cnt_cr), " synonyms and ", build(cnt_ex), " children). ")
+		col 1 txt1
+	foot report
+		row + 1
+		col 1 linesep
+		row + 2
+		if (not ignoreConceptsInd)
+			; 001 break
+			call center("LIST OF CONCEPT CKIS AND ASSOCIATED NOMENCLATURE IDS",1,112)
+			row + 1
+			col 1 linesep
+			row + 1
+			for (idx = 1 to cckis->cnt)
+				txt1 = cckis->qual[idx].ccki
+				col 1 txt1
+				row + 1
+				for (idx1 = 1 to cckis->qual[idx].ncnt)
+					if (cckis->qual[idx].nqual[idx1].active_ind = 0)
+						col 8 "*"
+					endif
+					txt1 = concat(trim(substring(1,100,cckis->qual[idx].nqual[idx1].display)), " - ",
+						cnvtstring(cckis->qual[idx].nqual[idx1].n_id,25,1))
+					col 10 txt1
+					row + 1
+				endfor
+			endfor
+			col 1 linesep
+			row + 1
+			col 1 "* Inactive nomenclatures"
+		endif
+	with nocounter, memsort, maxcol = 250, outerjoin=d1, outerjoin=d2, format=variable, separator=" ", FORMFEED=NONE
+*/ 
+else
+	call echo(concat("Invalid input value of <" , trim(input_value), ">!"))
+endif
+
+ 
+subroutine getConceptCKI(ID)
+ 
+	declare source_vocab_mean = vc
+ 
+	call echo(concat("Retrieving concept CKI for nomenclature ID = ", build(ID)))
+ 
+	select into "nl:"
+		cki = decode(con.seq,"CONCEPT","NO_CKI")
+	from
+		nomenclature nom,
+		concept con
+	plan nom where nom.nomenclature_id = ID
+	join con where
+		con.concept_identifier = outerjoin(nom.concept_identifier) and
+		con.concept_source_cd = outerjoin(nom.concept_source_cd) and
+		con.active_ind = outerjoin(1)
+	detail
+		source_vocab_mean = uar_get_code_meaning(nom.source_vocabulary_cd)
+		nomen->cnt = nomen->cnt + 1
+		stat = alterlist(nomen->qual, nomen->cnt)
+		nomen->qual[nomen->cnt].display = trim(nom.source_string)
+		nomen->qual[nomen->cnt].ccki = trim(nom.concept_cki)
+		if (size(nomen->qual[nomen->cnt].ccki) = 0 and cki = "CONCEPT")
+			if (source_vocab_mean = "MUL.ALGCAT" or source_vocab_mean = "MUL.DCLASS" or
+					source_vocab_mean = "MUL.DRUG" or source_vocab_mean = "MUL.MMDC")
+				nomen->qual[nomen->cnt].ccki = con.cki
+			endif ; end of source_vocab_mean
+		endif ; end of checking ccki
+		; copy the item to the lower level as a synonym
+		nomen->qual[nomen->cnt].cr_cnt = nomen->qual[nomen->cnt].cr_cnt + 1
+		cnt = nomen->qual[nomen->cnt].cr_cnt
+		stat = alterlist(nomen->qual[nomen->cnt].cr_qual, cnt)
+		nomen->qual[nomen->cnt].cr_qual[cnt].cr_ccki = nomen->qual[nomen->cnt].ccki
+		nomen->qual[nomen->cnt].cr_qual[cnt].cr_display = nomen->qual[nomen->cnt].display
+		nomen->qual[nomen->cnt].cr_qual[cnt].cr_flag = 0
+ 
+	with nocounter,expand=1
+ 
+end
+ 
+subroutine parseRefHelpValue(inputValue)
+ 
+	declare pos = i4 with protect
+	declare nomIDPos = i4 with protect
+	declare endPos = i4 with protect
+ 
+	set pos = findstring("NOMEN:",inputValue)
+	set nomIDPos = 1
+	set endPos = pos
+	while(pos > 0)
+		set endPos = findstring("<6>",inputValue, pos+1)
+		call echo(build("pos =", pos, "; endPos = ", endPos))
+		if (endPos > 0)
+			set nomen->cnt = nomen->cnt + 1
+			set stat = alterlist(nomen->qual, nomen->cnt)
+			set nomen->qual[nomen->cnt].ccki = substring(pos+6, endPos-pos-6,inputValue)
+			set nomen->qual[nomen->cnt].nomenclature_id = cnvtreal(substring(nomIDPos,pos-nomIDPos-1, inputValue))
+			set nomen->qual[nomen->cnt].cr_cnt = nomen->qual[nomen->cnt].cr_cnt + 1
+			set cnt = nomen->qual[nomen->cnt].cr_cnt
+			set stat = alterlist(nomen->qual[nomen->cnt].cr_qual, cnt)
+			set nomen->qual[nomen->cnt].cr_qual[cnt].cr_ccki = nomen->qual[nomen->cnt].ccki
+			set nomen->qual[nomen->cnt].cr_qual[cnt].cr_flag = 0
+			set pos = endPos
+			set endPos = findstring("<7>",inputValue, pos+1)
+			if (endPos > 0)
+				set nomen->qual[nomen->cnt].display = substring(pos+3, endPos-pos-3,inputValue)
+				set pos = findstring("NOMEN:",inputValue,endPos+1)
+			else
+				set nomen->qual[nomen->cnt].display =
+					substring(pos+3, size(inputValue,1)-pos-3, inputValue)
+				set pos = 0
+			endif
+			set nomIDPos = findstring("<8>",inputValue,endPos+1) + 3
+			if (nomIDPos > size(inputValue))
+				set nomIDPos = 0
+			endif
+			set nomen->qual[nomen->cnt].cr_qual[cnt].cr_display = nomen->qual[nomen->cnt].display
+			set nomen->qual[nomen->cnt].cr_qual[cnt].nomenclature_id = nomen->qual[nomen->cnt].nomenclature_id
+		endif
+	endwhile
+ 
+end
+ 
+subroutine parseCrossVocabs(Vocabs)
+ 
+	declare pos6 = i4 with protect
+ 
+	call echo("Start parseCrossVocabs")
+ 
+	if (cnvtupper(trim(Vocabs)) = "NONE")
+		set crossVocabs->cnt = -1
+	else
+		set Vocabs = replace(Vocabs,"<6>",char(6))
+		set Vocabs = replace(Vocabs,"<7>",char(7))
+ 
+		set orig_param = Vocabs
+		execute eks_t_parse_list with replace(reply, crossVocabslist)
+		free set orig_param
+ 
+		if (crossVocabslist->cnt > 0)
+			for (idx = 1 to crossVocabslist->cnt)
+				if (cnvtupper(trim(crossVocabslist->qual[idx].display)) in ("*ALL", "*NONE"))
+					if (crossVocabslist->cnt > 1)
+						set idx = crossVocabslist->cnt + 1
+						return(1)
+					elseif (cnvtupper(trim(crossVocabslist->qual[idx].display)) = "*NONE")
+						set crossVocabs->cnt = -1
+					endif
+				else
+					if (cnvtreal(crossVocabslist->qual[idx].value) > 0)
+						set crossVocabs->cnt = crossVocabs->cnt + 1
+						set stat = alterlist(crossVocabs->qual, crossVocabs->cnt)
+						set crossVocabs->qual[crossVocabs->cnt].vocab_cd = cnvtreal(crossVocabslist->qual[idx].value)
+						set pos6 = findstring(char(6), crossVocabslist->qual[idx].display)
+						if (pos6 > 0)
+							set crossVocabs->qual[crossVocabs->cnt].display =
+								substring(1, pos6-1, crossVocabslist->qual[idx].display)
+						else
+							set crossVocabs->qual[crossVocabs->cnt].display =
+								crossVocabslist->qual[idx].display
+						endif
+ 
+					endif
+				endif
+			endfor
+		endif
+ 
+	endif
+ 
+	return(0)
+ 
+end
+ 
+subroutine flattenRecord(_dummyarg)
+ 
+	if (cckiMap->cnt > 0)
+		set stat = initrec(cckiMap)
+		set cckiMap->cnt = 0
+	endif
+	for (idx = 1 to nomen->cnt)
+		for (idx1 = 1 to nomen->qual[idx].cr_cnt)
+			set cckiMap->cnt = cckiMap->cnt + 1
+			set stat = alterlist(cckiMap->qual, cckiMap->cnt)
+			set cckiMap->qual[cckiMap->cnt].ccki = nomen->qual[idx].cr_qual[idx1].cr_ccki
+			set cckiMap->qual[cckiMap->cnt].ix1 = idx
+			set cckiMap->qual[cckiMap->cnt].ix2 = idx1
+			set cckiMap->qual[cckiMap->cnt].ix3 = 0
+			if (nomen->qual[idx].cr_qual[idx1].ex_cnt > 0)
+				for (idx2 = 1 to nomen->qual[idx].cr_qual[idx1].ex_cnt)
+					set cckiMap->cnt = cckiMap->cnt + 1
+					set stat = alterlist(cckiMap->qual, cckiMap->cnt)
+					set cckiMap->qual[cckiMap->cnt].ccki = nomen->qual[idx].cr_qual[idx1].ex_qual[idx2].ex_ccki
+					set cckiMap->qual[cckiMap->cnt].ix1 = idx
+					set cckiMap->qual[cckiMap->cnt].ix2 = idx1
+					set cckiMap->qual[cckiMap->cnt].ix3 = idx2
+ 
+					if (nomen->qual[idx].cr_qual[idx1].ex_qual[idx2].ex_t_cnt > 0)
+						for (idx3 = 1 to nomen->qual[idx].cr_qual[idx1].ex_qual[idx2].ex_t_cnt)
+							set cckiMap->cnt = cckiMap->cnt + 1
+							set stat = alterlist(cckiMap->qual, cckiMap->cnt)
+							set cckiMap->qual[cckiMap->cnt].ccki =
+								nomen->qual[idx].cr_qual[idx1].ex_qual[idx2].ex_targets[idx3].ex_t_ccki
+							set cckiMap->qual[cckiMap->cnt].ix1 = idx
+							set cckiMap->qual[cckiMap->cnt].ix2 = idx1
+							set cckiMap->qual[cckiMap->cnt].ix3 = idx2
+						endfor
+					endif
+				endfor
+			endif
+			if (nomen->qual[idx].cr_qual[idx1].cr_t_cnt > 0)
+				for (idx2 = 1 to nomen->qual[idx].cr_qual[idx1].cr_t_cnt)
+					set cckiMap->cnt = cckiMap->cnt + 1
+					set stat = alterlist(cckiMap->qual, cckiMap->cnt)
+					set cckiMap->qual[cckiMap->cnt].ccki =
+						nomen->qual[idx].cr_qual[idx1].cr_targets[idx2].cr_t_ccki
+					set cckiMap->qual[cckiMap->cnt].ix1 = idx
+					set cckiMap->qual[cckiMap->cnt].ix2 = idx1
+					set cckiMap->qual[cckiMap->cnt].ix3 = idx2
+				endfor
+			endif
+		endfor
+	endfor
+ 
+end
+
+call echorecord(cckis)
+end
+go
+ 
+

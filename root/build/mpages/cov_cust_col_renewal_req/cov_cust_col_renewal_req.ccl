@@ -1,0 +1,153 @@
+SELECT 
+	 ea.alias
+	,pr.name_full_formatted
+	,pc.description
+	,no_of_hours = datetimediff (cnvtdatetime (curdate,curtime3) ,cnvtdatetime (p.order_dt_tm ) ,4 )
+	,status=uar_get_code_display(p.pw_status_cd)
+	,p.end_effective_dt_tm ";;q"
+	,*
+FROM  (pathway_catalog pc )
+	 ,(pathway p )
+	 ,(encounter e)
+	 ,(encntr_alias ea)
+	 ,(person pr)
+PLAN pc
+	WHERE 	(pc.description_key IN ("RESTRAINT INITIATE NON-VIOLENT" , "RESTRAINT RENEWAL NON-VIOLENT" ) )
+    AND 	(pc.type_mean = "CAREPLAN" )
+JOIN p
+    WHERE 	(p.pathway_catalog_id = pc.pathway_catalog_id )
+    AND 	(p.pw_status_cd IN (674356 , 10740 ) )
+    AND 	(p.end_effective_dt_tm BETWEEN cnvtlookbehind ("36,H" ) AND cnvtdatetime (curdate,curtime3))
+join e
+	where	(e.encntr_id = p.encntr_id)
+join ea
+	where	(ea.encntr_id = e.encntr_id)
+	and		(ea.encntr_alias_type_cd = 1077)
+	and		(ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3))
+	and     (ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3))
+	and     (ea.active_ind = 1)
+join pr
+	where	(pr.person_id = p.person_id)
+ORDER BY 
+	 p.person_id
+    ,p.end_effective_dt_tm DESC
+WITH NOCOUNTER
+
+select * from person p where p.person_id =    16586460.00
+
+   HEAD REPORT
+    person_idx = 0 ,
+    no_of_hours = 0
+   HEAD p.person_id
+    person_idx = locateval (loc_idx ,1 ,person_cnt ,p.person_id ,reply->person[loc_idx ].person_id )
+    
+    no_of_hours = datetimediff (current_date_time ,cnvtdatetime (p.order_dt_tm ) ,3 )
+    IF ((no_of_hours >= 12 ) AND (no_of_hours < 30 ) ) 
+    	reply->person[person_idx ].icon = renewal_status_icon
+    ELSE 
+    	reply->person[person_idx ].icon = " "
+    ENDIF
+   FOOT  p.person_id
+    null
+   WITH nocounter
+   
+SELECT distinct
+	 ea.alias
+	,pr.name_full_formatted
+	,p.order_mnemonic
+	,no_of_hours = datetimediff (cnvtdatetime (curdate,curtime3) ,cnvtdatetime (p.orig_order_dt_tm ) ,3 )
+	,status=uar_get_code_display(p.order_status_cd)
+	,sort_time=if( p.order_status_cd=      2545.00) p.status_dt_tm else p.orig_order_dt_tm endif ";;q"
+	;,p.orig_order_dt_tm ";;q"
+	,ce.result_val
+	,ce.event_id
+	,p1.pathway_catalog_id
+	,p1.description
+FROM  orders p
+	 ,(encounter e)
+	 ,(encntr_alias ea)
+	 ,(person pr)
+	 ,pathway_catalog p1
+	 ,clinical_event ce
+	 ,dummyt d1
+PLAN p where p.catalog_cd in( 	; 2561462681.00
+								;,4149451.00
+								4149455.00
+							)
+		and p.orig_order_dt_tm >= cnvtdatetime(curdate-10,0)
+		;and p.order_id = 398758201
+		and p.template_order_id = 0.0
+join p1 where p1.pathway_catalog_id = 	p.pathway_catalog_id
+join e
+	where	(e.encntr_id = p.encntr_id)
+join ea
+	where	(ea.encntr_id = e.encntr_id)
+	and		(ea.encntr_alias_type_cd = 1077)
+	and		(ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3))
+	and     (ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3))
+	and     (ea.active_ind = 1)
+join pr
+	where	(pr.person_id = p.person_id)
+join d1
+join ce
+    where 	ce.person_id = p.person_id
+    and		ce.encntr_id = p.encntr_id
+    and   	ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and		ce.event_cd = 19187681
+	and     ce.result_status_cd in(25,35,34)
+ORDER BY 
+	 p.person_id
+	,p.encntr_id
+    ,sort_time
+    ,ce.valid_from_dt_tm desc
+WITH NOCOUNTER, outerjoin = d1
+
+select * from person p where p.person_id =    16586460.00
+
+   HEAD REPORT
+    person_idx = 0 ,
+    no_of_hours = 0
+   HEAD p.person_id
+    person_idx = locateval (loc_idx ,1 ,person_cnt ,p.person_id ,reply->person[loc_idx ].person_id )
+    
+    no_of_hours = datetimediff (current_date_time ,cnvtdatetime (p.order_dt_tm ) ,3 )
+    IF ((no_of_hours >= 12 ) AND (no_of_hours < 30 ) ) 
+    	reply->person[person_idx ].icon = renewal_status_icon
+    ELSE 
+    	reply->person[person_idx ].icon = " "
+    ENDIF
+   FOOT  p.person_id
+    null
+   WITH nocounter
+
+select oc.catalog_cd,oc.primary_mnemonic,* from order_catalog oc
+plan oc where oc.primary_mnemonic in("PNRC Restraint Renewal Non-Violent"
+									,"Restraint Renewal Non-Violent"
+									,"Restraint Initiate Non-Violent"
+									,"Restraint Monitoring every 2 hours")
+									
+; 2561462681.00	PNRC Restraint Renewal Non-Violent
+;    4149445.00	Restraint Initiate Non-Violent
+;    4149455.00	Restraint Monitoring every 2 hours
+;    4149451.00	Restraint Renewal Non-Violent
+
+
+
+select uar_get_code_display(o.order_status_cd),o.orig_order_dt_tm,uar_Get_code_display(o.catalog_cd),o.order_mnemonic,
+ * from orders o where o.order_id = 398758201
+
+
+
+select * from code_value cv where cv.display = "Restraint Activity Type:"
+;   19187681.00	         72		Restraint Activity Type:
+;  270361197.00	         93		Restraint Activity Type:
+;   19187683.00	      14003		Restraint Activity Type:
+
+
+
+
+
+select * from code_value cv where cv.code_set = 8
+select * from order_catalog oc where oc.catalog_cd = 4149455
+
+select * from pathway_catalog pc where pc.pathway_catalog_id = 0.0

@@ -1,0 +1,9 @@
+;	FAC	PNAME	DOB	FIN	MRN	CMRN	EID	PID	AGE	ENC_VISIT_TYPE	ADMIT_DT	DC_DT
+;	FLMC	ZZZTEST, GEVP	 12/15/1980	1932300001	200922	21382283	119191824	19448916	38	Inpatient	11/19/2019 13:58	12/19/2019 00:01
+
+set link_personid = 15500096               go 	;ZZZTEST, GEVP
+set link_encntrid = 116739169 go  	;1932300001
+set link_orderid = 2355985295 go
+execute cov_eks_ppr_manage go
+
+

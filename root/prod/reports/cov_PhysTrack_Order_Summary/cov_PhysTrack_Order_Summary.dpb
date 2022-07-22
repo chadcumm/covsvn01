@@ -1,0 +1,180 @@
+<prompt-def program = 'COV_PHYSTRACK_ORDER_SUMMARY' group = '0' auto-arrange = 'true' stream-ver = '0' export-dt-tm = '202204051037' version = '7' script-enabled = 'true' prompt-control-version = '3.000000' updt_dt_tm = '04/13/2021 07:25:19' resource-enabled = 'false'><control name = 'OUTDEV' control = '6' height = '20' width = '275' position = '0' result-type = '1' exclude = 'false'><display align = 'left'>Output to File/Printer/MINE</display>
+<description></description>
+<default>MINE</default>
+<component name = 'CWizOutputDevice'><property name = 'OUTPUT-DEVICES:00'><![CDATA[HIDE-BROWSER='false' DEVICES='' DISPLAY-ALL='true' DISALLOW-FREETEXT='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROGRAM'><![CDATA[PROMPT-CONTROL-VERSION='3.000000' AUTO-ARRANGE='true' OWNER='' DU-BASE-HORZ='8' VERSION='7' STREAM-VER='0' REPORT-NAME='' UPDT_DT_TM='04/13/2021 07:25:19' DU-BASE-VERT='16' SCRIPT-ENABLED='true'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ]]></property>
+<property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='20' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='' LABEL-POS-TOP='10' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='275' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='10' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='130' TRIM='false' ]]></property>
+</component>
+<component name = 'JAVASCRIPT'><property name = 'CODE:00'><![CDATA[var theForm = null;
+
+function onLoad() {
+
+    theForm = new DiscernForm();
+
+    // insert event handlers
+    theForm.CLR_PMPT.onClick=ClrPrompts;
+}
+
+function ClrPrompts() {
+    theForm.ORDER_STATUS_PMPT.value="0.00";
+    theForm.ACTION_TYPE_PMPT.value="0.00";
+    theForm.COMMUNICATION_TYPE_PMPT.value="0.00";
+    theForm.PATIENT_TYPE_PMPT.value="0.00";
+    theForm.FIN_PMPT.value=""
+    theForm.ORDER_NAME_PMPT.value="";
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ]]></property>
+</component>
+</control>
+<control name = 'START_DATETIME_PMPT' control = '5' height = '20' width = '210' position = '1' result-type = '1' exclude = 'false'><display align = 'left'>Start Date/Time</display>
+<description></description>
+<default>SYSDATE</default>
+<component name = 'CWizDateTime'><property name = 'DATE-TIME-ATTR:00'><![CDATA[TIME-NOW='true' OUTPUT-FORMAT='DD-MMM-YYYY HH:MM:SS' ANCHOR-HOUR='' MONTH='' TIME-SRVTM='true' DATE-TODAY='true' DATE-LONG='true' BASE-DATE-TIME='?DBB' DATE-OFFSET='0.000000' DATE-CAL='true' LINK-INPUT='' HOUR='00' ANCHOR-YEAR='' DAY='' DATE-ENABLE='true' TIME-OFFSET='0.000000' DATE-INVDATE='true' DATE-FMT='0' ENABLE-MASK='3' MINUTE='00' TIME-MODE='1' TIME-REL-INPUT='true' AUTO-UPDATE='false' ANCHOR-MONTH='' YEAR='' ANCHOR-DAY='' TIME-SPININC='1' TIME-SPIN='true' TIME-NOW-INPUT='true' DATE-SPIN='true' ANCHOR-MINUTE='' TIME-ENABLE='false' DATE-SRVTM='true'                                                                                                                                                                                                                                                                                                                                                                                                                                                       ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='20' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='210' LABEL-POS-TOP='37' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='20' RESIZABLE='false' RIGHT='210' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='37' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='76' TRIM='false' ]]></property>
+</component>
+</control>
+<control name = 'END_DATETIME_PMPT' control = '5' height = '20' width = '210' position = '2' result-type = '1' exclude = 'false'><display align = 'left'>End Date/Time</display>
+<description></description>
+<default>SYSDATE</default>
+<component name = 'CWizDateTime'><property name = 'DATE-TIME-ATTR:00'><![CDATA[TIME-NOW='true' OUTPUT-FORMAT='DD-MMM-YYYY HH:MM:SS' ANCHOR-HOUR='' MONTH='' TIME-SRVTM='true' DATE-TODAY='true' DATE-LONG='true' BASE-DATE-TIME='?DBE' DATE-OFFSET='0.000000' DATE-CAL='true' LINK-INPUT='' HOUR='23' ANCHOR-YEAR='' DAY='' DATE-ENABLE='true' TIME-OFFSET='0.000000' DATE-INVDATE='true' DATE-FMT='0' ENABLE-MASK='3' MINUTE='59' TIME-MODE='1' TIME-REL-INPUT='true' AUTO-UPDATE='false' ANCHOR-MONTH='' YEAR='' ANCHOR-DAY='' TIME-SPININC='1' TIME-SPIN='true' TIME-NOW-INPUT='true' DATE-SPIN='true' ANCHOR-MINUTE='' TIME-ENABLE='false' DATE-SRVTM='true'                                                                                                                                                                                                                                                                                                                                                                                                                                                       ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='20' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='210' LABEL-POS-TOP='64' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='20' RESIZABLE='false' RIGHT='210' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='64' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='73' TRIM='false' ]]></property>
+</component>
+</control>
+<control name = 'FACILITY_PMPT' control = '2' height = '25' width = '250' position = '3' result-type = '3' exclude = 'false'><display align = 'left'>Facility</display>
+<description></description>
+<default></default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[MODIFIABLE='false' SORT='false' INC-ANY='false' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='false' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='' QUERY-STRING='select 
+    facility_name &#061; evaluate2(
+        if (findstring(" - ", o.org_name) > 0) 
+            substring(1, findstring(" - ", o.org_name), o.org_name) 
+        else 
+            o.org_name 
+        endif
+    )
+    , o.organization_id
+    , l.location_cd    
+from
+    PRSNL_ORG_RELTN por
+    , LOCATION l
+    , ORGANIZATION o
+where
+    por.person_id &#061; reqinfo -> updt_id
+    and por.active_ind &#061; 1
+    and l.organization_id &#061; por.organization_id
+    and l.location_type_cd &#061; 783.00 ; FACILITY
+    and o.organization_id &#061; l.organization_id
+    and o.organization_id in (
+        3144501.00,675844.00,3144505.00,3144499.00,3144502.00, 
+        3144503.00,3144504.00,3234074.00,3234073.00,
+        3234090.00,3234048.00
+    )
+order by
+    o.org_name' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#03]]></property>
+<property name = 'SETTINGS:01'><![CDATA[4; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;2200.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;FACILITY_NAME&#034; TITLE&#061;&#034;FACILITY_NAME&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;2520.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;ORGANIZATION_ID&#034; TITLE&#061;&#034;ORGANIZATION_ID&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;2&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;2&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;2040.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;LOCATION_CD&#034; TITLE&#061;&#034;LOCATION_CD&#034; &#125;'                                                                                                                                           ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='25' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='' LABEL-POS-TOP='91' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='16' CTRL-HORZ-OFFSET='' TOP='91' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='47' TRIM='true' ]]></property>
+</component>
+</control>
+<control name = 'ORDER_STATUS_PMPT' control = '2' height = '25' width = '250' position = '4' result-type = '3' exclude = 'false'><display align = 'left'>Order Status</display>
+<description></description>
+<default>0.0</default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[INC-ANY-DISPLAY='ALL' MODIFIABLE='false' SORT='false' INC-ANY='true' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' INC-ANY-KEY='0.0' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='false' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='0.0           ' QUERY-STRING='select distinct
+     cv_display &#061; cv.display
+    ,cv_code &#061; cv.code_value
+from CODE_VALUE cv
+where cv.code_set &#061; 6004 ;order_status_cd
+    and cv.code_value in (2542,2543,2545,2546,
+        2548,2550,2544,643467)
+order by cv.display
+
+
+' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1840.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;CV_DISPLAY&#034; TITLE&#061;&#034;CV_DISPLAY&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1540.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;CV_CODE&#034; TITLE&#061;&#034;CV_CODE&#034; &#125;'                    ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='25' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='' LABEL-POS-TOP='123' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='123' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='59' TRIM='false' ]]></property>
+</component>
+</control>
+<control name = 'ACTION_TYPE_PMPT' control = '2' height = '25' width = '250' position = '5' result-type = '3' exclude = 'false'><display align = 'left'>Action Type</display>
+<description></description>
+<default>0.00</default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[INC-ANY-DISPLAY='ALL' MODIFIABLE='false' SORT='false' INC-ANY='true' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' INC-ANY-KEY='0.00' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='false' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='0.00          ' QUERY-STRING='select distinct
+     cv_display &#061; cv.display
+    ,cv_code &#061; cv.code_value
+from CODE_VALUE cv
+where cv.code_set &#061; 6003 ;order action_type_cd
+    and cv.code_value in (2526,2527,2529,2530,2532,2533,2534,2535)
+order by cv.display' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1840.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;CV_DISPLAY&#034; TITLE&#061;&#034;CV_DISPLAY&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1540.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;CV_CODE&#034; TITLE&#061;&#034;CV_CODE&#034; &#125;'                                 ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='25' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='' LABEL-POS-TOP='155' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='155' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='57' TRIM='false' ]]></property>
+</component>
+</control>
+<control name = 'COMMUNICATION_TYPE_PMPT' control = '2' height = '25' width = '250' position = '6' result-type = '3' exclude = 'false'><display align = 'left'>Communication Type</display>
+<description></description>
+<default>0.00</default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[INC-ANY-DISPLAY='ALL' MODIFIABLE='false' SORT='false' INC-ANY='true' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' INC-ANY-KEY='0.00' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='false' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='0.00' QUERY-STRING='select distinct
+     cv_display &#061; cv.display
+    ,cv_code &#061; cv.code_value
+from CODE_VALUE cv
+where cv.code_set &#061; 6006 ;order_type_cd (Communication Type)
+    and cv.code_value in (2560,2561,2562,681544,19468404,20094437,22543438,
+        54416801,2553560081,4370401,2553560089,2553560097,2553560105,2560667137,
+        2576706321,680281,637915)
+order by cv.display' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1840.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;CV_DISPLAY&#034; TITLE&#061;&#034;CV_DISPLAY&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1540.000000&#034; TYPE&#061;&#034;&#034; VA]]></property>
+<property name = 'SETTINGS:01'><![CDATA[LUE&#061;&#034;true&#034; BINDING&#061;&#034;CV_CODE&#034; TITLE&#061;&#034;CV_CODE&#034; &#125;'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='25' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='' LABEL-POS-TOP='187' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='187' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='99' TRIM='false' ]]></property>
+</component>
+</control>
+<control name = 'PATIENT_TYPE_PMPT' control = '2' height = '25' width = '250' position = '7' result-type = '3' exclude = 'false'><display align = 'left'>Patient Type</display>
+<description></description>
+<default>0.00</default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[INC-ANY-DISPLAY='ALL' MODIFIABLE='false' SORT='false' INC-ANY='true' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' INC-ANY-KEY='0.00' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='false' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='0.00          ' QUERY-STRING='select distinct
+     cv_display &#061; cv.display
+    ,cv_code &#061; cv.code_value
+from CODE_VALUE cv
+where cv.code_set &#061; 71 ;encntr_type_cd (Patient Type)
+    and cv.code_value in (309308,309309,309310,309311,309312,4189852,2555137373,
+        3683069631,255137051,255268957,255267433,2555137309,24083578)
+order by cv.display
+
+
+
+' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1840.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;CV_DISPLAY&#034; TITLE&#061;&#034;CV_DISPLAY&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1540.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BIND]]></property>
+<property name = 'SETTINGS:01'><![CDATA[ING&#061;&#034;CV_CODE&#034; TITLE&#061;&#034;CV_CODE&#034; &#125;'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='25' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='' LABEL-POS-TOP='219' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='219' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='60' TRIM='false' ]]></property>
+</component>
+</control>
+<control name = 'FIN_PMPT' control = '0' height = '18' width = '250' position = '8' result-type = '1' exclude = 'false'><display align = 'left'>FIN</display>
+<description>Optional</description>
+<default></default>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='18' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='' LABEL-POS-TOP='251' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='251' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='17' TRIM='false' ]]></property>
+</component>
+<component name = 'Text Properties'><property name = 'DEFAULT-VALUE'><![CDATA[                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ]]></property>
+<property name = 'MAX-CHAR-LEN'><![CDATA[0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ]]></property>
+<property name = 'TEXT-ATTRIB:00'><![CDATA[AUTO-VAL-DELAY='0' FORMAT-CODE='0' CHAR-TYPE='any' MASK='' TX-DEFAULT='' CHAR-CASE='any' PSW='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ]]></property>
+</component>
+</control>
+<control name = 'ORDER_NAME_PMPT' control = '0' height = '18' width = '250' position = '9' result-type = '1' exclude = 'false'><display align = 'left'>Orderable Name</display>
+<description>( Use * for wildcard )</description>
+<default></default>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='18' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='160' CTRL-WIDTH='' LABEL-POS-TOP='276' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='276' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='77' TRIM='true' ]]></property>
+</component>
+<component name = 'Text Properties'><property name = 'DEFAULT-VALUE'><![CDATA[                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ]]></property>
+<property name = 'MAX-CHAR-LEN'><![CDATA[0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ]]></property>
+<property name = 'TEXT-ATTRIB:00'><![CDATA[AUTO-VAL-DELAY='0' FORMAT-CODE='0' CHAR-TYPE='any' MASK='' TX-DEFAULT='' CHAR-CASE='uppercase' PSW='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ]]></property>
+</component>
+</control>
+<control name = 'CLR_PMPT' control = '9' height = '25' width = '80' position = '10' result-type = '3' exclude = 'true'><display align = 'left'>Reset Prompts</display>
+<description></description>
+<default></default>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='25' HIDE-LABEL='true' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='0' LEFT='160' CTRL-WIDTH='80' LABEL-POS-TOP='0' CTRL-TOP='' EXCLUDE-RUNTIME='true' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='80' LABEL-POS-HEIGHT='0' CTRL-HORZ-OFFSET='' TOP='301' LABEL-LEFT='true' CTRL-LEFT='' LABEL-POS-WIDTH='0' TRIM='false' ]]></property>
+</component>
+</control>
+</prompt-def>

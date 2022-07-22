@@ -1,0 +1,35 @@
+free set requestin go
+record REQUESTIN (
+  1 request
+  2 patient_id = f8   
+  2 confirmation_dt_tm = dq8   
+  2 confirmation_method_cd = f8   
+  2 problem_data [*]   
+    3 problem_id = f8   
+    3 confirmation_status_cd = f8   
+    3 life_cycle_status_cd = f8   
+    3  onset_dt_tm = dq8   
+    3 problem_prsnl_id = f8   
+    3 problem_comment [*]   
+      4 problem_comment_id = f8   
+      4 comment_prsnl_id = f8   
+      4 comment_prsnl_name = vc  
+      4 problem_comment_text = vc  
+    3 onset_tz = i4   
+  2 diagnosis_data [*]   
+    3 diagnosis_id = f8   
+    3 encntr_id = f8   
+  2 nomen_source_id = vc  
+  2 nomen_vocab_mean = c12  
+  2 org_id = f8   
+  2 encntr_id = f8   
+  2 org_sec_override = i2   
+  2 action_tz = i4   
+  2 classification_cd = f8   
+  2 confirmation_tz = i4   
+) go
+
+set requestin->request->patient_id = 18807612 go
+
+execute pfmt_cov_upd_preg_onset go
+

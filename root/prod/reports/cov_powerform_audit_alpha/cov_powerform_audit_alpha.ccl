@@ -1,0 +1,37 @@
+select 
+*
+from name_Value_prefs nvp
+plan nvp where 
+      nvp.parent_entity_name = "DCP_INPUT_REF" 
+     ;and  nvp.parent_entity_id =    9638023.00
+     
+    
+     
+     select into "nl:"
+from 
+  dcp_forms_ref dfr,
+  dcp_forms_def dfd,
+  dcp_section_ref dsr,
+  dcp_input_ref dir,
+  name_value_prefs nvp
+plan dfr 
+  where dfr.dcp_form_instance_id = 9638023
+    and dfr.active_ind = 1
+join dfd 
+  where dfd.dcp_form_instance_id = dfr.dcp_form_instance_id
+join dsr 
+  where dfd.dcp_section_ref_id = dsr.dcp_section_ref_id
+    and dsr.active_ind = 1
+join dir 
+  where dir.dcp_section_instance_id = dsr.dcp_section_instance_id
+join nvp 
+  where nvp.parent_entity_id = dir.dcp_input_ref_id
+    and nvp.parent_entity_name = "DCP_INPUT_REF"
+order by 
+  dfr.dcp_form_instance_id, 
+  dfd.section_seq, 
+  dsr.dcp_section_instance_id,
+  dir.input_ref_seq, 
+  dir.dcp_input_ref_id, 
+  nvp.pvc_name, 
+  nvp.sequence

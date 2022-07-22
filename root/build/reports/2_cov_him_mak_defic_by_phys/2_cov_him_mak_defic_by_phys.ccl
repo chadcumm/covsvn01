@@ -1,0 +1,52 @@
+select * from prsnl p where p.username = "PHYSHOSP" ;    4122622.00
+select * from  prsnl p where p.username = "HIMREFUSAL" ;      744120.00
+
+
+SELECT
+	cea.ACTION_COMMENT
+	, cea.ACTION_DT_TM
+	, cea.ACTION_PRSNL_FT
+	, cea.ACTION_PRSNL_GROUP_ID
+	, cea.ACTION_PRSNL_ID
+	, CEA_ACTION_STATUS_DISP = UAR_GET_CODE_DISPLAY(CEA.ACTION_STATUS_CD)
+	, CEA_ACTION_TYPE_DISP = UAR_GET_CODE_DISPLAY(CEA.ACTION_TYPE_CD)
+	, cea.ACTION_TZ
+	, cea.CE_EVENT_PRSNL_ID
+	, cea.CHANGE_SINCE_ACTION_FLAG
+	, cea.DIGITAL_SIGNATURE_IDENT
+	, cea.EVENT_ID
+	, cea.EVENT_PRSNL_ID
+	, cea.LAST_UTC_TS
+	, cea.LINKED_EVENT_ID
+	, cea.LONG_TEXT_ID
+	, cea.PERSON_ID
+	, cea.PROXY_PRSNL_FT
+	, cea.PROXY_PRSNL_ID
+	, cea.RECEIVING_PERSON_FT
+	, cea.RECEIVING_PERSON_ID
+	, cea.REQUEST_COMMENT
+	, cea.REQUEST_DT_TM
+	, cea.REQUEST_PRSNL_FT
+	, cea.REQUEST_PRSNL_GROUP_ID
+	, cea.REQUEST_PRSNL_ID
+	, cea.REQUEST_TZ
+	, cea.ROWID
+	, cea.SYSTEM_COMMENT
+	, cea.UPDT_APPLCTX
+	, cea.UPDT_CNT
+	, cea.UPDT_DT_TM
+	, cea.UPDT_ID
+	, cea.UPDT_TASK
+	, p1.NAME_FULL_FORMATTED
+	, cea.VALID_FROM_DT_TM
+	, cea.VALID_UNTIL_DT_TM
+
+FROM
+	ce_event_prsnl   cea
+	, prsnl   p1
+
+plan cea
+	where cea.event_id = 317538938
+	and   cea.request_prsnl_id > 0.0
+join p1
+	where p1.person_id = cea.request_prsnl_id

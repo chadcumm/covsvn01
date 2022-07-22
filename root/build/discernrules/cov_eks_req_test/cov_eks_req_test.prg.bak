@@ -1,0 +1,38 @@
+drop program cov_eks_req_test go
+create program cov_eks_req_test 
+
+prompt 
+	"FILENAME" = "" 
+
+with FILENAME
+
+
+if ($FILENAME = "")
+	DECLARE FILEPATH = VC WITH CONSTANT( "CCLUSERDIR:3091000.dat" ) 
+else
+	DECLARE FILEPATH = VC WITH CONSTANT($FILENAME ) 
+endif
+ 
+free set request 
+
+declare line_in = vc 
+
+FREE DEFINE RTL3 
+DEFINE RTL3 IS FILEPATH 
+select into "nl:"
+from rtl3t r
+detail
+	line_in = concat(line_in,r.line)
+with nocounter 
+;call echo(line_in) go
+set stat = cnvtjsontorec(line_in) 
+
+call echorecord(request) 
+
+set stat = tdbexecute(1000000,3091000,3091000,"REC",request,"REC",rec_reply)
+
+call echorecord(rec_reply)
+end go
+
+
+cov_eks_req_test "test.json" go

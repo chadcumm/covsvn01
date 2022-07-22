@@ -1,0 +1,64 @@
+select
+	 cv1.display
+	,cv1.cdf_meaning
+	,cv2.display
+	,cv2.cdf_meaning
+from
+	 code_value cv1
+	,code_value cv2
+plan cv1
+	where cv1.code_set = 6000
+	and   cv1.display = "Nutrition Services"
+join cv2
+	where cv2.definition = cv1.cdf_meaning
+	and   cv2.code_set = 5801
+	
+select
+	 catalog_type = uar_get_code_display(oc.catalog_type_cd)
+	,activity_type = uar_get_code_display(oc.activity_type_cd)
+	,activity_type_cd = oc.activity_type_cd
+	,activity_subtype = uar_get_code_display(oc.activity_subtype_cd)
+	,oc.primary_mnemonic
+	,oc.catalog_cd
+	,ocs.mnemonic
+	,ocs.activity_subtype_cd
+	,ocs.activity_type_cd
+from
+	order_catalog oc
+	,order_catalog_synonym ocs
+plan oc
+	where oc.catalog_type_cd = value(uar_get_code_by("MEANING",6000,"DIETARY"))
+	and   oc.active_ind = 1
+join ocs
+	where ocs.catalog_cd = oc.catalog_cd
+order by
+	 catalog_type
+	,activity_type
+	,activity_subtype
+	,oc.primary_mnemonic
+
+
+free set t_rec go
+record t_rec
+(
+	1 activity_type
+		2 diets = f8
+		2 supplements = f8
+		2 tube_feeding = f8
+	1 subactivity_type
+		2 diets = f8
+		2 supplements = f8
+		2 tube_feeding = f8
+	1 catalog_type
+		2 nutritional_services = f8
+) go
+
+set t_rec->activity_type.diets 					= uar_get_code_by("DISPLAY",106,"") go
+set t_rec->activity_type.supplements 			= uar_get_code_by("DISPLAY",106,"") go
+set t_rec->activity_type.tube_feeding 			= uar_get_code_by("DISPLAY",106,"") go
+set t_rec->subactivity_type.diets 				= uar_get_code_by("DISPLAY",5801,"") go
+set t_rec->subactivity_type.supplements 		= uar_get_code_by("DISPLAY",5801,"") go
+set t_rec->subactivity_type.tube_feeding 		= uar_get_code_by("DISPLAY",5801,"") go
+set t_rec->catalog_type.nutritional_services	= uar_get_code_by("MEANING",6000,"DIETARY") go
+
+call echorecord(t_rec) go

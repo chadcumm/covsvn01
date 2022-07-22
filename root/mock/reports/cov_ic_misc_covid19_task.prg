@@ -1,0 +1,910 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+	Author:			Geetha Paramasivam
+	Date Written:		Oct'2020
+	Solution:			Infection Control
+	Source file name:	      cov_ic_misc_covid_task.prg
+	Object name:		cov_ic_misc_covid_task
+	Request#:			CR# 8786
+	Program purpose:	      MIS-C & COVID19 Task tracking report
+	Executing from:		DA2/CCL
+ 	Special Notes:
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+Mod Date	Developer			Comment
+----------	--------------	------------------------------------------
+******************************************************************************/
+
+
+drop program cov_ic_misc_covid19_task:dba go
+create program cov_ic_misc_covid19_task:dba
+
+prompt 
+	"Output to File/Printer/MINE" = "MINE"       ;* Enter or select the printer or file name to send this report to.
+	, "Start Discharged Date/Time" = "SYSDATE"
+	, "End Discharged Date/Time" = "SYSDATE"
+	, "Patient Status" = 2
+	, "Acute Facility List" = 0 
+
+with OUTDEV, start_datetime, end_datetime, patient_status, 
+	acute_facility_list
+
+
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+
+;COVID19
+declare sars_rna_var     = f8 with constant(uar_get_code_by("DISPLAY", 72, 'SARS CoV2 RNA, RT PCR')), protect
+declare sars_cov2_var    = f8 with constant(uar_get_code_by("DISPLAY", 72, 'SARS-CoV-2')), protect
+declare covid_reflab_var = f8 with constant(uar_get_code_by("DISPLAY", 72, 'COVID19 Reference Lab')), protect
+declare covid_risk_var   = f8 with constant(uar_get_code_by("DISPLAY", 72, 'COVID RISK')), protect
+declare covid_expose_var = f8 with constant(uar_get_code_by("DISPLAY", 72, 'COVID-19 healthcare worker exposure')), protect
+declare covid_past_var   = f8 with constant(uar_get_code_by("DISPLAY", 72, 'COVID-19 test past results')), protect
+
+;FEVER
+declare temp_oral_var    = f8 with constant(uar_get_code_by("DISPLAY", 72, "Temperature Oral")),protect
+declare temp_tympa_var   = f8 with constant(uar_get_code_by("DISPLAY", 72, "Temperature Tympanic")),protect
+declare temp_rectal_var  = f8 with constant(uar_get_code_by("DISPLAY", 72, "Temperature Rectal")),protect
+declare temp_axil_var    = f8 with constant(uar_get_code_by("DISPLAY", 72, "Temperature Axillary")),protect
+declare temp_core_var    = f8 with constant(uar_get_code_by("DISPLAY", 72, "Temperature Core	")),protect
+declare temp_bladder_var = f8 with constant(uar_get_code_by("DISPLAY", 72, "Temperature Bladder")),protect
+declare temp_tempo_var   = f8 with constant(uar_get_code_by("DISPLAY", 72, "Temperature Temporal Artery")),protect
+
+;MIS-C
+declare crp_var          = f8 with constant(uar_get_code_by("DISPLAY", 72, "CRP")),protect
+declare sed_auto_var     = f8 with constant(uar_get_code_by("DISPLAY", 72, "Sed Rate Automated")),protect
+declare sed_west_var     = f8 with constant(uar_get_code_by("DISPLAY", 72, "Sed Rate Westergren")),protect
+declare fibrin_var       = f8 with constant(uar_get_code_by("DISPLAY", 72, "Fibrinogen Lvl")),protect
+declare procal_var       = f8 with constant(uar_get_code_by("DISPLAY", 72, "Procalcitonin")),protect
+declare dimer_var        = f8 with constant(uar_get_code_by("DISPLAY", 72, "D Dimer (Quant)")),protect
+declare ferri_var        = f8 with constant(uar_get_code_by("DISPLAY", 72, "Ferritin Lvl")),protect
+declare ldh_var          = f8 with constant(uar_get_code_by("DISPLAY", 72, "LDH")),protect
+declare interle_var      = f8 with constant(uar_get_code_by("DISPLAY", 72, "Interleukin 6")),protect
+declare neuts_var        = f8 with constant(uar_get_code_by("DISPLAY", 72, "Absolute Neuts")),protect
+declare lympho_var       = f8 with constant(uar_get_code_by("DISPLAY", 72, "Lymphocytes")),protect
+declare albumin_var      = f8 with constant(uar_get_code_by("DISPLAY", 72, "Albumin Lvl")),protect
+
+declare cnt = i4 with noconstant(0)
+declare covid_positive_var = vc with noconstant('')
+declare mis_result_var = vc with noconstant('')
+declare fever_result_var = vc with noconstant('')
+
+set covid_positive_var = fillstring(1000," ")
+set fever_result_var = fillstring(3000," ")
+set mis_result_var = fillstring(3000," ")
+
+
+
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+
+RECORD mis(
+	1 reccnt = i4
+	1 plist[*]
+		2 facility = vc
+		2 fin = vc
+		2 encntrid = f8
+		2 personid = f8
+		2 pat_name = vc
+		2 reg_dt = vc
+		2 disch_dt = vc
+		2 age = vc
+		2 covid_result = vc
+		2 misc_lab_result = vc
+		2 fever_result = vc
+		2 alert_fired_dt = vc
+)
+
+;-----------------------------------------------------------------------------------------------------------
+
+;Patient Pool
+
+if($patient_status = 2) ;Active patients
+
+;== COVID Lab
+select into $outdev
+
+ ce.encntr_id, event = uar_get_code_display(ce.event_cd), ce.result_val
+ 
+from
+	encounter e
+	,person p
+	,dummyt d
+	,clinical_event ce
+ 
+plan e where e.loc_facility_cd = $acute_facility_list 
+	and e.encntr_type_cd in(309308.00, 309310.00, 309312.00);Inpatient,Emergency, Observation
+	and e.active_ind = 1
+	and e.disch_dt_tm is null
+
+join p where p.person_id = e.person_id
+	and p.active_ind = 1
+
+join d where p.birth_dt_tm >= cnvtlookbehind("21,Y", e.reg_dt_tm) ;21 or younger as of reg date
+
+join ce where ce.encntr_id = e.encntr_id
+	and ce.person_id = e.person_id
+	and ce.event_cd in(sars_rna_var, sars_cov2_var, covid_reflab_var)
+	and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+	and ce.result_status_cd IN (25.00, 34.00, 35.00)
+	and cnvtupper(ce.result_val) = 'POSITIVE'
+	and ce.event_id = (select max(ce1.event_id) from clinical_event ce1 where ce1.encntr_id = ce.encntr_id
+		and ce1.event_cd = ce.event_cd
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+		and ce1.result_status_cd IN (34.00, 25.00, 35.00)
+		group by ce1.encntr_id, ce1.event_cd)
+ 
+order by e.encntr_id, ce.event_cd, ce.event_end_dt_tm
+
+Head Report
+	ecnt = 0
+Head e.encntr_id	
+	cnt += 1
+	mis->reccnt = cnt
+	call alterlist(mis->plist, cnt)
+	mis->plist[cnt].encntrid = e.encntr_id
+	mis->plist[cnt].personid = e.person_id
+Head ce.event_cd
+	case (ce.event_cd)
+		of sars_rna_var:
+			covid_positive_var = build2(trim(covid_positive_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+					, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+		of sars_cov2_var: 
+			covid_positive_var = build2(trim(covid_positive_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+					, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+		of covid_reflab_var:
+			covid_positive_var = build2(trim(covid_positive_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+					, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+	endcase
+
+Foot e.encntr_id
+	mis->plist[cnt].covid_result = replace(trim(covid_positive_var),",","",2)
+	
+with nocounter
+
+;------------------------------------------------------------------
+;== COVID_RISK Exposer
+
+select into $outdev
+
+ ce.encntr_id, event = uar_get_code_display(ce.event_cd), ce.result_val
+ 
+from
+	encounter e
+	,person p
+	,dummyt d
+	,clinical_event ce
+ 
+plan e where e.loc_facility_cd = $acute_facility_list 
+	and e.encntr_type_cd in(309308.00, 309310.00, 309312.00);Inpatient,Emergency, Observation
+	and e.active_ind = 1
+	and e.disch_dt_tm is null
+	
+join p where p.person_id = e.person_id
+	and p.active_ind = 1
+	
+join d where p.birth_dt_tm >= cnvtlookbehind("21,Y", e.reg_dt_tm) ;21 or younger as of reg date
+
+join ce where ce.encntr_id = e.encntr_id
+	and ce.person_id = e.person_id
+	and ce.event_cd =  covid_risk_var 
+	and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+	and ce.result_status_cd IN (25.00, 34.00, 35.00)
+	and cnvtlower(ce.result_val) = 'close contact with a person with confirmed covid-19'
+	and ce.event_id = (select max(ce1.event_id) from clinical_event ce1 where ce1.encntr_id = ce.encntr_id
+		and ce1.event_cd = ce.event_cd
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+		and ce1.result_status_cd IN (34.00, 25.00, 35.00)
+		group by ce1.encntr_id, ce1.event_cd)
+ 
+order by e.encntr_id, ce.event_cd, ce.event_end_dt_tm
+
+Head e.encntr_id
+	icnt = 0
+ 	idx = 0
+      idx = locateval(icnt ,1 ,mis->reccnt ,e.encntr_id ,mis->plist[icnt].encntrid)
+     	if(idx = 0);add encntr_id
+		cnt += 1
+		mis->reccnt = cnt
+		call alterlist(mis->plist, cnt)
+		mis->plist[cnt].encntrid = e.encntr_id
+		mis->plist[cnt].personid = e.person_id
+	endif
+Head ce.event_cd	
+	covid_positive_var = build2(trim(covid_positive_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+		, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+
+Foot e.encntr_id
+	if(idx = 0)
+		mis->plist[cnt].covid_result = replace(trim(covid_positive_var),",","",2)
+	else
+		mis->plist[idx].covid_result = replace(trim(covid_positive_var),",","",2)	
+	endif
+
+with nocounter
+
+;--------------------------------------------------------------------------------------------------------------
+;== COVID Healthcare worker Exposer
+
+select into $outdev
+
+ce.encntr_id, event = uar_get_code_display(ce.event_cd), ce.result_val
+ 
+from
+	encounter e
+	,person p
+	,dummyt d
+	,clinical_event ce
+ 
+plan e where e.loc_facility_cd = $acute_facility_list 
+	and e.encntr_type_cd in(309308.00, 309310.00, 309312.00);Inpatient,Emergency, Observation
+	and e.active_ind = 1
+	and e.disch_dt_tm is null
+	
+join p where p.person_id = e.person_id
+	and p.active_ind = 1
+	
+join d where p.birth_dt_tm >= cnvtlookbehind("21,Y", e.reg_dt_tm) ;21 or younger as of reg date
+
+join ce where ce.encntr_id = e.encntr_id
+	and ce.person_id = e.person_id
+	and ce.event_cd = covid_expose_var 
+	and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+	and ce.result_status_cd IN (25.00, 34.00, 35.00)
+	and cnvtlower(ce.result_val) = 'yes'
+	and ce.event_id = (select max(ce1.event_id) from clinical_event ce1 where ce1.encntr_id = ce.encntr_id
+		and ce1.event_cd = ce.event_cd
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+		and ce1.result_status_cd IN (34.00, 25.00, 35.00)
+		group by ce1.encntr_id, ce1.event_cd)
+ 
+order by e.encntr_id, ce.event_cd, ce.event_end_dt_tm
+
+Head e.encntr_id
+	icnt = 0
+ 	idx = 0
+      idx = locateval(icnt ,1 ,mis->reccnt ,e.encntr_id ,mis->plist[icnt].encntrid)
+     	if(idx = 0);add encntr_id
+		cnt += 1
+		mis->reccnt = cnt
+		call alterlist(mis->plist, cnt)
+		mis->plist[cnt].encntrid = e.encntr_id
+		mis->plist[cnt].personid = e.person_id
+	endif
+Head ce.event_cd	
+	covid_positive_var = build2(trim(covid_positive_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+		, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+
+Foot e.encntr_id
+	if(idx = 0)
+		mis->plist[cnt].covid_result = replace(trim(covid_positive_var),",","",2)
+	else
+		mis->plist[idx].covid_result = replace(trim(covid_positive_var),",","",2)	
+	endif
+
+with nocounter
+
+;-------------------------------------------------------------------------------------
+;== COVID Past result
+select into $outdev
+
+ce.encntr_id, event = uar_get_code_display(ce.event_cd), ce.result_val
+ 
+from
+	encounter e
+	,person p
+	,dummyt d
+	,clinical_event ce
+ 
+plan e where e.loc_facility_cd = $acute_facility_list 
+	and e.encntr_type_cd in(309308.00, 309310.00, 309312.00);Inpatient,Emergency, Observation
+	and e.active_ind = 1
+	and e.disch_dt_tm is null
+	
+join p where p.person_id = e.person_id
+	and p.active_ind = 1
+
+join d where p.birth_dt_tm >= cnvtlookbehind("21,Y", e.reg_dt_tm) ;21 or younger as of reg date
+
+join ce where ce.encntr_id = e.encntr_id
+	and ce.person_id = e.person_id
+	and ce.event_cd = covid_past_var
+	and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+	and ce.result_status_cd IN (25.00, 34.00, 35.00)
+	and cnvtupper(ce.result_val) = 'POSITIVE'
+	and ce.event_id = (select max(ce1.event_id) from clinical_event ce1 where ce1.encntr_id = ce.encntr_id
+		and ce1.event_cd = ce.event_cd
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+		and ce1.result_status_cd IN (34.00, 25.00, 35.00)
+		group by ce1.encntr_id, ce1.event_cd)
+ 
+order by e.encntr_id, ce.event_cd, ce.event_end_dt_tm
+
+Head e.encntr_id
+	icnt = 0
+ 	idx = 0
+      idx = locateval(icnt ,1 ,mis->reccnt ,e.encntr_id ,mis->plist[icnt].encntrid)
+     	if(idx = 0);add encntr_id
+		cnt += 1
+		mis->reccnt = cnt
+		call alterlist(mis->plist, cnt)
+		mis->plist[cnt].encntrid = e.encntr_id
+		mis->plist[cnt].personid = e.person_id
+	endif
+Head ce.event_cd	
+	covid_positive_var = build2(trim(covid_positive_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+		, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+
+Foot e.encntr_id
+	if(idx = 0)
+		mis->plist[cnt].covid_result = replace(trim(covid_positive_var),",","",2)
+	else
+		mis->plist[idx].covid_result = replace(trim(covid_positive_var),",","",2)	
+	endif
+
+with nocounter
+
+;------------------------------------------------------------------
+
+
+else ;Discharged patients ==========================================================
+
+;== COVID Lab
+select into $outdev
+
+ce.encntr_id, event = uar_get_code_display(ce.event_cd), ce.result_val
+ 
+from
+	encounter e
+	,person p
+	,dummyt d
+	,clinical_event ce
+ 
+plan e where e.loc_facility_cd = $acute_facility_list 
+	and e.encntr_type_cd in(309308.00, 309310.00, 309312.00);Inpatient,Emergency, Observation
+	and e.disch_dt_tm between cnvtdatetime($start_datetime) and cnvtdatetime($end_datetime)
+	and e.active_ind = 1
+
+join p where p.person_id = e.person_id
+	and p.active_ind = 1
+
+join d where p.birth_dt_tm >= cnvtlookbehind("21,Y", e.reg_dt_tm) ;21 or younger as of reg date
+
+join ce where ce.encntr_id = e.encntr_id
+	and ce.person_id = e.person_id
+	and ce.event_cd in(sars_rna_var, sars_cov2_var, covid_reflab_var)
+	and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+	and ce.result_status_cd IN (25.00, 34.00, 35.00)
+	and cnvtupper(ce.result_val) = 'POSITIVE'
+	and ce.event_id = (select max(ce1.event_id) from clinical_event ce1 where ce1.encntr_id = ce.encntr_id
+		and ce1.event_cd = ce.event_cd
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+		and ce1.result_status_cd IN (34.00, 25.00, 35.00)
+		group by ce1.encntr_id, ce1.event_cd)
+ 
+order by e.encntr_id, ce.event_cd, ce.event_end_dt_tm
+
+Head Report
+	ecnt = 0
+Head e.encntr_id	
+	cnt += 1
+	mis->reccnt = cnt
+	call alterlist(mis->plist, cnt)
+	mis->plist[cnt].encntrid = e.encntr_id
+	mis->plist[cnt].personid = e.person_id
+Head ce.event_cd
+	case (ce.event_cd)
+		of sars_rna_var:
+			covid_positive_var = build2(trim(covid_positive_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+					, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+		of sars_cov2_var: 
+			covid_positive_var = build2(trim(covid_positive_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+					, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+		of covid_reflab_var:
+			covid_positive_var = build2(trim(covid_positive_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+					, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+	endcase
+
+Foot e.encntr_id
+	mis->plist[cnt].covid_result = replace(trim(covid_positive_var),",","",2)
+	
+with nocounter
+
+;------------------------------------------------------------------
+;== COVID_RISK Exposer
+
+select into $outdev
+
+ce.encntr_id, event = uar_get_code_display(ce.event_cd), ce.result_val
+ 
+from
+	encounter e
+	,person p
+	,dummyt d
+	,clinical_event ce
+ 
+plan e where e.loc_facility_cd = $acute_facility_list 
+	and e.encntr_type_cd in(309308.00, 309310.00, 309312.00);Inpatient,Emergency, Observation
+	and e.disch_dt_tm between cnvtdatetime($start_datetime) and cnvtdatetime($end_datetime)
+	and e.active_ind = 1
+	
+join p where p.person_id = e.person_id
+	and p.active_ind = 1
+
+join d where p.birth_dt_tm >= cnvtlookbehind("21,Y", e.reg_dt_tm) ;21 or younger as of reg date
+
+join ce where ce.encntr_id = e.encntr_id
+	and ce.person_id = e.person_id
+	and ce.event_cd =  covid_risk_var 
+	and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+	and ce.result_status_cd IN (25.00, 34.00, 35.00)
+	and cnvtlower(ce.result_val) = 'close contact with a person with confirmed covid-19'
+	and ce.event_id = (select max(ce1.event_id) from clinical_event ce1 where ce1.encntr_id = ce.encntr_id
+		and ce1.event_cd = ce.event_cd
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+		and ce1.result_status_cd IN (34.00, 25.00, 35.00)
+		group by ce1.encntr_id, ce1.event_cd)
+ 
+order by e.encntr_id, ce.event_cd, ce.event_end_dt_tm
+
+Head e.encntr_id
+	icnt = 0
+ 	idx = 0
+      idx = locateval(icnt ,1 ,mis->reccnt ,e.encntr_id ,mis->plist[icnt].encntrid)
+     	if(idx = 0);add encntr_id
+		cnt += 1
+		mis->reccnt = cnt
+		call alterlist(mis->plist, cnt)
+		mis->plist[cnt].encntrid = e.encntr_id
+		mis->plist[cnt].personid = e.person_id
+	endif
+Head ce.event_cd	
+	covid_positive_var = build2(trim(covid_positive_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+		, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+
+Foot e.encntr_id
+	if(idx = 0)
+		mis->plist[cnt].covid_result = replace(trim(covid_positive_var),",","",2)
+	else
+		mis->plist[idx].covid_result = replace(trim(covid_positive_var),",","",2)	
+	endif
+
+with nocounter
+
+;--------------------------------------------------------------------------------------------------------------
+;== COVID Healthcare worker Exposer
+
+select into $outdev
+
+ce.encntr_id, event = uar_get_code_display(ce.event_cd), ce.result_val
+ 
+from
+	encounter e
+	,person p
+	,dummyt d
+	,clinical_event ce
+ 
+plan e where e.loc_facility_cd = $acute_facility_list 
+	and e.encntr_type_cd in(309308.00, 309310.00, 309312.00);Inpatient,Emergency, Observation
+	and e.disch_dt_tm between cnvtdatetime($start_datetime) and cnvtdatetime($end_datetime)
+	and e.active_ind = 1
+	
+join p where p.person_id = e.person_id
+	and p.active_ind = 1
+
+join d where p.birth_dt_tm >= cnvtlookbehind("21,Y", e.reg_dt_tm) ;21 or younger as of reg date
+
+join ce where ce.encntr_id = e.encntr_id
+	and ce.person_id = e.person_id
+	and ce.event_cd = covid_expose_var 
+	and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+	and ce.result_status_cd IN (25.00, 34.00, 35.00)
+	and cnvtlower(ce.result_val) = 'yes'
+	and ce.event_id = (select max(ce1.event_id) from clinical_event ce1 where ce1.encntr_id = ce.encntr_id
+		and ce1.event_cd = ce.event_cd
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+		and ce1.result_status_cd IN (34.00, 25.00, 35.00)
+		group by ce1.encntr_id, ce1.event_cd)
+ 
+order by e.encntr_id, ce.event_cd, ce.event_end_dt_tm
+
+Head e.encntr_id
+	icnt = 0
+ 	idx = 0
+      idx = locateval(icnt ,1 ,mis->reccnt ,e.encntr_id ,mis->plist[icnt].encntrid)
+     	if(idx = 0);add encntr_id
+		cnt += 1
+		mis->reccnt = cnt
+		call alterlist(mis->plist, cnt)
+		mis->plist[cnt].encntrid = e.encntr_id
+		mis->plist[cnt].personid = e.person_id
+	endif
+Head ce.event_cd	
+	covid_positive_var = build2(trim(covid_positive_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+		, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+
+Foot e.encntr_id
+	if(idx = 0)
+		mis->plist[cnt].covid_result = replace(trim(covid_positive_var),",","",2)
+	else
+		mis->plist[idx].covid_result = replace(trim(covid_positive_var),",","",2)	
+	endif
+
+with nocounter
+
+;-------------------------------------------------------------------------------------
+;== COVID Past result
+select into $outdev
+
+ce.encntr_id, event = uar_get_code_display(ce.event_cd), ce.result_val
+ 
+from
+	encounter e
+	,person p
+	,dummyt d
+	,clinical_event ce
+ 
+plan e where e.loc_facility_cd = $acute_facility_list 
+	and e.encntr_type_cd in(309308.00, 309310.00, 309312.00);Inpatient,Emergency, Observation
+	and e.disch_dt_tm between cnvtdatetime($start_datetime) and cnvtdatetime($end_datetime)
+	and e.active_ind = 1
+	
+join p where p.person_id = e.person_id
+	and p.active_ind = 1
+
+join d where p.birth_dt_tm >= cnvtlookbehind("21,Y", e.reg_dt_tm) ;21 or younger as of reg date
+
+join ce where ce.encntr_id = e.encntr_id
+	and ce.person_id = e.person_id
+	and ce.event_cd = covid_past_var
+	and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+	and ce.result_status_cd IN (25.00, 34.00, 35.00)
+	and cnvtupper(ce.result_val) = 'POSITIVE'
+	and ce.event_id = (select max(ce1.event_id) from clinical_event ce1 where ce1.encntr_id = ce.encntr_id
+		and ce1.event_cd = ce.event_cd
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+		and ce1.result_status_cd IN (34.00, 25.00, 35.00)
+		group by ce1.encntr_id, ce1.event_cd)
+ 
+order by e.encntr_id, ce.event_cd, ce.event_end_dt_tm
+
+Head e.encntr_id
+	icnt = 0
+ 	idx = 0
+      idx = locateval(icnt ,1 ,mis->reccnt ,e.encntr_id ,mis->plist[icnt].encntrid)
+     	if(idx = 0);add encntr_id
+		cnt += 1
+		mis->reccnt = cnt
+		call alterlist(mis->plist, cnt)
+		mis->plist[cnt].encntrid = e.encntr_id
+		mis->plist[cnt].personid = e.person_id
+	endif
+Head ce.event_cd	
+	covid_positive_var = build2(trim(covid_positive_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+		, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+
+Foot e.encntr_id
+	if(idx = 0)
+		mis->plist[cnt].covid_result = replace(trim(covid_positive_var),",","",2)
+	else
+		mis->plist[idx].covid_result = replace(trim(covid_positive_var),",","",2)	
+	endif
+
+with nocounter
+
+endif ;End of Patient pool
+
+call echo(build2('reccnt = ', mis->reccnt))
+
+;======================================================================================================================
+if(mis->reccnt > 0)
+;======================================================================================================================
+;Demographic
+select into $outdev
+e.encntr_id,  reg_age = cnvtage(p.birth_dt_tm, e. reg_dt_tm,0)
+
+from	(dummyt d with seq = size(mis->reccnt, 5))
+	,encounter e
+	,encntr_alias ea
+	,person p
+
+plan d
+
+join e where e.encntr_id = mis->plist[d.seq].encntrid
+	and e.active_ind = 1
+
+join ea where ea.encntr_id = e.encntr_id
+	and ea.encntr_alias_type_cd = 1077
+	and ea.active_ind = 1
+
+join p where p.person_id = e.person_id
+	and p.active_ind = 1
+
+order by ea.encntr_id
+
+Head e.encntr_id
+	icnt = 0
+ 	idx = 0
+      idx = locateval(icnt ,1 ,mis->reccnt ,e.encntr_id ,mis->plist[icnt].encntrid)
+	if(idx > 0)
+		mis->plist[idx].facility = uar_get_code_display(e.loc_facility_cd)
+		mis->plist[idx].age = reg_age
+		mis->plist[idx].pat_name = p.name_full_formatted
+		mis->plist[idx].reg_dt = format(e.reg_dt_tm, 'mm/dd/yy hh:mm;;d')
+		mis->plist[idx].disch_dt = format(e.disch_dt_tm, 'mm/dd/yy hh:mm;;d')
+		mis->plist[idx].fin = ea.alias
+	endif
+with nocounter
+
+;-----------------------------------------------------------------------------------------------------------
+
+;Temperature - 24hrs
+select into $outdev
+ce.encntr_id, ce.event_cd, event = uar_get_code_display(ce.event_cd), ce.result_val
+, event_end_dt = format(ce.event_end_dt_tm, 'mm/dd/yyyy hh:mm:ss;;d')
+, minutes = datetimediff(cnvtdatetime(curdate,curtime3), ce.event_end_dt_tm ,4)
+
+from	(dummyt d with seq = size(mis->reccnt, 5))
+	,clinical_event ce
+	,dummyt d2
+
+plan d
+
+join ce where ce.encntr_id = mis->plist[d.seq].encntrid
+	and ce.event_cd in(temp_oral_var,temp_tympa_var,temp_rectal_var,temp_axil_var,temp_core_var,temp_bladder_var,temp_tempo_var)  
+	and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+ 	and ce.result_status_cd in (34.00, 25.00, 35.00)
+	and ce.event_tag != "Date\Time Correction"
+
+join d2 where cnvtreal(ce.result_val) >= 38.0
+	
+	/*and ce.event_id = (select max(ce1.event_id) from clinical_event ce1
+		where ce1.encntr_id = ce.encntr_id
+		and ce1.event_cd = ce.event_cd
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+ 		and ce1.result_status_cd in (34.00, 25.00, 35.00)
+		and ce1.event_tag != "Date\Time Correction"
+		and cnvtreal(ce1.result_val) >= 38.0
+		group by ce1.encntr_id, ce1.event_cd)
+		;and ce.event_end_dt_tm < CNVTLOOKBEHIND("24,H")*/
+
+order by ce.encntr_id, ce.event_cd
+
+Head ce.encntr_id
+	icnt = 0
+ 	idx = 0
+      idx = locateval(icnt ,1 ,mis->reccnt ,ce.encntr_id ,mis->plist[icnt].encntrid)
+
+Head ce.event_cd
+	if(idx > 0)
+		case (ce.event_cd)
+			of temp_oral_var:
+				fever_result_var = build2(trim(fever_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+			of temp_tympa_var:  
+				fever_result_var = build2(trim(fever_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+			of temp_rectal_var: 
+				fever_result_var = build2(trim(fever_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+			of temp_axil_var:   
+				fever_result_var = build2(trim(fever_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+			of temp_core_var:   
+				fever_result_var = build2(trim(fever_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+			of temp_bladder_var:
+				fever_result_var = build2(trim(fever_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+			of temp_tempo_var:  
+				fever_result_var = build2(trim(fever_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+		endcase
+	endif	
+
+Foot ce.encntr_id
+		mis->plist[idx].fever_result = replace(trim(fever_result_var),",","",2)	
+
+with nocounter
+
+;-----------------------------------------------------------------------------------------------------------
+;MIS - CRITICAL & HI
+
+select into $outdev
+ce.encntr_id, ce.event_cd, event = uar_get_code_display(ce.event_cd), ce.result_val, normalcy = uar_get_code_display(cea.normalcy_cd)
+, event_end_dt = format(ce.event_end_dt_tm, 'mm/dd/yyyy hh:mm:ss;;d')
+
+from	(dummyt d with seq = size(mis->reccnt, 5))
+	,clinical_event ce
+	,ce_event_action cea
+	
+plan d
+
+join ce where ce.encntr_id = mis->plist[d.seq].encntrid
+	and ce.event_cd in(crp_var,sed_auto_var,sed_west_var,fibrin_var,procal_var,dimer_var,ferri_var,ldh_var,interle_var,neuts_var)  
+	and ce.event_id = (select max(ce1.event_id) from clinical_event ce1
+		where ce1.encntr_id = ce.encntr_id
+		and ce1.event_cd = ce.event_cd
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+ 		and ce1.result_status_cd in (34.00, 25.00, 35.00)
+		and ce1.event_tag != "Date\Time Correction"
+		group by ce1.encntr_id, ce1.event_cd)
+		
+join cea where cea.event_id = ce.event_id
+	and cea.normalcy_cd in(203.00, 207)	;CRIT, HI
+
+order by ce.encntr_id, ce.event_cd
+
+Head ce.encntr_id
+	icnt = 0
+ 	idx = 0
+      idx = locateval(icnt ,1 ,mis->reccnt ,ce.encntr_id ,mis->plist[icnt].encntrid)
+
+Head ce.event_cd
+	if(idx > 0)
+		case (ce.event_cd)
+			of crp_var:
+				mis_result_var = build2(trim(mis_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', trim(normalcy), ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+			of sed_auto_var:
+				mis_result_var = build2(trim(mis_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', trim(normalcy), ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+			of sed_west_var:
+				mis_result_var = build2(trim(mis_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', trim(normalcy), ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+			of fibrin_var:
+				mis_result_var = build2(trim(mis_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', trim(normalcy), ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+			of procal_var:  
+				mis_result_var = build2(trim(mis_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', trim(normalcy), ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+			of dimer_var:
+				mis_result_var = build2(trim(mis_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', trim(normalcy), ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+			of ferri_var:
+				mis_result_var = build2(trim(mis_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', trim(normalcy), ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+			of ldh_var:     
+				mis_result_var = build2(trim(mis_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', trim(normalcy), ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+			of interle_var: 
+				mis_result_var = build2(trim(mis_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', trim(normalcy), ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+			of neuts_var:   
+				mis_result_var = build2(trim(mis_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', trim(normalcy), ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+		endcase
+	endif	
+
+Foot ce.encntr_id
+	mis->plist[idx].misc_lab_result = replace(trim(mis_result_var),",","",2)	
+
+with nocounter
+				
+;-----------------------------------------------------------------------------------------------------------
+;MIS - CRITICAL & LOW
+
+select into $outdev
+ce.encntr_id, ce.event_cd, event = uar_get_code_display(ce.event_cd), ce.result_val, normalcy = uar_get_code_display(cea.normalcy_cd)
+, event_end_dt = format(ce.event_end_dt_tm, 'mm/dd/yyyy hh:mm:ss;;d')
+
+from	(dummyt d with seq = size(mis->reccnt, 5))
+	,clinical_event ce
+	,ce_event_action cea
+	
+plan d
+
+join ce where ce.encntr_id = mis->plist[d.seq].encntrid
+	and ce.event_cd in(lympho_var, albumin_var)  
+	and ce.event_id = (select max(ce1.event_id) from clinical_event ce1
+		where ce1.encntr_id = ce.encntr_id
+		and ce1.event_cd = ce.event_cd
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+ 		and ce1.result_status_cd in (34.00, 25.00, 35.00)
+		and ce1.event_tag != "Date\Time Correction"
+		group by ce1.encntr_id, ce1.event_cd)
+		
+join cea where cea.event_id = ce.event_id
+	and cea.normalcy_cd in(203.00, 211.00) ;CRIT, LOW
+		
+order by ce.encntr_id, ce.event_cd
+
+Head ce.encntr_id
+	icnt = 0
+ 	idx = 0
+      idx = locateval(icnt ,1 ,mis->reccnt ,ce.encntr_id ,mis->plist[icnt].encntrid)
+
+Head ce.event_cd
+	if(idx > 0)
+		case (ce.event_cd)
+			of lympho_var:  
+				mis_result_var = build2(trim(mis_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', trim(normalcy), ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+			of albumin_var: 
+				mis_result_var = build2(trim(mis_result_var),'[' ,trim(event), ' - ', trim(ce.result_val)
+						, ' - ', trim(normalcy), ' - ', format(ce.event_end_dt_tm,"mm-dd-yy hh:mm;;d"),']',',')
+		endcase
+	endif	
+
+Foot ce.encntr_id
+	mis->plist[idx].misc_lab_result = replace(trim(mis_result_var),",","",2)	
+
+with nocounter
+
+;-----------------------------------------------------------------------------------------------------------
+;Rule Alert
+select into $outdev
+
+emad.encntr_id, ema.module_name, emad.logging, emad.updt_dt_tm ';;q'
+
+from	(dummyt d with seq = size(mis->reccnt, 5))
+	,eks_module_audit_det emad
+	,eks_module_audit ema
+	
+plan d
+
+join emad where emad.encntr_id = mis->plist[d.seq].encntrid
+	and cnvtupper(emad.logging) = '*COV_IC_MISC_COVID_TASK*'
+	and emad.template_type = 'A'
+	
+join ema where ema.rec_id = emad.module_audit_id
+	and cnvtupper(ema.module_name) = 'COV_IC_MISC_COVID_TASK'
+
+order by emad.encntr_id
+
+Head emad.encntr_id
+	icnt = 0
+ 	idx = 0
+      idx = locateval(icnt ,1 ,mis->reccnt ,emad.encntr_id ,mis->plist[icnt].encntrid)
+	if(idx > 0)
+		mis->plist[idx].alert_fired_dt = format(emad.updt_dt_tm, 'mm/dd/yy hh:mm;;d')
+	endif
+
+with nocounter
+
+call echorecord(mis)
+
+;------------------------------------------------------------------------------------------------
+
+
+select into $outdev
+
+	facility = trim(substring(1, 30, mis->plist[d1.seq].facility))
+	,fin = trim(substring(1, 30, mis->plist[d1.seq].fin))
+	,patient_name = trim(substring(1, 50, mis->plist[d1.seq].pat_name))
+	,admit_dt = trim(substring(1, 30, mis->plist[d1.seq].reg_dt))
+	,discharge_dt = trim(substring(1, 30, mis->plist[d1.seq].disch_dt))
+	,age = trim(substring(1, 3, mis->plist[d1.seq].age))
+	,alert_fired_dt = trim(substring(1, 30, mis->plist[d1.seq].alert_fired_dt))
+	,covid_result = trim(substring(1, 1000, mis->plist[d1.seq].covid_result))
+	,fever_result = trim(substring(1, 3000, mis->plist[d1.seq].fever_result))
+	,mis_lab_result = trim(substring(1, 3000, mis->plist[d1.seq].misc_lab_result))
+
+from
+	(dummyt   d1  with seq = size(mis->plist, 5))
+
+plan d1 where trim(substring(1, 1000, mis->plist[d1.seq].covid_result)) != " "
+	and trim(substring(1, 3000, mis->plist[d1.seq].fever_result)) != " "
+	and trim(substring(1, 3000, mis->plist[d1.seq].misc_lab_result)) != " "
+
+order by admit_dt
+
+with nocounter, separator=" ", format
+
+
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+
+endif
+
+end
+go
+

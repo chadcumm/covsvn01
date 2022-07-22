@@ -1,0 +1,188 @@
+select distinct
+	e.person_id
+     ,e.encntr_id
+    ,ea.alias
+    ,ce.clinical_event_id
+    ,ce.event_id
+    ,ce.event_title_text
+    ,ce.series_ref_nbr
+    ,ce.reference_nbr
+    ,cep.action_type_cd
+    ,ce.normal_ref_range_txt
+    ,ce.updt_dt_tm
+    ,ceb.blob_handle
+    ,ce.event_end_dt_tm
+    ,ce.result_status_cd
+    ,ce.valid_until_dt_tm
+    ,ce.view_level
+    ,ce.event_class_cd
+
+from
+     clinical_event ce
+    ,encounter e
+    ,encntr_alias ea
+    ,ce_blob_result ceb
+    ,ce_event_prsnl cep
+    ,(dummyt d1)
+plan ce
+    where ce.updt_dt_tm >= cnvtdatetime("02-DEC-2020 00:00:00")
+    and ce.event_cd = value(uar_get_code_by("DISPLAY",72,"Print to PDF Req"))
+join e
+	where e.encntr_id = ce.encntr_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and  ea.encntr_alias_type_cd = 1077
+join cep
+	where cep.event_id = ce.event_id
+join d1
+join ceb
+                where ceb.event_id = ce.event_id
+                and   ceb.valid_until_dt_tm >= cnvtdatetime(curdate,curtime3)
+
+order by
+	ce.updt_dt_tm desc
+	,ce.encntr_id
+	,ce.event_id
+	,cep.action_type_cd
+with format(date,";;q"),uar_code(d),outerjoin = d1
+
+
+select * from code_value cv where cv.code_value=value(uar_get_code_by("DISPLAY",72,"Print to PDF Req"))
+
+
+select * from code_value cv where cv.code_value in(2533)
+
+select * from prsnl p where p.username = "CHAD.CUMMINGS" with format(date,";;q"),uar_code(d)
+
+
+
+select into "nl:"
+from
+	 clinical_event ce
+	,clinical_event pe
+	,encounter e
+	,ce_blob_result ceb
+	,prsnl p
+plan e
+	where e.encntr_id = 106438559
+join ce
+	where ce.person_id = e.person_id
+	and   ce.encntr_id = e.encntr_id
+;	and   ce.event_cd = value(uar_get_code_by("DISPLAY",72,"Print to PDF Requisition"))
+	;and   ce.event_cd = value(uar_get_code_by("DISPLAY",72,"Print to PDF Req"))
+	and	  ce.result_status_cd in(
+									  value(uar_get_code_by("MEANING",8,"AUTH"))
+									 ,value(uar_get_code_by("MEANING",8,"MODIFIED"))
+									 ;003 ,value(uar_get_code_by("MEANING",8,"ALTERED"))
+									 ;003 ,value(uar_get_code_by("MEANING",8,"INERROR"))
+								)
+	
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   ce.event_tag        != "Date\Time Correction"
+join pe
+	where pe.event_id = ce.parent_event_id
+	and	  pe.result_status_cd in(
+									  value(uar_get_code_by("MEANING",8,"AUTH"))
+									 ,value(uar_get_code_by("MEANING",8,"MODIFIED"))
+									 ;003 ,value(uar_get_code_by("MEANING",8,"ALTERED"))
+									 ;003 ,value(uar_get_code_by("MEANING",8,"INERROR"))
+								)
+	
+	and   pe.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   pe.event_tag        != "Date\Time Correction"
+join ceb
+	where ceb.event_id = ce.event_id
+    and   ceb.valid_until_dt_tm >= cnvtdatetime(curdate,curtime3)
+join p
+	where p.person_id = ce.verified_prsnl_id
+order by
+	;003 ce.event_end_dt_tm desc
+	 pe.event_end_dt_tm desc ;003
+	,ce.event_end_dt_tm ;003
+	,ce.clinical_event_id
+	
+select * from code_value cv where cv.code_set = 220 and cv.active_ind = 1 and cv.cdf_meaning = "AMBU*"
+
+select * from code_value_set cvs where cvs.definition = "PRINTTOPDF"
+
+select 
+	 facility=uar_get_code_display(e.loc_facility_cd)
+	,unit=uar_get_code_display(e.loc_nurse_unit_cd)
+	,alias=cnvtalias(ea.alias,ea.alias_pool_cd)
+	,p.name_full_formatted
+	,o.order_mnemonic
+	,o.orig_order_dt_tm
+	,o.order_id
+	,order_status=uar_get_code_display(o.order_status_cd)
+	,requisition=uar_get_code_display(oc.requisition_format_cd)
+	,ce.event_title_text
+	,ce.event_end_dt_tm
+	,ce.normal_ref_range_txt
+	,document_status=uar_get_code_display(ce.result_status_cd)
+from
+ 	 orders o
+	,order_action oa
+	,encounter e
+	,encntr_alias ea
+	,person p
+	,order_catalog oc
+	,code_value cv1
+	,code_value cv2
+	,code_value_set cvs
+	,clinical_event ce
+	,(dummyt d1)
+plan e
+	where e.loc_facility_cd in(	
+									select code_value
+									from code_value
+									where cdf_meaning = "FACILITY"
+									and   active_ind = 1
+									and   description in("SPH St Pauls Hospital")
+							   )
+	and	e.loc_nurse_unit_cd in(
+									select code_value
+									from code_value
+									where cdf_meaning in("NURSEUNIT","AMBULATORY")
+									and   active_ind = 1
+									and   description in("SPH MSSU OPAT")
+
+								)
+join p
+	where p.person_id = e.person_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.active_ind = 1
+	and   ea.encntr_alias_type_cd = value(uar_get_code_by("MEANING",319,"FIN NBR"))
+	and   cnvtdatetime(curdate,curtime3) between ea.beg_effective_dt_tm and ea.end_effective_dt_tm
+join o
+	where ((o.originating_encntr_id = e.encntr_id) or (o.originating_encntr_id = e.encntr_id))
+	;and   o.orig_order_dt_tm >= cnvtdatetime("02-DEC-2020 08:00:00")
+	and   o.orig_order_dt_tm >= cnvtdatetime("03-DEC-2020 00:00:00")
+join oa
+	where oa.order_id = o.order_id
+	and   oa.action_type_cd = value(uar_get_code_by("MEANING",6003,"ORDER"))
+	and   oa.order_status_cd = value(uar_get_code_by("MEANING",6004,"FUTURE"))
+join oc
+	where oc.catalog_cd = o.catalog_cd
+join cv1
+	where cv1.code_value = oc.requisition_format_cd
+join d1
+join cv2
+	where cv2.description = cv1.cdf_meaning
+join cvs
+	where cvs.code_set = cv2.code_set
+	and   cvs.definition = "PRINTTOPDF"
+;join d1
+join ce
+	where ce.encntr_id = e.encntr_id
+	and   ce.valid_from_dt_tm <= cnvtdatetime(curdate,curtime3)
+	/* and	  ce.result_status_cd in(
+									  value(uar_get_code_by("MEANING",8,"AUTH"))
+									 ,value(uar_get_code_by("MEANING",8,"MODIFIED"))
+									 ,value(uar_get_code_by("MEANING",8,"ALTERED"))
+								)
+	*/
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   ce.event_tag        != "Date\Time Correction"
+	and   ce.event_cd = value(uar_get_code_by("DISPLAY",72,"Print to PDF Req"))
+with format(date,"dd-mmm-yyyy hh:mm:ss;;q"),uar_code(d),nocounter,outerjoin=d1,time=60

@@ -1,0 +1,2 @@
+set trigger_orderid = 1945897977.00 go
+execute cov_rad_cpt_rule go

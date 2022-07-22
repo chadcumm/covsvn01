@@ -1,0 +1,19 @@
+
+
+select 
+	pi.*
+from
+	 pregnancy_instance pi
+	,problem p
+plan pi
+	where pi.person_id 	= 18807610
+	;and   pi.active_ind = 1
+join p
+	where p.problem_id = pi.problem_id
+	and   p.active_ind = 1
+	and   p.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   p.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+with format(date,";;q"),uar_code(d)
+
+
+

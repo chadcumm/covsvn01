@@ -1,0 +1,92 @@
+select 
+	mn.csa_schedule
+from
+	encounter e
+	, order_action oa
+	, orders o
+	, mltm_ndc_main_drug_code mn 
+plan e
+	where e.loc_facility_cd = 2553454745
+join o
+	where o.encntr_id = e.encntr_id
+	and o.active_ind = 1
+	and o.activity_type_cd = value(uar_get_code_by("MEANING",106,"PHARMACY"))
+	and o.dcp_clin_cat_cd = value(uar_get_code_by("MEANING",16389,"MEDICATIONS")) ;Medication
+	and o.template_order_id = 0.00
+	and o.orig_ord_as_flag not in(2,3) ;exclude home, patient own meds
+ 
+join oa where oa.order_id = o.order_id
+	and oa.action_type_cd = value(uar_get_code_by("MEANING",6003,"ORDER")) ;003 ;Order
+	and oa.action_dt_tm between cnvtdatetime(curdate-60,0) and cnvtdatetime(curdate,curtime3)
+ 
+join mn where mn.drug_identifier = substring(9,6,o.cki)
+	;and cnvtint(mn.csa_schedule) > 0 ;controlled substance
+	
+	
+select 
+	 o.order_id
+	,order_prov=p2.name_full_formatted
+	,order_pos = uar_get_code_display(p2.position_cd)
+	,to_prov=p1.name_full_formatted
+	,to_prov_pos = uar_get_code_display(p1.position_cd)
+	,o.order_mnemonic
+	,o.clinical_display_line
+	,entering_prov = p3.name_full_formatted
+	,entering_prov_pos = uar_get_code_display(p3.position_cd)
+from 
+	 order_notification on1 
+	,prsnl p1
+	,order_action oa
+	,prsnl p2
+	,orders o
+	,prsnl p3
+plan on1
+	where on1.order_id = 2118177805
+join o
+	where o.order_id = on1.order_id
+join oa
+	where oa.order_id = o.order_id
+	and   oa.action_type_cd = value(uar_get_code_by("MEANING",6003,"ORDER"))
+join p1 
+	where p1.person_id = on1.to_prsnl_id
+join p2
+	where p2.person_id = oa.order_provider_id
+join p3
+	where p3.person_id = oa.action_personnel_id	
+	
+	
+select * from ccl_report_audit cra where cra.object_name 
+= "COV_AMB_SUBSTANCE_RPT*" and cra.begin_dt_tm >= cnvtdatetime(Curdate,0)
+with format(date,";;q")
+
+;"MINE", VALUE("Fam Clin Oak"), "11-NOV-2019 00:00:00", "11-NOV-2019 23:59:00", 0, 0
+select * from prsnl p where p.person_id = 12409425
+select * from code_value cv where cv.code_value=              1077.00
+select * from encntr_alias ea where ea.encntr_id=117083326.00 
+and   ea.active_ind = 1
+	and   ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+
+select *
+from
+	note_type nt
+plan nt
+	where nt.data_status_ind 		= 1
+	and   ((nt.note_type_description  = "*Office*")
+			or
+			(nt.note_type_description  = "Office*"))
+order by
+	nt.event_cd
+	
+select
+	pa.alias
+	,pa.person_alias_type_cd
+from 
+	person_Alias pa
+plan pa where pa.person_id = 16272590
+
+with nocounter,uar_code(d),format(date,";;q")
+
+select uar_get_code_display(ce.event_cd),ce.event_end_dt_tm ";;q",
+* from clinical_event ce where ce.person_id =    16272590.00; ce.encntr_id=  117054192.00
+order by ce.event_end_dt_tm desc

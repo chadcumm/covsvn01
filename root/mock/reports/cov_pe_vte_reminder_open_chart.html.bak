@@ -1,0 +1,348 @@
+<!--
+/*
+   Author:			   Geetha Paramasivam
+   Source file name:       cov_pe_vte_reminder_open_chart.html
+   Product:                VTE
+   Product Team:           Performance Excellence(Cerner)
+   File purpose:           Alerts the user on open chart that the patient has
+                           not completed VTE Advisor after being admitted for
+                           24 hours
+   Special Notes:          Modified from Cerner model pe_vte_reminder_open_chart.html
+ 
+*****************************************************************************
+*                  GENERATED MODIFICATION CONTROL LOG                       *
+*****************************************************************************
+ 
+Mod Date        Engineer              Feature    Comment
+*---------------------------------------------------------------------------------*
+ 
+ 10/08/2016   CERROP               497943     Initial Release
+ 05/10/2020	  Geetha Paramasivam   CR#8321    Functionality and alert Redesign
+ 03/02/2022   Geetha Paramasivam     ,,       Functionality and alert Redesign
+***********************************************************************************
+ 
+******************  END OF ALL MODCONTROL BLOCKS  ***************************/
+ 
+-->
+ 
+<html>
+ 
+<head>
+ 
+  <meta name="discern" content="CCLLINK,CCLNEWWINDOW,CCLEVENT,MPAGES_EVENT,APPLINK,XMLCCLREQUEST,CCLEKSREPLYOBJECT" >
+ 
+  <script type="text/javascript">
+ 
+ 
+ 
+    var patientDataSplit = "@MESSAGE:[PATIENTDATA]";
+ 
+    var patientData = patientDataSplit.split("|");
+ 
+    var patientID = patientData[0];
+ 
+    var encounterID = patientData[1];
+ 
+    var patientName = patientData[2];
+ 
+    var patientNurseUnit = patientData[3];
+ 
+    var patientRoom = patientData[4];
+ 
+    var medicalNumber = patientData[5];
+ 
+    var patientAge = patientData[6];
+ 
+    var patientFacility = patientData[7];
+ 
+    var patientBirthDate = patientData[8];
+ 
+    var currentDate = patientData[9];
+ 
+    var activityID = "0";
+    var textmessage = "@MESSAGE:[TEXT]";
+    var synmID = "@MESSAGE:[SYNMID]";
+    var formID = "@MESSAGE:[FORMID]";
+    var provider_id = "@MESSAGE:[PRSNL_ID]";
+    var alert_text = "@MESSAGE:[ALERT_TYPE]";
+ 
+    var dismiss_alert = "pe_vte_dismiss_advisor";
+    var doc_alert_np = "pe_vte_document_np";
+ 
+ 
+ try {
+	patobj = {};
+		patobj.patientDataSplit = "@MESSAGE:[PATIENTDATA]";
+		patobj.patientData = patobj.patientDataSplit.split("|");
+		patobj.patientID = patobj.patientData[0];
+		patobj.encounterID = patobj.patientData[1];
+	}catch (err) {
+	alertErrorMessage('Patient info from rule', err);
+}
+
+ 
+ 
+    /**
+ 
+     * Places VTE Advisor Guidelines order on scratchpad
+ 
+     * @param n/a
+ 
+     * @return n/a
+ 
+     */
+ 
+	function VTEAdvisor() {
+      	var order_params = patientID+"|"+encounterID+"|"+"{ORDER|"+synmID+"|0|0|0|0}|24|{2|127}|32|0";
+            MPAGES_EVENT("ORDERS",order_params);
+	     closeAlert()
+      }
+ 
+ 
+     /**
+ 
+     * Opens order screen
+ 
+     * @param n/a
+ 
+     * @return n/a
+ 
+     */
+ 
+ 
+ 	function launchOrders() {
+ 		var order_params = patientID+"|"+encounterID+"|"+"{ORDER|0|0|0|0|0}|0|{2|127}{3|127}|8";
+		MPAGES_EVENT("ORDERS",order_params);
+ 		closeAlert()
+ 	}
+ 
+  		
+
+	
+	/*Place Order to the Scratchpad */
+	
+function callOrders(){
+	var eid = patobj.encounterID;
+	var pid = patobj.patientID;
+	var mrObject = new Object()
+	mrObject = window.external.DiscernObjectFactory("ORDERS");
+	mrObject.PersonId = pid;
+	mrObject.EncntrId = eid;
+	mrObject.LaunchOrdersMode(1, 0, 0);
+	closeAlert()
+}
+
+	
+	
+ 
+    /**
+ 
+     * Closes the alert window and performs no action
+ 
+     * @param n/a
+ 
+     * @return n/a
+ 
+     */
+ 
+    function closeAlert() {
+ 
+      javascript:CCLEVENT("EVENT_EKS_OK", "");
+ 
+    }//close
+ 
+ 
+ 
+       /**
+ 
+     * Opens VTE Override Powerform for documentation and closes Alert
+ 
+     * @param n/a
+ 
+     * @return n/a    *
+ 
+     */
+ 
+     function launchPowerForm() {
+ 
+      var jlink = "";
+ 
+	  var alink = 'javascript:MPAGES_EVENT("POWERFORM","' + patientID + "|" + encounterID + "|" + formID + "|" + activityID + "|0" + '");';
+ 
+ 	  if (document.getElementById("hrefLaunchPowerForm"))
+ 
+	     {
+ 
+           document.body.removeChild(document.getElementById("hrefLaunchPowerForm"));
+ 
+         }
+ 
+      jlink =  document.createElement("<a>");
+ 
+	  jlink.id = "hrefLaunchPowerForm";
+ 
+	  jlink.href = alink;
+ 
+	  document.body.appendChild(jlink);
+ 
+	  document.getElementById("hrefLaunchPowerForm").click();
+ 
+	  closeAlert();
+ 
+    }
+ 
+ 
+ 
+   function stringForClinicalEvent(patId, enctrId, pID, synch_rule){
+ 
+        var ceString = '^COMMITRULE^,^';
+ 
+        ceString += (patId + "^,");
+ 
+        ceString += ("^" + enctrId + "^,");
+ 
+        ceString += ("^0.0^,^" + synch_rule + "^,^");
+ 
+        ceString += ("<P>ID=");
+ 
+        ceString += pID;
+ 
+        ceString += '^';
+ 
+        return ceString;
+ 
+    }
+ 
+ 
+    function DismissCE(){
+      CCLLINK("eks_call_synch_event", stringForClinicalEvent(patientID, encounterID, provider_id, dismiss_alert), 1);
+ 	CCLEVENT("EVENT_EKS_OK", "");
+     }
+ 
+    function DocumentNP(){
+      CCLLINK("eks_call_synch_event", stringForClinicalEvent(patientID, encounterID, provider_id, doc_alert_np), 1);
+	CCLEVENT("EVENT_EKS_OK", "");
+    }
+ 
+ 
+ 
+    /*fillInPatientBanner fills in patient information sent from the rule and checks to see if it exists and then assigns it to an
+ 
+    element */
+ 
+    function fillInPatientBanner() {
+ 
+      if (patientName.substring(0,1) != "@") {
+ 
+            document.getElementById('patient').innerHTML = patientName;
+ 
+      }
+ 
+      if (patientAge.substring(0,1) != "@") {
+ 
+            document.getElementById('age').innerHTML = patientAge;
+ 
+      }
+ 
+      if (patientBirthDate.substring(0,1) != "@") {
+ 
+            document.getElementById('birthDate').innerHTML = patientBirthDate;
+ 
+      }
+ 
+      if (patientNurseUnit.substring(0,1) != "@") {
+ 
+            document.getElementById('loc').innerHTML = patientNurseUnit + " ; " + patientRoom;
+ 
+      }
+ 
+      if (medicalNumber.substring(0,1) != "@") {
+ 
+            document.getElementById('mrn').innerHTML = medicalNumber;
+ 
+      }
+ 
+      document.getElementById('message').innerHTML = textmessage;
+ 
+ 
+ 
+    }//close fillPatientBanner
+ 
+ 
+ 
+  </script>
+ 
+</head>
+ 
+<style>
+	#message {
+	  background-color: White;
+	  color: Red;
+	  text-align: center;
+	  font-size: 110%;
+	}
+</style>
+ 
+ 
+ 
+<body style='overflow:scroll;' onload="javascript:fillInPatientBanner();">
+ 
+ 
+<br><br>
+ 
+<table width='100%' height='10%' style='background-color:#319DD8;border-collapse:collapse;color:#FFFFFF;'>
+ 
+    <tr>
+ 
+       <td width='33.00%'><b>NAME:  </b><span id='patient'></span></td>
+ 
+       <td width='33.00%'><b>DOB:  </b><span id='birthDate'></span></td>
+ 
+       <td width='33.00%'><b>MRN:  </b><span id='mrn'></span></td>
+ 
+    </tr>
+ 
+    <tr>
+ 
+       <td width='33.00%'><b>LOCATION:  </b><span id='loc'></span></td>
+ 
+       <td width='33.00%'><b>AGE:  </b><span id='age'></span></td>
+ 
+    </tr>
+ 
+  </table>
+ 
+<br><br>
+ 
+<p id="message"></p>
+ 
+ 
+<br><br><br><br>
+ 
+<div id='AdmitI' width='50.00%' height='5.00%' style='display:inline;visibility:visible;'>
+ 
+<input style='left: 25%; position: relative;' type="button" id= "NoIndBut"  value="Document Reason VTE Prophylaxis Not Received" onclick="launchPowerForm();" />
+<input style='left: 30%; position: relative;' type="button" id= "LaunchBut"  value="Order VTE" onclick="launchOrders();" />
+ 
+<!--
+<input style='left: 20%; position: relative;' type="button" id= "LaunchBut"  value="Launch VTE Advisor" onclick="VTEAdvisor();" />
+-->
+ 
+</div>
+ 
+<br><br><br><br><br>
+ 
+<div id='Defer' width='50.00%' height='3.00%' style='display:inline;visibility:visible;font-size:70%;'>
+ 
+<input style='left: 35%; position: relative;' type="button" id= "CloseBut"  value="Not Responsible Provider" onclick="DocumentNP();" />
+<input style='left: 48%; position: relative;' type="button" id= "CloseBut"  value="Defer Alert" onclick="DismissCE();" />
+ 
+</div>
+ 
+ 
+ 
+</body>
+ 
+ 
+ 
+</html>

@@ -1,0 +1,147 @@
+
+
+select 	o.order_mnemonic
+		,cpt_back =  bim.key6
+		,save_bi_id = bim.bill_item_id
+		,retval = 100
+		,bim.beg_effective_dt_tm
+		,bim.bill_item_id
+		,bi.ext_child_contributor_cd
+		,bi.ext_child_reference_id
+		,bi.ext_parent_contributor_cd
+		,bi.ext_parent_reference_id
+		,*
+	from orders 		o
+		, bill_item  	bi
+		, bill_item_modifier bim
+		, code_value cv ;001
+plan o where o.order_id = 2714314549
+		and	o.active_ind 		= 1
+		and o.catalog_type_cd 	= 2517   ;  Radiology
+join bi ;001 where bi.ext_description = o.order_mnemonic
+		where bi.ext_parent_reference_id = o.catalog_cd ;001
+		and bi.active_ind 		= 1
+		and bi.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
+join bim where bim.bill_item_id = bi.bill_item_id
+		and bim.active_ind		= 1
+		and bim.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
+		;001 and bim.key3_entity_name = "NOMENCLATURE"
+join cv	;001
+	where cv.code_value = bim.key1_id ;001
+	and   cv.display = "CPT"		;001
+order by
+	bim.beg_effective_dt_tm desc
+	,bim.bill_item_id
+with format(date,";;q"),uar_code(d)
+ 
+ 
+ select 
+ cpt_back = concat("test", bim.key6),
+  *
+		from bill_item_modifier bim
+ 
+	plan bim where bim.bill_item_id 	=    7957366
+				and bim.active_ind 		= 1
+				and bim.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
+				;and bim.key1_id			 = 3692   ;  cpt modifier
+				;and bim.key5_entity_name = "CODE_VALUE"
+ 
+
+ 
+		select * from code_value cv where cv.code_value =    2517
+		
+select 
+	 bi.bill_item_id
+	,bi.ext_description
+	,bi.ext_parent_contributor_cd
+	,bi.ext_child_contributor_cd
+	,bim.key6
+	,bi.*
+from
+	bill_item bi
+	,bill_item_modifier bim
+	,code_value cv
+plan bi
+	where bi.ext_owner_cd 			= value(uar_get_code_by("MEANING",106,"RADIOLOGY"))
+	and   bi.active_ind 			= 1
+	and	  cnvtdatetime(curdate,curtime3) between bi.beg_effective_dt_tm and bi.end_effective_dt_tm
+	and   bi.ext_parent_contributor_cd > 0.0
+join bim
+	where bim.bill_item_id			= bi.bill_item_id
+	and	  cnvtdatetime(curdate,curtime3) between bim.beg_effective_dt_tm and bim.end_effective_dt_tm
+	and   bim.active_ind 			= 1
+join cv
+	where cv.code_value				= bim.key1_id
+	and   cv.active_ind				= 1
+	and   cv.display				= "CPT"
+order by
+	  bi.ext_parent_reference_id
+	 ,bi.bill_item_id
+	 ,bim.beg_effective_dt_tm desc
+with format(date,";;q"),uar_code(d)
+go
+
+
+select * from code_value cv where cv.code_value = value(uar_get_code_by("DISPLAY",14003,"Report"))
+
+
+
+select 
+	 bi1.bill_item_id
+	,orderable 		= bi1.ext_description
+	,orderable_cpt	= bim1.key6
+	,exam_dta		= bi2.ext_description
+	,exam_cpt		= bim2.key6
+	,report_dta		= bi3.ext_description
+	,report_cpt		= bim3.key6
+from
+	 bill_item bi1
+	,bill_item_modifier bim1	
+	,bill_item bi2
+	,bill_item_modifier bim2
+	,bill_item bi3
+	,bill_item_modifier bim3
+plan bi1
+	where bi1.ext_owner_cd 					= value(uar_get_code_by("MEANING",106,"RADIOLOGY"))
+	and   bi1.active_ind 					= 1
+	and	  cnvtdatetime(curdate,curtime3) 	between bi1.beg_effective_dt_tm and bi1.end_effective_dt_tm
+	and   bi1.ext_parent_contributor_cd 	> 0.0
+	and	  bi1.ext_parent_contributor_cd 	= value(uar_get_code_by("MEANING",13016,"ORD CAT"))
+	and   bi1.ext_child_reference_id		= 0.0
+join bi2
+	where bi2.ext_parent_reference_id		= bi1.ext_parent_reference_id
+	and   bi2.active_ind 					= 1
+	and	  cnvtdatetime(curdate,curtime3) 	between bi2.beg_effective_dt_tm and bi2.end_effective_dt_tm
+	and	  bi2.ext_child_reference_id		not in(
+													 	 0.0
+														,value(uar_get_code_by("DISPLAY",14003,"Report"))
+													)
+join bi3
+	where bi3.ext_parent_reference_id		= bi1.ext_parent_reference_id
+	and   bi3.active_ind 					= 1
+	and	  cnvtdatetime(curdate,curtime3) 	between bi3.beg_effective_dt_tm and bi3.end_effective_dt_tm
+	and	  bi3.ext_child_reference_id		in(
+												value(uar_get_code_by("DISPLAY",14003,"Report"))
+												)
+join bim1
+	where bim1.bill_item_id					= outerjoin(bi1.bill_item_id)
+	and   bim1.beg_effective_dt_tm			< outerjoin(cnvtdatetime(curdate,curtime3)) 
+	and   bim1.end_effective_dt_tm			> outerjoin(cnvtdatetime(curdate,curtime3)) 
+	and	  bim1.active_ind					= outerjoin(1)
+	and   bim1.key1_id						= outerjoin(value(uar_get_code_by("DISPLAY",14002,"CPT")))
+join bim2
+	where bim2.bill_item_id					= outerjoin(bi2.bill_item_id)
+	and   bim2.beg_effective_dt_tm			< outerjoin(cnvtdatetime(curdate,curtime3)) 
+	and   bim2.end_effective_dt_tm			> outerjoin(cnvtdatetime(curdate,curtime3)) 
+	and	  bim2.active_ind					= outerjoin(1)
+	and   bim2.key1_id						= outerjoin(value(uar_get_code_by("DISPLAY",14002,"CPT")))
+join bim3
+	where bim3.bill_item_id					= outerjoin(bi3.bill_item_id)
+	and   bim3.beg_effective_dt_tm			< outerjoin(cnvtdatetime(curdate,curtime3)) 
+	and   bim3.end_effective_dt_tm			> outerjoin(cnvtdatetime(curdate,curtime3)) 
+	and	  bim3.active_ind					= outerjoin(1)
+	and   bim3.key1_id						= outerjoin(value(uar_get_code_by("DISPLAY",14002,"CPT")))
+order by
+	 bi1.ext_description
+with format(date,";;q"),uar_code(d)
+go

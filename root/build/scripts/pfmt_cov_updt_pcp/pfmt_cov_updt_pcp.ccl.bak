@@ -1,0 +1,89 @@
+declare PCP_VAR = f8 with Constant(uar_get_code_by("MEANING",331,"PCP")),protect  
+  
+SELECT INTO "nl:"  
+pl.name_full_formatted,  
+  
+FROM  
+  PERSON_PRSNL_RELTN   PPR  
+, PRSNL   PL  
+  
+plan ppr where ppr.person_id = link_personid  
+     and ppr.person_prsnl_r_cd = PCP_VAR ; from codeset 331   
+     AND ppr.active_ind = 1  
+     AND ppr.beg_effective_dt_tm < cnvtdatetime(curdate,curtime3)  
+     AND ppr.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)  
+  
+join pl where ppr.prsnl_person_id = pl.person_id ; this gets the PCP name if you need it  
+
+
+select into "nl:"
+from
+	 person_prsnl_reltn ppr
+	,prsnl p1
+plan ppr
+	where 	ppr.person_id = trigger_personid
+	and		ppr.person_prsnl_r_cd = value(uar_get_code_by("MEANING",331,"PCP"))
+	and   	ppr.active_ind = 1
+	and   	ppr.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   	ppr.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join p1
+	where 	p1.person_id = ppr.prsnl_person_id
+order by
+	 ppr.person_id
+	,ppr.beg_effective_dt_tm desc
+head report
+	log_retval = 0
+head ppr.person_id
+	log_misc1 = concat(trim(p.name_full_formatted))
+	log_retval = 100
+foot report
+	call echo(log_misc1)
+	call echo(log_retval)
+with nocounter, nullreport go
+
+
+
+
+select into "nl:"
+from
+	encounter e
+	,encntr_prsnl_reltn epr
+	,prsnl p
+	,phone ph
+	,(dummyt d1)
+plan e
+	where e.encntr_id =   trigger_encntrid
+join epr
+	where epr.encntr_id = e.encntr_id
+	and   epr.encntr_prsnl_r_cd = value(uar_get_code_by("MEANING",333,"ATTENDDOC"))
+	and   epr.active_ind = 1
+	and   epr.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   epr.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join p
+	where p.person_id = epr.prsnl_person_id
+join d1
+join  ph 
+	where ph.parent_entity_id = p.person_id
+	and ph.parent_entity_name = "PERSON"
+	and	  ph.phone_type_cd = value(uar_get_code_by("MEANING",43,"BUSINESS"))
+	and ph.beg_effective_dt_tm <= cnvtdatetime(curdate, curtime3)
+	and ph.end_effective_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and ph.active_ind = 1
+	and ph.phone_type_cd > 0.0
+	and ph.phone_type_seq = 1
+order by
+	 e.encntr_id
+	,epr.beg_effective_dt_tm desc
+head report
+	retval = 0
+head e.encntr_id
+	if (ph.phone_id > 0.0)
+		log_misc1 = concat(trim(p.name_full_formatted), ",",format(trim(ph.phone_num),"(###)###-####"))
+	else
+		log_misc1 = concat(trim(p.name_full_formatted))
+	endif
+	retval = 100
+foot report
+	call echo(log_misc1)
+	call echo(retval)
+with nocounter, nullreport,outerjoin=d1 go

@@ -1,0 +1,38 @@
+
+select
+	ea.alias
+	,p.name_full_formatted
+	,p.person_id
+	,e.encntr_id
+	,info_type=uar_get_code_display(ei.info_type_cd)
+	,info_sub_type=uar_get_code_display(ei.info_sub_type_cd)
+	,lt.long_text
+	,event_Type = uar_Get_code_display(pe.event_type_cd)
+from
+	encntr_alias ea
+	,encounter e
+	,person p
+	,encntr_info ei
+	,long_text lt
+	,patient_Event pe
+plan ea
+	where ea.alias = "1915500103"
+join e
+	where e.encntr_id = ea.encntr_id
+join p
+	where p.person_id = e.person_id
+join ei
+	where ei.encntr_id = e.encntr_id
+	and   ei.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   ei.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+	and   ei.active_ind = 1
+join lt
+	where lt.long_text_id = ei.long_text_id
+join pe
+	where pe.encntr_id = outerjoin(e.encntr_id)
+
+
+select * from patient_Event pe where pe.encntr_id = 
+
+
+

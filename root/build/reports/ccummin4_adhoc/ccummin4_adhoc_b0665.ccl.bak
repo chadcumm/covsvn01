@@ -1,0 +1,177 @@
+select * from allergy a
+plan a
+	where a.allergy_id = 17697959
+with uar_code(d)
+
+select * from dcp_forms_ref dfr where dfr.definition = "System*"
+or dfr.description = "System*"
+
+select * from discrete_task_assay dta where dta.task_assay_cd = 704786
+
+select
+     ea.alias
+    ,e.encntr_id 
+    ,e.person_id
+	,ce.event_cd
+	,ce.event_end_dt_tm 
+	,ce.result_val
+	,ce.result_status_cd
+	,ce.*
+from
+	 encntr_alias ea
+	,encounter e
+	,clinical_event ce
+	,dummyt d1
+plan ea
+	where ea.alias in( "1922000001"); , "2300803288")
+join e
+	where e.encntr_id = ea.encntr_id
+join d1
+join ce
+	where ce.encntr_id = e.encntr_id
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   ce.event_tag        != "Date\Time Correction"
+	;and   ce.result_val        >  " "
+	;and   ce.result_val 	= "Confirmed positive"
+	and   ce.task_assay_cd in(
+								value(uar_get_code_by("DISPLAY",14003,"Pregnancy Status"))
+							)
+	and	  ce.result_status_cd in(
+									  value(uar_get_code_by("MEANING",8,"AUTH"))
+									 ,value(uar_get_code_by("MEANING",8,"MODIFIED"))
+									 ,value(uar_get_code_by("MEANING",8,"ALTERED"))
+								)
+order by
+	ce.updt_dt_tm desc
+with 
+	format(date,";;q"),uar_code(d),outerjoin=d1
+go
+
+select * from prsnl p where p.username = "PHYSHOSP"
+
+select * from clinical_Event ce where ce.parent_event_id=1134189373 ;mdoc
+with uar_code(d),format(date,";;q")
+
+select * from ce_Event_prsnl ce where ce.event_id=1134189373
+with uar_code(d),format(date,";;q")
+
+select * from ce_Event_action ce where ce.event_id=1134189373 ; nothing
+with uar_code(d),format(date,";;q")
+
+select * from ce_blob_result ce where ce.event_id=1134189375 ; nothing
+with uar_code(d),format(date,";;q")
+
+update into ce_blob_result ce set blob_handle = "{e9-21-30-2a-44-02-44-75-80-91-2a-8b-6b-26-f6-8b}" 
+where ce.event_id =  1134189375.00 go
+
+update into clinical_event ce set ce.event_title_text = concat("ACTIONED:",trim(ce.event_Title_text)) where ce.parent_event_id = 
+1134189456.0000000000 go
+
+update into clinical_event ce set ce.event_title_text = concat(trim("Group & Screen")) where ce.parent_event_id = 
+1134189456.0000000000 go
+
+update into clinical_event ce set ce.result_status_cd = value(uar_get_code_by("MEANING",8,"IN ERROR")) where ce.parent_event_id = 
+1134189456.0000000000 go
+
+;1000015 event_prsnl_ensure
+
+;{83-b5-0a-2e-19-31-47-18-b6-a7-bd-af-4b-6b-34-d0}
+
+
+   select 
+      dmid.media_object_identifier,
+      dmi.dms_media_instance_id,
+      dmi.version,
+      *
+   from dms_media_identifier dmid, dms_media_instance dmi
+   plan dmid
+      where dmid.media_object_identifier = "{0c-a8-fe-72-1b-ab-43-64-ac-47-9b-27-31-57-ef-5c}"
+     ; dmid.updt_dt_tm >= cnvtdatetime(Curdate,0)
+   join dmi
+      where dmi.dms_media_identifier_id = dmid.dms_media_identifier_id
+with uar_code(d),format(date,";;q")
+
+select * from order_Task ot where ot.task_description = "Print DME Order Requisition"
+
+select * from task_Activity ta where ta.task_id=1112828723.0000000000
+
+select ta.task_create_dt_tm,ta.* from task_activity ta where ta.encntr_id=  114707835.00
+order by ta.task_create_dt_tm desc
+with format(date,";;q"),uar_code(D)
+
+update into task_activity ta set ta.task_class_cd = 2649,ta.msg_subject = "testing"
+ where ta.task_id =  1112828749.000 go
+ 
+ select * from prsnl p where p.username = "CCUMMIN4"
+ 
+ select audit_name,* from dms_content_type 
+ 
+ select * from code_value cv where cv.code_set = 72 and cv.display = "Print *"
+ 
+ select
+     format=uar_get_codmeaning(oc.requisition_format_cd)
+    ,oc.requisition_format_cd
+    ,cnt=count(*)  
+from order_catalog oc
+plan oc
+    where oc.active_ind = 1
+    and   oc.requisition_format_cd > 0.0
+group by
+    oc.requisition_format_cd
+order by
+    cnt desc
+
+SELECT * FROM common_Data_foundation cdf where cdf.code_set = 100473
+
+delete from clinical_event ce set valid_until_dt_tm = cnvtdatetime(curdate,curtime3) where encntr_id =   114707835.00 and event_cd
+in(  2932329067.00, 18889715.00) go
+
+select * from allergy a where a.rec_src_string = "Constipation"
+
+select * from allergy a where a.encntr_id = 114707835
+with format(date,";;q"),uar_code(d)
+
+select a.substance_nom_id,a.* from reaction r, allergy a, nomenclature n
+where a.encntr_id = 114707835 and r.allergy_id = a.allergy_id and n.nomenclature_id = r.reaction_nom_id
+;and n.source_string in( "Constipation","Diarrhea","Rash")
+with format(date,";;q"),uar_code(d)
+
+select a.person_id,* from allergy a where a.encntr_id = 114707835
+
+
+select 
+	*
+from
+	 allergy a
+	,reaction r
+	,nomenclature n
+plan a
+	where a.encntr_id = 114707835; trigger_encntrid
+	and   a.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   a.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+	and   a.active_ind = 1
+	and   a.substance_type_cd = value(uar_get_code_by("MEANING",12020,"DRUG"))
+	and   a.reaction_class_cd = value(uar_get_code_by("MEANING",12021,"ALLERGY"))
+join r
+	where r.allergy_id = a.allergy_id
+	and   r.active_ind = 1
+	and   r.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   r.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+join n
+	where n.nomenclature_id = r.reaction_nom_id
+	and   n.source_string in(
+								"Constipation",
+								"Diarrhea",
+								"Nausea",
+								"Nausea and vomiting",
+								"Stomach ache",
+								"Stomach cramps",
+								"Stomach discomfort",
+								"Stomach upset",
+								"Upset stomach",
+								"Vomit",
+								"Vomiting"
+							)
+	
+
+

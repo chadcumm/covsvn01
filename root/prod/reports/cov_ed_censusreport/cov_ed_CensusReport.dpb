@@ -1,0 +1,120 @@
+<prompt-def program = 'COV_ED_CENSUSREPORT' group = '0' auto-arrange = 'true' stream-ver = '0' export-dt-tm = '201811061520' version = '214' script-enabled = 'false' prompt-control-version = '3.000000' updt_dt_tm = '09/14/2018 10:18:34' resource-enabled = 'false'><control name = 'OUTDEV' control = '6' height = '20' width = '300' position = '0' result-type = '1' exclude = 'false'><display align = 'top'>&#038;Output to File/Printer/MINE</display>
+<description>Enter or select the printer or file name to send this report to.</description>
+<default>MINE</default>
+<component name = 'CWizOutputDevice'><property name = 'OUTPUT-DEVICES:00'><![CDATA[HIDE-BROWSER='false' DEVICES='' DISPLAY-ALL='true' DISALLOW-FREETEXT='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROGRAM'><![CDATA[PROMPT-CONTROL-VERSION='3.000000' AUTO-ARRANGE='true' OWNER='' DU-BASE-HORZ='8' VERSION='214' STREAM-VER='0' REPORT-NAME='' UPDT_DT_TM='09/14/2018 10:18:34' DU-BASE-VERT='16' SCRIPT-ENABLED='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ]]></property>
+<property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='20' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='10' CTRL-WIDTH='300' LABEL-POS-TOP='10' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='300' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='26' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='130' TRIM='false' ]]></property>
+</component>
+</control>
+<control name = 'FACILITY_PMPT' control = '2' height = '25' width = '250' position = '1' result-type = '3' exclude = 'false'><display align = 'top'>FACILITY</display>
+<description></description>
+<default></default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[MODIFIABLE='false' SORT='false' INC-ANY='false' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='false' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='' QUERY-STRING='SELECT
+    FACILITY_NAME &#061; O.ORG_NAME
+    ,L.LOCATION_CD
+
+FROM
+    PRSNL_ORG_RELTN   P
+    , LOCATION   L
+    , ORGANIZATION   O
+
+PLAN p WHERE p.person_id &#061; reqinfo -> updt_id        AND p.active_ind &#061; 1        AND p.end_effective_dt_tm > sysdate
+JOIN l WHERE l.organization_id &#061; p.organization_id          AND l.location_type_cd &#061; 783  ;(FACILITY)
+JOIN o WHERE o.organization_id &#061; l.organization_id          AND o.organization_id IN (3234038, 3144506, 3144501, 675844, 3144505, 
+3144499 
+,
+3144502, 3144503, 3144504)
+
+ORDER BY
+    FACILITY_NAME' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;2200.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;FACILITY_NAME&#034; TITLE&#061;&#034;FACILITY_NAME&#034; &#125;&#123;TABLE&#061]]></property>
+<property name = 'SETTINGS:01'><![CDATA[;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;2040.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;LOCATION_CD&#034; TITLE&#061;&#034;LOCATION_CD&#034; &#125;'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='true' CTRL-VERT-OFFSET='' BOTTOM='25' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='10' CTRL-WIDTH='' LABEL-POS-TOP='53' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='69' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='58' TRIM='true' ]]></property>
+</component>
+</control>
+<control name = 'ED_AREA_PMPT' control = '2' height = '0' width = '0' position = '2' result-type = '3' exclude = 'false'><display align = 'top'>ED AREA</display>
+<description></description>
+<default> 2553914297.00</default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[MODIFIABLE='false' SORT='false' INC-ANY='false' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='false' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY=' 2553914297.00' QUERY-STRING='SELECT DISTINCT
+    ed_area &#061; cv.display  
+    , ed_area_cd &#061; lg.root_loc_cd
+
+FROM
+    location_group   lg
+    , code_value   cv
+
+plan lg where lg.location_group_type_cd &#061; 796
+    and lg.child_loc_cd &#061; $FACILITY_PMPT     ;facility
+    and lg.active_ind &#061; 1
+    and lg.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
+join cv where cv.code_value &#061; lg.root_loc_cd
+    and cv.display &#061; "* EB *"  or cv.display &#061; "* ED *"
+
+ORDER BY
+    ed_area' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;ed_area&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1320.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;false&#034; BINDING&#061;&#034;ed_area&#034; TITLE&#061;&#034;ed_area&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;]]></property>
+<property name = 'SETTINGS:01'><![CDATA[&#034;1&#034; ALIAS&#061;&#034;ed_area_cd&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;1680.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;ed_area_cd&#034; TITLE&#061;&#034;ed_area_cd&#034; &#125;'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='true' CTRL-VERT-OFFSET='' BOTTOM='0' HIDE-LABEL='true' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='10' CTRL-WIDTH='' LABEL-POS-TOP='101' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='0' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='104' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='54' TRIM='true' ]]></property>
+</component>
+</control>
+<control name = 'DISPOSITION_TO_PMPT' control = '3' height = '100' width = '250' position = '3' result-type = '3' exclude = 'false'><display align = 'top'>DISPOSITION TO</display>
+<description></description>
+<default>0.0</default>
+<component name = 'CWizDataSource'><property name = 'DATASRC:00'><![CDATA[INC-ANY-DISPLAY='Any (*)' MODIFIABLE='false' SORT='false' INC-ANY='true' DUAL-LIST='false' KEEP-SELECTION='false' DB-EXE='SCRIPT' INC-ANY-KEY='0.0' LABEL-COLUMNS='false' QBE-SOURCE='' MULTI-SELECT='true' SOURCE-TYPE='DATABASE' MULTI_COLUMN='false'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ]]></property>
+<property name = 'DEFAULT-VALUES:00'><![CDATA[MULTI-DEF-COUNT='1' MUL-DEF-0='0.0'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ]]></property>
+<property name = 'SETTINGS:00'><![CDATA[DEFAULT-KEY='0.0' QUERY-STRING='SELECT DISTINCT
+     dispo_to   &#061;   n.source_string
+    ,nid        &#061;   n.nomenclature_id
+FROM
+     discrete_task_assay d
+    ,reference_range_factor r
+    ,alpha_responses a
+    ,nomenclature n
+
+PLAN d
+    WHERE d.task_assay_cd &#061; 37175705
+JOIN r
+    WHERE d.task_assay_cd &#061; r.task_assay_cd
+JOIN a
+    WHERE r.reference_range_factor_id &#061; a.reference_range_factor_id
+JOIN n
+    WHERE a.nomenclature_id &#061; n.nomenclature_id
+        and n.nomenclature_id in (280701767.00, 280693162.00, 280693157.00, 9450401.00, 280701813.00, 
+            8544649.00, 57798433.00, 14233843.00, 280693164.00, 280693153.00, 280693168.00, 22489483.00)    
+ORDER BY
+    dispo_to
+' QUERY-OPTIONS='1067' COLUMNS='&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;0&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;0&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;80.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&]]></property>
+<property name = 'SETTINGS:01'><![CDATA[#034;false&#034; BINDING&#061;&#034;AMB_COMP&#034; TITLE&#061;&#034;AMB_COMP&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;1&#034; VISIBLE&#061;&#034;false&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;920.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;NID&#034; TITLE&#061;&#034;NID&#034; &#125;&#123;TABLE&#061;&#034;&#034; ORDINAL&#061;&#034;2&#034; VISIBLE&#061;&#034;true&#034; COLUMN&#061;&#034;1&#034; ALIAS&#061;&#034;&#034; FORMAT&#061;&#034;&#034; WIDTH&#061;&#034;74.000000&#034; TYPE&#061;&#034;&#034; VALUE&#061;&#034;true&#034; BINDING&#061;&#034;DISPO_TO&#034; TITLE&#061;&#034;DISPO_TO&#034; &#125;'                                                                                                                                                                                                                                                                                          ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='100' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='10' CTRL-WIDTH='' LABEL-POS-TOP='149' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='250' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='165' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='87' TRIM='true' ]]></property>
+</component>
+</control>
+<control name = 'STARTDATE_PMPT' control = '5' height = '18' width = '200' position = '4' result-type = '1' exclude = 'false'><display align = 'top'>CHECK-IN DATE RANGE</display>
+<description></description>
+<default>SYSDATE</default>
+<component name = 'CWizDateTime'><property name = 'DATE-TIME-ATTR:00'><![CDATA[TIME-NOW='true' OUTPUT-FORMAT='DD-MMM-YYYY HH:MM:SS' ANCHOR-HOUR='' MONTH='' TIME-SRVTM='false' DATE-TODAY='true' DATE-LONG='true' BASE-DATE-TIME='?DBB' DATE-OFFSET='0.000000' DATE-CAL='true' LINK-INPUT='' HOUR='00' ANCHOR-YEAR='' DAY='-1' DATE-ENABLE='true' TIME-OFFSET='0.000000' DATE-INVDATE='true' DATE-FMT='0' ENABLE-MASK='3' MINUTE='00' TIME-MODE='0' TIME-REL-INPUT='true' AUTO-UPDATE='true' ANCHOR-MONTH='' YEAR='' ANCHOR-DAY='' TIME-SPININC='0' TIME-SPIN='true' TIME-NOW-INPUT='true' DATE-SPIN='true' ANCHOR-MINUTE='' TIME-ENABLE='false' DATE-SRVTM='true'                                                                                                                                                                                                                                                                                                                                                                                                                                                     ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='18' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='10' CTRL-WIDTH='' LABEL-POS-TOP='272' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='200' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='288' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='123' TRIM='false' ]]></property>
+</component>
+</control>
+<control name = 'ENDDATE_PMPT' control = '5' height = '18' width = '200' position = '5' result-type = '1' exclude = 'false'><display align = 'top'></display>
+<description></description>
+<default>SYSDATE</default>
+<component name = 'CWizDateTime'><property name = 'DATE-TIME-ATTR:00'><![CDATA[TIME-NOW='true' OUTPUT-FORMAT='DD-MMM-YYYY HH:MM:SS' ANCHOR-HOUR='' MONTH='' TIME-SRVTM='false' DATE-TODAY='true' DATE-LONG='true' BASE-DATE-TIME='?DEE' DATE-OFFSET='0.000000' DATE-CAL='true' LINK-INPUT='' HOUR='23' ANCHOR-YEAR='' DAY='-1' DATE-ENABLE='true' TIME-OFFSET='0.000000' DATE-INVDATE='true' DATE-FMT='0' ENABLE-MASK='3' MINUTE='59' TIME-MODE='0' TIME-REL-INPUT='true' AUTO-UPDATE='false' ANCHOR-MONTH='' YEAR='' ANCHOR-DAY='' TIME-SPININC='0' TIME-SPIN='true' TIME-NOW-INPUT='true' DATE-SPIN='true' ANCHOR-MINUTE='' TIME-ENABLE='false' DATE-SRVTM='true'                                                                                                                                                                                                                                                                                                                                                                                                                                                    ]]></property>
+</component>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='18' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='10' CTRL-WIDTH='' LABEL-POS-TOP='313' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='200' LABEL-POS-HEIGHT='0' CTRL-HORZ-OFFSET='' TOP='316' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='0' TRIM='false' ]]></property>
+</component>
+</control>
+<control name = 'AGE_PMPT' control = '7' height = '40' width = '150' position = '6' result-type = '3' exclude = 'false'><display align = 'top'>AGE GROUP</display>
+<description></description>
+<default>3</default>
+<component name = 'GENERAL'><property name = 'PROMPT'><![CDATA[REQUIRED='false' CTRL-VERT-OFFSET='' BOTTOM='40' HIDE-LABEL='false' AUTO-GROUP='false' BORDER='false' LABEL-POS-LEFT='10' LEFT='10' CTRL-WIDTH='150' LABEL-POS-TOP='711' CTRL-TOP='' EXCLUDE-RUNTIME='false' CTRL-HEIGHT='' RESIZABLE='false' RIGHT='150' LABEL-POS-HEIGHT='13' CTRL-HORZ-OFFSET='' TOP='344' LABEL-LEFT='false' CTRL-LEFT='' LABEL-POS-WIDTH='51' TRIM='false' ]]></property>
+</component>
+<component name = 'GROUPBOX'><property name = 'BUTTONS:00'><![CDATA[VALUE0='1' VALUE1='2' VALUE2='3' LABEL2='Both' LABEL1='Pediatrics' LABEL0='Adults'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ]]></property>
+<property name = 'GROUP-SETTINGS'><![CDATA[ALIGN-VERT='false' WRAP='true' DEFAULT='3'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ]]></property>
+</component>
+</control>
+</prompt-def>

@@ -1,0 +1,732 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Dawn Greer, DBA
+	Date Written:		9/20/2019
+	Solution:			Ambulatory
+	Source file name:	cov_cmg_press_ganey.prg
+	Object name:		cov_cmg_press_ganey
+	Request #:			XXXX
+ 
+	Program purpose:	Export patients seen by CMG Clinic to send to Press
+	                    Ganey for patient surveys
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:
+	Execute Example:    cov_cmg_press_ganey "MINE", 1, '<runtype>'
+						cov_cmg_press_ganey "MINE", 1, 'D'
+						cov_cmg_press_ganey "MINE", 1, 'U'
+ 
+***********************************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+***********************************************************************************************
+ 
+ Mod   Date	          Developer				 Comment
+ ----  ----------	  --------------------	 --------------------------------------------------
+ 0001  02/11/2020     Dawn Greer, DBA        Added the DOB Fix
+ 0002  02/20/2020     Dawn Greer, DBA        Added criteria to limit it to
+                                             specific Appt Types which a dr
+                                             would be seen.
+ 0003  05/11/2020     Dawn Greer, DBA        Added criteria to limit to Auth (Verified) data
+                                             status for Provider Prsnl Process.  Added Change
+                                             to include Language data and not default to English.
+                                             Starting Spanish Surveys.
+ 0004  07/29/2020     Dawn Greer, DBA        CR 8161 - Setup process to run on Friday as an Update
+  			                                 CR 8160 - Setup Telemedine vs Office visits with a
+  			                                 T or O in the Fast Track or Acute Flag field.
+ 0005  08/07/2020     Dawn Greer, DBA        Added the code to mark a patient as deceased or
+                                             not wanting a survey instead of excluding them
+                                             because if the are marked as deceased or not wanting
+                                             after the file goes out on Monday then the
+                                             update file should include those patients.
+ 0006  09/02/2020     Dawn Greer, DBA        Removed the dash from the Patient DOB field.
+ 0007  09/21/2020     Dawn Greer, DBA        Added parameter to determine if it is a daily run or update run.
+                                             Removed the code selecting the date range.
+                                             The Daily run will run for yesterday every day of the week.
+                                             The Update run will be 90 days back through yesterday.
+ 
+***********************************************************************************************/
+ 
+drop program cov_cmg_press_ganey go
+create program cov_cmg_press_ganey
+ 
+PROMPT
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	,"Output To File" = 1
+	,"RunType" = 'D'
+ 
+WITH OUTDEV, output_file, RunType
+ 
+/**************************************************************
+; DECLARED VARIABLES
+**************************************************************/
+DECLARE cov_crlf 			= vc WITH constant(build(char(13),char(10)))
+DECLARE cov_lf              = vc WITH constant(char(10))
+DECLARE cov_pipe			= vc WITH constant(char(124))
+DECLARE cov_comma			= vc WITH constant(char(44))
+DECLARE cov_quote			= vc WITH constant(char(34))
+ 
+DECLARE file_var			= vc WITH noconstant("cerner_cmg_press_ganey_")
+DECLARE update_file_var     = vc WITH noconstant("cerner_cmg_press_ganey_update_")   ;0004
+DECLARE cur_date_var  		= vc WITH noconstant(build(YEAR(curdate),FORMAT(MONTH(curdate),"##;P0"),FORMAT(DAY(curdate),"##;P0")))
+DECLARE filepath_var		= vc WITH noconstant("")
+DECLARE temppath_var  		= vc WITH noconstant("cer_temp:")
+DECLARE temppath2_var		= vc WITH noconstant("$cer_temp/")
+DECLARE output_var			= vc WITH noconstant("")
+DECLARE output_rec  		= vc WITH noconstant("")
+ 
+DECLARE cmd					= vc WITH noconstant("")
+DECLARE len					= i4 WITH noconstant(0)
+DECLARE stat				= i4 WITH noconstant(0)
+ 
+DECLARE startdate			= F8
+DECLARE enddate				= F8
+ 
+;0004
+IF ($RunType = 'D')   ;Sending Daily File ;007
+	SET startdate = CNVTDATETIME(CURDATE-1,0)
+	SET enddate = CNVTDATETIME(CURDATE-1,235959)
+ELSEIF ($RunType = 'U')	;Weekly Update File ;007
+	SET startdate = CNVTDATETIME(CURDATE-90,0)
+	SET enddate = CNVTDATETIME(CURDATE-1,235959)
+ENDIF
+ 
+CALL ECHO (BUILD("***** Start Date: ",FORMAT(startdate, "MM/DD/YYYY HH:mm:ss;;q")," *****"))
+CALL ECHO (BUILD("***** End Date: ",FORMAT(enddate, "MM/DD/YYYY HH:mm:ss;;q"), " *****"))
+ 
+;  Set astream path
+SET filepath_var = "/cerner/w_custom/p0665_cust/to_client_site/Extracts/PressGaney_CMG/"
+ 
+;0004
+IF ($RunType = 'D') ; Send Daily file ;007
+	SET file_var = cnvtlower(build(file_var,cur_date_var,".txt"))
+ELSEIF ($RunType = 'U')   ;Send update file ;007
+	SET file_var = cnvtlower(build(update_file_var,cur_date_var,".txt"))
+ENDIF
+ 
+SET filepath_var = build(filepath_var, file_var)
+SET temppath_var = build(temppath_var, file_var)
+SET temppath2_var = build(temppath2_var, file_var)
+ 
+IF (validate(request->batch_selection) = 1 or $output_file = 1)
+	SET output_var = value(temppath_var)
+ELSE
+	SET output_var = value($OUTDEV)
+ENDIF
+ 
+RECORD exp_data (
+	1 output_cnt = i4
+	1 list[*]
+	    2 Survey_Designator = VC
+	    2 Client_ID = VC
+	    2 Last_Name = VC
+	    2 Middle_Initial = VC
+	    2 First_Name = VC
+	    2 Address_1 = VC
+	    2 Address_2 = VC
+	    2 City = VC
+	    2 State = VC
+	    2 Zip_Code = VC
+	    2 Telephone_Number = VC
+	    2 Mobile_Number = VC
+	    2 MS_DRG = VC
+	    2 Gender = VC
+	    2 Race = VC
+	    2 Date_of_Birth = VC
+	    2 Language = VC
+	    2 Medical_Record_Number = VC
+	    2 Unique_ID = VC
+	    2 Location_Code = VC
+	    2 Location_Name = VC
+	    2 Attending_Physician_NPI = VC
+	    2 Attending_Physician_Name = VC
+	    2 Provider_Type = VC
+	    2 Provider_Specialty = VC
+	    2 Site_Address_1 = VC
+	    2 Site_Address_2 = VC
+	    2 Site_City = VC
+	    2 Site_State = VC
+	    2 Site_Zip = VC
+	    2 Patient_Admission_Source = VC
+	    2 Visit_Admit_Date = VC
+	    2 Visit_Admit_Time = VC
+	    2 Discharge_Date = VC
+	    2 Discharge_Time = VC
+	    2 Patient_Discharge_Status = VC
+	    2 Unit = VC
+	    2 Service = VC
+	    2 Specialty = VC
+	    2 Payor_Insurance_Fin_Class = VC
+	    2 Length_of_Stay = VC
+	    2 Room = VC
+	    2 Bed = VC
+	    2 Hospitalist = VC
+	    2 Fast_Track_Acute_Flag = VC
+	    2 Email = VC
+	    2 Hospitalist_1 = VC
+	    2 Hospitalist_2 = VC
+	    2 ER_Admit = VC
+	    2 Other_Diagnosis_or_Procedure_Code = VC
+	    2 Procedure_Code_1 = VC
+	    2 Procedure_Code_2 = VC
+	    2 Procedure_Code_3 = VC
+	    2 Procedure_Code_4 = VC
+	    2 Procedure_Code_5 = VC
+	    2 Procedure_Code_6 = VC
+	    2 Deceased_Flag = VC
+	    2 No_Publicity_Flag = VC
+	    2 State_Regulation_Flag = VC
+	    2 Newborn_Patient = VC
+	    2 Transferred_Admitted_To_Inpatient = VC
+	    2 EOR_Indicator = VC
+	)
+ 
+CALL ECHO ("***** GETTING CMG PRESS GANEY DATA ******")
+CALL ECHO (BUILD("***** Start Date: ",FORMAT(startdate, "MM/DD/YYYY HH:mm:ss;;q"), " *****"))
+CALL ECHO (BUILD("***** End Date: ",FORMAT(enddate, "MM/DD/YYYY HH:mm:ss;;q"), " *****"))
+/**************************************************************
+; Get CMG Press Ganey Data
+**************************************************************/
+ 
+SELECT DISTINCT
+	  Survey_Designator = "MD0101"
+	  ,Client_ID = "31668"
+	  ,Last_Name = EVALUATE2(IF (SIZE(pat.name_last_key) = 0) " " ELSE TRIM(pat.name_last_key,3) ENDIF)
+	  ,Middle_Initial = EVALUATE2(IF (SIZE(pat.name_middle_key) = 0) " " ELSE TRIM(pat.name_middle_key,3) ENDIF)
+	  ,First_Name = EVALUATE2(IF (SIZE(pat.name_first_key) = 0) " " ELSE TRIM(pat.name_first_key,3) ENDIF)
+	  ,Address_1 = EVALUATE2(IF (SIZE(addr.street_addr) = 0) " " ELSE TRIM(addr.street_addr,3) ENDIF)
+	  ,Address_2 = EVALUATE2(IF (SIZE(addr.street_addr2) = 0) " " ELSE TRIM(addr.street_addr2,3) ENDIF)
+	  ,City = EVALUATE2(IF (SIZE(addr.city) = 0) " " ELSE TRIM(addr.city,3) ENDIF)
+	  ,State = EVALUATE2(IF (SIZE(addr.state) = 0) " " ELSE TRIM(addr.State,3) ENDIF)
+	  ,Zip_Code = EVALUATE2(IF (SIZE(addr.zipcode_key) = 0) " " ELSE TRIM(SUBSTRING(1,5,addr.zipcode_key),3) ENDIF)
+	  ,Telephone_Number = EVALUATE2(IF (home_phone.phone_num_key LIKE '*^MOBILE*' OR home_phone.phone_num_key LIKE '*NONE*'
+	  		OR SIZE(home_phone.phone_num_key) < 10 OR home_phone.phone_Num_key IN ('9999999999','8888888888','7777777777',
+	  		'6666666666','5555555555','4444444444','3333333333','2222222222','1111111111','0000000000')) " "
+	  		ELSE home_phone.phone_num_key ENDIF)
+	  ,Mobile_Number = EVALUATE2(IF (mobile_phone.phone_num_key LIKE '*^MOBILE*' OR mobile_phone.phone_num_key LIKE '*NONE*'
+	  		OR SIZE(mobile_phone.phone_num_key) < 10 OR mobile_phone.phone_Num_key IN ('9999999999','8888888888','7777777777',
+	  		'6666666666','5555555555','4444444444','3333333333','2222222222','1111111111','0000000000')) " "
+	  		ELSE mobile_phone.phone_num_key ENDIF)
+	  ,MS_DRG = " "
+	  ,Gender = EVALUATE(pat.sex_cd, 362.00, "F", 363.00, "M",364.00, "U", 0.00, "U"," ")
+	  ,Race = EVALUATE(pat.race_cd, 0.00, "Other Race None", 309318.00, "American Indian or Alaska Native",
+	     309317.00,	"Asian", 309315.00, "Black or African American", 23274729.00, "Other Race Multiple",
+    	4189861.00, "Native Hawaiian or Pacific Islander", 18702439.00,	"Other Race Patient Declined",
+	   25804105.00,	"Other Race Unavailable",309316.00, "White"," ")
+	  ,Date_of_Birth = EVALUATE2(IF (TRIM(CNVTSTRING(pat.birth_dt_tm),3) IN ("0","31558644000")) " "
+		ELSE FORMAT(CNVTDATETIMEUTC(pat.birth_dt_tm,1), "MMDDYYYY;;q") ENDIF)		;0001  DOB Fix  ;0006
+	  ,Language = EVALUATE(pat.language_cd, 2553030205.00, "1", 312741.00, "1", "0")   ;0003
+	  ,Medical_Record_Number = EVALUATE2(IF (SIZE(cmrn_nbr.alias) = 0) " " ELSE cmrn_nbr.alias ENDIF)
+	  ,Unique_ID = EVALUATE2(IF (SIZE(fin_nbr.alias) = 0) " " ELSE fin_nbr.alias ENDIF)
+	  ,Location_Code = EVALUATE2(IF (SIZE(orga.alias) = 0) " " ELSE orga.alias ENDIF)
+	  ,Location_Name = EVALUATE(orga.alias,
+	  		"CAET", "Cardiology Associates of East Tenn",
+	  		"CMG", "Crossville Medical Group",
+	  		"CSG", "Cumberland Specialty Group",
+	  		"ETCVSG", "East TN Cardiovascular Surgery Group",
+	  		"FCS", "FamilyCare Specialists",
+	  		"FSNS", "Fort Sanders Neurosurgery And Spine",
+	  		"HC", "Hookman Cardiology",
+	  		"HP", "Hamblen Pulmonary",
+	  		"HUC", "Hamblen Urology Clinic",
+	  		"KHG", "Knoxville Heart Group",
+	  		"SAET", "Surgical Assoc Of East Tenn",
+	  		"SMG", "Southern Medical Group",
+	  		"TNBS", "TN Brain & Spine",
+	  		"USET", "Urology Specialist of East Tn",
+	  		org.org_name)
+	  ,Attending_Physician_NPI = EVALUATE2(IF (prov.person_id  = 0) " " ELSE npi.alias ENDIF)
+	  ,Attending_Physician_Name = EVALUATE2(IF (prov.person_id = 0) " " ELSE prov.name_full_formatted ENDIF)
+	  ,Provider_Type = EVALUATE2(IF (epr.encntr_prsnl_r_cd = 0) " " ELSE UAR_GET_CODE_DISPLAY(epr.encntr_prsnl_r_cd) ENDIF)
+	  ,Provider_Specialty = EVALUATE2(IF (prov_grp.prsnl_group_id = 0.00) " "
+			ELSE prov_grp.prsnl_group_name ENDIF)
+	  ,Site_Address_1 = EVALUATE2(IF (SIZE(clinic_addr.street_addr) = 0) " " ELSE TRIM(clinic_addr.street_addr,3) ENDIF)
+	  ,Site_Address_2 = EVALUATE2(IF (SIZE(clinic_addr.street_addr2) = 0) " " ELSE TRIM(clinic_addr.street_addr2,3) ENDIF)
+	  ,Site_City = EVALUATE2(IF (SIZE(clinic_addr.city) = 0) " " ELSE TRIM(clinic_addr.city,3) ENDIF)
+	  ,Site_State = EVALUATE2(IF (SIZE(clinic_addr.state) = 0) " " ELSE TRIM(clinic_addr.State,3) ENDIF)
+	  ,Site_Zip = EVALUATE2(IF (SIZE(clinic_addr.zipcode_key) = 0) " " ELSE TRIM(SUBSTRING(1,5,clinic_addr.zipcode_key),3) ENDIF)
+	  ,Patient_Admission_Source = "9"
+	  ,Visit_Admit_Date = EVALUATE2(IF (TRIM(CNVTSTRING(sch.beg_dt_tm),3) IN ("0","31558644000")) " "
+		ELSE FORMAT(sch.beg_dt_tm, "MMDDYYYY;;q") ENDIF)
+	  ,Visit_Admit_Time =  EVALUATE2(IF (TRIM(CNVTSTRING(sch.beg_dt_tm),3) IN ("0","31558644000")) " "
+		ELSE FORMAT(sch.beg_dt_tm, "HHMMSS;;q") ENDIF)
+	  ,Discharge_Date = EVALUATE2(IF (TRIM(CNVTSTRING(sch.beg_dt_tm),3) IN ("0","31558644000")) " "
+		ELSE FORMAT(sch.beg_dt_tm, "MMDDYYYY;;q") ENDIF)
+	  ,Discharge_Time =  EVALUATE2(IF (TRIM(CNVTSTRING(sch.beg_dt_tm),3) IN ("0","31558644000")) " "
+		ELSE FORMAT(sch.beg_dt_tm, "HHMMSS;;q") ENDIF)
+	  ,Patient_Discharge_Status = "01"
+	  ,Unit = " "
+	  ,Service = " "
+	  ,Specialty = EVALUATE2(IF (prov_grp.prsnl_group_id = 0.00) " "
+			ELSE prov_grp.prsnl_group_name ENDIF)
+	  ,Payor_Insurance_Fin_Class = EVALUATE2(IF (hp_ins.financial_class_cd = 0.00) " "
+	  	ELSE UAR_GET_CODE_DISPLAY(hp_ins.financial_class_cd)ENDIF)
+	  ,Length_of_Stay = " "
+	  ,Room = " "
+	  ,Bed = " "
+	  ,Hospitalist = "2"
+	  ,Fast_Track_Acute_Flag = EVALUATE2(IF(TRIM(se.appt_reason_free,3) = 'Telemedicine') 'T' ELSE 'O' ENDIF)  ;0004
+	  ,Email = EVALUATE2(IF (SIZE(email_addr.street_addr) = 0
+	  	OR CNVTUPPER(email_addr.street_addr) = 'NONE'
+	  	OR email_addr.street_addr NOT LIKE '*@*'
+	  	OR CNVTUPPER(email_addr.street_addr) LIKE '*@.com*'
+	  	OR CNVTUPPER(email_addr.street_addr) LIKE '*REFUSED*') " " ELSE TRIM(email_addr.street_addr,3) ENDIF)
+	  ,Hospitalist_1 = " "
+	  ,Hospitalist_2 = " "
+	  ,ER_Admit = " "
+	  ,Other_Diagnosis_or_Procedure_Code = " "
+	  ,Procedure_Code_1 = " "
+	  ,Procedure_Code_2 = " "
+	  ,Procedure_Code_3 = " "
+	  ,Procedure_Code_4 = " "
+	  ,Procedure_Code_5 = " "
+	  ,Procedure_Code_6 = " "
+	  ,Deceased_Flag = EVALUATE2(IF(NULLIND(pat.deceased_dt_tm) = 1) 'N' ELSE 'Y' ENDIF)
+	  ,No_Publicity_Flag = EVALUATE2(IF( NULLIND(survey.value_dt_Tm) != 0 OR survey.person_info_id = 0)
+	  	'N' ELSE 'Y' ENDIF)
+	  ,State_Regulation_Flag = "N"
+	  ,Newborn_Patient = "N"
+	  ,Transferred_Admitted_To_Inpatient = "N"
+	  ,EOR_Indicator = "$"
+FROM SCH_APPT sch
+	, (INNER JOIN SCH_APPT res ON (sch.sch_event_id = res.sch_event_id
+		AND res.role_meaning = 'RESOURCE'
+		))
+	, (INNER JOIN SCH_EVENT se ON (sch.sch_event_id = se.sch_event_id			;;0002
+		AND se.appt_type_cd IN (2893954647 /*Clayton Homes*/, 2553464245 /*DOT Self Pay*/, 2553464375 /*Industrial Medicine*/,
+		2553464457 /*New Patient*/, 2553464477 /*Newborn*/, 2555201865 /*Office Visit*/, 3220694461 /*Online Self-Scheduling*/,
+		2553464527 /*Physical*/, 2553464549 /*Procedure*/, 2553464569 /*Same Day*/, 2553464631 /*Walk In*/,
+		2553464653 /*Work In*/, 2553464673 /*Worker's Compensation*/)
+		))
+	, (INNER JOIN ENCOUNTER enc ON (sch.encntr_id = enc.encntr_id
+		AND enc.active_ind = 1
+		AND enc.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND enc.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+		AND enc.encntr_type_cd IN (22282402 /*Clinic*/,2554389963/*Phone Message*/,
+			2560523697/*Results Only*/,20058643/*Legacy Data*/)
+		))
+	, (INNER JOIN ENCNTR_ALIAS fin_nbr ON (enc.encntr_id = fin_nbr.encntr_id
+		AND fin_nbr.active_ind = 1
+		AND fin_nbr.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND fin_nbr.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+   		AND fin_nbr.alias_pool_cd = 2554138229.00   ;FIN
+   		))
+	, (INNER JOIN PERSON pat ON (enc.person_id = pat.person_id
+		AND pat.active_ind = 1
+		AND pat.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND pat.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+		AND pat.name_last_key NOT IN ("TTTT*","FFFF*","ZZZ*")
+		))
+	, (LEFT JOIN PERSON_ALIAS cmrn_nbr ON (pat.person_id = cmrn_nbr.person_id
+		AND cmrn_nbr.active_ind = 1
+		AND cmrn_nbr.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND cmrn_nbr.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+   		AND cmrn_nbr.person_alias_type_cd =  2.00   ;CMRN
+   		))
+	, (LEFT JOIN ADDRESS addr ON (enc.person_id = addr.parent_entity_id
+		AND pat.person_id = addr.parent_entity_id
+		AND addr.parent_entity_name = "PERSON"
+		AND addr.active_ind = 1
+		AND addr.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND addr.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+   		AND addr.address_type_cd = 756.00   ;HOME
+		AND addr.address_id IN (SELECT MAX(addr1.address_id) FROM address addr1
+			WHERE addr1.parent_entity_id = pat.person_id
+			AND addr1.parent_entity_name = "PERSON"
+			AND addr1.active_ind = 1
+			AND addr1.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND addr1.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND addr1.address_type_cd = 756.00   ;HOME
+			GROUP BY addr1.address_type_cd)
+   		))
+	, (LEFT JOIN PHONE home_phone ON (enc.person_id = home_phone.parent_entity_id
+		AND pat.person_id = home_phone.parent_entity_id
+		AND home_phone.parent_entity_name = "PERSON"
+		AND home_phone.active_ind = 1
+		AND home_phone.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND home_phone.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+   		AND home_phone.phone_type_cd = 170.00   ;HOME
+   		AND home_phone.phone_type_seq = 1
+		AND home_phone.phone_id IN (SELECT MAX(phone1.phone_id) FROM phone phone1
+			WHERE phone1.parent_entity_id = pat.person_id
+			AND phone1.parent_entity_name = "PERSON"
+			AND phone1.active_ind = 1
+			AND phone1.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND phone1.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND phone1.phone_type_cd = 170.00  ;HOME
+			AND phone1.phone_type_seq = 1
+			GROUP BY phone1.phone_type_cd)
+   		))
+	, (LEFT JOIN PHONE mobile_phone ON (enc.person_id = mobile_phone.parent_entity_id
+		AND pat.person_id = mobile_phone.parent_entity_id
+		AND mobile_phone.parent_entity_name = "PERSON"
+		AND mobile_phone.active_ind = 1
+		AND mobile_phone.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND mobile_phone.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+   		AND mobile_phone.phone_type_cd = 4149712.00  ;MOBILE
+   		AND mobile_Phone.phone_type_seq = 1
+		AND mobile_phone.phone_id IN (SELECT MAX(phone1.phone_id) FROM phone phone1
+			WHERE phone1.parent_entity_id = pat.person_id
+			AND phone1.parent_entity_name = "PERSON"
+			AND phone1.active_ind = 1
+			AND phone1.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND phone1.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND phone1.phone_type_cd = 4149712.00 ;MOBILE
+			AND phone1.phone_type_seq = 1
+			AND phone1.phone_num != ' '
+			GROUP BY phone1.phone_type_cd)
+   		))
+	, (LEFT JOIN ADDRESS email_addr ON (enc.person_id = email_addr.parent_entity_id
+		AND pat.person_id = email_addr.parent_entity_id
+		AND email_addr.parent_entity_name = "PERSON"
+		AND email_addr.active_ind = 1
+		AND email_addr.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND email_addr.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+   		AND email_addr.address_type_cd = 755.00   ;e-mail
+   		))
+	, (LEFT JOIN ORGANIZATION org ON (enc.organization_id = org.organization_id
+		AND org.active_ind = 1
+		AND org.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND org.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+		))
+	, (LEFT JOIN ORGANIZATION_ALIAS orga ON (org.organization_id = orga.organization_id
+		AND orga.active_ind = 1
+		AND orga.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND orga.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+		AND orga.alias_pool_cd = 3189775577.00 /*Press Ganey*/
+		))
+	, (LEFT JOIN ENCNTR_PLAN_RELTN enc_ins ON (enc.encntr_id = enc_ins.encntr_id
+		AND enc_ins.active_ind = 1
+		AND enc_ins.priority_seq = 1
+		AND enc_ins.member_nbr != ' '
+		AND enc_ins.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND enc_ins.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+		))
+	, (LEFT JOIN HEALTH_PLAN hp_ins ON (enc_ins.health_plan_id = hp_ins.health_plan_id
+		AND hp_ins.active_ind = 1
+		AND hp_ins.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND hp_ins.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+		))
+	, (INNER JOIN ENCNTR_PRSNL_RELTN epr ON (enc.encntr_id = epr.encntr_id
+		AND epr.priority_seq = 1
+		AND epr.encntr_prsnl_r_cd IN (1116 /*Admitting*/,1119 /*Attending*/,681283 /*NP*/,681284/*PA*/)
+		AND epr.active_ind = 1
+		AND epr.data_status_cd = 25.00 /* Auth Verified */   ;0003
+		AND epr.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND epr.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+   		))
+    , (INNER JOIN PRSNL prov ON (epr.prsnl_person_id = prov.person_id
+   		AND prov.active_ind = 1
+   		AND prov.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+   		AND prov.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+   		))
+	, (INNER JOIN PRSNL_GROUP_RELTN prov_grp_rel ON (prov.person_id = prov_grp_rel.person_id
+		AND prov_grp_rel.active_ind = 1
+		AND prov_grp_rel.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND prov_grp_rel.end_effective_dt_Tm >= CNVTDATETIME(CURDATE,CURTIME3)
+		AND prov_grp_rel.contributor_system_cd =  2553023875.00 /* Star */
+		AND prov_grp_rel.prsnl_group_reltn_id IN (SELECT MIN(pgr.prsnl_group_reltn_id)
+			FROM PRSNL_GROUP_RELTN pgr
+			WHERE prov_grp_rel.person_id = pgr.person_id
+				AND pgr.active_ind = 1
+				AND pgr.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+				AND pgr.end_effective_dt_Tm >= CNVTDATETIME(CURDATE,CURTIME3)
+				AND pgr.contributor_system_cd =  2553023875.00 /* Star */
+				ORDER BY pgr.prsnl_group_reltn_id
+				)
+		))
+	, (INNER JOIN PRSNL_GROUP prov_grp ON (prov_grp_rel.prsnl_group_id = prov_grp.prsnl_group_id
+		AND prov_grp.active_ind = 1
+		AND prov_grp.prsnl_group_class_cd = 678635.00  /* Service */
+		))
+	, (INNER JOIN PRSNL_ALIAS npi ON (epr.prsnl_person_id = npi.person_id
+		AND npi.active_ind = 1
+		AND npi.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND npi.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+		AND npi.prsnl_alias_type_cd = 4038127.00  ;npi
+		))
+	, (INNER JOIN ADDRESS clinic_addr ON (org.organization_id = clinic_addr.parent_entity_id
+		AND clinic_addr.parent_entity_name = "ORGANIZATION"
+		AND clinic_addr.active_ind = 1
+		AND clinic_addr.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND clinic_addr.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+   		AND clinic_addr.address_type_cd = 754.00   ;BUSINESS
+   		AND clinic_addr.address_type_seq IN (SELECT MIN(clinic_addr1.address_type_seq) FROM address clinic_addr1
+			WHERE clinic_addr1.parent_entity_id = org.organization_id
+			AND clinic_addr1.parent_entity_name = "ORGANIZATION"
+			AND clinic_addr1.active_ind = 1
+			AND clinic_addr1.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+			AND clinic_addr1.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+			AND clinic_addr1.address_type_cd =  754.00   ;BUSINESS
+			GROUP BY clinic_addr1.address_type_cd
+			)
+  		))
+  	, (LEFT JOIN PERSON_INFO survey ON (pat.person_id = survey.person_id
+  		AND survey.info_type_cd = 1170.00 /*Custom Field*/
+		AND survey.info_sub_type_cd =  2896484897.00 /* Patient Survey Opt Out */
+		))
+WHERE sch.sch_state_cd = 4537.00 /*'CHECKED OUT'*/
+	AND sch.sch_role_cd = 4572.00 /*'PATIENT'*/
+	AND (sch.beg_dt_tm >= CNVTDATETIME(startdate)
+	AND sch.beg_dt_tm <= CNVTDATETIME(enddate))
+ 
+/****************************************************************************
+	Populate Record structure with CMG PRESS GANEY Data
+*****************************************************************************/
+HEAD REPORT
+	cnt = 0
+	CALL alterlist(exp_data->list, 10)
+ 
+DETAIL
+	cnt = cnt + 1
+ 
+	IF(mod(cnt,10) = 1)
+		CALL alterlist(exp_data->list, cnt + 9)
+	ENDIF
+ 
+	exp_data->list[cnt].Survey_Designator = Survey_Designator
+	exp_data->list[cnt].Client_ID = Client_ID
+	exp_data->list[cnt].Last_Name = Last_Name
+	exp_data->list[cnt].Middle_Initial = Middle_Initial
+	exp_data->list[cnt].First_Name = First_Name
+	exp_data->list[cnt].Address_1 = Address_1
+	exp_data->list[cnt].Address_2 = Address_2
+	exp_data->list[cnt].City = City
+	exp_data->list[cnt].State = State
+	exp_data->list[cnt].Zip_Code = Zip_Code
+	exp_data->list[cnt].Telephone_Number = Telephone_Number
+	exp_data->list[cnt].Mobile_Number = Mobile_Number
+	exp_data->list[cnt].MS_DRG = MS_DRG
+	exp_data->list[cnt].Gender = Gender
+	exp_data->list[cnt].Race = Race
+	exp_data->list[cnt].Date_of_Birth = Date_of_Birth
+	exp_data->list[cnt].Language = Language
+	exp_data->list[cnt].Medical_Record_Number = Medical_Record_Number
+	exp_data->list[cnt].Unique_ID = Unique_ID
+	exp_data->list[cnt].Location_Code = Location_Code
+	exp_data->list[cnt].Location_Name = Location_Name
+	exp_data->list[cnt].Attending_Physician_NPI = Attending_Physician_NPI
+	exp_data->list[cnt].Attending_Physician_Name = Attending_Physician_Name
+	exp_data->list[cnt].Provider_Type = Provider_Type
+	exp_data->list[cnt].Provider_Specialty = Provider_Specialty
+	exp_data->list[cnt].Site_Address_1 = Site_Address_1
+	exp_data->list[cnt].Site_Address_2 = Site_Address_2
+	exp_data->list[cnt].Site_City = Site_City
+	exp_data->list[cnt].Site_State = Site_State
+	exp_data->list[cnt].Site_Zip = Site_Zip
+	exp_data->list[cnt].Patient_Admission_Source = Patient_Admission_Source
+	exp_data->list[cnt].Visit_Admit_Date = Visit_Admit_Date
+	exp_data->list[cnt].Visit_Admit_Time = Visit_Admit_Time
+	exp_data->list[cnt].Discharge_Date = Discharge_Date
+	exp_data->list[cnt].Discharge_Time = Discharge_Time
+	exp_data->list[cnt].Patient_Discharge_Status = Patient_Discharge_Status
+	exp_data->list[cnt].Unit = Unit
+	exp_data->list[cnt].Service = Service
+	exp_data->list[cnt].Specialty = Specialty
+	exp_data->list[cnt].Payor_Insurance_Fin_Class = Payor_Insurance_Fin_Class
+	exp_data->list[cnt].Length_of_Stay = Length_of_Stay
+	exp_data->list[cnt].Room = Room
+	exp_data->list[cnt].Bed = Bed
+	exp_data->list[cnt].Hospitalist = Hospitalist
+	exp_data->list[cnt].Fast_Track_Acute_Flag = Fast_Track_Acute_Flag
+	exp_data->list[cnt].Email = Email
+	exp_data->list[cnt].Hospitalist_1 = Hospitalist_1
+	exp_data->list[cnt].Hospitalist_2 = Hospitalist_2
+	exp_data->list[cnt].ER_Admit = ER_Admit
+	exp_data->list[cnt].Other_Diagnosis_or_Procedure_Code = Other_Diagnosis_or_Procedure_Code
+	exp_data->list[cnt].Procedure_Code_1 = Procedure_Code_1
+	exp_data->list[cnt].Procedure_Code_2 = Procedure_Code_2
+	exp_data->list[cnt].Procedure_Code_3 = Procedure_Code_3
+	exp_data->list[cnt].Procedure_Code_4 = Procedure_Code_4
+	exp_data->list[cnt].Procedure_Code_5 = Procedure_Code_5
+	exp_data->list[cnt].Procedure_Code_6 = Procedure_Code_6
+	exp_data->list[cnt].Deceased_Flag = Deceased_Flag
+	exp_data->list[cnt].No_Publicity_Flag = No_Publicity_Flag
+	exp_data->list[cnt].State_Regulation_Flag = State_Regulation_Flag
+	exp_data->list[cnt].Newborn_Patient = Newborn_Patient
+	exp_data->list[cnt].Transferred_Admitted_To_Inpatient = Transferred_Admitted_To_Inpatient
+	exp_data->list[cnt].EOR_Indicator = EOR_Indicator
+ 
+ 
+FOOT REPORT
+ 	exp_data->output_cnt = cnt
+ 	CALL alterlist(exp_data->list, cnt)
+WITH nocounter
+ 
+    CALL ECHO (BUILD("**Output_Cnt:",CNVTSTRING(exp_data->output_cnt)))
+ 
+ 
+CALL ECHO ("***** BUILD Output ******")
+CALL ECHO (BUILD("***** Start Date: ",FORMAT(startdate, "MM/DD/YYYY HH:mm:ss;;q"), " *****"))
+CALL ECHO (BUILD("***** End Date: ",FORMAT(enddate, "MM/DD/YYYY HH:mm:ss;;q"), " *****"))
+/****************************************************************************
+	Build Output
+*****************************************************************************/
+ 
+IF (exp_data->output_cnt > 0)
+ 	CALL ECHO ("******* Build Output - Data in Record Structure *******")
+ 
+ 	SET output_rec = ""
+ 
+ 	CALL ECHO (BUILD("**Output_Cnt: ",exp_data->output_cnt))
+ 
+	SELECT DISTINCT INTO VALUE(output_var)
+	FROM (DUMMYT dt with seq = exp_data->output_cnt)
+	ORDER BY dt.seq
+ 
+	HEAD REPORT
+		output_rec = build(cov_quote, "Survey_Designator", cov_quote, cov_comma,
+						cov_quote, "Client_ID", cov_quote, cov_comma,
+						cov_quote, "Last_Name", cov_quote, cov_comma,
+						cov_quote, "Middle_Initial", cov_quote, cov_comma,
+						cov_quote, "First_Name", cov_quote, cov_comma,
+						cov_quote, "Address_1", cov_quote, cov_comma,
+						cov_quote, "Address_2", cov_quote, cov_comma,
+						cov_quote, "City", cov_quote, cov_comma,
+						cov_quote, "State", cov_quote, cov_comma,
+						cov_quote, "Zip_Code", cov_quote, cov_comma,
+						cov_quote, "Telephone_Number", cov_quote, cov_comma,
+						cov_quote, "Mobile_Number", cov_quote, cov_comma,
+						cov_quote, "MS_DRG", cov_quote, cov_comma,
+						cov_quote, "Gender", cov_quote, cov_comma,
+						cov_quote, "Race", cov_quote, cov_comma,
+						cov_quote, "Date_of_Birth", cov_quote, cov_comma,
+						cov_quote, "Language", cov_quote, cov_comma,
+						cov_quote, "Medical_Record_Number", cov_quote, cov_comma,
+						cov_quote, "Unique_ID", cov_quote, cov_comma,
+						cov_quote, "Location_Code", cov_quote, cov_comma,
+						cov_quote, "Location_Name", cov_quote, cov_comma,
+						cov_quote, "Attending_Physician_NPI", cov_quote, cov_comma,
+						cov_quote, "Attending_Physician_Name", cov_quote, cov_comma,
+						cov_quote, "Provider_Type", cov_quote, cov_comma,
+						cov_quote, "Provider_Specialty", cov_quote, cov_comma,
+						cov_quote, "Site_Address_1", cov_quote, cov_comma,
+						cov_quote, "Site_Address_2", cov_quote, cov_comma,
+						cov_quote, "Site_City", cov_quote, cov_comma,
+						cov_quote, "Site_State", cov_quote, cov_comma,
+						cov_quote, "Site_Zip", cov_quote, cov_comma,
+						cov_quote, "Patient_Admission_Source", cov_quote, cov_comma,
+						cov_quote, "Visit_Admit_Date", cov_quote, cov_comma,
+						cov_quote, "Visit_Admit_Time", cov_quote, cov_comma,
+						cov_quote, "Discharge_Date", cov_quote, cov_comma,
+						cov_quote, "Discharge_Time", cov_quote, cov_comma,
+						cov_quote, "Patient_Discharge_Status", cov_quote, cov_comma,
+						cov_quote, "Unit", cov_quote, cov_comma,
+						cov_quote, "Service", cov_quote, cov_comma,
+						cov_quote, "Specialty", cov_quote, cov_comma,
+						cov_quote, "Payor_Insurance_Fin_Class", cov_quote, cov_comma,
+						cov_quote, "Length_of_Stay", cov_quote, cov_comma,
+						cov_quote, "Room", cov_quote, cov_comma,
+						cov_quote, "Bed", cov_quote, cov_comma,
+						cov_quote, "Hospitalist", cov_quote, cov_comma,
+						cov_quote, "Fast_Track_Acute_Flag", cov_quote, cov_comma,
+						cov_quote, "Email", cov_quote, cov_comma,
+						cov_quote, "Hospitalist_1", cov_quote, cov_comma,
+						cov_quote, "Hospitalist_2", cov_quote, cov_comma,
+						cov_quote, "ER_Admit", cov_quote, cov_comma,
+						cov_quote, "Other_Diagnosis_or_Procedure_Code", cov_quote, cov_comma,
+						cov_quote, "Procedure_Code_1", cov_quote, cov_comma,
+						cov_quote, "Procedure_Code_2", cov_quote, cov_comma,
+						cov_quote, "Procedure_Code_3", cov_quote, cov_comma,
+						cov_quote, "Procedure_Code_4", cov_quote, cov_comma,
+						cov_quote, "Procedure_Code_5", cov_quote, cov_comma,
+						cov_quote, "Procedure_Code_6", cov_quote, cov_comma,
+						cov_quote, "Deceased_Flag", cov_quote, cov_comma,
+						cov_quote, "No_Publicity_Flag", cov_quote, cov_comma,
+						cov_quote, "State_Regulation_Flag", cov_quote, cov_comma,
+						cov_quote, "Newborn_Patient", cov_quote, cov_comma,
+						cov_quote, "Transferred_Admitted_To_Inpatient", cov_quote, cov_comma,
+						cov_quote, "EOR_Indicator", cov_quote)
+		col 0 output_rec
+		row + 1
+ 
+	head dt.seq
+		output_rec = ""
+		output_rec = build(output_rec,
+						cov_quote, exp_data->list[dt.seq].Survey_Designator, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Client_ID, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Last_Name, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Middle_Initial, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].First_Name, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Address_1, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Address_2, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].City, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].State, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Zip_Code, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Telephone_Number, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Mobile_Number, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].MS_DRG, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Gender, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Race, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Date_of_Birth, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Language, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Medical_Record_Number, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Unique_ID, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Location_Code, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Location_Name, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Attending_Physician_NPI, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Attending_Physician_Name, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Provider_Type, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Provider_Specialty, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Site_Address_1, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Site_Address_2, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Site_City, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Site_State, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Site_Zip, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Patient_Admission_Source, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Visit_Admit_Date, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Visit_Admit_Time, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Discharge_Date, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Discharge_Time, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Patient_Discharge_Status, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Unit, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Service, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Specialty, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Payor_Insurance_Fin_Class, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Length_of_Stay, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Room, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Bed, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Hospitalist, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Fast_Track_Acute_Flag, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Email, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Hospitalist_1, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Hospitalist_2, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].ER_Admit, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Other_Diagnosis_or_Procedure_Code, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Procedure_Code_1, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Procedure_Code_2, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Procedure_Code_3, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Procedure_Code_4, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Procedure_Code_5, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Procedure_Code_6, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Deceased_Flag, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].No_Publicity_Flag, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].State_Regulation_Flag, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Newborn_Patient, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].Transferred_Admitted_To_Inpatient, cov_quote, cov_comma,
+						cov_quote, exp_data->list[dt.seq].EOR_Indicator, cov_quote)
+ 
+		output_rec = trim(output_rec,3)
+ 
+	FOOT dt.seq
+		col 0 output_rec
+		IF (dt.seq < exp_data->output_cnt) row + 1 ELSE row + 0 ENDIF
+ 
+	WITH nocounter, maxcol = 32000, FORMAT=STREAM, formfeed = none, maxrow=1, NOHEADING, NOFORMFEED
+ENDIF
+ 
+;CALL ECHORECORD (exp_data)
+ 
+; Copy file to AStream
+IF (validate(request->batch_selection) = 1 OR $output_file = 1)
+	SET cmd = build2("mv ", temppath2_var, " ", filepath_var)
+	SET len = size(trim(cmd))
+ 
+	CALL dcl(cmd, len, stat)
+	CALL echo(build2(cmd, " : ", stat))
+ENDIF
+END
+GO

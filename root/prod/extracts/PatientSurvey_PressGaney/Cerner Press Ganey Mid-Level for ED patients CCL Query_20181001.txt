@@ -1,0 +1,52 @@
+SELECT DISTINCT
+	Attending_Physician_NPI = PAR.ALIAS
+	, Attending_Physician_Name = P.NAME_FULL_FORMATTED
+	, Provider_Type = UAR_GET_CODE_DISPLAY(EP.ENCNTR_PRSNL_R_CD)
+	, Provider_Specialty = UAR_GET_CODE_DISPLAY(PS.SPECIALTY_CD)
+	, Site_Address_1 = A.STREET_ADDR
+	, Site_Address_2 = A.STREET_ADDR2
+	, Site_City = A.CITY
+	, Site_State = A.STATE
+	, Site_Zip = A.ZIPCODE
+	, Finnbr = EA.ALIAS
+	, Facility_Code = oa.alias
+	, Reg_dt_tm = FORMAT(E.REG_DT_TM,"MM/DD/YYYY HH:mm:ss")
+
+FROM
+	ENCOUNTER   E
+	, ENCNTR_PRSNL_RELTN   EP
+	, PRSNL   P
+	, PERSON   PE
+	, ENCNTR_ALIAS   EA
+	, PERSON_ALIAS   PA
+	, PRSNL_ALIAS   PAR
+	, ORGANIZATION   O
+	, ADDRESS   A
+	, PRSNL_SPECIALTY_RELTN   PS
+	, ORGANIZATION_ALIAS   oa
+
+WHERE e.encntr_type_cd =      309310.00 ;Emergency
+AND e.encntr_id = ep.encntr_id
+AND ep.prsnl_person_id= p.person_id
+AND ep.encntr_prsnl_r_cd IN (4199426.00,4199425.00)  ;ED PA and ED NP
+AND e.encntr_status_cd =         856.00   ;Discharged
+AND EA.encntr_id = e.encntr_id
+AND ea.alias_pool_cd =  2554138251.00 ;STAR FIN
+AND pe.person_id = e.person_id
+AND pa.person_id = pe.person_id
+AND pa.alias_pool_cd =  2554138243.00  ;CMRN
+AND par.person_id = p.person_id
+AND par.alias_pool_cd =    26026547.00  ;NPI
+AND o.organization_id = OUTERJOIN (e.organization_id)
+AND a.parent_entity_id = OUTERJOIN (o.organization_id)
+AND a.address_type_cd = OUTERJOIN (754.00) ;Business
+AND ps.prsnl_id = OUTERJOIN(p.person_id)
+AND o.organization_id = oa.organization_id
+AND oa.alias_pool_cd =    21808469.00 ;Client Code
+AND e.reg_dt_tm >= cnvtlookbehind("14, d", cnvtdatetime(curdate,000000))
+AND e.reg_dt_tm <= cnvtlookbehind("8, d", cnvtdatetime(curdate,235959))
+
+ORDER BY
+	E.REG_DT_TM
+
+WITH MAXREC = 50000, NOCOUNTER, SEPARATOR=" ", FORMAT

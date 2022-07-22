@@ -1,0 +1,198 @@
+CREATE PROCEDURE [dbo].[cov_mosaiq_patient_survey_PressGaney_sp] (@runtype AS VARCHAR(1))       
+--------------------------------------------------------------------------      
+-- Author: Dawn Greer, DBA      
+-- Create date: 9/28/2018      
+--      
+-- Procedure Name: cov_mosaiq_patient_survey_PressGaney_sp      
+-- Description: Pull information from Mosaiq to      
+--  send patient surveys to Press Ganey to      
+--  process.      
+      
+-- Modifications:      
+--  4/2/2019 - DG - Changed the process from looking at the schedule      
+--     and pull the DOS, Provider, and Unigue_id from the charge table.      
+--  5/6/2019 - DG - Added a process to be able to exclude providers      
+--  9/18/2019 - DG - Added criteria to exclude Voided charges (c.void = 0)      
+--  9/19/2019 - DG - Added criteria to exclude patients who Opt Out of Survey      
+--     Admin.User_Defined_pro_id_4 is the field that gets populated with this      
+--     data.  Possible values are      
+--         14073 = No Phone/email,      
+--         14071 = Opt In      
+--         14072 = Opt Out,      
+--         NULL = None      
+--  9/27/2019 - DG - Adjusted criteria for Admin.User_Defined_pro_id_4      
+--  9/30/2019 - DG - Updated Attending name to not put in extra spaces when      
+--                   the middle name is blank/null      
+-- 11/01/2019 - DG - Remove special characters from the Admit Time and Discharge Time      
+--      and add 'N' for fields No_Publicity_Flag,State_Regulation_Flag,      
+--      Newborn_Patient,Transferred_Admitted_To_Inpatient      
+-- 05/11/2020 - DG - Added the ability to pull Language for the Spanish Surveys.      
+-- 08/24/2020 - DG - Added RTRIM/LTRIM to the Patient Street Address 1 & 2.      
+-- 08/28/2020 - DG - Changed the name of the exclusion table.      
+-- 08/31/2020 - DG - Added RTRIM/LTRIM to the Race column.      
+-- 09/02/2020 - DG - Add ISNULL to the Race Column.      
+-- 09/08/2020 - DG - Setting up to run an update file on Friday      
+--   Added Database name to Exclusions table.    
+-- 09/21/2020 - DG - Added parameter to determine if it is a daily run or update run.  
+--   Removed the code selecting the date range.  The Daily run will run for 15 days back through  
+--   yesterday every day of the week.  The Update run will be 90 days back through yesterday.  
+--  
+-- Execute Example:    
+--  exec cov_mosaiq_patient_survey_PressGaney_sp '<runtype>'  
+--  exec cov_mosaiq_patient_survey_PressGaney_sp 'D'  
+--  exec cov_mosaiq_patient_survey_PressGaney_sp 'U'  
+  
+-- Execute Example:      
+--  exec cov_mosaiq_patient_survey_PressGaney_sp      
+----------------------------------------------------------------------------      
+AS      
+BEGIN      
+ -- SET NOCOUNT ON added to prevent extra result sets from      
+ -- interfering with SELECT statements.      
+ SET NOCOUNT ON;      
+      
+DECLARE @sd VARCHAR(10),    
+@ed VARCHAR(10)    
+  
+IF @runtype = 'D'  
+BEGIN  
+ SET @sd = CONVERT(VARCHAR, DATEADD(dd, -15, GETDATE()), 112)     ---15  
+ SET @ed = CONVERT(VARCHAR, DATEADD(dd, -1, GETDATE()), 112)    
+END  
+ELSE BEGIN IF @runtype = 'U'  
+ SET @sd = CONVERT(VARCHAR, DATEADD(dd, -90, GETDATE()), 112)     ---90  
+ SET @ed = CONVERT(VARCHAR, DATEADD(dd, -1, GETDATE()), 112)    
+END     
+      
+SELECT Survey_Designator,Client_ID,Last_Name,Middle_Initial,First_Name,Address_1,Address_2,City,State,Zip_Code,Telephone_Number,Mobile_Number,MS_DRG,Gender,      
+Race,Date_of_Birth,Language,Medical_Record_Number,Unique_ID,Location_Code,Location_Name,Attending_Physician_NPI,Attending_Physician_Name,Provider_Type,      
+Provider_Specialty,Site_Address_1,Site_Address_2,Site_City,Site_State,Site_Zip,Patient_Admission_Source,Visit_Admit_Date,Visit_Admit_Time,Discharge_Date,      
+Discharge_Time,Patient_Discharge_Status,Unit,Service,Specialty,Payor_Insurance_Fin_Class,Length_of_Stay,Room,Bed,Hospitalist,Fast_Track_Acute_Flag,      
+Email,Hospitalist_1,Hospitalist_2,ER_Admit,Other_Diagnosis_or_Procedure_Code,Procedure_Code_1,Procedure_Code_2,Procedure_Code_3,Procedure_Code_4,Procedure_Code_5,      
+Procedure_Code_6,Deceased_Flag,No_Publicity_Flag,State_Regulation_Flag,Newborn_Patient,Transferred_Admitted_To_Inpatient,EOR_Indicator      
+FROM (      
+ SELECT *, ROW_NUMBER() OVER(PARTITION BY pat_id1      
+  ORDER BY pat_id1, Visit_Admit_Date DESC) AS RowNum      
+ FROM (      
+  SELECT DISTINCT 'MD0102' AS Survey_Designator,      
+  '31668' AS Client_ID,      
+  ISNULL(pat.last_name,'') AS Last_Name,      
+  ISNULL(SUBSTRING(pat.MIddle_Name,1,1),'') AS Middle_Initial,      
+  ISNULL(pat.first_name,'') AS First_Name,      
+  ISNULL(RTRIM(LTRIM(a.Pat_Adr1)),'') AS Address_1,      
+  ISNULL(RTRIM(LTRIM(a.Pat_Adr2)),'') AS Address_2,      
+  ISNULL(a.Pat_City,'') AS City,      
+  ISNULL(RTRIM(LTRIM(a.Pat_State)),'') AS State,      
+  CASE WHEN LEN(a.Pat_Postal) > 5 AND CHARINDEX('-',a.pat_postal) = 0 THEN SUBSTRING(LTRIM(RTRIM(a.Pat_Postal)),1,5) + '-'      
+   + SUBSTRING(LTRIM(RTRIM(a.Pat_Postal)),6,LEN(a.Pat_Postal))      
+  ELSE ISNULL(RTRIM(LTRIM(a.Pat_Postal)),'') END AS Zip_Code,      
+  CASE WHEN a.Pat_Home_Phone LIKE '%^MOBILE%' THEN ''      
+ WHEN a.Pat_Home_Phone LIKE '%NONE%' THEN ''      
+ WHEN LEN(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(a.Pat_Home_Phone,'(',''),')',''),'-',''),' ',''),'\',''),'/','')) < 10 THEN ''      
+ WHEN REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(a.Pat_Home_Phone,'(',''),')',''),'-',''),' ',''),'\',''),'/','') = '9999999999' THEN ''      
+ WHEN REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(a.Pat_Home_Phone,'(',''),')',''),'-',''),' ',''),'\',''),'/','') = '0000000000' THEN ''      
+ ELSE ISNULL(SUBSTRING(ISNULL(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(a.Pat_Home_Phone,'(',''),')',''),'-',''),' ',''),'\',''),'/',''),''),1,10),'') END AS Telephone_Number,      
+CASE WHEN a.pat_Cellphone LIKE '%^MOBILE%' THEN ''      
+ WHEN a.pat_Cellphone LIKE '%NONE%' THEN ''      
+ WHEN LEN(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(a.pat_Cellphone,'(',''),')',''),'-',''),' ',''),'\',''),'/','')) < 10 THEN ''      
+ WHEN REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(a.pat_Cellphone,'(',''),')',''),'-',''),' ',''),'\',''),'/','') = '9999999999' THEN ''      
+ WHEN REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(a.pat_Cellphone,'(',''),')',''),'-',''),' ',''),'\',''),'/','') = '0000000000' THEN ''      
+ ELSE ISNULL(SUBSTRING(ISNULL(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(a.pat_Cellphone,'(',''),')',''),'-',''),' ',''),'\',''),'/',''),''),1,10),'') END AS Mobile_Number,      
+  '' AS MS_DRG,      
+  CASE WHEN a.gender = 'Male' THEN '1'      
+   WHEN a.gender = 'Female' THEN '2'      
+   ELSE 'M' END AS Gender,      
+  RTRIM(LTRIM(ISNULL(a.Race,''))) AS Race,      
+  REPLACE(CONVERT(VARCHAR(10),CONVERT(DATE,pat.Birth_DtTm),101),'/','') AS Date_of_Birth,      
+  CASE WHEN a.Language_Spoken_Pro_ID IN (13261,13984,13482) /*Spanish*/ THEN '1' ELSE '0' END AS Language,  --Including Spanish Surveys as of 5/11/2020      
+  ISNULL(i.ida,'') AS Medical_Record_Number,      
+  ISNULL(c.CHG_ID,'') AS Unique_ID,      
+  ISNULL(inst.inst_abrv,'') AS Location_Code,      
+  ISNULL(inst.Inst_Name,'') AS Location_Name,      
+  ISNULL(prov_id.ID_Code,'') AS Attending_Physician_NPI,      
+  RTRIM(LTRIM(ISNULL(LTRIM(RTRIM(prov.first_name)),'')      
+ + CASE WHEN LEN(ISNULL(prov.mdl_initial,'')) > 0      
+ THEN ' ' + ISNULL(LTRIM(RTRIM(SUBSTRING(prov.Mdl_Initial,1,1))),'')      
+ ELSE '' END + ' ' + ISNULL(LTRIM(RTRIM(prov.last_name)),'')      
+ + CASE WHEN LEN(ISNULL(prov.bill_credentials,'')) > 0      
+ THEN ' ' + ISNULL(prov.bill_credentials,'')      
+    ELSE '' END)) AS Attending_Physician_Name,      
+  CASE WHEN prov.bill_credentials LIKE 'NP%' THEN 'Nurse Practitioner'      
+    WHEN prov.bill_credentials LIKE 'PA%' THEN 'Physician Assistant'      
+    ELSE 'Physician' END AS Provider_Type,      
+  'Oncology' AS Provider_Specialty,      
+  ISNULL(RTRIM(LTRIM(inst.adr1)),'') AS Site_Address_1,      
+  ISNULL(RTRIM(LTRIM(inst.adr2)),'') AS Site_Address_2,      
+  ISNULL(inst.city,'') AS Site_City,      
+  ISNULL(inst.state_Province,'') AS Site_State,      
+  CASE WHEN LEN(inst.Postal) > 5 AND CHARINDEX('-',inst.Postal) = 0      
+  THEN SUBSTRING(LTRIM(RTRIM(inst.Postal)),1,5) + '-'      
+   + SUBSTRING(LTRIM(RTRIM(inst.Postal)),6,LEN(inst.Postal))      
+  ELSE ISNULL(RTRIM(LTRIM(inst.Postal)),'') END AS Site_Zip,      
+  '9' AS Patient_Admission_Source,      
+  REPLACE(CONVERT(VARCHAR(10),CONVERT(DATE,c.Proc_DtTm),101),'/','') AS Visit_Admit_Date,      
+  REPLACE(CONVERT(VARCHAR(10),c.Proc_DtTm,108),':','') AS Visit_Admit_Time,      
+  REPLACE(CONVERT(VARCHAR(10),CONVERT(DATE,c.Proc_DtTm),101),'/','') AS Discharge_Date,      
+  REPLACE(CONVERT(VARCHAR(10),c.Proc_DtTm,108),':','') AS Discharge_Time,      
+  '01' AS Patient_Discharge_Status,      
+  '' AS Unit,      
+  '' AS Service,      
+  'Oncology' AS Specialty,      
+  ISNULL(RTRIM(LTRIM(pay.payer_name)),'') AS Payor_Insurance_Fin_Class,      
+  '' AS Length_of_Stay,      
+  '' AS Room,      
+  '' AS Bed,      
+  '2' AS Hospitalist,      
+  '' AS Fast_Track_Acute_Flag,      
+  CASE WHEN a.Pat_EMail = 'NONE' THEN ''      
+ WHEN a.Pat_EMail NOT LIKE '%@%' THEN ''      
+ WHEN a.Pat_EMail LIKE '%@.com%' THEN ''      
+ WHEN a.Pat_EMail LIKE '%refused%' THEN ''      
+ ELSE ISNULL(a.Pat_EMail,'') END AS Email,      
+  '' AS Hospitalist_1,      
+  '' AS Hospitalist_2,      
+  '' AS ER_Admit,      
+  '' AS Other_Diagnosis_or_Procedure_Code,      
+  '' AS Procedure_Code_1,      
+  '' AS Procedure_Code_2,      
+  '' AS Procedure_Code_3,      
+  '' AS Procedure_Code_4,      
+  '' AS Procedure_Code_5,      
+  '' AS Procedure_Code_6,      
+  CASE WHEN a.Expired_DtTm IS NOT NULL THEN 'Y' ELSE 'N' END AS Deceased_Flag,      
+  'N' AS No_Publicity_Flag,      
+  'N' AS State_Regulation_Flag,      
+  'N' AS Newborn_Patient,      
+  'N' AS Transferred_Admitted_To_Inpatient,      
+  '$' AS EOR_Indicator,      
+  pat.Pat_ID1 AS pat_id1      
+  FROM MOSAIQ..Patient pat (NOLOCK) JOIN MOSAIQ..AdmDept ad (NOLOCK) ON ad.Pat_id1 = pat.pat_id1      
+ AND pat.Inactive = 0      
+  JOIN MOSAIQ..Admin a (NOLOCK) ON a.Pat_ID1 = pat.pat_id1 AND a.Expired_DtTm IS NULL      
+  LEFT JOIN MOSAIQ..Prompt pro (NOLOCK) ON a.Language_Spoken_Pro_ID = pro.Pro_ID      
+  JOIN MOSAIQ..Ident i (NOLOCK) ON a.pat_id1 = i.pat_id1      
+  JOIN MOSAIQ..Charge c (NOLOCK) ON a.Pat_ID1 = c.Pat_ID1      
+  JOIN MOSAIQ..Staff prov (NOLOCK) ON c.Staff_ID = prov.staff_id      
+  JOIN MOSAIQ..Ext_ID prov_id (NOLOCK) ON prov.Staff_ID = prov_id.Staff_id AND prov_id.Ext_Type = 'NPI'      
+  JOIN MOSAIQ..Config inst (NOLOCK) ON a.STF_MD1_Inst_ID = inst.Inst_ID      
+  JOIN MOSAIQ..Prompt lang (NOLOCK) ON a.Language_Spoken_Pro_ID = lang.Pro_ID AND lang.PGroup = 'LANG'      
+  JOIN MOSAIQ..Pat_Pay pat_pay (NOLOCK) ON a.Pat_ID1 = pat_pay.Pat_ID1 AND pat_pay.Priority = 1 AND pat_pay.Payer_Type = 4000      
+   AND pat_pay.Expiration_DtTm IS NULL AND pat_pay.Inactive = 0      
+  JOIN MOSAIQ..Payer pay (NOLOCK) ON pat_pay.Payer_ID = pay.Payer_ID      
+  JOIN MOSAIQ..Prompt ethincity (NOLOCK) ON a.Ethnicity_PRO_ID = ethincity.Pro_ID AND ethincity.PGroup = 'ETH1'      
+  WHERE inst.Inst_Abrv IN ('MOB','MODT','MOLC','MOMH ','MOOR','MOS','MOW')      
+  AND c.Reviewed = 1      
+  AND c.Billable > 0      
+  AND (a.User_Defined_Pro_Id_4 NOT IN (14072 /*Opt Out*/) OR a.User_Defined_Pro_Id_4 IS NULL)      
+  AND c.Void = 0 --9/18/2019 - Charges not voided/excluding voided charges      
+  AND c.Hsp_Code NOT BETWEEN '800000' AND '89999'      
+  AND c.Hsp_Code <> '36415'      
+  AND c.Hsp_Code NOT IN ('LAB')      
+  AND prov_id.ID_Code NOT IN (SELECT prov_npi FROM Cov_Mosaiq_Integration..cov_mosaiq_PressGaney_Exclusions)      
+  AND c.Proc_DtTm >= @sd      
+  AND c.Proc_DtTm <= @ed      
+ ) x      
+) y      
+WHERE y.RowNum = 1      
+OPTION (MAXDOP 1);      
+END 

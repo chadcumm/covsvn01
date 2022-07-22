@@ -1,0 +1,168 @@
+CREATE PROCEDURE cov_Humana_Colorectal_Screening_Crossville_sp            
+----------------------------------------------------------------------------------------------------------                                            
+---                                            
+--- Name: cov_Humana_Colorectal_Screening_Crossville_sp                                            
+---                                            
+--- Customer: Covenant                                            
+--- Created by: Dawn Greer, DBA                                            
+--- Date: 7/15/2018                          
+---                                            
+--- Purpose: To pull Colorectal screening data to send to Humana.                                            
+---                                            
+--- Database Server: NGSQLR05, CMGREPORTDB1                                            
+--- Databases Used: NGPROD, Cov_NextGen_Integration                                            
+--- File Share for Export: \\ngfs01\nextgenroot\Humana_Extracts                                          
+---                                          
+--- Modifications:                                          
+---   4/4/2017 - DG - Moved from NGSQL02DB to NGSQLR05 and changed the Database from NGPROD to NGPROD_Snapshot                       
+---   7/10/2017 - DG - Changed payer from one payer (Medicare Humana Gold) to this list ('Medicare Humana Gold',                       
+---     'Medicare Humana Advantage','Medicare Humana Gold Plus HMO')                         
+---  11/2/2017 - DG - Changed to the new Payer view and added code for excluding expired patient.              
+---  2/20/2018 - DG - Changed to Cov_NextGen_Integration.cov_NextGen_Patient_Ins_Payers_Covenant_vw            
+---  and changed name to cov_Humana_Colorectal_Screening_sp              
+---  7/15/2018 - DG - Created for Crossville         
+---  7/27/2018 - DG - Added C in front of the practice_id                                  
+-----------------------------------------------------------------------------------------------------------                               
+AS                              
+--- Humana Colorectal Screening Query                              
+DECLARE @StartDate DATETIME, @EndDate DATETIME                                    
+SET @StartDate = DATEADD(mm, DATEDIFF(mm, 0, GETDATE())-18, 0)                                        
+SET @EndDate = DATEADD(ms, -2, DATEADD(mm, 18, @StartDate)) ;                                 
+                               
+SELECT DISTINCT 'C' + CAST(c.practice_id AS VARCHAR) + CAST(pe.enc_nbr AS VARCHAR) AS source_claim_id,                              
+'' AS claim_line_id,                              
+RTRIM(ISNULL(pm.national_provider_id,'')) AS prov_id,                              
+RTRIM(ISNULL(paym.policy_nbr,'')) AS member_id,                              
+CONVERT(VARCHAR(10), pe.enc_timestamp,101) AS first_serv_date,                               
+CONVERT(VARCHAR(10), pe.enc_timestamp,101) AS last_serv_date,                               
+'' AS PRINCIPAL_PROC_CD,                              
+'' AS OTHER_PROC_CD1,                              
+'' AS OTHER_PROC_CD2,                              
+'' AS OTHER_PROC_CD3,                              
+'' AS OTHER_PROC_CD4,                              
+'' AS OTHER_PROC_CD5,                              
+'' AS OTHER_PROC_CD6,                              
+'' AS OTHER_PROC_CD7,                              
+'' AS OTHER_PROC_CD8,                              
+'' AS OTHER_PROC_CD9,                              
+'' AS REVENUE_CD,                              
+ISNULL(ed.icd9cm_code_id,'') AS primary_diag_cd,                              
+'' AS sec_diag_cd1,                              
+'' AS sec_diag_cd2,                              
+'' AS sec_diag_cd3,                              
+'' AS sec_diag_cd4,                              
+'' AS sec_diag_cd5,                              
+'' AS sec_diag_cd6,    
+'' AS sec_diag_cd7,                              
+'' AS sec_diag_cd8,                              
+'' AS sec_diag_cd9,                              
+'' AS sec_diag_cd10,                
+'' AS LINE_PROCCD_MODIFIER,                              
+'' AS LINE_PROCCD_MODIFIER_2,          
+CONVERT(VARCHAR(13), REPLACE(REPLACE(c.service_item_id,'I',''),'O','')) AS line_procedure_cd,                              
+'' AS LOINC_Code,                              
+'' AS LOINC_Result,                              
+'' AS BMI_Weight,                              
+'' AS BP_Systolic,                  
+'' AS BP_Diastolic,                              
+'' AS LDL_Screen,                              
+ISNULL(icd.icd_type,'') AS Custom_Field1,                              
+'' AS Custom_Field2,                              
+'' AS Custom_Field3,                            
+'' AS Custom_Field4,                              
+'' AS Custom_Field5,                              
+'' AS Custom_Field6,                              
+RTRIM(ISNULL(paym.policy_nbr,'')) AS Humana_Member_ID,                              
+RTRIM(ISNULL(p.first_name,'')) AS Member_First_Name,                              
+RTRIM(ISNULL(p.last_name,'')) AS Member_Last_Name,                              
+CASE WHEN ISNULL(p.date_of_birth, '') = '' THEN '00000000' ELSE SUBSTRING(p.date_of_birth,5,2) + '/' +                         
+ SUBSTRING(p.date_of_birth,7,2) + '/' + SUBSTRING(p.date_of_birth,1,4) END AS Member_DOB,                              
+CASE WHEN ISNULL(p.sex,'') = '' OR p.sex = 'O' THEN 'U' ELSE p.sex END AS Member_Gender,                              
+GETDATE() AS as_of_date                              
+FROM CMGREPORTDB1.NGPROD.dbo.charges c (NOLOCK) JOIN CMGREPORTDB1.NGPROD.dbo.patient_encounter pe (NOLOCK)           
+ ON c.source_id = pe.enc_id                         
+ and c.person_id = pe.person_id AND c.source_type = 'V'                              
+JOIN CMGREPORTDB1.Cov_NextGen_Integration.dbo.cov_NextGen_Patient_Ins_Payers_Covenant_vw paym (NOLOCK)           
+ ON pe.enc_id = paym.enc_id                           
+ AND paym.payer_name IN ('Medicare Humana Gold','Medicare Humana Advantage','Medicare Humana Gold Plus HMO')                           
+JOIN CMGREPORTDB1.NGPROD.dbo.person p (NOLOCK) ON c.person_id = p.person_id                 
+ AND (p.expired_ind = 'N' OR p.expired_date IS NULL OR p.expired_date = '')                 
+JOIN CMGREPORTDB1.NGPROD.dbo.provider_mstr pm (NOLOCK) ON c.rendering_id = pm.provider_id AND pm.delete_ind = 'N'                             
+LEFT JOIN CMGREPORTDB1.NGPROD.dbo.encounter_diags ed (NOLOCK) ON pe.enc_id = ed.enc_id AND pe.person_id = ed.person_id                              
+LEFT JOIN CMGREPORTDB1.NGPROD.dbo.icd9cm_code_mstr icd (NOLOCK) ON ed.icd9cm_code_id = icd.icd9cm_code_id                              
+WHERE p.last_name NOT LIKE 'COVTEST%'                              
+AND p.last_name NOT LIKE 'cov_ng_app_dev%'                              
+AND c.service_item_id IN ('I82270','I82274','O82270','O82274','G0328','45330','G0104','44388','G0105','G0121')                              
+AND c.link_id IS NULL                              
+AND CONVERT(DATE,pe.enc_timestamp) BETWEEN @StartDate AND @EndDate                              
+UNION                              
+SELECT DISTINCT 'C' + CAST(o.practice_id AS VARCHAR) + CAST(pe.enc_nbr AS VARCHAR) AS source_claim_id,                              
+'' AS claim_line_id,                              
+RTRIM(ISNULL(pm.national_provider_id,'')) AS prov_id,                              
+RTRIM(ISNULL(paym.policy_nbr,'')) AS member_id,                              
+SUBSTRING(o.completedDate,5,2) + '/' + SUBSTRING(o.completedDate,7,2) + '/'           
+ + SUBSTRING(o.completedDate,1,4) AS first_serv_date,                               
+SUBSTRING(o.completedDate,5,2) + '/' + SUBSTRING(o.completedDate,7,2) + '/'           
+ + SUBSTRING(o.completedDate,1,4) AS last_serv_date,                               
+'' AS PRINCIPAL_PROC_CD,                        
+'' AS OTHER_PROC_CD1,                              
+'' AS OTHER_PROC_CD2,                              
+'' AS OTHER_PROC_CD3,                              
+'' AS OTHER_PROC_CD4,                              
+'' AS OTHER_PROC_CD5,                              
+'' AS OTHER_PROC_CD6,                              
+'' AS OTHER_PROC_CD7,                              
+'' AS OTHER_PROC_CD8,                              
+'' AS OTHER_PROC_CD9,                              
+'' REVENUE_CD,                        
+ISNULL(ed.icd9cm_code_id,'') AS primary_diag_cd,                              
+'' AS sec_diag_cd1,                              
+'' AS sec_diag_cd2,                              
+'' AS sec_diag_cd3,                              
+'' AS sec_diag_cd4,                              
+'' AS sec_diag_cd5,                              
+'' AS sec_diag_cd6,                              
+'' AS sec_diag_cd7,                              
+'' AS sec_diag_cd8,                              
+'' AS sec_diag_cd9,                              
+'' AS sec_diag_cd10,                           
+'' AS LINE_PROCCD_MODIFIER,                              
+'' AS LINE_PROCCD_MODIFIER_2,                              
+CONVERT(VARCHAR(13), REPLACE(REPLACE(o.actcode,'I',''),'O','')) AS line_procedure_cd,                              
+'' AS LOINC_Code,                              
+'' AS LOINC_Result,                              
+'' AS BMI_Weight,                              
+'' AS BP_Systolic,                              
+'' AS BP_Diastolic,                           
+'' AS LDL_Screen,                              
+ISNULL(icd.icd_type,'') AS Custom_Field1,                              
+'' AS Custom_Field2,                              
+'' AS Custom_Field3,                              
+'' AS Custom_Field4,                              
+'' AS Custom_Field5,                              
+'' AS Custom_Field6,                              
+RTRIM(ISNULL(paym.policy_nbr,'')) AS Humana_Member_ID,                              
+RTRIM(ISNULL(p.first_name,'')) AS Member_First_Name,                              
+RTRIM(ISNULL(p.last_name,'')) AS Member_Last_Name,                              
+CASE WHEN ISNULL(p.date_of_birth, '') = '' THEN '00000000' ELSE SUBSTRING(p.date_of_birth,5,2) + '/' +                         
+ SUBSTRING(p.date_of_birth,7,2) + '/' + SUBSTRING(p.date_of_birth,1,4) END AS Member_DOB,                              
+CASE WHEN ISNULL(p.sex,'') = '' OR p.sex = 'O' THEN 'U' ELSE p.sex END AS Member_Gender,                              
+GETDATE() AS as_of_date                              
+FROM CMGREPORTDB1.NGPROD.dbo.order_ o (NOLOCK) JOIN CMGREPORTDB1.NGPROD.dbo.patient_encounter pe (NOLOCK)           
+ ON o.encounterID = pe.enc_id                         
+ AND o.person_id = pe.person_id                              
+JOIN CMGREPORTDB1.Cov_NextGen_Integration.dbo.cov_NextGen_Patient_Ins_Payers_Covenant_vw paym (NOLOCK)           
+ ON pe.enc_id = paym.enc_id                           
+ AND paym.payer_name IN ('Medicare Humana Gold','Medicare Humana Advantage','Medicare Humana Gold Plus HMO')                              
+JOIN CMGREPORTDB1.NGPROD.dbo.person p (NOLOCK) ON o.person_id = p.person_id                    
+ AND (p.expired_ind = 'N' OR p.expired_date IS NULL OR p.expired_date = '')                            
+JOIN CMGREPORTDB1.NGPROD.dbo.provider_mstr pm (NOLOCK) ON pe.rendering_provider_id = pm.provider_id           
+ AND pm.delete_ind = 'N'                              
+LEFT JOIN CMGREPORTDB1.NGPROD.dbo.encounter_diags ed (NOLOCK) ON pe.enc_id = ed.enc_id AND pe.person_id = ed.person_id                              
+LEFT JOIN CMGREPORTDB1.NGPROD.dbo.icd9cm_code_mstr icd (NOLOCK) ON ed.icd9cm_code_id = icd.icd9cm_code_id                              
+WHERE p.last_name NOT LIKE 'COVTEST%'                              
+AND p.last_name NOT LIKE 'cov_ng_app_dev%'                              
+AND o.actCode IN ('I82270','I82274','O82270','O82274','G0328','45330','G0104','44388','G0105','G0121')                              
+AND o.completedReason = 'historical entry'                              
+AND o.completedDate BETWEEN REPLACE(CAST(@StartDate AS DATE),'-','') AND REPLACE(CAST(@EndDate AS DATE),'-','')                         
+ORDER BY Member_last_name, Member_first_name, source_claim_id 

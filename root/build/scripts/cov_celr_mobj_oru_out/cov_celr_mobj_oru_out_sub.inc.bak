@@ -1,0 +1,214 @@
+DECLARE formatisodate ((datetime = dq8 ) ,(timezone = i4 ) ) = vc
+DECLARE add_data_field_by_cdf ((field_ident = vc ) ,(source_cdf = vc ) ,(source_display = vc ) ) = null
+DECLARE add_data_field_by_code ((field_ident = vc ) ,(source_code = f8 ) ,(source_display = vc ) ) = null
+DECLARE populate_cwe ((field_ident = vc ) ,(identifier = vc (ref ) ) ,(text = vc (ref ) ) ,( coding_system = vc (ref ) ) ) = null
+DECLARE populate_id ((field_ident = vc ) ,(field = vc (ref ) ) ) = null
+DECLARE populate_xtn ((phone_nbr = vc (ref ) ) ,(country_cd = vc (ref ) ) ,(area_cd = vc (ref ) ) ,(phone_nbr_comp = vc (ref ) ) ) = null
+DECLARE format_zip ((zip_code = vc (ref ) ) ,(country = vc ) ) = null
+DECLARE get_double_value (string_meaning ) = i4
+DECLARE get_long_value (string_meaning ) = i4
+DECLARE get_proc_id (proc_name ) = i4
+DECLARE get_string_value (string_meaning ) = c15
+
+SUBROUTINE  formatisodate (datetime ,timezone )
+  DECLARE utcdatetime = f8 WITH protect ,noconstant (0 )
+  DECLARE isoformat = vc WITH protect ,noconstant ("" )
+  DECLARE offsetminutes = i4 WITH protect ,noconstant (0 )
+  DECLARE offset = vc WITH protect ,noconstant ("" )
+  IF ((datetime > 0 ) )
+   SET utcdatetime = cnvtdatetimeutc (datetime ,3 ,timezone )
+   SET offsetminutes = datetimediff (datetime ,utcdatetime ,4 )
+   IF ((offsetminutes >= 0 ) )
+    SET offset = format (cnvttime (offsetminutes ) ,"+HHMM;;M" )
+   ELSE
+    SET offset = format (cnvttime (abs (offsetminutes ) ) ,"-HHMM;;M" )
+   ENDIF
+   SET isoformat = build (format (datetime ,"YYYYMMDDHHMMSS;;D" ) ,offset )
+  ENDIF
+  RETURN (isoformat )
+ END ;Subroutine
+ SUBROUTINE  add_data_field_by_cdf (field_ident ,source_cdf ,source_display )
+  EXECUTE oencpm_msglog build2 ("Adding " ,field_ident ," in add_data_field_by_cdf" ,char (0 ) )
+  SET cnt1 = (size (data_field->qual ,5 ) + 1 )
+  SET stat = alterlist (data_field->qual ,cnt1 )
+  SET data_field->qual[cnt1 ].field_ident = field_ident
+  SET data_field->qual[cnt1 ].source_cd = uar_get_code_by ("MEANING" ,73 ,source_cdf )
+  SET data_field->qual[cnt1 ].source_display = source_display
+ END ;Subroutine
+ SUBROUTINE  add_data_field_by_code (field_ident ,source_code ,source_display )
+  EXECUTE oencpm_msglog build2 ("Adding " ,field_ident ," in add_data_field_by_code" ,char (0 ) )
+  SET cnt1 = (size (data_field->qual ,5 ) + 1 )
+  SET stat = alterlist (data_field->qual ,cnt1 )
+  SET data_field->qual[cnt1 ].field_ident = field_ident
+  SET data_field->qual[cnt1 ].source_cd = source_code
+  SET data_field->qual[cnt1 ].source_display = source_display
+ END ;Subroutine
+ SUBROUTINE  populate_cwe (field_ident ,identifier ,text ,coding_system )
+  DECLARE code_value = f8
+  DECLARE pos = i4
+  DECLARE idx = i4
+  SET code_value = cnvtreal (cnvtalphanum (identifier ,5 ) )
+  IF ((code_value > 0.00 ) )
+   SET pos = locateval (idx ,1 ,size (data_field->qual ,5 ) ,field_ident ,data_field->qual[idx ].
+    field_ident )
+   IF ((pos > 0 ) )
+    SELECT INTO "nl:"
+     FROM (code_value_outbound cvo )
+     PLAN (cvo
+      WHERE (cvo.code_value = code_value )
+      AND (cvo.contributor_source_cd = data_field->qual[pos ].source_cd ) )
+     HEAD REPORT
+      identifier = cvo.alias ,
+      coding_system = data_field->qual[pos ].source_display ,
+      text = trim (uar_get_code_display (cvo.code_value ) ,3 )
+     WITH nocounter
+    ;end select
+   ENDIF
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  populate_id (field_ident ,field )
+  DECLARE code_value = f8
+  DECLARE pos = i4
+  DECLARE idx = i4
+  IF ((substring (1 ,3 ,field ) = "CD:" ) )
+   SET code_value = cnvtreal (cnvtalphanum (field ,5 ) )
+  ENDIF
+  IF ((code_value > 0.00 ) )
+   SET pos = locateval (idx ,1 ,size (data_field->qual ,5 ) ,field_ident ,data_field->qual[idx ].
+    field_ident )
+   IF ((pos > 0 ) )
+    SELECT INTO "nl:"
+     FROM (code_value_outbound cvo )
+     PLAN (cvo
+      WHERE (cvo.code_value = code_value )
+      AND (cvo.contributor_source_cd = data_field->qual[pos ].source_cd ) )
+     HEAD REPORT
+      field = cvo.alias
+     WITH nocounter
+    ;end select
+   ENDIF
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  populate_xtn (phone_nbr ,country_cd ,area_cd ,phone_nbr_comp )
+  DECLARE unformatted_phone_nbr = vc
+  SET unformatted_phone_nbr = cnvtalphanum (phone_nbr ,1 )
+  CASE (textlen (trim (unformatted_phone_nbr ) ) )
+   OF 11 :
+    SET country_cd = substring (1 ,1 ,unformatted_phone_nbr )
+    SET area_cd = substring (2 ,3 ,unformatted_phone_nbr )
+    SET phone_nbr_comp = substring (5 ,7 ,unformatted_phone_nbr )
+   OF 10 :
+    SET country_cd = "1"
+    SET area_cd = substring (1 ,3 ,unformatted_phone_nbr )
+    SET phone_nbr_comp = substring (4 ,7 ,unformatted_phone_nbr )
+   ELSE
+    SET phone_nbr_comp = unformatted_phone_nbr
+  ENDCASE
+  SET phone_nbr = ""
+ END ;Subroutine
+ SUBROUTINE  format_zip (zip_code ,country )
+  IF ((trim (country ,3 ) IN ('""' ,
+  "US" ,
+  "" ) )
+  AND (textlen (trim (zip_code ) ) = 9 )
+  AND (zip_code = cnvtalphanum (zip_code ,1 ) ) )
+   SET zip_code = format (zip_code ,"#####-####" )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  get_double_value (string_meaning )
+  DECLARE eso_idx = i4
+  DECLARE list_size = i4
+  SET eso_idx = 0
+  SET list_size = 0
+  SET stat = validate (oen_reply->cerner )
+  IF ((stat = 0 ) )
+   RETURN (0 )
+  ELSE
+   SET eso_idx = 0
+   SET list_size = 0
+   SET list_size = size (oen_reply->cerner.doublelist ,5 )
+   IF ((list_size > 0 ) )
+    SET eso_x = 1
+    FOR (eso_x = eso_x TO list_size )
+     IF ((oen_reply->cerner.doublelist[eso_x ].strmeaning = string_meaning ) )
+      SET eso_idx = eso_x
+     ENDIF
+    ENDFOR
+   ENDIF
+   IF ((eso_idx > 0 ) )
+    RETURN (oen_reply->cerner.doublelist[eso_idx ].dval )
+   ELSE
+    RETURN (0 )
+   ENDIF
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  get_long_value (string_meaning )
+  DECLARE eso_idx = i4
+  DECLARE list_size = i4
+  SET eso_idx = 0
+  SET list_size = 0
+  SET stat = validate (oen_reply->cerner )
+  IF ((stat = 0 ) )
+   RETURN (0 )
+  ELSE
+   SET eso_idx = 0
+   SET list_size = 0
+   SET list_size = size (oen_reply->cerner.longlist ,5 )
+   IF ((list_size > 0 ) )
+    SET eso_x = 1
+    FOR (eso_x = eso_x TO list_size )
+     IF ((oen_reply->cerner.longlist[eso_x ].strmeaning = string_meaning ) )
+      SET eso_idx = eso_x
+     ENDIF
+    ENDFOR
+   ENDIF
+   IF ((eso_idx > 0 ) )
+    RETURN (oen_reply->cerner.longlist[eso_idx ].lval )
+   ELSE
+    RETURN (0 )
+   ENDIF
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  get_proc_id (proc_name )
+  DECLARE out_pid = i4
+  SELECT INTO "nl:"
+   p.interfaceid
+   FROM (oen_procinfo p )
+   WHERE (cnvtupper (p.proc_name ) = cnvtupper (proc_name ) )
+   DETAIL
+    out_pid = p.interfaceid
+   WITH nocounter
+  ;end select
+  IF ((curqual != 0 ) )
+   RETURN (out_pid )
+  ELSE
+   RETURN (0 )
+  ENDIF
+ END ;Subroutine
+ SUBROUTINE  get_string_value (string_meaning )
+  DECLARE eso_idx = i4
+  DECLARE list_size = i4
+  SET eso_idx = 0
+  SET list_size = 0
+  SET stat = validate (oen_reply->cerner )
+  IF ((stat = 0 ) )
+   RETURN ("" )
+  ELSE
+   SET eso_idx = 0
+   SET list_size = 0
+   SET list_size = size (oen_reply->cerner.stringlist ,5 )
+   IF ((list_size > 0 ) )
+    SET eso_x = 1
+    FOR (eso_x = eso_x TO list_size )
+     IF ((oen_reply->cerner.stringlist[eso_x ].strmeaning = string_meaning ) )
+      SET eso_idx = eso_x
+     ENDIF
+    ENDFOR
+   ENDIF
+   IF ((eso_idx > 0 ) )
+    RETURN (oen_reply->cerner.stringlist[eso_idx ].strval )
+   ELSE
+    RETURN ("" )
+   ENDIF
+  ENDIF
+ END ;Subroutine

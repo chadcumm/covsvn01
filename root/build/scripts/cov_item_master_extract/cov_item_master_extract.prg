@@ -1,0 +1,193 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Marty Blair
+	Date Written:		03/30/2020
+	Solution:
+	Source file name:	cov_item_master_extract.prg
+	Object name:		cov_item_master_extract
+	Request #:
+ 
+	Program purpose:
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:		Called by ccl program(s).
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+Mod 	Mod Date	  Developer				      Comment
+---     ----------  --------------------    ----------------------------------
+000 	09/12/2020  Chad Cummings           Initial Release
+001 	04/20/2021  Chad Cummings           Added addtional UPN logic
+002     08/16/2021  Dawn Greer, DBA         CR 10232 - Added ASTREAM path
+******************************************************************************/
+drop program cov_item_master_extract go
+create program cov_item_master_extract
+ 
+if (not(validate(reply,0)))
+record  reply
+(
+	1 text = vc
+	1 status_data
+	 2 status = c1
+	 2 subeventstatus[1]
+	  3 operationname = c15
+	  3 operationstatus = c1
+	  3 targetobjectname = c15
+	  3 targetobjectvalue = c100
+)
+endif
+ 
+set reply->status_data.status = "F"
+ 
+record t_rec
+(
+	1 cnt					= i4
+	1 output_filename 		= vc
+	1 output_var			= vc
+)
+ 
+set t_rec->output_filename = concat(trim(cnvtlower(curprog)),"_",trim(format(sysdate,"yyyymmdd_hhmmss;;d")),".txt")
+set t_rec->output_var = concat("cer_temp:",trim(t_rec->output_filename))
+ 
+select distinct into value(t_rec->output_var)
+	 charge_nbr = ot.value
+	,exp_dt_ind = df.udi_exp_date_ind
+	,serial_ind = df.udi_serial_nbr_ind
+	,lot_ind = df.udi_lot_nbr_ind
+	,mfg_dt_ind = df.udi_mfr_date_ind
+	,sub_acct = csub.display
+	,created_by = pe.name_full_formatted
+	,item_nbr = it.stock_nbr
+	,item_descrp = it.description
+	,hcpcs = bim2.key6
+	,upn = ob.value
+	;,ob.value_key
+	,price_schedule = ps.price_sched_desc
+	,supply_cost = ic.cost
+	,organization = O.ORG_NAME
+	,CDM = bim.key6
+	,charge_ind = df.chargeable_ind
+	,UOM = cuom.display
+	,classification = it.class_name
+	,mfg_catg_nbr = ocat.value
+	,manufacturer = cv.display
+	,created_dt_tm = it.create_dt_tm
+	;,it.last_dist_dt_tm
+	;,it.last_updt_dt_tm
+	;,it.updt_dt_tm
+	;,it.item_master_id
+	;,ma.item_id
+from
+	mm_omf_item_master it
+	,item_definition df
+	,item_master ma
+	,item_location_cost ic
+	,location loc
+	,organization o
+	,object_identifier_index ob
+	,identifier id
+	,package_type pk
+	,object_identifier_index ot
+	,object_identifier_index ocat
+	,code_value cv
+	,bill_item bi
+	,bill_item b2
+	,bill_item_modifier bim
+	,bill_item_modifier bim2
+	,prsnl pe
+	,price_sched_items psi
+	,price_sched ps
+	,code_value cuom
+	,code_value csub
+ 
+PLAN it
+                WHERE (it.active_ind = 1)
+ 
+join df     where (df.item_id = it.item_master_id
+                and df.active_ind = 1)
+ 
+join ma     where (ma.item_id = it.item_master_id)
+ 
+join ic    where (ic.item_id  = it.item_master_id
+            and ic.cost_type_cd = 24492892 )
+ 
+join loc  where (loc.location_cd = ic.location_cd
+          and      loc.active_ind = 1)
+ 
+JOIN o    WHERE (o.organization_id = loc.organization_id )
+           AND (o.active_ind = 1 )
+ 
+join ob  where (outerjoin(it.item_master_id) = ob.object_id
+            and ob.identifier_type_cd = outerjoin(638956)
+            and textlen(ob.value) > outerjoin(6))
+ 
+join id  where outerjoin(ob.identifier_id) = id.identifier_id
+		 and id.replaced_upn_id = outerjoin (0) ;001
+ 
+join pk where outerjoin(id.package_type_id) = pk.package_type_id
+       and pk.base_package_type_ind = outerjoin(1)
+ 
+join ot  where outerjoin(it.item_master_id) = ot.object_id
+        and ot.identifier_type_cd  = outerjoin(3096)
+ 
+join ocat where  (it.item_master_id = ocat.object_id
+          and ocat.identifier_type_cd  = 3103
+          and ocat.active_ind = 1)
+ 
+join cv where  (ocat.vendor_manf_cd = cv.code_value
+         and cv.active_ind = 1)
+ 
+JOIN bi WHERE (it.item_master_id = bi.ext_parent_reference_id
+            AND bi.active_ind = 1)
+ 
+JOIN bim WHERE (outerjoin(bi.bill_item_id) = bim.bill_item_id
+            AND bim.key1_id = outerjoin(2556027807)
+            and bim.active_ind = outerjoin(1)
+            and bim.end_effective_dt_tm > outerjoin(SYSDATE))
+ 
+JOIN b2     WHERE (it.item_master_id = b2.ext_parent_reference_id
+             AND b2.active_ind = 1)
+JOIN bim2   WHERE (outerjoin(b2.bill_item_id) = bim2.bill_item_id
+            AND bim2.key1_id = outerjoin(615215)
+            and bim2.active_ind = outerjoin(1)
+            and bim2.end_effective_dt_tm > outerjoin(SYSDATE))
+ 
+JOIN pe
+            WHERE pe.person_id = it.create_id
+ 
+join psi    where psi.bill_item_id = bi.bill_item_id
+            and psi.active_ind = 1
+ 
+join ps     where ps.price_sched_id = psi.price_sched_id
+            and ps.active_ind = 1
+ 
+join csub where (ma.sub_account_cd = csub.code_value
+         and csub.active_ind = 1)
+join cuom where (it.base_pkg_uom_cd = cuom.code_value
+         and cuom.active_ind = 1)
+ 
+with nocounter, pcformat(^"^, ^,^, 1,0),format=stream,formfeed=none,maxcol=32000,format
+ 
+if (curqual > 0)
+	set reply->status_data.status = "S"
+	set t_rec->cnt = curqual
+	execute cov_astream_file_transfer "cer_temp",replace(t_rec->output_var,"cer_temp:",""),
+	"Extracts/SupplyChain","CP" ;002
+else
+	set reply->status_data.status = "Z"
+endif
+ 
+call echorecord(t_rec)
+call echorecord(reply)
+ 
+end go
+ 
+ 
+ 
+ 

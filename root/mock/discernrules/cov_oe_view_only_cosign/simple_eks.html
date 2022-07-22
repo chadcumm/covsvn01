@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <title>JSON Test Script</title>
+ <meta name="discern" content="CCLLINK,CCLNEWWINDOW,CCLEVENT,MPAGES_EVENT,APPLINK,XMLCCLREQUEST">
+ <meta http-equiv="x-ua-compatible" content="IE=edge" />
+ <style>
+ 
+ 
+	.basic a:link {
+  		color: #000000;
+	}
+	.basic a:visited,
+	.basic a:hover,
+	.basic a:active {
+  		color: #000000;
+	}
+ 
+	#banner_bar {
+		background: #319DD8;
+		background: -moz-linear-gradient(top, #319DD8 0%, #17629a 100%);
+		background: -webkit-linear-gradient(top, #319DD8 0%, #17629a 100%);
+		background: linear-gradient(to bottom, #319DD8 0%, #17629a 100%);
+	}
+ 
+	#banner_bar_font {
+		font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+		font-size: 14px;
+		letter-spacing: 0px;
+		word-spacing: 0px;
+		color: #FFFFFF;
+		font-weight: normal;
+		text-decoration: none;
+		font-style: normal;
+		font-variant: normal;
+		text-transform: none;
+	}
+ 
+	#body_font {
+		font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+		font-size: 16px;
+		letter-spacing: 0px;
+		word-spacing: 0px;
+		color: #000000;
+		font-weight: normal;
+		text-decoration: none;
+		font-style: normal;
+		font-variant: normal;
+		text-transform: none;
+	}
+ 
+		#debug_font {
+		font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+		font-size: 6px;
+		letter-spacing: 0px;
+		word-spacing: 0px;
+		color: #FFFFFF;
+		font-weight: normal;
+		text-decoration: none;
+		font-style: normal;
+		font-variant: normal;
+		text-transform: none;
+	}
+ 
+	.myButton { color: rgb(255, 255, 255);
+				font-size: 15px;
+				line-height: 15px;
+				padding: 5px;
+				border-radius: 3px;
+				font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+				font-weight: normal;
+				text-decoration: none;
+				font-style: normal;
+				font-variant: normal;
+				text-transform: none;
+				background-image: radial-gradient(at center center, rgb(28, 110, 164) 0%, rgb(35, 136, 203) 100%, rgb(20, 78, 117) 100%);
+				display: inline-block;}
+	.myButton:hover { background: #1C6EA4; }
+	.myButton:active { background: #144E75; }
+ </style>
+ 
+<script language="javascript">
+		//var patientDataJSON = '{"PATIENTDATA":{"PERSON_ID":18808002.0,"ENCNTR_ID":116726003.0}}';
+ 		//var orderDataJSON = '{"ORDERDATA":{"ORDER_ID":2196559911.0,"SYNONYM":"Breast Pump"}}';
+ 
+ 		var patientDataJSON = '@MESSAGE:[PATIENTDATA]';
+ 		var orderDataJSON = '@MESSAGE:[ORDERDATA]';
+ 
+	 	var patientData = JSON.parse(patientDataJSON);
+	 	var orderData = JSON.parse(orderDataJSON);
+ 
+	 	var personid = patientData.PATIENTDATA.PERSON_ID;
+	 	var encntrid = patientData.PATIENTDATA.ENCNTR_ID;
+ 	function fillInPatientBanner() {
+ 
+	 	var bannerObj = window.external.XMLCclRequest();
+	 	var ordersObj = window.external.XMLCclRequest();
+ 
+	 	bannerObj.open("GET", "cov_eks_patient_banner", false);
+	 	bannerObj.setBlobIn(patientDataJSON);
+		bannerObj.send('"MINE"');
+ 
+		ordersObj.open("GET", "cov_eks_ord_cosign", false);
+	 	ordersObj.setBlobIn(orderDataJSON);
+		ordersObj.send('"MINE"');
+ 
+	if (bannerObj.status == 200) {
+ 		document.getElementById('patientdatajson').innerHTML = bannerObj.responseText;
+ 		var patientBanner = JSON.parse(bannerObj.responseText);
+ 		document.getElementById('patient_name').innerHTML 			=  patientBanner.PATIENT_BANNER.NAME_FULL;
+ 		document.getElementById('patient_dob').innerHTML 			=  patientBanner.PATIENT_BANNER.DOB;
+ 		document.getElementById('patient_age').innerHTML  			=  patientBanner.PATIENT_BANNER.AGE;
+ 		document.getElementById('patient_mrn').innerHTML  			=  patientBanner.PATIENT_BANNER.MRN;
+ 		document.getElementById('patient_fin').innerHTML  			= patientBanner.PATIENT_BANNER.FIN;
+				//"<a href='#' onclick='javascript:launchPowerChart(\"" +encntrid + "\", \"" + personid +"\" );'>"+patientBanner.PATIENT_BANNER.FIN+"</a>";
+ 		document.getElementById('patient_encntr_type').innerHTML 	=  patientBanner.PATIENT_BANNER.ENCNTR_TYPE;
+ 		document.getElementById('patient_loc_unit').innerHTML 	    =  patientBanner.PATIENT_BANNER.LOC_UNIT;
+ 		document.getElementById('patient_loc_room_bed').innerHTML 	=  patientBanner.PATIENT_BANNER.LOC_ROOM_BED;
+ 		document.getElementById('patient_sex').innerHTML 			=  patientBanner.PATIENT_BANNER.SEX;
+ 
+	}
+	else {
+   		alert('XMLCclRequest failed with status of ' + bannerObj.status);
+	}
+	if (ordersObj.status == 200) {
+ 		document.getElementById('patientordersjson').innerHTML = ordersObj.responseText;
+ 		var patientOrders = JSON.parse(ordersObj.responseText);
+ 		document.getElementById('order_comm_type').innerHTML 		=  patientOrders.INCOMING_ORDER.COMM_TYPE;
+ 		document.getElementById('order_mnemonic').innerHTML 		=  patientOrders.INCOMING_ORDER.SYNONYM;
+ 		document.getElementById('order_provider').innerHTML 		=  patientOrders.INCOMING_ORDER.ORDERING_PROVIDER;
+ 
+	}
+	else {
+   		alert('XMLCclRequest failed with status of ' + ordersObj.status);
+	}
+ 
+	bannerObj.cleanup();
+	ordersObj.cleanup();
+ 	}
+ 
+ 
+ 	function updateCommunication()
+	{
+		document.getElementById("communication").setAttribute('disabled','disabled');
+		document.getElementById("cancel_orders").setAttribute('disabled','disabled');
+		document.getElementById("delay_notification").setAttribute('disabled','disabled');
+		document.getElementById('communication').innerHTML 		= "Updating Communication Type....";
+		setTimeout(function(){ document.getElementById('communication').innerHTML 		= "Orders Updated";}, 2200);
+ 
+	}
+ 
+	function delayNotification()
+	{
+		document.getElementById("cancel_orders").setAttribute('disabled','disabled');
+		document.getElementById("communication").setAttribute('disabled','disabled');
+		document.getElementById('delay_notification').innerHTML 		= "Creating Reminder....";
+		setTimeout(function(){ document.getElementById('delay_notification').innerHTML 		= "Removing Message";}, 2200);
+		//setTimeout(function(){ CCLEVENT("EVENT_NOTIFY_DELETE_HTMLONLY"); }, 2200);
+ 
+ 
+	}
+ 
+	 function cancelOrders()
+	{
+		document.getElementById("cancel_orders").setAttribute('disabled','disabled');
+		document.getElementById("communication").setAttribute('disabled','disabled');
+		document.getElementById("delay_notification").setAttribute('disabled','disabled');
+		document.getElementById('cancel_orders').innerHTML 		= "Voiding Orders....";
+		setTimeout(function(){ document.getElementById('cancel_orders').innerHTML 		= "Orders Voided";}, 2200);
+		setTimeout(function(){ CCLEVENT("EVENT_NOTIFY_DELETE_HTMLONLY"); }, 2200);
+ 
+ 
+	}
+ 
+	function launchPowerChart(encntrID,personID)
+	{
+		var app = "Powerchart.exe";
+		var vcParams = "/PERSONID="+ personID + "/ENCNTRID=" + encntrID;
+		APPLINK(0,app,vcParams);
+	}
+ 
+	function launchOrdersWindow()
+	{
+ 
+		var PowerOrdersMPageUtils = window.external.DiscernObjectFactory("POWERORDERS");
+		var m_hMOEW = PowerOrdersMPageUtils.CreateMOEW(personid, encntrid, 1, 2, 127);
+		PowerOrdersMPageUtils.CustomizeTabMOEW(m_hMOEW, 2,127);
+		PowerOrdersMPageUtils.DisplayMOEW(m_hMOEW);
+		PowerOrdersMPageUtils.DestroyMOEW(m_hMOEW);
+		}
+</script>
+</head>
+<body onload="javascript:fillInPatientBanner();">
+<div id=banner_bar>
+<div id=banner_bar_font>
+<table width=100%>
+	<tr>
+		<td colspan=2>
+			<b><span id=patient_name></span></b>
+		</td>
+		<td align=right>
+			MRN:<span id=patient_mrn></span>
+		</td>
+		<td align=right>
+			FIN:<span id=patient_fin></span>
+		</td>
+	</tr>
+	<tr>
+	<tr>
+		<td>
+			DOB:<span id=patient_dob></span>
+		</td>
+		<td>
+			Age:<span id=patient_age></span>
+		</td>
+		<td colspan=3 align=right>
+			<span id=patient_encntr_type></span>&nbsp
+		</td>
+	</tr>
+	<tr>
+		<td colspan=2>
+			Loc:<span id=patient_loc_unit></span>; <span id=patient_loc_room_bed></span>
+		</td>
+		<td>
+			<span id=patient_sex></span>
+		</td>
+	</tr>
+</table>
+</div>
+</div>
+<br/><br/>
+<div id=body_font>
+You have placed a <b><span id=order_comm_type></span></b> order for <i><span id=order_mnemonic></span></i> by <span id=
+order_provider></span> <u>who is not able to co-sign orders in eCare</u>.
+<br><br>
+If you <b>have a paper order</b> for this service, use the button below to change the order to <b>Written Paper Order/Fax No Cosign</b>.
+<br><br>
+If you <b>selected the wrong provider</b>, use the button below to void the order and then re-enter the order for the patient with the correct provider.
+</div>
+<br/><br/>
+<table width=100%>
+<tr>
+	<td width=10%>&nbsp</td>
+	<td align=left><div id=communication class=myButton onclick='javascript:updateCommunication()'>Change to Written Paper Order/Fax No Cosign</div></td>
+	<td>&nbsp</td>
+	<td align=center><div id=delay_notification class=myButton onclick='javascript:delayNotification()'>I Will Modify the Orders</div></td>
+	<td align=right><div id=cancel_orders class=myButton onclick='javascript:cancelOrders()'>Void Orders</div></td>
+	<td width=10%>&nbsp</td>
+</tr>
+</table>
+<br/><br/>
+<table id=patientdata>
+<tr><td colspan=2><div id=debug_font><span id=patientdatajson></span><span id=patientordersjson></span></div></td></tr>
+</table>
+ 
+</body>
+</html>

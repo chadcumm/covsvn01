@@ -1,0 +1,715 @@
+/*********************************************************************************
+Author          :	Dawn Greer, DBA
+Date Written	:	06/17/2021
+Program Title	:	cov_card_ekg_report
+Source File     :	cov_card_ekg_report.prg
+Object Name     :	cov_card_ekg_report
+Directory       :	cust_script
+ 
+Purpose         : 	Cardiology EKG Report
+ 
+ 
+Mod     Date        Engineer                Comment
+----    ----------- ----------------------- ---------------------------------------
+001     06/17/2021  Dawn Greer, DBA         Original Release - CR 10557
+002     06/18/2021  Dawn Greer, DBA         Limit to 5 cardiology orders.  Renamed program
+                                            to be cov_card_ekg_report from cov_rad_ekg_report
+                                            Change the Reason for Exam to Reason for Procedure
+************************************************************************************/
+drop program cov_card_ekg_report go
+create program cov_card_ekg_report
+ 
+prompt
+	"Output to File/Printer/MINE" = "MINE"
+	, "Select Facility" = 0
+	, "Select Provider" = VALUE(0          )
+	, "Select Enc Begin Date" = "SYSDATE"
+	, "Seelct Enc End Date" = "SYSDATE"
+	, "Select Summary or Detail" = 0
+ 
+with OUTDEV, FAC, PROV, BDATE, EDATE, SUMDET
+ 
+FREE RECORD a
+RECORD a
+(
+	1	rec_cnt		 = i4
+	1 	p_facility   = c100
+	1 	p_provider   = c100
+	1 	p_start_date = vc
+	1 	p_end_date   = vc
+	1   p_sum_det    = vc
+	1	qual[*]
+		2	patient 		= c100
+		2	dob				= c10
+		2	fin				= c20
+		2	enc_date		= c25
+		2   enc_class       = c100
+		2   enc_type        = c100
+		2	facility		= c100
+		2   diagnosis       = c100
+		2	reason_for_exam	= c100
+		2	order_provider  = c100
+		2   order_name      = c200
+		2   order_type      = c200
+		2   order_id        = f8
+		2   order_date      = c25
+		2   order_status    = c20
+)
+ 
+ 
+FREE RECORD totals
+RECORD totals
+(
+	1 rec_cnt = i4
+	1 new_rec_cnt = i4
+	1 totaldiagcnt = i4
+	1 qual[*]
+		2 facility 		 = c100
+		2 order_provider = c100
+		2 enc_class      = c100
+		2 enc_type       = c100
+		2 order_name     = c200
+		2 total_counts	 = i4
+)
+ 
+ 
+DECLARE faclist = c2000
+DECLARE facprompt = vc
+DECLARE facprompt2 = vc
+DECLARE num = i4
+DECLARE facitem = vc
+DECLARE provlist = c90000
+DECLARE provprompt = vc
+DECLARE pnum = i4
+DECLARE provitem = vc
+DECLARE fac_opr_var = c2
+DECLARE prov_opr_var = c2
+ 
+/**********************************************************
+Get Facility Data
+***********************************************************/
+CALL ECHO ("Get Facility Prompt Data")
+ 
+;Pulling the list for when Any is selected in the Prompt
+SELECT facnum = CNVTSTRING(CV.CODE_VALUE)
+FROM CODE_VALUE CV
+WHERE CV.CODE_SET = 220
+AND CV.CDF_MEANING = 'FACILITY'
+AND CV.ACTIVE_IND = 1
+ORDER BY TRIM(CV.DESCRIPTION,3)
+ 
+HEAD REPORT
+	faclist = FILLSTRING(2000,' ')
+ 	faclist = '('
+DETAIL
+	faclist = BUILD(BUILD(faclist, facnum), ', ')
+ 
+FOOT REPORT
+	faclist = BUILD(faclist,')')
+	faclist = REPLACE(faclist,',','',2)
+ 
+WITH nocounter
+ 
+;Facility Prompt
+IF(SUBSTRING(1,1,REFLECT(PARAMETER(PARAMETER2($FAC),0))) = "L")		;multiple options selected
+	SET fac_opr_var = "IN"
+	SET facprompt = '('
+	SET num = CNVTINT(SUBSTRING(2,2,REFLECT(PARAMETER(PARAMETER2($FAC),0))))
+ 
+	FOR (i = 1 TO num)
+		SET facitem = CNVTSTRING(PARAMETER(PARAMETER2($FAC),i))
+		SET facprompt = BUILD(facprompt,facitem)
+		IF (i != num)
+			SET facprompt = BUILD(facprompt, ",")
+		ENDIF
+	ENDFOR
+	SET facprompt = BUILD(facprompt, ")")
+	SET facprompt2 = BUILD("cv.code_value IN ",facprompt)
+	SET facprompt = BUILD("enc.loc_facility_cd IN ",facprompt)
+ 
+ELSEIF(PARAMETER(PARAMETER2($FAC),1)=0.0)  ;any was selected
+	SET fac_opr_var = "!="
+	SET facprompt = BUILD("enc.loc_facility_cd != 0.0 ")
+	SET facprompt2 = BUILD("cv.code_value != 0.0 ")
+ELSE 	;single value selected
+	SET facitem = CNVTSTRING(PARAMETER(PARAMETER2($FAC),1))
+	SET fac_opr_var = "="
+	SET facprompt2 = BUILD("cv.code_value = ",facitem)
+	SET facprompt = BUILD("enc.loc_facility_cd = ", facitem)
+ENDIF
+ 
+;Select Facility Prompt Data
+SELECT facnum = CNVTSTRING(CV.CODE_VALUE)
+,Facility_Name = TRIM(CV.DESCRIPTION,3)
+FROM CODE_VALUE CV
+WHERE CV.CODE_SET = 220
+AND CV.CDF_MEANING = 'FACILITY'
+AND CV.ACTIVE_IND = 1
+AND PARSER(facprompt2)
+ORDER BY TRIM(CV.DESCRIPTION,3)
+ 
+; populate pat_meds record structure with facility prompt data
+HEAD REPORT
+	a->p_facility = evaluate(fac_opr_var, "IN", "Multiple", "!=", "Any (*)", "=", TRIM(CV.DESCRIPTION,3))
+WITH nocounter
+ 
+/**********************************************************
+Get Provider Data
+***********************************************************/
+CALL ECHO ("Get Provider Prompt Data")
+ 
+;Pulling the list for when Any is selected in the Prompt
+SELECT provnum = CNVTSTRING(prov.person_id)
+FROM prsnl prov
+WHERE prov.physician_ind = 1
+AND prov.active_ind = 1
+AND prov.data_status_cd = 25.00 /*Auth*/
+ORDER BY CNVTUPPER(TRIM(prov.name_full_formatted,3))
+ 
+HEAD REPORT
+	provlist = FILLSTRING(2000,' ')
+ 	provlist = '('
+DETAIL
+	provlist = BUILD(BUILD(provlist, provnum), ', ')
+ 
+FOOT REPORT
+	provlist = BUILD(provlist,')')
+	provlist = REPLACE(provlist,',','',2)
+ 
+WITH nocounter
+CALL ECHO(CONCAT("Provlist ",provlist))
+;Provider Prompt
+IF(SUBSTRING(1,1,REFLECT(PARAMETER(PARAMETER2($PROV),0))) = "L")		;multiple options selected
+	SET prov_opr_var = "IN"
+	SET provprompt = '('
+	SET pnum = CNVTINT(SUBSTRING(2,2,REFLECT(PARAMETER(PARAMETER2($PROV),0))))
+ 
+	FOR (i = 1 TO pnum)
+		SET provitem = CNVTSTRING(PARAMETER(PARAMETER2($PROV),i))
+	SET provprompt = BUILD(provprompt,provitem)
+		IF (i != pnum)
+			SET provprompt = BUILD(provprompt, ",")
+		ENDIF
+	ENDFOR
+	SET provprompt = BUILD(provprompt, ")")
+	SET provprompt = BUILD("prov.person_id IN ",provprompt)
+ 
+ELSEIF(PARAMETER(PARAMETER2($PROV),1)=0)  ;any was selected
+	SET prov_opr_var = "!="
+	SET provprompt = BUILD("prov.person_id != 0.0 ")
+ELSE 	;single value selected
+	SET prov_opr_var = "="
+	SET provitem = CNVTSTRING(PARAMETER(PARAMETER2($PROV),1))
+	SET provprompt = BUILD("prov.person_id = ", provitem)
+ENDIF
+ 
+;Select Provider Prompt Data
+SELECT provnum = CNVTSTRING(prov.person_id),
+provname = TRIM(prov.name_full_formatted,3)
+FROM prsnl prov
+WHERE prov.physician_ind = 1
+AND prov.active_ind = 1
+AND prov.data_status_cd = 25.00 /*Auth*/
+AND PARSER(provprompt)
+ORDER BY CNVTUPPER(TRIM(prov.name_full_formatted,3))
+ 
+; populate pat_meds record structure with provider prompt data
+HEAD REPORT
+	a->p_provider = EVALUATE(prov_opr_var, "IN", "Multiple", "!=", "Any (*)", "=", TRIM(prov.name_full_formatted,3))
+WITH nocounter
+ 
+/**********************************************************
+	Set Other Prompt Values
+***********************************************************/
+CALL ECHO("Set Other Prompt Values")
+ 
+SELECT INTO "NL:"
+FROM dummyt
+ 
+HEAD REPORT
+	a->p_start_date = FORMAT(CNVTDATE2($bdate, "dd-mmm-yyyy hh:mm"), "mm/dd/yyyy;;d")
+	a->p_end_date = FORMAT(CNVTDATE2($edate, "dd-mmm-yyyy hh:mm"), "mm/dd/yyyy;;d")
+	a->p_sum_det = EVALUATE2(IF ($SUMDET = 0) "Summary" ELSE "Detail" ENDIF)
+WITH nocounter
+ 
+/**********************************************************
+Get Data
+***********************************************************/
+CALL ECHO ("Get Data")
+ 
+SELECT DISTINCT	ord.order_id
+FROM orders ord
+  , (INNER JOIN encounter enc ON (ord.encntr_id = enc.encntr_id
+  		AND enc.active_ind = 1
+  	))
+  , (INNER JOIN encntr_alias ea ON (ea.encntr_id = enc.encntr_id
+		AND ea.active_ind = 1
+		AND ea.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+		AND ea.encntr_alias_type_cd = 1077  /*FIN NBR*/
+	))
+  , (INNER JOIN person pat ON (enc.person_id = pat.person_id
+  		AND pat.active_ind = 1
+  	))
+  , (INNER JOIN order_action oa ON (ord.order_id = oa.order_id
+  		AND oa.action_type_cd = 2534.00 /*Order*/
+  	))
+  , (INNER JOIN prsnl prov ON (oa.order_provider_Id = prov.person_id
+    ))
+  , (INNER JOIN order_detail od ON (ord.order_id = od.order_id
+  		AND od.oe_field_id = 4328850.00 /*Reason for Exam*/
+  	))
+WHERE PARSER(facprompt)
+AND PARSER(provprompt)
+AND pat.name_last_key NOT IN ('FFFFPEDS','FFFFAMB','FFFFPNRC','FFFFOP','FFFFED','FFFFIP','FFFFWH','FFFFTEST','FFFFREVCYCLE',
+	'FFFFPHARM','ZZGLOVER','ZZTEST','ZZWICK','ZZBOGUS','ZZZZTESTPW','ZZZREGRESSION','ZZZZBHTEST','ZZZNEUROPW','ZZZFLMCRAD',
+	'ZZZFSRRAD','ZZZTESTONE','ZZZAMB','ZZZPWRAD','ZZTOPTEST','ZZZ','ZZZRMCRAD','ZZZZTESTPBH','ZZMDDONOTUSE','ZZZMPITESTP',
+	'ZZZRADTEST','ZZZFSRGO','ZZZFSWRAD','ZZZTESTIP','ZZZTEST','ZZELLMER','ZZZMPITESTBL','ZZZZTESTPOC','ZZZZZZTEST','ZZZTESTOP',
+	'TTTTTEST','TTTTGENLAB','TTTT','TTTTMAYO','TTTTPHARMTEST','TTTTESTFSV','TTTTONC','TTTTESTCATHLAB','TTURNER','TTEST',
+	'TTTTHUDLOW','TTTTTESTFN','TTTTCAMCAPTEST',	'TTTTMDI','TTBACKLOADING','TTTTESTPRVL','TTTTMMC','TTTTQUEST','TTHOMASON',
+	'TTTTPRINTER','TTTTEST')
+AND ord.catalog_cd IN (2560915963 /*Cheyenne EKG 12 Lead*/,2559940361 /*ED Electrocardiogram 12 Lead*/,
+	2568292437 /*EKG OP Medicare Screen IPPE*/,24231120 /*Electrocardiogram 12 Lead*/,2560915983 /*Outpatient EKG 12 Lead*/)
+AND ord.orig_order_dt_tm BETWEEN CNVTDATETIME($bdate) AND CNVTDATETIME($edate)
+ 
+HEAD REPORT
+	cnt = 0
+	CALL alterlist(a->qual, 10)
+ 
+DETAIL
+	cnt = cnt + 1
+	IF (mod(cnt,10) = 1 OR cnt = 1)
+		stat = alterlist(a->qual, cnt + 9)
+	ENDIF
+ 
+	a->qual[cnt].patient 		 = TRIM(pat.name_full_formatted,3)
+	a->qual[cnt].dob			 = FORMAT(CNVTDATETIMEUTC(pat.birth_dt_tm,1),"MM/DD/YYYY;;d")
+	a->qual[cnt].fin             = TRIM(ea.alias,3)
+	a->qual[cnt].enc_date		 = FORMAT(enc.reg_dt_tm, "MM/DD/YYYY hh:mm:ss")
+	a->qual[cnt].enc_class  	 = TRIM(UAR_GET_CODE_DISPLAY(enc.encntr_class_cd),3)
+	a->qual[cnt].enc_type		 = UAR_GET_CODE_DISPLAY(enc.encntr_type_cd)
+	a->qual[cnt].reason_for_exam = TRIM(od.oe_field_display_value,3)		;002
+	a->qual[cnt].order_provider	 = TRIM(prov.name_full_formatted,3)
+	a->qual[cnt].facility		 = TRIM(UAR_GET_CODE_DISPLAY(enc.loc_facility_cd),3)
+	a->qual[cnt].order_id        = ord.order_id
+	a->qual[cnt].order_name      = TRIM(ord.order_mnemonic,3)
+	a->qual[cnt].order_type      = TRIM(UAR_GET_CODE_DISPLAY(ord.catalog_type_cd),3)
+	a->qual[cnt].order_date      = FORMAT(ord.orig_order_dt_tm, "MM/DD/YYYY hh:mm:ss")
+	a->qual[cnt].order_status    = TRIM(UAR_GET_CODE_DISPLAY(ord.order_status_cd),3)
+ 
+FOOT REPORT
+	stat = alterlist(a->qual, cnt )
+	a->rec_cnt = cnt
+WITH nocounter
+ 
+IF (a->rec_cnt != 0)	/*No Records*/
+	/********************************************************************************
+		Get Order Diagnosis Data
+	*********************************************************************************/
+	CALL ECHO("Get Order Diagnosis Data")
+ 
+	SELECT DISTINCT INTO "NL:"
+		Diag = LISTAGG(nom_diag.source_identifier, "; ")
+	            OVER(PARTITION BY ord.order_id ORDER BY ner.priority)
+	FROM (dummyt d WITH seq = VALUE(SIZE(a->qual,5)))
+		,ORDERS ord
+		,NOMEN_ENTITY_RELTN ner
+		,NOMENCLATURE nom_diag
+	PLAN d
+	JOIN ord WHERE ord.order_id = a->qual[d.seq].order_id
+	JOIN ner WHERE ner.encntr_id = ord.encntr_id
+		AND ner.parent_entity_id = ord.order_id
+		AND ner.active_ind = 1
+		AND ner.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND ner.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+		AND ner.reltn_type_cd = 639177.00 /*Diagnosis to Order*/
+	JOIN nom_diag WHERE nom_diag.nomenclature_id = ner.nomenclature_id
+		AND nom_diag.active_ind = 1
+		AND nom_diag.beg_effective_dt_tm <= CNVTDATETIME(CURDATE,CURTIME3)
+		AND nom_diag.end_effective_dt_tm > CNVTDATETIME(CURDATE,CURTIME3)
+ 
+	/****************************************************************************
+		Populate Record structure - Order Diagnosis Data
+	*****************************************************************************/
+	DETAIL
+	 	cnt = 0
+		idx = 0
+		idx = LOCATEVAL(cnt,1,SIZE(a->qual,5),ord.order_id, a->qual[cnt].order_id)
+ 
+	 	IF (idx != 0)
+			a->qual[idx].diagnosis = diag
+		ENDIF
+ 
+	WITH nocounter
+ 
+	/*********************************************************************
+		Summary
+	**********************************************************************/
+	CALL ECHO("Order Name Totals")
+ 
+	SELECT DISTINCT INTO 'nl:'
+		Facility = a->qual[d.seq].facility
+		,Order_Provider = a->qual[d.seq].order_provider
+		,Enc_Class = a->qual[d.seq].enc_class
+		,Enc_Type = a->qual[d.seq].enc_type
+		,Order_Name = a->qual[d.seq].order_name
+		FROM (dummyt d WITH seq = VALUE(SIZE(a->qual,5)))
+		PLAN d
+		ORDER BY Facility, Order_Provider, Enc_Class, Enc_Type, Order_Name
+ 
+		HEAD REPORT
+			cnt = 0
+		 	totalscnt = 0
+		 	newreccnt = 0
+ 
+		DETAIL
+			cnt = cnt + 1
+ 
+			stat = alterlist(totals->qual, cnt)
+ 
+			totals->qual[cnt].facility = facility
+			totals->qual[cnt].order_provider = order_provider
+			totals->qual[cnt].enc_class = enc_class
+			totals->qual[cnt].enc_type = enc_type
+			totals->qual[cnt].order_name = order_name
+ 
+		FOOT REPORT
+		 	totals->rec_cnt = cnt
+			totals->new_rec_cnt = cnt + 1
+		 	CALL alterlist(totals->qual, cnt)
+ 
+		 	fac1 = fillstring(50,' ')
+			fac2 = fillstring(50,' ')
+			prov1 = fillstring(50,' ')
+			prov2 = fillstring(50,' ')
+			enc_class1 = fillstring(50,' ')
+			enc_class2 = fillstring(50,' ')
+			enc_type1 = fillstring(50,' ')
+			enc_type2 = fillstring(50,' ')
+			order_name1 = fillstring(50,' ')
+			order_name2 = fillstring(50,' ')
+ 
+			FOR (tcnt = 1 TO totals->rec_cnt)
+				FOR (scnt = 1 TO a->rec_cnt)
+					fac1 = TRIM(totals->qual[tcnt].facility,3)
+					prov1 = TRIM(totals->qual[tcnt].order_provider,3)
+					enc_class1 = TRIM(totals->qual[tcnt].enc_class,3)
+					enc_type1 = TRIM(totals->qual[tcnt].enc_type,3)
+					Order_name1 = TRIM(totals->qual[tcnt].order_name,3)
+ 
+					fac2 = TRIM(a->qual[scnt].facility,3)
+					prov2 = TRIM(a->qual[scnt].order_provider,3)
+					enc_class2 = TRIM(a->qual[scnt].enc_class,3)
+					enc_type2 = TRIM(a->qual[scnt].enc_type,3)
+					order_name2 = TRIM(a->qual[scnt].order_name,3)
+ 
+					IF (fac1 = fac2 AND prov1 = prov2 AND enc_class1 = enc_class2
+						AND enc_type1 = enc_type2 AND order_name1 = order_name2)
+						totals->qual[tcnt].total_counts = totals->qual[tcnt].total_counts + 1
+					ENDIF
+				ENDFOR
+			ENDFOR
+ 
+			totals->totaldiagcnt = a->rec_cnt
+			totals->new_rec_cnt = totals->rec_cnt
+		WITH nocounter
+ 
+	/**************************************************************
+	; Enc Type Totals
+	**************************************************************/
+	CALL ECHO ("Enc Type Totals")
+ 
+		SELECT DISTINCT INTO 'nl:'
+		Facility = a->qual[d.seq].facility
+		,Order_Provider = a->qual[d.seq].order_provider
+		,Enc_Class = a->qual[d.seq].enc_class
+		,Enc_Type = a->qual[d.seq].Enc_Type
+		FROM (dummyt d WITH seq = VALUE(SIZE(a->qual,5)))
+		PLAN d
+		ORDER BY Facility, Order_Provider, Enc_Class, Enc_Type
+ 
+		HEAD REPORT
+			cnt = totals->rec_cnt
+ 
+		DETAIL
+			cnt = cnt + 1
+ 
+			stat = alterlist(totals->qual, cnt)
+ 
+			totals->qual[cnt].facility = facility
+			totals->qual[cnt].order_provider = order_provider
+			totals->qual[cnt].enc_class = enc_class
+			totals->qual[cnt].enc_type = enc_type
+			totals->qual[cnt].Order_name = 'z Totals'
+ 
+		FOOT REPORT
+		 	totals->rec_cnt = cnt
+			newreccnt = totals->new_rec_cnt + 1
+		 	CALL alterlist(totals->qual, cnt)
+ 
+		 	fac1 = fillstring(50,' ')
+			fac2 = fillstring(50,' ')
+			prov1 = fillstring(50,' ')
+			prov2 = fillstring(50,' ')
+			enc_class1 = fillstring(50,' ')
+			enc_class2 = fillstring(50,' ')
+			enc_type1 = fillstring(50,' ')
+			enc_type2 = fillstring(50,' ')
+ 
+			FOR (tcnt = newreccnt TO totals->rec_cnt)
+				FOR (scnt = 1 TO a->rec_cnt)
+					fac1 = TRIM(totals->qual[tcnt].facility,3)
+					prov1 = TRIM(totals->qual[tcnt].order_provider,3)
+					enc_class1 = TRIM(totals->qual[tcnt].enc_class,3)
+					enc_type1 = TRIM(totals->qual[tcnt].enc_type,3)
+ 
+					fac2 = TRIM(a->qual[scnt].facility,3)
+					prov2 = TRIM(a->qual[scnt].order_provider,3)
+					enc_class2 = TRIM(a->qual[scnt].enc_class,3)
+					enc_type2 = TRIM(a->qual[scnt].enc_type,3)
+ 
+					IF (fac1 = fac2 AND prov1 = prov2 AND enc_class1 = enc_class2
+						AND enc_type1 = enc_type2)
+						totals->qual[tcnt].total_counts = totals->qual[tcnt].total_counts + 1
+					ENDIF
+				ENDFOR
+			ENDFOR
+ 
+			totals->new_rec_cnt = totals->rec_cnt
+		WITH nocounter
+ 
+	/**************************************************************
+	; Enc Class Totals
+	**************************************************************/
+	CALL ECHO ("Enc Class Totals")
+ 
+		SELECT DISTINCT INTO 'nl:'
+		Facility = a->qual[d.seq].facility
+		,Order_Provider = a->qual[d.seq].order_provider
+		,Enc_Class = a->qual[d.seq].enc_class
+		FROM (dummyt d WITH seq = VALUE(SIZE(a->qual,5)))
+		PLAN d
+		ORDER BY Facility, Order_Provider, Enc_Class
+ 
+		HEAD REPORT
+			cnt = totals->rec_cnt
+ 
+		DETAIL
+			cnt = cnt + 1
+ 
+			stat = alterlist(totals->qual, cnt)
+ 
+			totals->qual[cnt].facility = facility
+			totals->qual[cnt].order_provider = order_provider
+			totals->qual[cnt].enc_class = enc_class
+			totals->qual[cnt].enc_type = 'z Totals'
+			totals->qual[cnt].Order_name = 'z Totals'
+ 
+		FOOT REPORT
+		 	totals->rec_cnt = cnt
+			newreccnt = totals->new_rec_cnt + 1
+		 	CALL alterlist(totals->qual, cnt)
+ 
+		 	fac1 = fillstring(50,' ')
+			fac2 = fillstring(50,' ')
+			prov1 = fillstring(50,' ')
+			prov2 = fillstring(50,' ')
+			enc_class1 = fillstring(50,' ')
+			enc_class2 = fillstring(50,' ')
+ 
+			FOR (tcnt = newreccnt TO totals->rec_cnt)
+				FOR (scnt = 1 TO a->rec_cnt)
+					fac1 = TRIM(totals->qual[tcnt].facility,3)
+					prov1 = TRIM(totals->qual[tcnt].order_provider,3)
+					enc_class1 = TRIM(totals->qual[tcnt].enc_class,3)
+ 
+					fac2 = TRIM(a->qual[scnt].facility,3)
+					prov2 = TRIM(a->qual[scnt].order_provider,3)
+					enc_class2 = TRIM(a->qual[scnt].enc_class,3)
+ 
+					IF (fac1 = fac2 AND prov1 = prov2 AND enc_class1 = enc_class2)
+						totals->qual[tcnt].total_counts = totals->qual[tcnt].total_counts + 1
+					ENDIF
+				ENDFOR
+			ENDFOR
+ 
+			totals->new_rec_cnt = totals->rec_cnt
+		WITH nocounter
+ 
+	/**************************************************************
+	; Order Provider Totals
+	**************************************************************/
+	CALL ECHO ("Order Provider Totals")
+ 
+		SELECT DISTINCT INTO 'nl:'
+		Facility = a->qual[d.seq].facility
+		,Order_Provider = a->qual[d.seq].order_provider
+		FROM (dummyt d WITH seq = VALUE(SIZE(a->qual,5)))
+		PLAN d
+		ORDER BY Facility, Order_Provider
+ 
+		HEAD REPORT
+			cnt = totals->rec_cnt
+ 
+		DETAIL
+			cnt = cnt + 1
+ 
+			stat = alterlist(totals->qual, cnt)
+ 
+			totals->qual[cnt].facility = facility
+			totals->qual[cnt].order_provider = order_provider
+			totals->qual[cnt].enc_class = 'z Totals'
+			totals->qual[cnt].enc_type = 'z Totals'
+			totals->qual[cnt].Order_name = 'z Totals'
+ 
+		FOOT REPORT
+		 	totals->rec_cnt = cnt
+			newreccnt = totals->new_rec_cnt + 1
+		 	CALL alterlist(totals->qual, cnt)
+ 
+		 	fac1 = fillstring(50,' ')
+			fac2 = fillstring(50,' ')
+			prov1 = fillstring(50,' ')
+			prov2 = fillstring(50,' ')
+ 
+			FOR (tcnt = newreccnt TO totals->rec_cnt)
+				FOR (scnt = 1 TO a->rec_cnt)
+					fac1 = TRIM(totals->qual[tcnt].facility,3)
+					prov1 = TRIM(totals->qual[tcnt].order_provider,3)
+ 
+					fac2 = TRIM(a->qual[scnt].facility,3)
+					prov2 = TRIM(a->qual[scnt].order_provider,3)
+ 
+					IF (fac1 = fac2 AND prov1 = prov2)
+						totals->qual[tcnt].total_counts = totals->qual[tcnt].total_counts + 1
+					ENDIF
+				ENDFOR
+			ENDFOR
+ 
+			totals->new_rec_cnt = totals->rec_cnt
+		WITH nocounter
+ 
+	/**************************************************************
+	; Facility Totals
+	**************************************************************/
+	CALL ECHO ("Facility Totals")
+ 
+		SELECT DISTINCT INTO 'nl:'
+		Facility = a->qual[d.seq].facility
+		FROM (dummyt d WITH seq = VALUE(SIZE(a->qual,5)))
+		PLAN d
+		ORDER BY Facility
+ 
+		HEAD REPORT
+			cnt = totals->rec_cnt
+ 
+		DETAIL
+			cnt = cnt + 1
+ 
+			stat = alterlist(totals->qual, cnt)
+ 
+			totals->qual[cnt].facility = facility
+			totals->qual[cnt].order_provider = 'z Totals'
+			totals->qual[cnt].enc_class = 'z Totals'
+			totals->qual[cnt].enc_type = 'z Totals'
+			totals->qual[cnt].Order_name = 'z Totals'
+ 
+		FOOT REPORT
+		 	totals->rec_cnt = cnt
+			newreccnt = totals->new_rec_cnt + 1
+		 	CALL alterlist(totals->qual, cnt)
+ 
+		 	fac1 = fillstring(50,' ')
+			fac2 = fillstring(50,' ')
+ 
+			FOR (tcnt = newreccnt TO totals->rec_cnt)
+				FOR (scnt = 1 TO a->rec_cnt)
+					fac1 = TRIM(totals->qual[tcnt].facility,3)
+ 
+					fac2 = TRIM(a->qual[scnt].facility,3)
+ 
+					IF (fac1 = fac2)
+						totals->qual[tcnt].total_counts = totals->qual[tcnt].total_counts + 1
+					ENDIF
+				ENDFOR
+			ENDFOR
+ 
+			totals->new_rec_cnt = totals->rec_cnt
+		WITH nocounter
+ 
+ENDIF /*No Records*/
+/***************************************************************************
+	Output Detail Report or Summary Report
+****************************************************************************/
+IF (a->rec_cnt > 0)
+	IF($sumdet = 0)	;Summary Report
+ 
+		CALL ECHO("Summary Totals Report")
+ 
+		SELECT INTO $outdev
+	 		dateRange = BUILD2(FORMAT(CNVTDATETIME($bdate),"mm/dd/yyyy hh:mm;;q"), ' - ',
+			FORMAT(CNVTDATETIME($edate), "mm/dd/yyyy hh:mm;;q")),
+			Facility = totals->qual[d.seq].facility,
+			Order_Provider = totals->qual[d.seq].Order_Provider,
+			Enc_Class = totals->qual[d.seq].enc_class,
+			Enc_Type = totals->qual[d.seq].enc_type,
+			Order_Name = totals->qual[d.seq].order_name,
+			Totals_Counts = totals->qual[d.seq].total_counts
+	 	FROM (dummyt d with seq = totals->rec_cnt)
+	 	ORDER BY Facility, Order_Provider, Enc_Class, Enc_Type, Order_Name
+		WITH nocounter, format, separator = ' '
+ 
+	ELSE		;Detail Report
+ 
+		CALL ECHO("Summary Detail Report")
+ 
+		SELECT INTO $outdev
+			Facility = a->qual[d.seq].facility,
+			Order_Provider = a->qual[d.seq].order_provider,
+			Patient = a->qual[d.seq].patient,
+			DOB = a->qual[d.seq].DOB,
+			Fin = a->qual[d.seq].fin,
+			Enc_Date = a->qual[d.seq].enc_date,
+			Enc_Class = a->qual[d.seq].enc_class,
+			Enc_Type = a->qual[d.seq].enc_type,
+			Order_Date = a->qual[d.seq].order_date,
+			Order_ID = a->qual[d.seq].order_id,
+			Order_Type = a->qual[d.seq].order_type,
+			Order_Name = a->qual[d.seq].order_name,
+			Order_Status = a->qual[d.seq].order_status,
+			Reason_for_Exam = a->qual[d.seq].reason_for_exam,
+			Diagnosis = a->qual[d.seq].diagnosis,
+			Prompt_Values = CONCAT(CONCAT(CONCAT(CONCAT(CONCAT("Facility = ",TRIM(a->p_facility,3)),
+			"     Order_Provider = ",TRIM(a->p_provider,3)),
+			"     Start Date = ",TRIM(a->p_start_date,3)),
+			"     End_Date = ",TRIM(a->p_end_date,3)),
+			"     Summary/Detail = ",TRIM(a->p_sum_det,3))
+		FROM (dummyt d WITH seq = a->rec_cnt)
+		ORDER BY Facility, Order_Provider, Enc_Class, Enc_Type, Patient
+		WITH nocounter, format, separator = ' '
+	ENDIF
+ELSE
+ 
+	CALL ECHO("No Data Prompts Report")
+ 
+	SELECT INTO $OUTDEV
+	Message = "No data for the prompt values",
+	Prompt_Facility = a->p_facility,
+	Prompt_Provider = a->p_provider,
+	Prompt_Start_Date = a->p_start_date,
+	Prompt_End_Date = a->p_end_date,
+	Prompt_Sum_Det = a->p_sum_det
+	FROM (dummyt d)
+	WITH nocounter, format, separator = ' '
+ 
+ENDIF
+ 
+CALL ECHORECORD(a)
+;CALL ECHORECORD(totals)
+ 
+GO TO exitscript
+#exitscript
+ 
+END
+GO
+ 
+ 

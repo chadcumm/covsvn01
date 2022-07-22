@@ -1,0 +1,54 @@
+drop program cov_preprocess_test:dba go 
+create program cov_preprocess_test:dba 
+prompt 
+	"Output to File/Printer/MINE" = "MINE"
+	, "order_id:" = 0 
+
+with OUTDEV, FILENAME1
+
+/*
+	set stat = cnvtjsontorec(concat(^{"REQUEST":{^
+									,^"ENCNTRID":00.000000,^
+									,^"PERSONID":00.000000,^
+									,^"SYNONYMID":00.000000,^
+									,^"CATALOGCD":00.000000,^
+									,^"ORDERID":2240547571.000000,^
+									,^"DETAILLIST":[]}}^			
+									
+									))
+									*/
+	record request   
+(    
+     1 encntrid              = f8   
+     1 personid              = f8   
+     1 synonymid             = f8   
+     1 catalogcd             = f8   
+     1 orderid               = f8   
+     1 detaillist[*]   
+       2 oefieldid           = f8   
+       2 oefieldvalue        = f8   
+       2 oefielddisplayvalue = vc   
+       2 oefielddttmvalue    = dq8   
+       2 oefieldmeaningid    = f8   
+       2 valuerequiredind    = i2   
+) 
+	set request->orderid = $FILENAME1 
+	select into "nl:"
+	from
+	orders o
+	plan o where o.order_id = request->orderid
+	detail
+		request->ENCNTRID = o.originating_encntr_id
+		request->PERSONID = o.person_id
+		request->CATALOGCD = o.catalog_cd
+		request->SYNONYMID = o.synonym_id
+	with nocounter
+
+call echorecord(request)
+execute cov_preprocess_oef_covid19
+;call echorecord(oen_reply)
+end go
+
+;cov_preprocess_test "MINE",3292245439 go
+
+

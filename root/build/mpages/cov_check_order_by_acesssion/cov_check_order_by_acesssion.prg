@@ -1,0 +1,249 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+
+	Author:				Chad Cummings
+	Date Written:		03/30/2020
+	Solution:			
+	Source file name:	cov_check_order_by_accesssion.prg
+	Object name:		cov_check_order_by_accesssion
+	Request #:
+
+	Program purpose:
+
+	Executing from:		CCL
+
+ 	Special Notes:		Called by ccl program(s).
+
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+
+Mod 	Mod Date	  Developer				      Comment
+--- 	----------	--------------------	----------------------------------
+000 	03/30/2021  Chad Cummings			Initial Release
+******************************************************************************/
+
+drop program cov_check_order_by_accesssion:dba go
+create program cov_check_order_by_accesssion:dba
+
+prompt 
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "ACCESSION" = ""
+	, "ATTEMPT" = 0 
+
+with OUTDEV, ACCESSION, ATTEMPT
+
+
+call echo(build("loading script:",curprog))
+set nologvar = 0	;do not create log = 1		, create log = 0
+set noaudvar = 0	;do not create audit = 1	, create audit = 0
+%i ccluserdir:cov_custom_ccl_common.inc
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Custom Section  ************************************"))
+
+if (not(validate(reply,0)))
+record  reply
+(
+	1 text = vc
+	1 status_data
+	 2 status = c1
+	 2 subeventstatus[1]
+	  3 operationname = c15
+	  3 operationstatus = c1
+	  3 targetobjectname = c15
+	  3 targetobjectvalue = c100
+)
+endif
+
+call set_codevalues(null)
+call check_ops(null)
+
+free set t_rec
+record t_rec
+(
+	1 prompts
+	 2 outdev				= vc
+	 2 accession			= vc
+	 2 attempts				= i2
+	1 cnt					= i4
+	1 order_id				= f8
+	1 order_status			= vc
+	1 dept_status			= vc
+	1 order_mnemonic		= vc
+	1 accession_formatted   = vc
+	1 send_notification_ind	= i2
+	1 memory_reply_string	= vc
+)
+
+free record 3051004Request 
+record 3051004Request (
+  1 MsgText = vc  
+  1 Priority = i4   
+  1 TypeFlag = i4   
+  1 Subject = vc  
+  1 MsgClass = vc  
+  1 MsgSubClass = vc  
+  1 Location = vc  
+  1 UserName = vc  
+) 
+
+call addEmailLog("chad.cummings@covhlth.com")
+
+declare sendNotification(null)=null
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Setting Variables **********************************"))
+
+set t_rec->prompts.outdev 		= $OUTDEV
+set t_rec->prompts.accession	= $ACCESSION
+set t_rec->prompts.attempts		= $ATTEMPT
+
+call writeLog(build2("* END   Setting Variables **********************************"))
+call writeLog(build2("************************************************************"))
+
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Checking Values ************************************"))
+
+if (t_rec->prompts.accession = "")
+	set t_rec->memory_reply_string = "No Acccession Number Sent"
+	set reply->status_data->status = "F"
+	go to exit_script
+endif
+
+call writeLog(build2("* END   Checking Values ************************************"))
+call writeLog(build2("************************************************************"))
+
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Finding Order **************************************"))
+
+select
+	into "nl:"
+from
+	 accession_order_r aor
+	,accession a
+	,orders o
+plan a
+	where a.accession = t_rec->prompts.accession
+join aor
+	where aor.accession_id = a.accession_id
+join o
+	where o.order_id = aor.order_id
+order by
+	o.order_id
+head o.order_id
+	t_rec->order_id			= o.order_id
+	t_rec->order_status		= uar_get_code_display(o.order_status_cd)
+	t_rec->dept_status		= uar_get_code_display(o.dept_status_cd)
+	t_rec->order_mnemonic	= o.order_mnemonic
+	t_rec->accession_formatted = cnvtacc(a.accession)
+with nocounter
+
+if (t_rec->order_id = 0.0)
+	set t_rec->memory_reply_string = concat("No Orders Found Related to Accession ",trim(t_rec->prompts.accession))
+	set reply->status_data->status = "Z"
+	go to exit_script
+endif
+
+if (t_rec->order_status not in("Ordered"))
+	set t_rec->memory_reply_string = concat(
+												; trim(t_rec->order_mnemonic)
+												;," (",trim(t_rec->prompts.accession),")"
+												;," is in a "
+												"Order "
+												,trim(t_rec->order_status)
+												;," status")
+												)
+	set reply->status_data->status = "Z"
+	go to exit_script
+endif
+
+call writeLog(build2("* END   Finding Order **************************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Check Status and Attempts **************************"))
+
+if (t_rec->dept_status not in("Exam Completed"))
+	if (t_rec->prompts.attempts >= 4)
+		set t_rec->send_notification_ind = 1
+	endif
+endif
+
+call writeLog(build2("* END   Check Status and Attempts **************************"))
+call writeLog(build2("************************************************************"))
+
+call writeLog(build2("************************************************************"))
+call writeLog(build2("* START Set Department Status for Return *******************"))
+/*
+if (t_rec->dept_status in("Exam Completed","Completed"))
+	set t_rec->memory_reply_string = "Release"
+else
+	set t_rec->memory_reply_string = t_rec->dept_status
+endif
+*/
+set t_rec->memory_reply_string = t_rec->dept_status
+
+call writeLog(build2("* END   Set Department Status for Return *******************"))
+call writeLog(build2("************************************************************"))
+
+;if (t_rec->send_notification_ind = 1)
+	call sendNotification(0)
+;endif
+
+subroutine sendNotification(null)
+	call echo("sendNotification")
+	/*
+	set 3011001Request->Module_Dir = "cust_script:" 
+	set 3011001Request->Module_Name = "cov_eks_alert_wrong_order.html" 
+	set 3011001Request->bAsBlob = 1 
+	
+	execute eks_get_source with replace ("REQUEST" ,3011001Request ) , replace ("REPLY" ,3011001Reply ) 
+	set html_output = 3011001Reply->data_blob 
+	
+	set html_output = replace(html_output,"@MESSAGE:[PATIENTDATA]",cnvtrectojson(patientdata))
+	set html_output = replace(html_output,"@MESSAGE:[ORDERDATA]",cnvtrectojson(orderdata))
+	*/
+	
+	set 3051004Request->MsgText = concat(cnvtstring(t_rec->prompts.attempts)," Accession:"
+											,t_rec->prompts.accession," Order:",t_rec->order_mnemonic," Status:",t_rec->dept_status )
+	set 3051004Request->Priority = 100 
+	set 3051004Request->TypeFlag = 0 
+	set 3051004Request->Subject = "Rad Exam Not Completed" 
+	set 3051004Request->MsgClass = "APPLICATION" 
+	set 3051004Request->MsgSubClass = "DISCERN" 
+	set 3051004Request->Location = "REPLY" 
+	set 3051004Request->UserName = "CCUMMIN4" 
+	
+	set stat = tdbexecute(3030000,3036100,3051004,"REC",3051004Request,"REC",3051004Reply) 
+	
+	set 3051004Request->UserName = "PFISCHE1" 
+	set stat = tdbexecute(3030000,3036100,3051004,"REC",3051004Request,"REC",3051004Reply) 
+	set 3051004Request->UserName = "UA.PFISCHE1" 
+	set stat = tdbexecute(3030000,3036100,3051004,"REC",3051004Request,"REC",3051004Reply) 
+
+
+
+	set stat = tdbexecute(3030000,3036100,3051004,"REC",3051004Request,"REC",3051004Reply) 
+	;set t_rec->return_value = "TRUE"
+end ;sendNotification
+
+set reply->status_data->status = "S"
+
+#exit_script
+call writeLog(build2(cnvtrectojson(t_rec)))
+
+set _memory_reply_string = t_rec->memory_reply_string
+
+call exitScript(null)
+
+call echorecord(code_values)
+call echorecord(program_log)
+call echorecord(t_rec)
+call echorecord(reply)
+end
+go

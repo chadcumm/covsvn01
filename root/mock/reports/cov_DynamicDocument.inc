@@ -1,0 +1,377 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Todd A. Blanchard
+	Date Written:		12/17/2021
+	Source file name:	cov_DynamicDocument.inc
+	Request #:			11280
+ 
+	Purpose:			This is a library of common subroutines that can be
+						used by any program for managing dynamic documents.
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+ 	Mod Date	Developer				Comment
+ 	----------	--------------------	--------------------------------------
+ 
+******************************************************************************/
+ 
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+ 
+declare open_existing_document_969503 = null
+declare open_new_document_969500 = null
+declare save_html_to_new_document_969502 = null
+ 
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+ 
+record existing_doc (
+	1 person_id = f8
+	1 encntr_id = f8
+	1 event_id = f8
+)
+ 
+record new_doc (
+	1 person_id = f8
+	1 encntr_id = f8
+	1 event_cd = f8
+	1 dd_ref_template_id = f8
+	1 title_text = vc
+)
+ 
+record 969500_request (
+	1 patient_id = f8
+	1 encounter_id = f8
+	1 dd_ref_template_id = f8
+)
+ 
+record 969500_reply (
+	1 document
+		2 attribute
+			3 author_id = f8
+			3 doc_status_cd = f8
+			3 encounter_id = f8
+			3 event_cd = f8
+			3 mdoc_event_id = f8
+			3 person_id = f8
+			3 service_dt_tm = dq8
+			3 service_tz = i4
+			3 title_text = vc
+			3 workflow_id = f8
+			3 valid_from_dt_tm = dq8
+		2 contributions [*]
+			3 attribute
+				4 author_id = f8
+				4 contribution_id = f8
+				4 contribution_status_cd = f8
+				4 dd_session_id = f8
+				4 event_cd = f8
+				4 doc_event_id = f8
+				4 session_user_id = f8
+				4 session_dt_tm = dq8
+				4 title_text = vc
+				4 updt_id = f8
+				4 uptd_dt_tm = dq8
+				4 sequence_val = vc
+			3 html_text = gvc
+		2 signers [*]
+			3 attribute
+				4 id = f8
+				4 type_cd = f8
+				4 action_dt = dq8
+				4 action_tz = i4
+				4 provider_id = f8
+				4 status_cd = f8
+		2 reviewers [*]
+			3 attribute
+				4 id = f8
+				4 type_cd = f8
+				4 action_dt = dq8
+				4 action_tz = i4
+				4 provider_id = f8
+				4 status_cd = f8
+	1 status_data
+		2 status = c1
+		2 subeventstatus [*]
+			3 OperationName = c25
+			3 OperationStatus = c1
+			3 TargetObjectName = c50
+			3 TargetObjectValue = vc
+	1 tagged_entities [*]
+		2 emr_type_cd = f8
+		2 entity_ids [*]
+			3 id = f8
+)
+ 
+record 969502_request (
+	1 action_tz = i4
+	1 author_id = f8
+	1 encounter_id = f8
+	1 event_cd = f8
+	1 patient_id = f8
+	1 mdoc_event_id = f8
+	1 current_doc_status_cd = f8
+	1 service_dt_tm = dq8
+	1 service_tz = i4
+	1 title_text = vc
+	1 unlock_flag = i4
+	1 ppr_cd = i4
+	1 wkf_workflow_id = f8
+	1 contributions [*]
+		2 author_id = f8
+		2 dd_contribution_id = f8
+		2 dd_session_id = f8
+		2 doc_event_id = f8
+		2 event_cd = f8
+		2 html_text = gvc
+		2 title_text = vc
+		2 ensure_type = i4
+	1 pat_prsnl_reltn_cd = f8
+	1 excluded_extract_ids [*]
+		2 extract_uuid = vc
+		2 excluded_ids [*]
+			3 content_type_mean = vc
+			3 ids [*]
+				4 id = f8
+	1 reference_dqr = vc
+	1 signers [*]
+		2 provider_id = f8
+		2 cancel_ind = i2
+		2 comment = vc
+	1 reviewers [*]
+		2 provider_id = f8
+		2 cancel_ind = i2
+		2 comment = vc
+	1 structure_section_components [*]
+		2 entry_mode_mean = c12
+		2 activity_json = gvc
+	1 user_id = f8
+)
+ 
+record 969502_reply (
+	1 mdoc_event_id = f8
+	1 doc_status_cd = f8
+	1 contributions [*]
+		2 dd_contribution_id = f8
+		2 doc_event_id = f8
+	1 components [*]
+		2 concept = vc
+		2 event_id = f8
+		2 version = i4
+		2 concept_cki = vc
+	1 status_data
+		2 status = c1
+		2 subeventstatus [*]
+			3 OperationName = c25
+			3 OperationStatus = c1
+			3 TargetObjectName = c50
+			3 TargetObjectValue = vc
+)
+ 
+record 969502_reply_list (
+	1 cnt = i4
+	1 docs [*]
+		2 mdoc_event_id = f8
+		2 result_dt_tm = dq8
+		2 valid_from_dt_tm = dq8
+		2 updt_id = f8
+		2 updt_dt_tm = dq8
+		
+		2 performed_dt_tm = dq8
+		2 performed_prsnl_id = f8
+		2 performed_valid_from_dt_tm = dq8
+		2 performed_updt_id = f8
+		2 performed_updt_dt_tm = dq8
+		
+		2 signed_dt_tm = dq8
+		2 signed_prsnl_id = f8
+		2 signed_valid_from_dt_tm = dq8
+		2 signed_updt_id = f8
+		2 signed_updt_dt_tm = dq8
+		
+		2 verified_dt_tm = dq8
+		2 verified_prsnl_id = f8
+		2 verified_valid_from_dt_tm = dq8
+		2 verified_updt_id = f8
+		2 verified_updt_dt_tm = dq8
+)
+ 
+record 969503_request (
+	1 mdoc_event_id = f8
+	1 sessions [*]
+		2 dd_session_id = f8
+	1 read_only_flag = i4
+	1 revise_flag = i2
+)
+ 
+record 969503_reply (
+	1 document
+		2 attribute
+			3 author_id = f8
+			3 doc_status_cd = f8
+			3 encounter_id = f8
+			3 event_cd = f8
+			3 mdoc_event_id = f8
+			3 person_id = f8
+			3 service_dt_tm = dq8
+			3 service_tz = i4
+			3 title_text = vc
+			3 workflow_id = f8
+			3 valid_from_dt_tm = dq8
+		2 contributions [*]
+			3 attribute
+				4 author_id = f8
+				4 contribution_id = f8
+				4 contribution_status_cd = f8
+				4 dd_session_id = f8
+				4 event_cd = f8
+				4 doc_event_id = f8
+				4 session_user_id = f8
+				4 session_dt_tm = dq8
+				4 title_text = vc
+				4 updt_id = f8
+				4 uptd_dt_tm = dq8
+				4 sequence_val = vc
+			3 html_text = gvc
+		2 signers [*]
+			3 attribute
+				4 id = f8
+				4 type_cd = f8
+				4 action_dt = dq8
+				4 action_tz = i4
+				4 provider_id = f8
+				4 status_cd = f8
+		2 reviewers [*]
+			3 attribute
+				4 id = f8
+				4 type_cd = f8
+				4 action_dt = dq8
+				4 action_tz = i4
+				4 provider_id = f8
+				4 status_cd = f8
+	1 status_data
+		2 status = c1
+		2 subeventstatus [*]
+			3 OperationName = c25
+			3 OperationStatus = c1
+			3 TargetObjectName = c50
+			3 TargetObjectValue = vc
+)
+ 
+ 
+/**************************************************************
+; DVDev DECLARED SUBROUTINES
+**************************************************************/
+ 
+subroutine open_existing_document_969503(null)
+ 
+	call echo("open_existing_document_969503()")
+ 
+	set 969503_request->mdoc_event_id		= existing_doc->event_id
+	set 969503_request->revise_flag			= 0
+ 
+	set stat = tdbexecute(
+		600005					/*appid - HNA: Powerchart*/
+		, 3202004				/*taskid*/
+		, 969503				/*reqid*/
+		, "REC"					/*request_from_type*/
+		, 969503_request		/*request_from*/
+		, "REC"					/*reply_to_type*/
+		, 969503_reply			/*reply_to*/
+		, 0						/*mode*/
+	)
+ 
+	call echorecord(969503_request)
+	call echorecord(969503_reply)
+ 
+end
+ 
+ 
+subroutine open_new_document_969500(null)
+ 
+	call echo("open_new_document_969500()")
+ 
+	set 969500_request->patient_id				= new_doc->person_id
+	set 969500_request->encounter_id			= new_doc->encntr_id
+	set 969500_request->dd_ref_template_id		= new_doc->dd_ref_template_id
+ 
+	set stat = tdbexecute(
+		600005					/*appid - HNA: Powerchart*/
+		, 3202004				/*taskid*/
+		, 969500				/*reqid*/
+		, "REC"					/*request_from_type*/
+		, 969500_request		/*request_from*/
+		, "REC"					/*reply_to_type*/
+		, 969500_reply			/*reply_to*/
+		, 0						/*mode*/
+	)
+ 
+	call echorecord(969500_request)
+	call echorecord(969500_reply)
+ 
+end
+ 
+ 
+subroutine save_html_to_new_document_969502(null)
+ 
+	call echo("save_html_to_new_document_969502()")
+ 
+	set 969502_request->action_tz					= curtimezoneapp
+	set 969502_request->author_id					= 1 ;969503_reply->document->attribute->author_id
+	set 969502_request->encounter_id				= 969500_reply->document->attribute->encounter_id
+	set 969502_request->event_cd					= new_doc->event_cd
+	set 969502_request->patient_id					= 969500_reply->document->attribute->person_id
+;	 set 969502_request->mdoc_event_id				= 969500_reply->document->attribute->mdoc_event_id
+;	 set 969502_request->current_doc_status_cd		= 969500_reply->document->attribute->doc_status_cd
+	set 969502_request->service_dt_tm				= 969503_reply->document->attribute->service_dt_tm ;cnvtdatetime(sysdate)
+	set 969502_request->service_tz					= 969503_reply->document->attribute->service_tz ;curtimezoneapp
+	set 969502_request->title_text					= new_doc->title_text
+	set 969502_request->unlock_flag					= true
+	; set 969502_request->wkf_workflow_id			= 969500_reply->document->attribute[1]->workflow_id
+ 
+	call alterlist(969502_request->contributions, 1)
+ 
+	set 969502_request->contributions[1]->author_id					= 1 ;969503_reply->document->contributions[1]->attribute->author_id
+	; set 969502_request->contributions[1]->dd_contribution_id		= 969500_reply->document->contributions[1]->attribute->contribution_id
+	; set 969502_request->contributions[1]->dd_session_id			= 969500_reply->document->contributions[1]->attribute->dd_session_id
+	; set 969502_request->contributions[1]->doc_event_id			= 969500_reply->document->contributions[1]->attribute->doc_event_id
+	set 969502_request->contributions[1]->dd_contribution_id		= 969500_reply->document->contributions->attribute->contribution_id
+	set 969502_request->contributions[1]->dd_session_id				= 969500_reply->document->contributions->attribute->dd_session_id
+	set 969502_request->contributions[1]->doc_event_id				= 969500_reply->document->contributions->attribute->doc_event_id
+	set 969502_request->contributions[1]->event_cd					= 969502_request->event_cd
+	set 969502_request->contributions[1]->html_text					= 969503_reply->document->contributions[1]->html_text
+	set 969502_request->contributions[1]->title_text				= new_doc->title_text
+	set 969502_request->contributions[1]->ensure_type				= 2 /*Ensure_type = 1 for new documents*/
+ 
+	; set 969502_request->pat_prsnl_reltn_cd						= 1115
+	; set 969502_request->user_id									= 0
+ 
+	set stat = tdbexecute(
+		600005					/*appid - HNA: Powerchart*/
+		, 3202004				/*taskid*/
+		, 969502				/*reqid*/
+		, "REC"					/*request_from_type*/
+		, 969502_request		/*request_from*/
+		, "REC"					/*reply_to_type*/
+		, 969502_reply			/*reply_to*/
+		, 0						/*mode*/
+	)
+ 
+	call echorecord(969502_request)
+	call echorecord(969502_reply)
+ 
+end
+ 

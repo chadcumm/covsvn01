@@ -1,0 +1,31 @@
+drop program pfmt_test_print_to_pdf_req_tst:dba go
+create program pfmt_test_print_to_pdf_req_tst:dba
+prompt 
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "Filename" = "" 
+
+with OUTDEV, FILENAME
+
+if ($FILENAME = "")
+	DECLARE FILEPATH = VC WITH CONSTANT( "CCLUSERDIR:json.txt" ) 
+else
+	DECLARE FILEPATH = VC WITH CONSTANT($FILENAME ) 
+endif
+ 
+free set requestin 
+
+declare line_in = vc 
+
+FREE DEFINE RTL3 
+DEFINE RTL3 IS FILEPATH 
+select into "nl:"
+from rtl3t r
+detail
+	line_in = concat(line_in,r.line)
+with nocounter 
+;call echo(line_in) go
+set stat = cnvtjsontorec(line_in) 
+
+execute pfmt_bc_print_to_pdf_req 
+call echorecord(requestin) 
+end go

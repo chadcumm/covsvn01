@@ -1,0 +1,71 @@
+select 
+	ea.alias
+	,p.name_full_formatted
+	,status=uar_Get_Code_display(sa.sch_state_cd)
+	,appt_loc=uar_get_code_display(sa.appt_location_cd)
+	,appt_type=uar_get_code_display(se.appt_type_cd)
+	,sa.beg_dt_tm ";;q"
+	,result=uar_get_code_display(ce.event_cd)
+	,ce.event_cd
+	,ce.event_end_dt_tm
+	,sa.sch_appt_id
+from
+	encntr_alias ea
+	,encounter e
+	,person p
+	,sch_appt sa
+	,sch_event se
+	,clinical_event ce 
+plan ea
+	where ea.alias = "1917000003"
+join e
+	where ea.encntr_id = e.encntr_id
+join ce
+	where ce.encntr_id = e.encntr_id
+join p
+	where p.person_id = e.person_id
+join sa
+	where sa.encntr_id = e.encntr_id
+	and   sa.beg_dt_tm >= cnvtdatetime(curdate,curtime3)
+join se
+	where se.sch_event_id = sa.sch_event_id
+	and   se.appt_type_cd in(
+								     value(uar_get_code_by("DISPLAY",14230,"OB Amniocentesis"))
+									,value(uar_get_code_by("DISPLAY",14230,"OB Cerclage Removal"))
+									,value(uar_get_code_by("DISPLAY",14230,"OB Fetal Non-Stress Test"))
+									,value(uar_get_code_by("DISPLAY",14230,"OB Induction"))
+									,value(uar_get_code_by("DISPLAY",14230,"OB Induction (Fetal Demise)"))
+									,value(uar_get_code_by("DISPLAY",14230,"OB Methotrexate Injection"))
+									,value(uar_get_code_by("DISPLAY",14230,"OB Misc"))
+									,value(uar_get_code_by("DISPLAY",14230,"OB Pre-Registration"))
+									,value(uar_get_code_by("DISPLAY",14230,"OB Steroid Injection 1st"))
+									,value(uar_get_code_by("DISPLAY",14230,"OB Steroid Injection 2nd"))
+									,value(uar_get_code_by("DISPLAY",14230,"OB Version"))
+							)
+							
+order by
+	ce.updt_dt_tm desc
+with nocounter,format(date,";;q")
+	
+	
+select * from code_value cv where cv.concept_cki = "CERNER!ASYr9AEYvUr1YoPTCqIGfQ"
+
+select into "nl:"
+from
+	 sch_appt sa
+	,sch_appt sap
+plan sa
+	where expand(i,1,t_rec->app_loc_cnt,sa.appt_location_cd,t_rec->app_loc[i].app_location_cd)
+	and   sa.beg_dt_tm between cnvtdatetime(t_rec->start_dt_tm) and cnvtdatetime(t_rec->end_dt_tm)
+	and   expand(j,1,t_rec->res_cnt,sa.resource_cd,t_rec->res_list[j].resource_cd)
+	and   sa.role_meaning != "PATIENT"
+	and   sa.sch_state_cd in(
+									 code_values->cv.cs_14233.checked_out_cd
+									,code_values->cv.cs_14233.checked_in_cd
+									,code_values->cv.cs_14233.finalized_cd
+									,code_values->cv.cs_14233.complete_cd
+								)
+join sap
+	where sap.sch_event_id = sa.sch_event_id
+	and   sap.role_meaning = "PATIENT"
+	and   sap.encntr_id > 0.0

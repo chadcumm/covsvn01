@@ -1,0 +1,58 @@
+Vista Radiology Dictation
+
+File Name:	vistacodeYYYYMMDD_cer.del
+
+
+--Line 1--
+FAC_DISP~
+PAT_ACCT_NBR~
+ORDER_ID~
+CK_IN_DT_Y~
+CK_IN_DT_M~
+CK_IN_DT_D~
+CK_IN_DT_T~
+RAD_DR_ID~
+RAD_DR_FISRT~
+RAD_DR_LAST~
+ORD_DR_ID~
+ORD_DR_FIRST~
+ORD_DR_LAST~
+PAT_TYPE_IOE~
+RAD_PROC_TYPE
+
+--Line 2--
+UNIT_NBR~
+FIRST_NAME~
+M_NAME~
+LAST_NAME~
+DOB_YEAR~
+DOB_MONTH~
+DOB_DAY~
+SEX_ALIAS~
+IPLAN_NAME~
+IPLAN_CODE~
+PAT_TYPECRVAR
+
+--Line 3---
+[Procedure Ordered:] CK_IN_NUM~
+ORDER_CAT_CD~
+ORDER_MNEM~
+CPTCD_CPTCDMOD~
+ORDER_ID
+
+--Line 4--
+[Admitting DX:] ADMIT_DX
+
+--Line 5--
+[Working DX:] WORK_DX
+
+--Line 6--
+BLOB_DATA
+
+[Transcriptionist-] TRANSCRIBED_OR_DICTATED
+[Read By-] TRANSCRIBED_OR_RDICTATED
+
+[Reviewed and E-Signed By-] APPROVED
+RELEASED
+------------------------------------------------------------------------------
+|

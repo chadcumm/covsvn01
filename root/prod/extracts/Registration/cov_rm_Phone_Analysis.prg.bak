@@ -1,0 +1,489 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Todd A. Blanchard
+	Date Written:		05/15/2020
+	Solution:			Revenue Cycle - Registration Management
+	Source file name:	tab_phone_analysis.prg
+	Object name:		tab_phone_analysis
+	Request #:			7712
+ 
+	Program purpose:	Phone/email analysis and cleanup.
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:		Adopted from Cerner CCL pm_fix_dup_ppp_phones.
+ 	
+						Parent Entities:						
+						  - PERSON
+						  - PERSON_PATIENT
+						  - PERSON_ORG_RELTN
+						  - PERSON_PLAN_RELTN
+						  - ORGANIZATION
+						  - HEALTH_PLAN
+						  - ENCNTR_ORG_RELTN
+						  - ENCNTR_PLAN_RELTN
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+ 	Mod Date	Developer				Comment
+ 	----------	--------------------	--------------------------------------
+ 
+******************************************************************************/
+
+DROP PROGRAM cov_rm_Phone_Analysis:dba GO
+CREATE PROGRAM cov_rm_Phone_Analysis:dba
+
+prompt 
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "Output To File" = 0                   ;* Output to file 
+
+with OUTDEV, output_file
+ 
+ 
+/**************************************************************
+; DVDev DECLARED SUBROUTINES
+**************************************************************/
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+
+declare eprescreltn_var		= f8 with constant(uar_get_code_by("MEANING", 30300, "EPRESCRELTN"))
+declare num					= i4 with noconstant(0)
+
+declare file_var			= vc with constant(build("phone_analysis", ".csv"))
+ 
+declare temppath_var		= vc with constant(build("cer_temp:", file_var))
+declare temppath2_var		= vc with constant(build("$cer_temp/", file_var))
+
+declare filepath_var		= vc with constant(build("/cerner/w_custom/", cnvtlower(curdomain),
+													 "_cust/to_client_site/RevenueCycle/Registration/", file_var))
+															 
+declare output_var			= vc with noconstant("")
+ 
+declare cmd					= vc with noconstant("")
+declare len					= i4 with noconstant(0)
+declare stat				= i4 with noconstant(0)
+
+
+; define output value
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set output_var = value(temppath_var)
+else
+	set output_var = value($OUTDEV)
+endif
+
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+
+free set dup_list
+record dup_list (
+	1 cnt							= i4
+	1 list [*]
+		2 parent_entity_name		= c32
+		2 parent_entity_id			= f8
+		2 phone_type_cd				= f8
+		2 phone_num_key				= c100
+		2 contact					= c100
+		2 extension					= c100
+		2 total						= i4
+)
+
+free set erx_list
+record erx_list (
+	1 cnt							= i4
+	1 list [*]
+		2 phone_id					= f8
+		2 reltn_type_cd				= f8
+)
+
+
+free set final_list
+record final_list (
+	1 cnt							= i4
+	1 list [*]
+		2 person_id 				= f8
+		2 person_name 				= c100
+		2 birth_dt_tm 				= dq8
+		2 birth_tz					= i4
+		2 physician_ind				= i2
+		2 reltn_type				= c40
+		2 phone_id 					= f8
+		2 phone_num 				= c100
+		2 parent_entity_id 			= f8
+		2 parent_entity_name 		= c32
+		2 phone_type 				= c40
+		2 phone_type_seq			= i4
+		2 contact_method_cd			= f8
+		2 contact_method			= c40
+		2 contact 					= c100
+		2 extension 				= c100
+		2 contributor_system_cd		= f8
+		2 contributor_system 		= c40
+		2 updt_task 				= i4
+		2 task_desc 				= c200
+		2 application_number		= i4
+		2 application				= c200
+		2 updt_dt_tm				= dq8
+		2 updt_id 					= f8
+		2 updt_name 				= c100
+		2 beg_effective_dt_tm		= dq8
+		2 end_effective_dt_tm		= dq8
+		2 active_ind 				= i2
+)
+ 
+ 
+/**************************************************************/
+; select duplicate data
+select 
+    ph.parent_entity_name
+	, ph.parent_entity_id
+	, ph.phone_num_key
+	, ph.phone_type_cd
+	, contact = trim(ph.contact, 3)
+	, extension = trim(ph.extension, 3)
+	, total = count(*)
+	
+from
+	PHONE ph
+	
+where
+	ph.parent_entity_name in ("PERSON", "PERSON_PATIENT")
+	and ph.phone_type_cd > 0.0
+	and ph.beg_effective_dt_tm < sysdate
+	and ph.end_effective_dt_tm > sysdate
+	and ph.active_ind = 1
+;	and ph.parent_entity_id between 12399134.00 and (12399134.00 + 10) ; TEST
+
+group by
+    ph.parent_entity_name
+	, ph.parent_entity_id
+	, ph.phone_num_key
+	, ph.phone_type_cd
+	, trim(ph.contact, 3)
+	, trim(ph.extension, 3)
+	
+having
+	count(*) > 1
+	
+order by
+	ph.parent_entity_id
+    , ph.parent_entity_name
+	, ph.phone_type_cd
+	, ph.phone_num_key
+	, trim(ph.contact, 3)
+	, trim(ph.extension, 3)
+ 
+ 
+; populate record structure
+head report
+	cnt = 0
+ 
+detail
+	cnt = cnt + 1
+ 
+	call alterlist(dup_list->list, cnt)
+ 
+	dup_list->cnt							= cnt
+	dup_list->list[cnt].parent_entity_name	= ph.parent_entity_name
+	dup_list->list[cnt].parent_entity_id	= ph.parent_entity_id
+	dup_list->list[cnt].phone_type_cd		= ph.phone_type_cd
+	dup_list->list[cnt].phone_num_key		= ph.phone_num_key
+	dup_list->list[cnt].contact				= contact
+	dup_list->list[cnt].extension			= extension
+	dup_list->list[cnt].total				= total
+	
+with nocounter, time = 300
+
+
+;call echorecord(dup_list)
+call echo(build2("duplicate count: ", dup_list->cnt))
+ 
+ 
+/**************************************************************/
+; select eprescribing data
+select distinct into "nl:"
+from
+	PHONE ph
+		
+	, (inner join PRSNL_RELTN_CHILD prc on prc.parent_entity_id = ph.phone_id
+		and prc.parent_entity_name = "PHONE"
+		and prc.parent_entity_id > 0.0
+		and prc.end_effective_dt_tm > sysdate
+;		and prc.display_seq > 0
+		)
+		
+	, (inner join PRSNL_RELTN pr on pr.prsnl_reltn_id = prc.prsnl_reltn_id
+		and pr.person_id = ph.parent_entity_id 
+		and pr.reltn_type_cd = eprescreltn_var
+		and pr.end_effective_dt_tm > sysdate
+		and pr.active_ind = 1)
+	
+where
+	ph.parent_entity_name in ("PERSON", "PERSON_PATIENT")
+	and ph.phone_type_cd > 0.0
+	and ph.beg_effective_dt_tm < sysdate
+	and ph.end_effective_dt_tm > sysdate
+	and ph.active_ind = 1
+;	and ph.parent_entity_id between 12399134.00 and (12399134.00 + 10) ; TEST
+	
+order by
+    ph.phone_id
+ 
+ 
+; populate record structure
+head report
+	cnt = 0
+ 
+detail
+	cnt = cnt + 1
+ 
+	call alterlist(erx_list->list, cnt)
+ 
+	erx_list->cnt							= cnt
+	erx_list->list[cnt].phone_id			= ph.phone_id
+	erx_list->list[cnt].reltn_type_cd		= pr.reltn_type_cd
+	
+with nocounter, time = 300
+
+
+;call echorecord(erx_list)
+call echo(build2("ePrescribing count: ", erx_list->cnt))
+ 
+ 
+/**************************************************************/
+; select final data
+select into "nl:"
+from
+	PHONE ph
+	
+	, (inner join PERSON p on p.person_id = ph.parent_entity_id
+		and p.end_effective_dt_tm > sysdate
+		and p.active_ind = 1)
+ 
+	, (left join APPLICATION_TASK at on at.task_number = ph.updt_task)
+ 
+	, (left join APPLICATION_CONTEXT ac on ac.applctx = ph.updt_applctx)
+
+	, (left join APPLICATION a on a.application_number = ac.application_number)
+	
+	, (left join PRSNL per on per.person_id = ph.updt_id
+		and per.end_effective_dt_tm > sysdate
+		and per.active_ind = 1)
+	
+	, (left join PRSNL per2 on per2.person_id = ph.parent_entity_id
+		and per2.end_effective_dt_tm > sysdate
+		and per2.active_ind = 1)
+	
+where
+	expand(num, 1, dup_list->cnt, ph.parent_entity_id, dup_list->list[num].parent_entity_id)
+	and ph.parent_entity_name in ("PERSON", "PERSON_PATIENT")
+	and ph.phone_type_cd > 0.0
+	and ph.beg_effective_dt_tm < sysdate
+	and ph.end_effective_dt_tm > sysdate
+	and ph.active_ind = 1
+;	and ph.parent_entity_id between 12399134.00 and (12399134.00 + 10) ; TEST
+ 
+order by
+	ph.parent_entity_id
+    , ph.parent_entity_name
+	, ph.phone_type_cd
+	, ph.phone_num_key
+	
+ 
+; populate record structure
+head report
+	cnt = 0
+ 
+detail
+	cnt = cnt + 1
+	
+	idx = locateval(num, 1, erx_list->cnt, ph.phone_id, erx_list->list[num].phone_id)
+ 
+	call alterlist(final_list->list, cnt)
+ 
+	final_list->cnt									= cnt
+	final_list->list[cnt].person_id 				= p.person_id
+	final_list->list[cnt].person_name 				= p.name_full_formatted
+	final_list->list[cnt].birth_dt_tm 				= p.birth_dt_tm
+	final_list->list[cnt].birth_tz					= p.birth_tz
+	final_list->list[cnt].physician_ind				= per2.physician_ind
+	
+	final_list->list[cnt].reltn_type				= 
+		if (idx > 0)
+			uar_get_code_display(erx_list->list[idx].reltn_type_cd)
+		else
+			""
+		endif
+		
+	final_list->list[cnt].phone_id 					= ph.phone_id
+	final_list->list[cnt].phone_num 				= ph.phone_num
+	final_list->list[cnt].parent_entity_id 			= ph.parent_entity_id
+	final_list->list[cnt].parent_entity_name 		= ph.parent_entity_name
+	final_list->list[cnt].phone_type 				= uar_get_code_display(ph.phone_type_cd)
+	final_list->list[cnt].phone_type_seq			= ph.phone_type_seq
+	final_list->list[cnt].contact_method_cd			= ph.contact_method_cd
+	final_list->list[cnt].contact_method			= uar_get_code_display(ph.contact_method_cd)
+	final_list->list[cnt].contact 					= ph.contact
+	final_list->list[cnt].extension 				= ph.extension
+	final_list->list[cnt].contributor_system_cd		= ph.contributor_system_cd
+	final_list->list[cnt].contributor_system 		= uar_get_code_display(ph.contributor_system_cd)
+	final_list->list[cnt].updt_task 				= ph.updt_task
+	
+	final_list->list[cnt].task_desc 				= 
+		if (ph.updt_task = -100000)
+;			"Attempted removal of duplicates via custom CCL (based on Cerner update script pm_fix_dup_ppp_phones)."
+			"Attempted removal of duplicates."
+		else
+			at.description
+		endif
+
+	final_list->list[cnt].application_number		= a.application_number
+	final_list->list[cnt].application				= a.description
+	final_list->list[cnt].updt_dt_tm				= ph.updt_dt_tm
+	final_list->list[cnt].updt_id 					= ph.updt_id
+	final_list->list[cnt].updt_name 				= per.name_full_formatted
+	final_list->list[cnt].beg_effective_dt_tm		= ph.beg_effective_dt_tm
+	final_list->list[cnt].end_effective_dt_tm		= ph.end_effective_dt_tm
+	final_list->list[cnt].active_ind 				= ph.active_ind
+	
+with nocounter, expand = 1, time = 300
+
+
+;call echorecord(final_list)
+call echo(build2("final count: ", final_list->cnt))
+
+
+/**************************************************************/
+; select data
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set modify filestream
+endif
+
+;017
+select if (validate(request->batch_selection) = 1 or $output_file = 1)
+	with nocounter, pcformat (^"^, ^,^, 1), format = stream, format, time = 600
+else
+	with nocounter, separator = " ", format, time = 600
+endif
+ 
+into value(output_var)
+;	person_id				= final_list->list[d1.seq].person_id
+	person_name			= trim(final_list->list[d1.seq].person_name, 3)
+	, dob					= format(cnvtdatetimeutc(datetimezone(
+								final_list->list[d1.seq].birth_dt_tm, final_list->list[d1.seq].birth_tz), 1), 
+								"mm/dd/yyyy;;d")
+								
+	, physician_ind			= final_list->list[d1.seq].physician_ind	
+	, reltn_type			= trim(final_list->list[d1.seq].reltn_type, 3)
+									  
+	, phone_id				= final_list->list[d1.seq].phone_id
+	, phone_num				= trim(final_list->list[d1.seq].phone_num, 3)
+	, parent_entity_id		= final_list->list[d1.seq].parent_entity_id
+	, parent_entity_name	= trim(final_list->list[d1.seq].parent_entity_name, 3)
+	, phone_type			= trim(final_list->list[d1.seq].phone_type, 3)
+	, phone_type_seq		= final_list->list[d1.seq].phone_type_seq
+;	, contact_method_cd		= final_list->list[d1.seq].contact_method_cd
+	, contact_method		= trim(final_list->list[d1.seq].contact_method, 3)
+	, contact				= trim(final_list->list[d1.seq].contact, 3)
+	, extension				= trim(final_list->list[d1.seq].extension, 3)
+	    
+;	, contributor_system_cd		= final_list->list[d1.seq].contributor_system_cd
+	, contributor_system		= trim(final_list->list[d1.seq].contributor_system, 3)
+	    
+	, updt_task				= final_list->list[d1.seq].updt_task
+	    
+	, task_desc				= trim(final_list->list[d1.seq].task_desc, 3)
+	    
+	, application_number	= final_list->list[d1.seq].application_number
+	, application			= trim(final_list->list[d1.seq].application, 3)
+	    
+	, updt_dt_tm			= final_list->list[d1.seq].updt_dt_tm "mm/dd/yyyy hh:mm;;q"
+	, updt_id				= final_list->list[d1.seq].updt_id
+	, updt_name				= trim(final_list->list[d1.seq].updt_name, 3)
+	    
+	, beg_effective_dt_tm	= final_list->list[d1.seq].beg_effective_dt_tm "mm/dd/yyyy hh:mm;;q"
+	, end_effective_dt_tm	= final_list->list[d1.seq].end_effective_dt_tm "mm/dd/yyyy hh:mm;;q"
+	, active_ind			= final_list->list[d1.seq].active_ind
+      
+from
+	(dummyt d1 with seq = value(final_list->cnt))
+ 
+plan d1
+ 
+order by	
+	parent_entity_id
+    , parent_entity_name
+	, phone_type
+	, phone_num
+	, contact
+	, extension
+	, phone_type_seq
+
+with nocounter, filesort, separator = " ", format, time = 60
+
+ 
+; copy file to AStream
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set cmd = build2("cp ", temppath2_var, " ", filepath_var)
+	set len = size(trim(cmd))
+ 
+	call dcl(cmd, len, stat)
+	call echo(build2(cmd, " : ", stat))
+endif
+
+
+;  SET stat = alterlist (dup_list->list, dup_count)
+;  
+;  IF ((dup_count > 0))
+;   SET dup_cnt_tot +=dup_count
+;   SET upt_count = 0
+;   SET upt_lower_limit = 1
+;   SET upt_upper_limit = minval (dup_count, upt_batch_size)
+;   
+;   WHILE ((upt_lower_limit <= upt_upper_limit))
+;   ; TEST
+;;    UPDATE FROM (phone ph)
+;;     SET ph.active_ind = 0, 
+;;      ph.active_status_cd = reqdata->inactive_status_cd, 
+;;;      ph.active_status_prsnl_id = reqinfo->updt_id, 
+;;      ph.active_status_prsnl_id = 17496726.00, ; SCRIPTING UPDATES, TODD BLANCHARD
+;;      ph.updt_dt_tm = cnvtdatetime (sysdate), 
+;;;      ph.updt_id = - (100000), 
+;;      ph.updt_id = 17496726.00, ; SCRIPTING UPDATES, TODD BLANCHARD
+;;      ph.updt_cnt = (ph.updt_cnt + 1), 
+;;      ph.updt_task = - (100000)
+;;      
+;;     WHERE expand (upt_count, upt_lower_limit, upt_upper_limit, ph.phone_id, dup_list->list[upt_count].phone_id)
+;;    ;end update
+;;    
+;;    COMMIT
+;    ; END TEST
+;    
+;    SET upt_lower_limit = (upt_upper_limit + 1)
+;    SET upt_upper_limit = minval (dup_count, (upt_upper_limit + upt_batch_size))
+;   ENDWHILE   
+;  ENDIF
+;  
+;  SET start_parent_entity_id = stop_parent_entity_id
+;  
+;  IF ((start_parent_entity_id > max_parent_entity_id))
+;;  IF ((start_parent_entity_id >= max_parent_entity_id)) ; TEST
+;   SET clean_done = true
+;  ENDIF
+;  
+; ENDWHILE
+
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+ 
+END GO
+

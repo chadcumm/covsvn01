@@ -1,0 +1,43 @@
+select 
+	 ea.alias
+	,p.name_full_formatted
+	,location = concat(
+						     trim(uar_get_code_display(e.loc_facility_cd))
+						," ",trim(uar_get_code_display(e.loc_nurse_unit_cd))
+						," ",trim(uar_get_code_display(e.loc_room_cd))
+						,"/", trim(uar_get_code_display(e.loc_room_cd)))
+	,action = 	if 		(ede.modify_dlg_name = "COV_PLANNED_PP_DISMISS")
+					"Dismissed Alert"
+				elseif	(ede.modify_dlg_name = "COV_PLANNED_PP_ORDERS")
+					"Launched Order Profile"
+				elseif	(ede.modify_dlg_name = "COV_PLANNED_PP_MEDREC")
+					"Launched Med Rec"
+				else	
+					"Unknown Action"
+				endif
+	,action_dt_tm = ede.dlg_dt_tm ";;q"
+	,clinician = concat(trim(pr.name_full_formatted)," (",trim(pr.username),")")
+from
+	 eks_dlg_event ede
+	,prsnl pr
+	,person p
+	,encounter e
+	,encntr_alias ea
+plan ede
+	where ede.dlg_dt_tm >= cnvtdatetime(curdate,0)
+	and   ede.dlg_name = "COV_EKM!COV_SYNC_PLANNED_PP"
+join pr
+	where pr.person_id = ede.dlg_prsnl_id
+join p
+	where p.person_id = ede.person_id
+join e
+	where e.encntr_id = ede.encntr_id
+join ea
+	where ea.encntr_id = e.encntr_id
+	and   ea.encntr_alias_type_cd = 1077
+	and   ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+	and   ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime3)
+	and   ea.active_ind = 1
+order by
+	 p.name_full_formatted
+	,ede.dlg_dt_tm
