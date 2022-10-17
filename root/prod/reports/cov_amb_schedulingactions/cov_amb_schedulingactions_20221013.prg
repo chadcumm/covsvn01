@@ -28,6 +28,10 @@
 003		02/15/21	David Baumgardner		CR9086 Update for the following changes:
 												- Only the latest action would return on the report
 												- Eliminate Action, Scheduling_dt_tm, and Action_dt_tm
+												- 003 02/15/21 update the sorting order to only sort by appt_dt_tm then fin
+												  Removed patient_name,sched_appt->list[d1.seq].person_id,appt_type,
+                                                  sched_appt->list[d1.seq].schedule_id,sched_appt->list[d1.seq].action_dt_tm,
+                                                  action,location
         02/17/21    David Baumgardner    		- fix Auth_exp
 004		02/25/21	David Baumgardner		Requested to reenable the scheduling_dt_tm and to report out the org_name
 005		04/14/21	David Baumgardner		Requested to omit rescheduled items.  Marsha Keck on 4/12 noting this caused issues
@@ -42,13 +46,56 @@
 011		05/11/22	David Baumgardner		CR12849 Add in code to pull the latest action_sequence for the
 											prior auth expiration date
 012		10/10/22	David Baumgardner		CR9653 Update the R2W to pull from 60 days back.
-******************************************************************************/
+013     10/12/2022  Dawn Greer, DBA         CR 9653 - Fixed errors in the report.  Removed and added documentation as needed
+                                            Changed the logic of the Dates
+                                            FROM: ;002 update the edate and bdate to pull for 30 days from now for the export.
+                                                if($CMGExport = "0")
+	                                              SET bdate = CNVTDATETIME($start_datetime)
+	                                              SET edate = CNVTDATETIME($end_datetime)
+                                                else
+	                                              ;012 Update to pull for the 60 days past
+	                                              SET bdate = CNVTDATETIME(CURDATE-60, 0)
+	                                              SET edate = CNVTDATETIME(CURDATE+30,235959)
+	                                            endif
+	                                        TO: IF ($CMGExport = "1" AND actprompt = "(4518.00, 4528.00)")  ;4518 = Cancel,
+	                                               4528 = No Show
+	                                            ;012 Update to pull for the 60 days past
+	                                              SET bdate = CNVTDATETIME(CURDATE-60, 0)
+	                                              SET edate = CNVTDATETIME(CURDATE+30,235959)
+                                                ELSEIF ($start_datetime = "SYSDATE" AND $end_datetime = "SYSDATE")
+	                                              SET bdate = CNVTDATETIME(CURDATE,0)
+	                                              SET edate = CNVTDATETIME(CURDATE,235959)
+                                                ELSE
+	                                              SET bdate = CNVTDATETIME($start_datetime)
+	                                              SET edate = CNVTDATETIME($end_datetime)
+                                                ENDIF
+014    10/12/2022  Dawn Greer, DBA          CR 9653 - Added more logic to the data prompts.
+                                                IF ($CMGExport = "1" AND actprompt = "(4518.00, 4528.00)");4518=Cancel,4528=No Show
+	                                               ;012 Update to pull for the 60 days past and 30 days in the future
+	                                               SET bdate = CNVTDATETIME(CURDATE-60, 0)
+	                                               SET edate = CNVTDATETIME(CURDATE+30,235959)
+                                                ELSEIF ($CMGExport = "1" AND actprompt = "(4521.00)")  ;4521 = Confirm		;014
+	                                               SET bdate = CNVTDATETIME(CURDATE, 0)
+	                                               SET edate = CNVTDATETIME(CURDATE+30,235959)
+                                                ELSEIF ($start_datetime = "SYSDATE" AND $end_datetime = "SYSDATE")
+	                                               SET bdate = CNVTDATETIME(CURDATE,0)
+	                                               SET edate = CNVTDATETIME(CURDATE,235959)
+                                                ELSE
+	                                               SET bdate = CNVTDATETIME($start_datetime)
+	                                               SET edate = CNVTDATETIME($end_datetime)
+                                                ENDIF
+                                               Removed from the code above.
+                                                  ELSEIF ($start_datetime = "SYSDATE" AND $end_datetime = "SYSDATE")
+	                                                 SET bdate = CNVTDATETIME(CURDATE,0)
+	                                                 SET edate = CNVTDATETIME(CURDATE,235959)     
+                                               Remove ".00" from the action status numbers so that it matched what the prompt was
+**********************************************************************************************************************************/
  
 drop program COV_AMB_SCHEDULINGACTIONS:DBA go
 create program COV_AMB_SCHEDULINGACTIONS:DBA
  
 prompt
-	"Output to File/Printer/MINE" = "MINE"                                                                                ;* Enter
+	"Output to File/Printer/MINE" = "MINE"          ;* Enter
 	, "Facility" = VALUE(3144501.00, 675844.00, 3234047.00, 3144499.00, 3144505.00, 3144502.00, 3144503.00, 3144504.00)
 	, "Start Date" = "SYSDATE"
 	, "End Date" = "SYSDATE"
@@ -59,11 +106,6 @@ prompt
  
 with OUTDEV, facility, start_datetime, end_datetime, action, physician_group,
 	userProvider, CMGExport
- 
- 
-/**************************************************************
-; DVDev DECLARED SUBROUTINES
-**************************************************************/
  
 /**************************************************************
 ; DVDev DECLARED VARIABLES
@@ -115,9 +157,18 @@ declare stat							= i4 with noconstant(0) ;013
 DECLARE bdate	 = f8 WITH NOCONSTANT(0.0), PROTECT
 DECLARE edate	 = f8 WITH NOCONSTANT(0.0), PROTECT
  
+;013 - For Action Prompts
+DECLARE actlist = c2000
+DECLARE actprompt = vc
+DECLARE actnum = i4
+DECLARE actitem = vc
+ 
 set output_var = value(temppath_var)
  
- 
+/**********************************************************
+Defining Operators for Prompts
+***********************************************************/
+CALL ECHO("Defining Operators for Prompts") ;013
  
 ; define operator for $facility
 if (substring(1, 1, reflect(parameter(parameter2($facility), 0))) = "L") ; multiple values selected
@@ -153,14 +204,13 @@ endif
  
  
 /**************************************************************
-; DVDev Start Coding
+Record Structure
 **************************************************************/
  
 record sched_appt (
 	1	p_start_datetime	= vc
 	1	p_end_datetime		= vc
- 
-	1	sched_cnt			= i4
+ 	1	sched_cnt			= i4
 	1	list[*]
 		2	sch_appt_id			= f8
 		2	appt_dt_tm			= dq8
@@ -169,8 +219,7 @@ record sched_appt (
 		2	location			= c100
 		2	location_type		= c100
 		2	org_name			= c100
- 
-		2	schedule_id			= f8
+ 		2	schedule_id			= f8
 		2	sch_event_id		= f8
 		2	appt_type			= c100
 		2	appt_state			= c30
@@ -182,17 +231,13 @@ record sched_appt (
 		2	reason_exam			= c100
 		2	action_comment		= c300
 		2	schedule_dt_tm		= dq8
- 
-		2	order_phy			= c100
+ 		2	order_phy			= c100
 		2	order_phy_group		= c100
 		2	performed_prsnl_id	= f8
 		2	admit_phy			= c100
 		2	attend_phy			= c100
- 
-		;009 next appointment
-		2	next_appt_dt_tm		= dq8
- 
-		2 proc_cnt				= i4
+ 		2	next_appt_dt_tm		= dq8   ;009 next appointment
+ 		2 proc_cnt				= i4
 		2 procedures[*]
 			3	order_id			= f8
 			3	order_mnemonic		= c100
@@ -203,21 +248,18 @@ record sched_appt (
 			3	order_signed_yn		= c3
 			3	order_scanned_yn	= c3
 			3   prior_auth_exp		= c30
- 
-		2	person_id			= f8
+ 		2	person_id			= f8
 		2	patient_name		= c100
 		2	dob					= dq8
 		2	dob_tz				= i4
- 
- 		2	encntr_id			= f8
+  		2	encntr_id			= f8
  		2	encntr_type			= c100
  		2	encntr_status		= c30
 		2	fin					= c10
 		2	health_plan			= c100
 		2	auth_nbr			= c50
 		2	auth_expire_dt		= dq8
- 
-		2	comments			= c255
+ 		2	comments			= c255
 		2   star_id				= c50
 )
  
@@ -227,21 +269,54 @@ record organizationList (
   	2 organization = f8
 )
  
-/**************************************************************/
-; populate record structure with prompt data
+/**********************************************************
+Populated Record Structure with Prompt Data
+***********************************************************/
+CALL ECHO("Populated Record Structure with Prompt Data")  ;013
+ 
 set sched_appt->p_start_datetime = format(cnvtdate2($start_datetime, "dd-mmm-yyyy hh:mm"), "mm/dd/yyyy;;d")
 set sched_appt->p_end_datetime = format(cnvtdate2($end_datetime, "dd-mmm-yyyy hh:mm"), "mm/dd/yyyy;;d")
  
+CALL ECHO("Setup Dates based on output and Action Prompt Values")	;013
+ 
+;Action Prompt Values		;013
+IF(SUBSTRING(1,1,REFLECT(PARAMETER(PARAMETER2($action),0))) = "L")		;multiple options selected
+	SET actprompt = '('
+	SET actnum = CNVTINT(SUBSTRING(2,2,REFLECT(PARAMETER(PARAMETER2($action),0))))
+ 
+	FOR (i = 1 TO actnum)
+		SET actitem = CNVTSTRING(PARAMETER(PARAMETER2($action),i))
+		SET actprompt = BUILD(actprompt,actitem)
+		IF (i != actnum)
+			SET actprompt = BUILD(actprompt, ",")
+		ENDIF
+	ENDFOR
+	SET actprompt = BUILD(actprompt, ")")
+ELSE 	;single value selected
+	SET actitem = CNVTSTRING(PARAMETER(PARAMETER2($action),1))
+	SET actprompt = BUILD(actitem)	
+ENDIF		;0013
+
+CALL ECHO(CONCAT("ActPrompt ", actprompt))
+ 
 ;002 update the edate and bdate to pull for 30 days from now for the export.
-if($CMGExport = "0")
-	SET bdate = CNVTDATETIME($start_datetime)
-	SET edate = CNVTDATETIME($end_datetime)
-else
+;013 - Changed this logic (see notes above)
+IF ($CMGExport = "1" AND actprompt = "(4518,4528)")  /*4518 = Cancel, 4528 = No Show */ ;014 - removed ".00" from the numbers
 	;012 Update to pull for the 60 days past
 	SET bdate = CNVTDATETIME(CURDATE-60, 0)
 	SET edate = CNVTDATETIME(CURDATE+30,235959)
-endif
+ELSEIF ($CMGExport = "1" AND actprompt = "4521")  /* 4521 = Confirm */		;014 - removed ".00" from the numbers
+	SET bdate = CNVTDATETIME(CURDATE, 0)
+	SET edate = CNVTDATETIME(CURDATE+30,235959)
+ELSE
+	SET bdate = CNVTDATETIME($start_datetime)
+	SET edate = CNVTDATETIME($end_datetime)
+ENDIF
  
+CALL ECHO("Export Data for Practices")	;013
+/**********************************************************
+Export Data for Practices - organizationList
+***********************************************************/
 ;001 CMG Export build data
 if (NOT($CMGExport = "0"))
  
@@ -261,11 +336,14 @@ if (NOT($CMGExport = "0"))
  
 	foot report
 		stat = alterlist(organizationList->olist, ocnt)
-	with nocount
+	with nocounter   ;013 - renamed from nocount to nocounter
 endif
  
-/**************************************************************/
-; select scheduled appointment data
+/**********************************************************
+Scheduled Appointment Data
+***********************************************************/
+CALL ECHO("Scheduled Appointment Data")	;013
+ 
 select
 	if (substring(1, 1, reflect(parameter(parameter2($physician_group), 0))) = "I"
 		and substring(1, 1, reflect(parameter(parameter2($userProvider), 0))) = "I")
@@ -310,15 +388,10 @@ select
 			and operator(per.person_id, op_provider_var, $userProvider)
 			and operator(ps.practice_site_id, op_practice_var, $physician_group)
 			and sa.beg_dt_tm between cnvtdatetime(bdate) and cnvtdatetime(edate)
- 
-	endif
- 
-into "NL:"
-from
- 	; scheduled patient
-	SCH_APPT sa
- 
- 	; scheduled resource
+ 	endif
+ into "NL:"
+from SCH_APPT sa  ; scheduled patient
+  	; scheduled resource
 	, (inner join SCH_APPT sar on sar.sch_event_id = sa.sch_event_id
 		and sar.role_meaning != "PATIENT"
 		and sar.sch_state_cd in (
@@ -340,30 +413,24 @@ from
 	, (left join SCH_EVENT_DETAIL sed1 on sed1.sch_event_id = sev.sch_event_id
 		and sed1.oe_field_meaning = "REASONFOREXAM"
 		and sed1.active_ind = 1)
- 
-	, (left join SCH_EVENT_DETAIL sed2 on sed2.sch_event_id = sev.sch_event_id
+ 	, (left join SCH_EVENT_DETAIL sed2 on sed2.sch_event_id = sev.sch_event_id
 		and sed2.oe_field_meaning = "SPECINX"
 		and sed2.active_ind = 1)
- 
-	, (left join SCH_EVENT_DETAIL sed3 on sed3.sch_event_id = sev.sch_event_id
+ 	, (left join SCH_EVENT_DETAIL sed3 on sed3.sch_event_id = sev.sch_event_id
 		and sed3.oe_field_meaning = "SCHORDPHYS"
 		and sed3.active_ind = 1)
- 
-	, (left join PRSNL per on per.person_id = sed3.oe_field_value
+ 	, (left join PRSNL per on per.person_id = sed3.oe_field_value
 		and per.active_ind = 1)
 	, (inner join PRSNL_ALIAS pera_oa on pera_oa.person_id = per.person_id
                                 and pera_oa.prsnl_alias_type_cd = orgdoc_var
                                 and pera_oa.alias_pool_cd = stardoc_var
                                 and pera_oa.end_effective_dt_tm > sysdate
                                 and pera_oa.active_ind = 1)
- 
-	, (left join PRSNL_RELTN pr on pr.person_id = per.person_id
+ 	, (left join PRSNL_RELTN pr on pr.person_id = per.person_id
 		and pr.parent_entity_name = "PRACTICE_SITE"
 		and pr.active_ind = 1)
- 
-	, (left join PRACTICE_SITE ps on ps.practice_site_id = pr.parent_entity_id)
- 
- ; action  008 Update to counter degradation of sub queries
+ 	, (left join PRACTICE_SITE ps on ps.practice_site_id = pr.parent_entity_id)
+  ; action  008 Update to counter degradation of sub queries
 	, (inner join SCH_EVENT_ACTION seact on seact.sch_event_id = sev.sch_event_id
 		and seact.schedule_id = sa.schedule_id
 		and seact.action_meaning != "VIEW"
@@ -374,96 +441,70 @@ from
 			and sub_seact.schedule_id = sa.schedule_id
 			and sub_seact.sch_event_id = sev.sch_event_id
 			and sub_seact.active_ind = 1
-			and (
-			(operator(sub_seact.sch_action_cd, op_action_var, $action)
+			and ((operator(sub_seact.sch_action_cd, op_action_var, $action)
 				and sub_seact.sch_action_cd in (confirm_var, cancel_var, noshow_var))
- 
-			or
- 
-			(operator(sub_seact.sch_reason_cd, op_action_var, $action)
-				and sub_seact.sch_reason_cd in (cancel_unable_sched_var))
-			)
+ 				or
+ 				(operator(sub_seact.sch_reason_cd, op_action_var, $action)
+					and sub_seact.sch_reason_cd in (cancel_unable_sched_var))
+				)
 ;			group by
 ;				sch_event_id,
 ;				schedule_id
 		)
- 
- 
-		and seact.active_ind = 1
+  		and seact.active_ind = 1
 ;		and seact.action_meaning = "SCHEDULE"
 		)
- 
-	, (inner join PRSNL per3 on per3.person_id = seact.action_prsnl_id)
- 
-	, (left join SCH_EVENT_COMM sec on sec.sch_event_id = seact.sch_event_id
+ 	, (inner join PRSNL per3 on per3.person_id = seact.action_prsnl_id)
+ 	, (left join SCH_EVENT_COMM sec on sec.sch_event_id = seact.sch_event_id
 		and sec.sch_action_id = seact.sch_action_id
 		and sec.text_type_cd = action_comments_text_var
 		and sec.sub_text_cd = action_comments_sub_text_var
 		and sec.active_ind = 1)
- 
-	, (left join LONG_TEXT lt on lt.long_text_id = sec.text_id
+ 	, (left join LONG_TEXT lt on lt.long_text_id = sec.text_id
 		and lt.active_ind = 1)
- 
- 	; patient
+  	; patient
 	, (inner join PERSON p on p.person_id = sa.person_id)
- 
- 	; encounter
+  	; encounter
 	, (left join ENCOUNTER e on operator(e.organization_id, op_facility_var, $facility) ; facility
 		and e.encntr_id = sa.encntr_id
 		and e.person_id = sa.person_id
 		and e.organization_id != 0.00
 		and e.active_ind = 1)
- 
-	, (left join ENCNTR_ALIAS eaf on eaf.encntr_id = e.encntr_id
+ 	, (left join ENCNTR_ALIAS eaf on eaf.encntr_id = e.encntr_id
 		and eaf.encntr_alias_type_cd = fin_var
 		and eaf.active_ind = 1)
- 
-	; health plan
+ 	; health plan
 	, (left join ENCNTR_PLAN_RELTN epr on epr.encntr_id = e.encntr_id
 		and epr.priority_seq = 1
 		and epr.end_effective_dt_tm > sysdate
 		and epr.active_ind = 1)
- 
-	, (left join ENCNTR_PLAN_AUTH_R epar on epar.encntr_plan_reltn_id = epr.encntr_plan_reltn_id
+ 	, (left join ENCNTR_PLAN_AUTH_R epar on epar.encntr_plan_reltn_id = epr.encntr_plan_reltn_id
 		and epar.active_ind = 1)
- 
-	, (left join AUTHORIZATION au on au.authorization_id = epar.authorization_id
+ 	, (left join AUTHORIZATION au on au.authorization_id = epar.authorization_id
 		and au.active_ind = 1)
- 
-	, (left join HEALTH_PLAN hp on hp.health_plan_id = epr.health_plan_id
+ 	, (left join HEALTH_PLAN hp on hp.health_plan_id = epr.health_plan_id
 		and hp.end_effective_dt_tm > sysdate
 		and hp.active_ind = 1)
- 
-	; scanned order
+ 	; scanned order
 	, (left join CLINICAL_EVENT ce on ce.encntr_id = e.encntr_id
 		and ce.person_id = e.person_id
 		and ce.event_cd in (physician_order_var, outside_order_var))
- 
-	, (left join CE_EVENT_PRSNL ceper on ceper.event_id = ce.event_id
+ 	, (left join CE_EVENT_PRSNL ceper on ceper.event_id = ce.event_id
 		and ceper.action_type_cd = perform_var)
- 
- 	; physicians
+  	; physicians
 	, (left join ENCNTR_PRSNL_RELTN eper1 on eper1.encntr_id = e.encntr_id
 		and eper1.encntr_prsnl_r_cd = admitting_physician_var
 		and eper1.active_ind = 1)
- 
-	, (left join PRSNL per1 on per1.person_id = eper1.prsnl_person_id)
- 
-	, (left join ENCNTR_PRSNL_RELTN eper2 on eper2.encntr_id = e.encntr_id
+ 	, (left join PRSNL per1 on per1.person_id = eper1.prsnl_person_id)
+ 	, (left join ENCNTR_PRSNL_RELTN eper2 on eper2.encntr_id = e.encntr_id
 		and eper2.encntr_prsnl_r_cd = attending_physician_var
 		and eper2.active_ind = 1)
- 
-	, (left join PRSNL per2 on per2.person_id = eper2.prsnl_person_id)
- 
-	; patient location
+ 	, (left join PRSNL per2 on per2.person_id = eper2.prsnl_person_id)
+ 	; patient location
 	, (inner join LOCATION l on l.location_cd = sa.appt_location_cd)
- 
- 	; encounter organization
+  	; encounter organization
 	, (inner join ORGANIZATION org on org.organization_id = e.organization_id)
- 
-order by
-	sa.sch_appt_id
-	, seact.sch_action_id
+ order by sa.sch_appt_id, seact.sch_action_id
  
  
 ; populate sched_appt record structure
@@ -490,7 +531,6 @@ head seact.sch_action_id
 	sched_appt->list[cnt].location			= trim(uar_get_code_display(sa.appt_location_cd), 3)
 	sched_appt->list[cnt].location_type		= trim(uar_get_code_meaning(l.location_type_cd), 3)
 	sched_appt->list[cnt].org_name			= trim(org.org_name, 3)
- 
 	sched_appt->list[cnt].schedule_id		= sa.schedule_id
 	sched_appt->list[cnt].sch_event_id		= sa.sch_event_id
 	sched_appt->list[cnt].action_dt_tm		= seact.action_dt_tm
@@ -502,25 +542,20 @@ head seact.sch_action_id
 	sched_appt->list[cnt].action_prsnl		= per3.name_full_formatted
 	sched_appt->list[cnt].reason			= trim(uar_get_code_display(seact.sch_reason_cd), 3)
 	sched_appt->list[cnt].reason_exam		= trim(sed1.oe_field_display_value, 3)
- 
 	sched_appt->list[cnt].action_comment	= lt.long_text
 	sched_appt->list[cnt].action_comment	= replace(sched_appt->list[cnt].action_comment, char(13), " ", 4)
 	sched_appt->list[cnt].action_comment	= replace(sched_appt->list[cnt].action_comment, char(10), " ", 4)
 	sched_appt->list[cnt].action_comment	= replace(sched_appt->list[cnt].action_comment, char(0), " ", 4)
 	sched_appt->list[cnt].action_comment	= trim(sched_appt->list[cnt].action_comment, 3)
- 
 	sched_appt->list[cnt].order_phy			= trim(sed3.oe_field_display_value, 3)
 	sched_appt->list[cnt].order_phy_group	= trim(ps.practice_site_display, 3)
 	sched_appt->list[cnt].performed_prsnl_id	= ce.performed_prsnl_id
- 
 	sched_appt->list[cnt].admit_phy			= per1.name_full_formatted
 	sched_appt->list[cnt].attend_phy		= per2.name_full_formatted
- 
 	sched_appt->list[cnt].person_id			= p.person_id
 	sched_appt->list[cnt].patient_name		= p.name_full_formatted
 	sched_appt->list[cnt].dob				= p.birth_dt_tm
 	sched_appt->list[cnt].dob_tz			= p.birth_tz
- 
  	sched_appt->list[cnt].encntr_id			= e.encntr_id
 	sched_appt->list[cnt].encntr_type		= trim(uar_get_code_display(e.encntr_type_cd), 3)
 	sched_appt->list[cnt].encntr_status		= trim(uar_get_code_display(e.encntr_status_cd), 3)
@@ -528,27 +563,32 @@ head seact.sch_action_id
 	sched_appt->list[cnt].health_plan		= trim(hp.plan_name, 3)
 	sched_appt->list[cnt].auth_nbr			= trim(au.auth_nbr, 3)
 	sched_appt->list[cnt].auth_expire_dt	= au.auth_expire_dt_tm
- 
 	sched_appt->list[cnt].comments			= replace(sed2.oe_field_display_value, char(13), " ", 4)
 	sched_appt->list[cnt].comments			= replace(sched_appt->list[cnt].comments, char(10), " ", 4)
 	sched_appt->list[cnt].comments			= replace(sched_appt->list[cnt].comments, char(0), " ", 4)
 	sched_appt->list[cnt].comments			= trim(sched_appt->list[cnt].comments, 3)
 	sched_appt->list[cnt].star_id			= pera_oa.alias
  
- 
 foot report
 	call alterlist(sched_appt->list, cnt)
-;009
-; WITH nocounter, time = 500
-WITH nocounter, time = 1000
  
-/**************************************************************/
-; select patient health plan data
+WITH nocounter, time = 1000		;009 - changed time from 500 to 1000
+ 
+/**********************************************************
+Continue if there is data from the first query
+***********************************************************/
+CALL ECHO ("Continue if there is data from the first query")	;013
+ 
+IF (sched_appt->sched_cnt > 0) ;013 - Continue if there is data from the first query
+ 
+/**********************************************************
+Patient Health Plan Data
+***********************************************************/
+CALL ECHO("Patient Health Plan Data")	;013
+ 
 select into "NL:"
-from
-	SCH_ENTRY sen
- 
-	; patient health plan
+from SCH_ENTRY sen
+ 	; patient health plan
 	, (inner join PERSON_PLAN_RELTN ppr on ppr.person_id = sen.person_id
 		and ppr.priority_seq = (
 			select min(pprm.priority_seq)
@@ -562,17 +602,11 @@ from
 		and ppr.beg_effective_dt_tm <= cnvtdatetime (curdate ,curtime3 )
 		and ppr.end_effective_dt_tm > cnvtdatetime (curdate ,curtime3 )
 		and ppr.active_ind = 1)
- 
-	, (inner join HEALTH_PLAN hp on hp.health_plan_id = ppr.health_plan_id
+ 	, (inner join HEALTH_PLAN hp on hp.health_plan_id = ppr.health_plan_id
 		and hp.active_ind = 1)
- 
-where
-	expand(num, 1, size(sched_appt->list, 5), sen.sch_event_id, sched_appt->list[num].sch_event_id)
+ where expand(num, 1, size(sched_appt->list, 5), sen.sch_event_id, sched_appt->list[num].sch_event_id)
 	and sen.active_ind = 1
- 
-order by
-	sen.sch_event_id
- 
+ order by sen.sch_event_id
  
 ; populate sched_obj record structure with health plan data
 head sen.sch_event_id
@@ -585,25 +619,22 @@ detail
 	if (sched_appt->list[idx].encntr_id <= 0)
  		sched_appt->list[idx].health_plan = trim(hp.plan_name, 3)
 	endif
- 
 WITH nocounter, expand = 1, time = 1000
  
-/**************************************************************/
-; select scheduled procedures data
+/**********************************************************
+Scheduled Procedures Data
+***********************************************************/
+CALL ECHO("Scheduled Procedures Data") ;013
  
 select into "NL:"
-from
-	SCH_EVENT_ATTACH sea
- 
-	, (inner join SCH_APPT sa on sa.sch_event_id = sea.sch_event_id
+from SCH_EVENT_ATTACH sea
+ 	, (inner join SCH_APPT sa on sa.sch_event_id = sea.sch_event_id
 		and sa.schedule_id > 0.0
 		and sa.role_meaning = "PATIENT"
 		and sa.active_ind = 1)
- 
-	, (inner join ORDERS o on o.order_id = sea.order_id
+ 	, (inner join ORDERS o on o.order_id = sea.order_id
 		and o.active_ind = 1)
- 
-	, (left join ORDER_DETAIL od on od.order_id = o.order_id
+ 	, (left join ORDER_DETAIL od on od.order_id = o.order_id
 		and od.oe_field_meaning = "SCHEDAUTHNBR"
 ; 007 Add a section to ensure we are pulling the latest action_sequence
 		and od.action_sequence = (SELECT MAX(sub_od.action_sequence)
@@ -615,8 +646,7 @@ from
 									)
 ; end 007
 		)
- 
-	, (left join ORDER_DETAIL od2 on od2.order_id = o.order_id
+ 	, (left join ORDER_DETAIL od2 on od2.order_id = o.order_id
 		and od2.oe_field_meaning = "SURGUSER1")
 ; PULL THE AUTH EXPIRE DT from the order detail.
 	, (left join ORDER_DETAIL od3 on od3.order_id = o.order_id
@@ -628,13 +658,10 @@ from
 									and OD.oe_field_meaning = "SURGRECOVERYDUR")
 ; end 011
 	)
- 
-	, (inner join ORDER_ACTION oa on oa.order_id = o.order_id
+ 	, (inner join ORDER_ACTION oa on oa.order_id = o.order_id
 		and oa.action_type_cd = order_var)
- 
-	, (inner join PRSNL per on per.person_id = oa.action_personnel_id)
- 
-	, (left join ORDER_COMMENT oc on oc.order_id = o.order_id
+ 	, (inner join PRSNL per on per.person_id = oa.action_personnel_id)
+ 	, (left join ORDER_COMMENT oc on oc.order_id = o.order_id
 ; 007 Add a section to ensure we are pulling the latest action_sequence
 		and oc.action_sequence = (SELECT MAX(sub_oc.action_sequence)
 								  FROM ORDER_COMMENT SUB_OC
@@ -644,21 +671,14 @@ from
 								  )
 ; end 007
 	)
- 
-	, (left join LONG_TEXT lt on lt.long_text_id = oc.long_text_id
+ 	, (left join LONG_TEXT lt on lt.long_text_id = oc.long_text_id
 		and lt.parent_entity_id = oc.order_id
 		and lt.parent_entity_name = "ORDER_COMMENT")
- 
-where
-	expand(num, 1, size(sched_appt->list, 5), sea.sch_event_id, sched_appt->list[num].sch_event_id
+ where expand(num, 1, size(sched_appt->list, 5), sea.sch_event_id, sched_appt->list[num].sch_event_id
 		, sa.sch_appt_id, sched_appt->list[num].sch_appt_id)
 	and sea.attach_type_cd = attach_type_var
 	and sea.active_ind = 1
- 
-order by
-	sea.sch_event_id
-	, sa.sch_appt_id
-	, o.order_id
+order by sea.sch_event_id, sa.sch_appt_id, o.order_id
  
  
 ; populate sched_appt record structure with procedure data
@@ -681,11 +701,9 @@ head sa.sch_appt_id
 detail
 	if (cnvtdate(o.current_start_dt_tm) = cnvtdate(sched_appt->list[idx].appt_dt_tm))
 		cntx = cntx + 1
- 
 		if (mod(cntx, 10) = 1 and cntx > 10)
 			call alterlist(sched_appt->list[idx].procedures, cntx + 9)
 		endif
- 
  		sched_appt->list[idx].proc_cnt = cntx
 		sched_appt->list[idx].procedures[cntx].order_id = o.order_id
 		sched_appt->list[idx].procedures[cntx].order_mnemonic = trim(o.order_mnemonic, 3)
@@ -701,19 +719,14 @@ detail
 				"NO"
 			endif
 			)
- 
-		sched_appt->list[idx].procedures[cntx].order_comment = lt.long_text
- 
-		sched_appt->list[idx].procedures[cntx].order_comment = replace(
+ 		sched_appt->list[idx].procedures[cntx].order_comment = lt.long_text
+ 		sched_appt->list[idx].procedures[cntx].order_comment = replace(
 			sched_appt->list[idx].procedures[cntx].order_comment, char(13), " ", 4)
- 
-		sched_appt->list[idx].procedures[cntx].order_comment = replace(
+ 		sched_appt->list[idx].procedures[cntx].order_comment = replace(
 			sched_appt->list[idx].procedures[cntx].order_comment, char(10), " ", 4)
- 
-		sched_appt->list[idx].procedures[cntx].order_comment = replace(
+ 		sched_appt->list[idx].procedures[cntx].order_comment = replace(
 			sched_appt->list[idx].procedures[cntx].order_comment, char(0), " ", 4)
- 
-		sched_appt->list[idx].procedures[cntx].order_comment = trim(sched_appt->list[idx].procedures[cntx].order_comment, 3)
+ 		sched_appt->list[idx].procedures[cntx].order_comment = trim(sched_appt->list[idx].procedures[cntx].order_comment, 3)
  
 	endif
  
@@ -721,6 +734,8 @@ foot sa.sch_appt_id
 	call alterlist(sched_appt->list[idx].procedures, cntx)
  
 WITH nocounter, expand = 1, time = 1000
+ 
+CALL ECHO ("Get Patient's next appointment with the ordering provider's physicians group")
  
 ;010 Get patient's next scheduled appointment with the ordering provider's physicians group.
 select distinct into "NL:"
@@ -759,6 +774,11 @@ detail
  
 WITH nocounter, time = 600, expand =1
  
+/**********************************************************
+Determine whether send to Grid/Spreadsheet or ASTREAM
+***********************************************************/
+CALL ECHO("Determine whether send to Grid/Spreadsheet or ASTREAM")
+ 
 ; 001 extract capabilities
 if ($CMGExport = "0")
 	CALL OUTPUT_SPREADSHEET(null)
@@ -766,103 +786,83 @@ else
 	CALL OUTPUT_ASTREAM(null)
 endif
  
+/**********************************************************
+Output to Grid/Spreadsheet
+***********************************************************/
+ 
 SUBROUTINE OUTPUT_SPREADSHEET(null)
-/**************************************************************/
-; select data
+ 
+CALL ECHO ("Output to Grid/Spreadsheet")
+ 
 select distinct into $OUTDEV
 	patient_name			= sched_appt->list[d1.seq].patient_name
 	, dob					= format(cnvtdatetimeutc(datetimezone(sched_appt->list[d1.seq].dob,
 																  sched_appt->list[d1.seq].dob_tz), 1), "mm/dd/yyyy;;d")
- 
-	, fin					= sched_appt->list[d1.seq].fin
+ 	, fin					= sched_appt->list[d1.seq].fin
 	, order_phy				= sched_appt->list[d1.seq].order_phy
-;004 add in the org_name
-	, org_name				= sched_appt->list[d1.seq].org_name
+	, org_name				= sched_appt->list[d1.seq].org_name    ;004 add in the org_name
 	, appt_type				= sched_appt->list[d1.seq].appt_type
 	, health_plan			= sched_appt->list[d1.seq].health_plan
 	, appt_dt_tm			= format(sched_appt->list[d1.seq].appt_dt_tm, "mm/dd/yyyy hh:mm:ss;;Q")
- 
-	, auth_nbr				= if (trim(sched_appt->list[d1.seq].procedures[d2.seq].prior_auth, 3) =
+ 	, auth_nbr				= if (trim(sched_appt->list[d1.seq].procedures[d2.seq].prior_auth, 3) =
 								trim(sched_appt->list[d1.seq].auth_nbr, 3))
 								trim(sched_appt->list[d1.seq].auth_nbr, 3)
- 
-							  elseif (size(trim(sched_appt->list[d1.seq].procedures[d2.seq].prior_auth, 3)) > 0
+ 							  elseif (size(trim(sched_appt->list[d1.seq].procedures[d2.seq].prior_auth, 3)) > 0
 							  	and size(trim(sched_appt->list[d1.seq].auth_nbr, 3)) = 0)
 							  	trim(sched_appt->list[d1.seq].procedures[d2.seq].prior_auth, 3)
- 
-							  elseif (size(trim(sched_appt->list[d1.seq].auth_nbr, 3)) > 0
+ 							  elseif (size(trim(sched_appt->list[d1.seq].auth_nbr, 3)) > 0
 							  	and size(trim(sched_appt->list[d1.seq].procedures[d2.seq].prior_auth, 3)) = 0)
 							  	trim(sched_appt->list[d1.seq].auth_nbr, 3)
- 
-							  else
+ 							  else
 							  	build2(trim(sched_appt->list[d1.seq].auth_nbr, 3), " / ",
 							  		trim(sched_appt->list[d1.seq].procedures[d2.seq].prior_auth, 3))
- 
-							  endif
+ 							  endif
 ; 	, sch_evnt_id			= sched_appt->list[d1.seq].sch_appt_id
 ;	, order_id				= sched_appt->list[d1.seq].procedures[d2.seq].order_id
 	, order_comment			= trim(sched_appt->list[d1.seq].procedures[d2.seq].order_comment, 3)
- 
 	, auth_expire_dt		= build2(format(sched_appt->list[d1.seq].auth_expire_dt, "mm/dd/yyyy hh:mm:ss;;Q"),
 								TRIM(sched_appt->list[d1.seq].procedures[d2.seq].prior_auth_exp,3))
 	, group_practice		= sched_appt->list[d1.seq].order_phy_group
 	, reason_exam			= sched_appt->list[d1.seq].reason_exam
- 
 	, appt_state			= sched_appt->list[d1.seq].appt_state
- 
 	, order_dt_tm			= format(sched_appt->list[d1.seq].procedures[d2.seq].order_dt_tm, "mm/dd/yyyy hh:mm:ss;;Q")
 	, order_mnemonic		= trim(sched_appt->list[d1.seq].procedures[d2.seq].order_mnemonic, 3)
- 
 	, schedule_dt_tm		= format(sched_appt->list[d1.seq].schedule_dt_tm, "mm/dd/yyyy hh:mm:ss;;Q")
-;
 ;	, action_dt_tm			= format(sched_appt->list[d1.seq].action_dt_tm, "mm/dd/yyyy hh:mm:ss;;Q")
 ;	, action				= sched_appt->list[d1.seq].action
 	, action_prsnl			= sched_appt->list[d1.seq].action_prsnl
 	, action_comment		= trim(sched_appt->list[d1.seq].action_comment, 3)
 	, reason				= trim(sched_appt->list[d1.seq].reason, 3)
 	, next_appt_dt_tm		= format(sched_appt->list[d1.seq].next_appt_dt_tm, "mm/dd/yyyy hh:mm:ss;;Q")
- 
- 
-from
-	(dummyt d1 with seq = value(sched_appt->sched_cnt))
+from (dummyt d1 with seq = value(sched_appt->sched_cnt))
 	, (dummyt d2 with seq = 1)
- 
 plan d1 where maxrec(d2, sched_appt->list[d1.seq].proc_cnt)
 orjoin d2
- 
-order by
-; 003 02/15/21 update the sorting order to only sort by appt_dt_tm then fin
-;	patient_name
-;	, sched_appt->list[d1.seq].person_id
-;	, fin
-	 sched_appt->list[d1.seq].appt_dt_tm
-	, fin
-	, appt_type
-;	, sched_appt->list[d1.seq].schedule_id
-;	, sched_appt->list[d1.seq].action_dt_tm
-;	, action
-;	, location
+order by sched_appt->list[d1.seq].appt_dt_tm, fin, appt_type
  
 with nocounter, separator = " ", format, time = 1000
  
 END
  
+/**********************************************************
+Output to a file and ASTREAM
+***********************************************************/
+ 
 SUBROUTINE OUTPUT_ASTREAM(null)
+ 
+CALL ECHO("Output to a file and ASTREAM")
  
 SELECT DISTINCT INTO value(output_var)
 	patient_name			= sched_appt->list[d1.seq].patient_name
 	, dob					= format(cnvtdatetimeutc(datetimezone(sched_appt->list[d1.seq].dob,
 																  sched_appt->list[d1.seq].dob_tz), 1), "mm/dd/yyyy;;d")
- 
 	, fin					= sched_appt->list[d1.seq].fin
 	, order_phy				= sched_appt->list[d1.seq].order_phy
-;004 add in the org_name
-	, org_name				= sched_appt->list[d1.seq].org_name
+	, org_name				= sched_appt->list[d1.seq].org_name		;004 add in the org_name
 	, appt_type				= sched_appt->list[d1.seq].appt_type
 	, health_plan			= sched_appt->list[d1.seq].health_plan
 	, appt_dt_tm			= format(sched_appt->list[d1.seq].appt_dt_tm, "mm/dd/yyyy hh:mm:ss;;Q")
- 
-	, auth_nbr				= if (trim(sched_appt->list[d1.seq].procedures[d2.seq].prior_auth, 3) =
+   	, auth_nbr				= if (trim(sched_appt->list[d1.seq].procedures[d2.seq].prior_auth, 3) =
 								trim(sched_appt->list[d1.seq].auth_nbr, 3))
 								trim(sched_appt->list[d1.seq].auth_nbr, 3)
  
@@ -877,53 +877,31 @@ SELECT DISTINCT INTO value(output_var)
 							  else
 							  	build2(trim(sched_appt->list[d1.seq].auth_nbr, 3), " / ",
 							  		trim(sched_appt->list[d1.seq].procedures[d2.seq].prior_auth, 3))
- 
-							  endif
+ 							  endif
 ; 	, sch_evnt_id			= sched_appt->list[d1.seq].sch_appt_id
 ;	, order_id				= sched_appt->list[d1.seq].procedures[d2.seq].order_id
 	, order_comment			= trim(sched_appt->list[d1.seq].procedures[d2.seq].order_comment, 3)
- 
 	, auth_expire_dt		= build2(format(sched_appt->list[d1.seq].auth_expire_dt, "mm/dd/yyyy hh:mm:ss;;Q"),
 								TRIM(sched_appt->list[d1.seq].procedures[d2.seq].prior_auth_exp,3))
 	, group_practice		= sched_appt->list[d1.seq].order_phy_group
 	, reason_exam			= sched_appt->list[d1.seq].reason_exam
- 
 	, appt_state			= sched_appt->list[d1.seq].appt_state
- 
 	, order_dt_tm			= format(sched_appt->list[d1.seq].procedures[d2.seq].order_dt_tm, "mm/dd/yyyy hh:mm:ss;;Q")
 	, order_mnemonic		= trim(sched_appt->list[d1.seq].procedures[d2.seq].order_mnemonic, 3)
-;004 uncomment the following line
-	, schedule_dt_tm		= format(sched_appt->list[d1.seq].schedule_dt_tm, "mm/dd/yyyy hh:mm:ss;;Q")
-;
+	, schedule_dt_tm		= format(sched_appt->list[d1.seq].schedule_dt_tm, "mm/dd/yyyy hh:mm:ss;;Q")   ;004 - uncommented
 ;	, action_dt_tm			= format(sched_appt->list[d1.seq].action_dt_tm, "mm/dd/yyyy hh:mm:ss;;Q")
 ;	, action				= sched_appt->list[d1.seq].action
 	, action_prsnl			= sched_appt->list[d1.seq].action_prsnl
 	, action_comment		= trim(sched_appt->list[d1.seq].action_comment, 3)
 	, reason				= trim(sched_appt->list[d1.seq].reason, 3)
 	, star_id				= sched_appt->list[d1.seq].star_id
- 
- 
-from
-	(dummyt d1 with seq = value(sched_appt->sched_cnt))
+from (dummyt d1 with seq = value(sched_appt->sched_cnt))
 	, (dummyt d2 with seq = 1)
- 
 plan d1 where maxrec(d2, sched_appt->list[d1.seq].proc_cnt)
 orjoin d2
+order by sched_appt->list[d1.seq].appt_dt_tm, fin, appt_type
  
-order by
-; 003 02/15/21 update the sorting order to only sort by appt_dt_tm then fin
-;	patient_name
-;	, sched_appt->list[d1.seq].person_id
-;	, fin
-	 sched_appt->list[d1.seq].appt_dt_tm
-	, fin
-	, appt_type
-;	, sched_appt->list[d1.seq].schedule_id
-;	, sched_appt->list[d1.seq].action_dt_tm
-;	, action
-;	, location
- 
-WITH NOCOUNTER, PCFORMAT(^"^,^,^,1,0),SEPARATOR=",", FORMAT = STREAM, formatfeed = none, format
+WITH NOCOUNTER, PCFORMAT(^"^,^,^,1,0),SEPARATOR=",", FORMAT = STREAM, formfeed = none, format	;013 Changed formatfeed to formfeed
  
 	set cmd = build2("cp ", temppath2_var, " ", filepath_var)
 	set len = size(trim(cmd))
@@ -932,11 +910,8 @@ WITH NOCOUNTER, PCFORMAT(^"^,^,^,1,0),SEPARATOR=",", FORMAT = STREAM, formatfeed
 	call echo(build2(cmd, " : ", stat))
 END
 ;call echorecord(sched_appt)
-;go to exitscript
  
-/**************************************************************
-; DVDev DEFINED SUBROUTINES
-**************************************************************/
+ENDIF ;013 - No Data from main query
  
 #exitscript
  

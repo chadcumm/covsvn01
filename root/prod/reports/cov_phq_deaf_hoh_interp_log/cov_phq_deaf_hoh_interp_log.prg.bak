@@ -18,7 +18,7 @@
  
 Mod Date	Developer			Comment
 ----------	-----------------------------------------------------------------
-09-21-22    Geetha         Initial release
+09-21-22    Geetha         Initial release as an excel format
 ******************************************************************************/
 
 drop program cov_phq_deaf_hoh_interp_log:dba go
@@ -37,6 +37,12 @@ with OUTDEV, start_datetime, end_datetime, facility_list
 /**************************************************************
 ; DVDev DECLARED VARIABLES
 **************************************************************/
+
+
+declare comm_assess_var = f8 with constant(value(uar_get_code_by('DISPLAY', 72, 'Communication Assessment Form'))), protect
+
+;3911149319.00	Communication Assessment Form
+
 
 declare reg_interp_req_var       = f8 with constant(23290423.00) 
 declare sch_interp_req_var       = f8 with constant(25789963.00)
@@ -104,6 +110,7 @@ Record pat(
 		2 nu_typ_service_provided = vc
 		2 reason_no_service = vc
 		2 pr_no_service_decision = vc
+		2 comm_assess_form = vc
 )		
 
 
@@ -134,9 +141,6 @@ join ea where ea.encntr_id = e.encntr_id
 	
 order by e.loc_facility_cd, e.encntr_id
 
-;with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
-;go to exitscript
-
 Head report
 	cnt = 0
 Head e.encntr_id
@@ -154,9 +158,6 @@ Head e.encntr_id
 Foot report
 	stat = alterlist(pat->plist, cnt)
 WITH nocounter
-
-;call echorecord(pat)
-;go to exitscript
 
 ;-------------------------------------------------------------------------------------------------------------	
 ;Scheduled appt dt
@@ -194,7 +195,6 @@ from sch_appt sa
 	, sch_event_detail sed1
 	
 plan sa where expand(num, 1, pat->rec_cnt, sa.encntr_id, pat->plist[num].encntrid)
-	;where sa.encntr_id = 131604420.00
 	and sa.active_ind = 1
 	and sa.sch_state_cd = value(uar_get_code_by("DISPLAY", 14233, "Confirmed"))
 	and sa.sch_role_cd = value(uar_get_code_by("DISPLAY", 14250, "Patient"))
@@ -214,14 +214,10 @@ join sed1 where sed1.sch_event_id = sed.sch_event_id
 
 order by sa.encntr_id, sed.sch_event_id, sed.oe_field_id, sed1.oe_field_id
 
-;with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), expand = 1;, maxrow = 10000
-;go to exitscript
-
 Head sa.encntr_id
 	icnt = 0
 	idx = 0
       idx = locateval(icnt ,1 ,pat->rec_cnt ,sa.encntr_id ,pat->plist[icnt].encntrid)
-      ;pat->plist[idx].sch_appt_dt = sa.beg_dt_tm
       interp_req_tmp_var = ' ', bh_interp_req_tmp_var = ' '
 Head sed.oe_field_id
 	case(sed.oe_field_id)
@@ -259,13 +255,8 @@ Foot report
 
 with nocounter, expand = 1
 
-
-;call echorecord(pat)
-;go to exitscript
-
-
 ;--------------------------------------------------------------------------------------------------------------
-;Nursing ; fin = '5225800629', eid = 131462592.00 9/15/06am
+;Nursing 
 
 select into $outdev
 ce.encntr_id, ce.event_id, ce.result_val, ce.event_id, ce.parent_event_id, ce.verified_dt_tm ';;q'
@@ -320,15 +311,10 @@ Head ce.parent_event_id
 	pat->plist[idx].nu_interp_service_for = ce3.result_val ;patient/companion
 with nocounter, expand = 1	
 
-;call echorecord(pat)
-;go to exitscript
 ;--------------------------------------------------------------------------------------------------------------
 ;Interpreter Service Provided
 ;Lori to get with Debi - charted time or service begin time (not in build yet)
 
- ;9/21-  42963395.00 Interpreter Agency Name	Stratus Video Remote Interpreting (sign/foreign language) ;actual patient result
-   
-   
 select into $outdev
 ce.encntr_id, ce.event_id, ce.result_val, ce.parent_event_id, ce.verified_dt_tm ';;q'
 
@@ -384,6 +370,35 @@ Head pp.person_id
 with nocounter, expand = 1		
 
 ;--------------------------------------------------------------------------------------------------------------
+;Communication Assessment Form completion
+
+select into $outdev
+
+from clinical_event ce
+
+plan ce where expand(num, 1,pat->rec_cnt, ce.encntr_id, pat->plist[num].encntrid)
+	and ce.event_cd = comm_assess_var
+	and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+	and ce.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
+	and ce.event_id = (select max(ce1.event_id) from clinical_event ce1
+		where ce1.encntr_id = ce.encntr_id
+		and ce1.event_cd = ce.event_cd
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+		and ce1.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
+		group by ce1.encntr_id, ce1.event_cd)
+
+order by ce.encntr_id
+
+Head ce.encntr_id
+	icnt = 0
+	idx = 0
+      idx = locateval(icnt ,1 ,pat->rec_cnt ,ce.encntr_id ,pat->plist[icnt].encntrid)
+	if(idx > 0)
+		pat->plist[idx].comm_assess_form = uar_get_code_display(ce.event_cd)
+	endif	
+with nocounter, expand = 1
+
+;--------------------------------------------------------------------------------------------------------------
 
 call echorecord(pat)	
 	
@@ -409,6 +424,7 @@ select into $outdev
 	, service_provided_dt = pat->plist[d1.seq].nu_interp_service_dt ';;q'
 	, reason_no_service = substring(1, 1000, pat->plist[d1.seq].reason_no_service)
 	, employee_decision_no_service = substring(1, 100, pat->plist[d1.seq].pr_no_service_decision)
+	, Deaf_Assessment_form = substring(1, 100, pat->plist[d1.seq].comm_assess_form)
 
 from
 	(dummyt   d1  with seq = size(pat->plist, 5))

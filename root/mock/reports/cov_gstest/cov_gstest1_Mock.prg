@@ -22,7 +22,7 @@ select fin = ea.alias, ce.encntr_id, ce.event_cd
 , e.person_id, fac = uar_get_code_display(e.loc_facility_cd), e.loc_facility_cd
 , event_start_dt  = format(ce.event_start_dt_tm, 'mm/dd/yyyy hh:mm:ss;;d')
 , ce.view_level, ce.publish_flag,normalcy = uar_get_code_display(ce.normalcy_cd), ce.ce_dynamic_label_id, ce.valid_until_dt_tm
- 
+, ce.* 
 from clinical_event ce, encntr_alias ea, prsnl pr, prsnl pr1, encounter e
  
 where ce.encntr_id = ea.encntr_id
@@ -33,9 +33,9 @@ and ce.performed_prsnl_id = pr.person_id
 and ce.verified_prsnl_id = pr1.person_id
 and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
 and ce.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
-and ce.encntr_id = 130143712                
+;and ce.encntr_id = 130143712                
 ;and ce.person_id =    18862688.00
-;and ea.alias = '2210800002';'5219900004';'2124600147'
+and ea.alias = '2125900109'
 ;and ce.event_id = 3686938696.00
 ;and ce.ce_dynamic_label_id =      11367714587.00
 order by ce.verified_dt_tm desc
@@ -3539,7 +3539,7 @@ with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), ti
 
 SELECT P.*
 from person p
-where p.name_full_formatted =  'ZZZTEST, CUSTDEV'
+where p.name_full_formatted =  'TEST, CUSTDEV'
 
 select * from person_patient pp where pp.person_id = 21391781
 with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
@@ -3906,20 +3906,194 @@ Detail
 With nocounter, nullreport go   	
    	
    	
+MOCK Patient for result type
+ 
+ FIN - 2125900109
+
+ZZZTEST, CORTEXONE   	
    	
    	
    	
+ 3911149319.00	Communication Assessment Form
    	
    	
+select * from person p where p.name_full_formatted = 'TEST, DEVGRP'    	
    	
+select * from encounter e where e.person_id =     20755830.00
    	
+select ea.alias, ea.encntr_id,ea.* from encntr_alias ea 
+;where ea.encntr_id =    125448108.00
+where ea.alias = '4000000152';'2124600147'  ;'4000000186';'2125900109'   	
    	
+select e.reg_dt_tm, e.* from encounter e 
+where e.encntr_id =     125486109.00; 125486659.00; 125370996.00
    	
+
+=======================================================================================================================
    	
+;Blood Bank
+=======================================================================================================================
+ 
+select * 
+from patient_dispense pd 
+where pd.person_id = 20812082.00
+ 
+ 
+select pe.*;, pr.*, pd.*
+from patient_dispense pd, product pr, product_event pe
+where pd.person_id = 20812082.00
+and pr.product_id = pd.product_id 
+and pe.product_id = pr.product_id 
+and pe.person_id = pd.person_id
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1);, maxrow = 10000
+
+select pe.person_id, pe.encntr_id,pe.event_dt_tm, pe.event_type_cd,pe.product_id, pe.product_event_id, pe.* 
+from product_event pe, product pr 
+where pe.person_id = 20812082.00
+and pr.product_id = pe.product_id
+and pe.active_ind = 1
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+ 
+select pe.person_id, pe.encntr_id,pe.event_dt_tm, pe.event_type_cd,pe.product_id, pe.product_event_id, pe.* 
+from product_event pe 
+;where pe.encntr_id =   125448108.00
+where pe.person_id = 20812082.00
+and pe.active_ind = 1
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+ 
+
+select pe.person_id, pe.encntr_id, pe.event_dt_tm, pe.event_type_cd,pe.product_id, pe.product_event_id;, pe.* 
+from product_event pe 
+;where pe.encntr_id = 125486659.00 
+;where pe.person_id = 20812082.00
+WHERE pe.active_ind = 1
+and pe.event_dt_tm >= cnvtdatetime('01-JAN-2022 00:00:00')
+order by pe.person_id, pe.event_dt_tm desc
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+;Products
+select; - live 
+pe.person_id, pe.encntr_id, pe.event_dt_tm, prod_event = uar_get_code_display(pe.event_type_cd)
+,pe.product_id, pe.product_event_id;, pr.*
+, productcd = uar_get_code_display(pr.product_cd), prod_catcd = uar_get_code_display(pr.product_cat_cd)
+, product = build2(trim(uar_get_code_display(pr.product_cd))," ",trim(uar_get_code_display(pr.product_cat_cd)))
+, abo_rh = build2(trim(uar_get_code_display(bp.cur_abo_cd))," ",trim(uar_get_code_display(bp.cur_rh_cd)))
+, pr.product_nbr, bp.*
+
+from product_event pe
+	, product pr
+	, blood_product   bp
+
+plan pe where pe.person_id = 20812082.00
+	and pe.active_ind = 1
+	
+join pr where pr.product_id = pe.product_id
+
+join bp where bp.product_id = outerjoin(pr.product_id)
+
+order by prod_event, pe.product_event_id
+
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+
+;Overview
+
+select 
+pe.person_id, pe.encntr_id, pe.event_dt_tm, prod_event = uar_get_code_display(pe.event_type_cd)
+,pe.product_id, pe.product_event_id,st.*
+, productcd = uar_get_code_display(pr.product_cd), prod_catcd = uar_get_code_display(pr.product_cat_cd)
+, product = build2(trim(uar_get_code_display(pr.product_cd))," ",trim(uar_get_code_display(pr.product_cat_cd)))
+, abo_rh = build2(trim(uar_get_code_display(bp.cur_abo_cd))," ",trim(uar_get_code_display(bp.cur_rh_cd)))
+, pr.product_nbr;, bp.*
+
+from product_event pe
+	, special_testing st
+	, product pr
+	, blood_product   bp
+
+plan pe where pe.person_id = 20812082.00
+	and pe.active_ind = 1
+	
+join pr where pr.product_id = pe.product_id
+
+join st where st.product_id = pe.product_id
+	and st.active_ind = 1
+
+join bp where bp.product_id = outerjoin(pr.product_id)
+
+order by prod_event, pe.product_event_id
+
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+
+
+
+
+
+ 
+       1429.00	Assigned
+       1433.00	Crossmatched
+       1436.00	Dispensed
+       1448.00	Transfused
+       1439.00	In Progress
+
+ 
+ select
+   eventdate = format(pe.event_dt_tm, "mm/dd/yyyy hh:mm" )
+, product = build2(trim(uar_get_code_display(pr.product_cd))," ",trim(uar_get_code_display(pr.product_cat_cd)))
+, pr.product_nbr
+, dispenselocation = uar_get_code_display(p.dispense_to_locn_cd)
+, type =  build2( trim(uar_get_code_display(b.cur_abo_cd)), " ", trim(uar_get_code_display(b.cur_rh_cd)))
+
+  from
+   patient_dispense   p
+   , product   pr
+   , product_event   pe
+   , blood_product   b
+
+  plan p 
+   where p.person_id =    20812082.00 ;  125486659.00 ;20809873.00
+   ;and p.dispense_status_flag = 2; 1 ;;dispensed status (1 = dispensed, 2 = transfused)
+  join pr
+   where p.product_id = pr.product_id
+  join pe
+   where p.product_id = pe.product_id
+   and p.person_id = pe.person_id
+   ;and pe.event_type_cd = 909 ;906 ;;906 = dispense event (909 = transfuse event)
+  join b
+   where b.product_id = outerjoin(pr.product_id)
+  order by pe.event_dt_tm desc, pr.product_cat_cd
+
+
+;----------------------------------------------------------------------------
+ select
+   eventdate = format(pe.event_dt_tm, "mm/dd/yyyy hh:mm" )
+, product = build2(trim(uar_get_code_display(pr.product_cd))," ",trim(uar_get_code_display(pr.product_cat_cd)))
+, pr.product_nbr
+, dispenselocation = uar_get_code_display(p.dispense_to_locn_cd)
+, type =  build2( trim(uar_get_code_display(b.cur_abo_cd)), " ", trim(uar_get_code_display(b.cur_rh_cd)))
+
+  from
+   patient_dispense   p
+   , product   pr
+   , product_event   pe
+   , blood_product   b
+
+
+  plan p 
+   where p.person_id =    20812082.00 ;  125486659.00 ;20809873.00
+   ;and p.dispense_status_flag = 2; 1 ;;dispensed status (1 = dispensed, 2 = transfused)
+  join pr
+   where p.product_id = pr.product_id
+  join pe
+   where p.product_id = pe.product_id
+   and p.person_id = pe.person_id
+   ;and pe.event_type_cd = 909 ;906 ;;906 = dispense event (909 = transfuse event)
+  join b
+   where b.product_id = outerjoin(pr.product_id)
+  order by pe.event_dt_tm desc, pr.product_cat_cd
    	
-   	
-   	
-   	
+=======================================================================================================================
    	
    	
    	

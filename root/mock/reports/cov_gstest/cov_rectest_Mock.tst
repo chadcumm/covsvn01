@@ -5,6 +5,12 @@
 ;  Call Echorecord(request) Go
 
 
+cov_gstest5 "MINE",   20812082.00,0.00,0.00,"","",0.00,0.00,0 go
+
+;cov_mp_get_bloodbank_product "MINE",20812082.00,0.00,0.00,"","",0.00,0.00,0 go
+
+
+   
 
 ;cov_eks_get_codeblue "mine" go
 
@@ -16,7 +22,7 @@
 
 ;cov_sz_codeblue_ekm "mine" go
 
-cov_phq_deaf_hoh_interp_log "mine", "02-AUG-2022 00:00:00", "29-AUG-2022 23:59:00" , 2552503645.00 go
+;cov_phq_deaf_hoh_interp_log "mine", "02-SEP-2021 00:00:00", "10-OCT-2022 23:59:00" , 2552503639.00 go
  
 ;cov_dsch_medrec_alert_tracking "mine", "22-FEB-2022 00:00:00", "22-FEB-2022 23:59:00", 2552503645.00 go
  

@@ -51,20 +51,45 @@ set log_retval = 0
 ;pid = 22376109        
 
 
+/*
+select into 'nl:' 
+from  person p
+where p.person_id =    20757826.00 ;trigger_personid
+	and p.active_ind = 1
+	
+Detail
+	if((cnvtupper(p.name_last) = 'TEST') or (cnvtupper(p.name_last) = '*TEST')
+		or (cnvtupper(p.name_last) = 'TEST*') or (cnvtupper(p.name_last) = '*TEST*') )
+		log_retval = 100
+		log_misc1 = p.name_full_formatted
+	else	
+		log_retval = 0
+		log_misc1 = p.name_full_formatted
+	endif	
+	log_message = concat( 'Patient Name - ', log_misc1)
+
+with nocounter;, nullreport go
+*/
+
+
 
 select into 'nl:' 
-ea.alias, ea.encntr_id
-from encntr_alias ea
-where ea.encntr_id =    131617747.00; 128655117.00 ;trigger_encntrid  
+e.encntr_id, ea.alias
+from encounter e ,encntr_alias ea 
+
+plan e where e.encntr_id =   125487077.00 ;trigger_encntrid  
+
+join ea where outerjoin(e.encntr_id) = ea.encntr_id
 	and ea.encntr_alias_type_cd = value(uar_get_code_by("DISPLAY", 319, "FIN NBR")) 
 	and ea.active_ind = 1
+
 Head report
 	log_message = "No Alias found"
 	log_retval = 100
 	log_misc1 = 'NO IN'
 Detail
  	log_retval = 100
- 	if(ea.alias != ' ')
+ 	if(ea.alias = ' ')
  		log_misc1 = 'NO FIN'
  	else	
  		log_misc1 = ea.alias
@@ -73,6 +98,7 @@ Detail
 with nocounter;, nullreport go
 
 
+;select * from encounter e where e.encntr_id =    131617747.00; 128655117.00 ;trigger_encntrid  
 
 /*
 
