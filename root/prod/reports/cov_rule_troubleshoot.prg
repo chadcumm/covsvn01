@@ -24,115 +24,70 @@ prompt
 with OUTDEV
  
 ;------------------------------------------------------------------
- 
- 
- 
-;------------------------------------------------------------------
-			;VTE ADVISOR ALERT
-;------------------------------------------------------------------
 ;Modules by name
+ 
 select * from eks_module em
-where cnvtupper(em.module_name) = '*VTE*'
-and em.active_flag = 'A'
-and em.maint_validation = 'PRODUCTION'
+;where cnvtupper(em.module_name) = '*MED*'
+where cnvtupper(em.module_name) = 'VTE*'
+;and em.active_flag = 'A'
+;and em.maint_validation = 'PRODUCTION'
 order by em.module_name
  
-;Alerts detail by Module
-select ema.module_name, emad.*
-from eks_module_audit ema, eks_module_audit_det emad
-where ema.rec_id = emad.module_audit_id
-and cnvtupper(ema.module_name) = 'COV_VTE_OC_24HOUR_ADMIT'
-;and emad.encntr_id =   120288454.00
-;and cnvtupper(emad.logging) = '*SEVERE SEPSIS IP ALERT*'
-and emad.template_type = 'A'
-and emad.updt_dt_tm >= sysdate
-order by emad.updt_dt_tm
  
- 
-;------------------------------------------------------------------
-			;SEPSIS ADVISOR ALERT
-;------------------------------------------------------------------
- 
-select emad.*
-from eks_module_audit_det emad
-where emad.encntr_id =   125469001.00 
- 
-
- 
-;Rules with name 'Sepsis'
 select ema.*
 from eks_module em, eks_module_audit ema
 where ema.module_name = em.module_name
-and cnvtupper(em.module_name) = '*SEPSIS*'
+and cnvtupper(em.module_name) = 'COV_IC_MISC_COVID_TASK'
 and em.active_flag = 'A'
 order by em.module_name
  
+;------------------------------------------------------------------
  
 ;Alerts detail by encntr_id
 select ema.module_name, emad.*
 from eks_module_audit ema, eks_module_audit_det emad
 where ema.rec_id = emad.module_audit_id
-and emad.encntr_id =   120288454.00
-and cnvtupper(emad.logging) = '*SEVERE SEPSIS IP ALERT*'
-and emad.template_type = 'A'
+and emad.encntr_id =     131195898.00
+;and cnvtupper(emad.logging) = '*SEVERE SEPSIS IP ALERT*'
+and cnvtupper(ema.module_name) = 'COV_GL_AMERIGROUP_INSU'
+;and emad.template_type = 'A'
 order by emad.updt_dt_tm
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"),uar_code(d,1)
  
-select ema.module_name, emad.*
-from eks_module_audit ema, eks_module_audit_det emad
-where ema.rec_id = emad.module_audit_id
-and emad.encntr_id = 120139544.00
-and ema.module_name = 'SEPSIS_ADVSR_LAUNCH'
-order by emad.updt_dt_tm
- 
-select ema.module_name, emad.*
-from eks_module_audit ema, eks_module_audit_det emad
-where ema.rec_id = emad.module_audit_id
-and emad.encntr_id = 120139544.00
-;and ema.module_name = 'SEPSIS_ADVSR_LAUNCH'
-order by ema.module_name, emad.updt_dt_tm
- 
-
-;CHG
-
-select emad.template_name,emad.module_audit_id, emad.updt_dt_tm ';;q', emad.*
-from eks_module_audit_det emad
-where emad.encntr_id =   125469001.00
-;and emad.person_id =    15743605.00 
-and emad.template_name = 'EKS_ADD_ONE_TIME_TASK_A'
-and emad.template_type = 'A'
-order by emad.updt_dt_tm
-
 select ema.module_name, emad.updt_dt_tm ';;q', emad.*
 from eks_module_audit ema, eks_module_audit_det emad
 where ema.rec_id = emad.module_audit_id
-and emad.encntr_id =   125469001.00
-;and cnvtupper(emad.logging) = '*SEVERE SEPSIS IP ALERT*'
-and emad.template_type = 'A'
-order by emad.updt_dt_tm
+and emad.encntr_id = 123770838.00
+and cnvtupper(ema.module_name) = 'COV_IC_MISC_COVID_TASK'
+order by emad.module_audit_id,emad.template_number  ;emad.updt_dt_tm
  
-select ema.module_name, emad.updt_dt_tm ';;q', emad.logging
+select ema.updt_dt_tm ';;q', ema.module_name, emad.*
 from eks_module_audit ema, eks_module_audit_det emad
 where ema.rec_id = emad.module_audit_id
-;and emad.person_id =   125221801.00
-and emad.encntr_id =    125469001.00
-
-and ema.module_name = 'COV_INA*';_CHG_TASK');, 'COV_INA_CHG_TASK_TIMER')
-order by emad.updt_dt_tm
+and emad.encntr_id =   129618469.00
+and ema.module_name = 'COV_LH_STK_ANTITH_DSCHMED'
+and emad.template_type = 'A'
+order by ema.module_name, emad.updt_dt_tm
+ 
+ 
+ 
+select ema.module_name, EMAD.logging, EMAD.updt_dt_tm ';;q', emad.*
+from eks_module_audit ema, eks_module_audit_det emad
+where ema.rec_id = emad.module_audit_id
+and emad.encntr_id = 110353215.00
+;and ema.module_name = 'COV_GL_BLUECARE_INSU'
+order by ema.module_name, emad.updt_dt_tm desc
+ 
  
 select ema.module_name, emad.*
 from eks_module_audit ema, eks_module_audit_det emad
 where ema.rec_id = emad.module_audit_id
-and emad.encntr_id = 120139544.00
-;and ema.module_name = 'SEPSIS_ADVSR_LAUNCH'
-order by ema.module_name, emad.updt_dt_tm
+and emad.encntr_id = 128655117
+and ema.module_name = 'COV_DSCH_MEDREC_TSK'
+order by ema.module_name, emad.updt_dt_tm desc
  
-select * from eks_module_audit ema where ema.rec_id =    591794163.00 
-
-
-
-
-
-
+ 
+ 128655117
 ;-----------------------------------------------------------------------------------
 ;Rule Activity for an encounter
 select
@@ -149,13 +104,14 @@ select
 from	eks_module_audit ema, eks_module_audit_det emad
  
 plan ema
-where cnvtupper(ema.module_name) = "ADVSR_VTE_8HOUR_ADMIT" ; replace with a rule name to see one specifically.
+where cnvtupper(ema.module_name) = "COV_IC_MISC_COVID_TASK" ; replace with a rule name to see one specifically.
   and ema.conclude    = 2   ; 2 = action performed, change to "!= 2" to see others
  ; and ema.updt_dt_tm  > cnvtdatetime("28-JUN-2011 00:00:00") ;if you need a time restriction
 														     ; or use between
  
 join emad
 where emad.module_audit_id = ema.rec_id
+and emad.encntr_id = 123770838
   and emad.module_audit_id = (select emad2.module_audit_id
   						  	    from eks_module_audit_det emad2
   						       where emad2.module_audit_id = emad.module_audit_id)
@@ -164,6 +120,5 @@ where emad.module_audit_id = ema.rec_id
 order by ema.updt_dt_tm desc, ema.rec_id, emad.template_number
  
 with time = 60
- 
  
  

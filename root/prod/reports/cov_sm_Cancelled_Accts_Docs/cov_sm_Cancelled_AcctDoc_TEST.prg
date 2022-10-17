@@ -150,7 +150,7 @@ record enc_flex_after (
 	1	list[*]
 		2	encntr_id				= f8
 		2	person_id				= f8
-		2	fin						= c20
+		2	fin						= c20 ;006
 		2	encntr_class_cd			= f8 ;006
 		2	encntr_type_cd			= f8 ;006
 		2	transaction_dt_tm		= dq8
@@ -182,8 +182,8 @@ record enc (
 		2	has_appts				= i2
 		2	appt_dt_tm				= dq8 ;006
 		
-		2	is_excluded				= i2 ;006
-		2	excluding_fin			= c20 ;006
+;		2	is_excluded				= i2 ;006
+;		2	excluding_fin			= c20 ;006
 		2	has_coding_summary		= i2 ;006
 )
 
@@ -229,6 +229,7 @@ select distinct into "NL:"
 from
 	ENCNTR_FLEX_HIST efh
 	
+	;006
 	, (left join CLINICAL_EVENT ce on ce.encntr_id = efh.encntr_id
 		and ce.event_cd = codingsummary_var)
  
@@ -243,16 +244,18 @@ where
 			efh2.encntr_id = efh.encntr_id
 			and efh2.encntr_type_cd = efh.encntr_type_cd
 	)
+	
+;	and efh.person_id in (15742078) ; TODO: TESTING
 order by
-	efh.encntr_id	
-	, efh.transaction_dt_tm	
+	efh.encntr_id
+	, efh.transaction_dt_tm
  
  
 ; populate record structure
 head report
 	cnt = 0
 	
-detail
+head efh.encntr_id ;006
 	cnt = cnt + 1
 	
 	call alterlist(enc_flex->list, cnt)
@@ -283,11 +286,13 @@ from
 plan d1
 
 join efh 
-where
-	efh.person_id = enc_flex->list[d1.seq].person_id
+where 1 = 1
+;	and efh.person_id = enc_flex->list[d1.seq].person_id ;006
 	and efh.encntr_id = enc_flex->list[d1.seq].encntr_id
 	and efh.encntr_type_cd not in (canceluponreview_var, 0.0)
 	and efh.transaction_dt_tm < cnvtdatetime(enc_flex->list[d1.seq].transaction_dt_tm)
+	
+;	and efh.person_id in (15742078) ; TODO: TESTING
 	
 order by
 	efh.person_id
@@ -299,7 +304,7 @@ order by
 head report
 	cnt = 0
 	
-head efh.person_id		
+head efh.encntr_id		
 	cnt = cnt + 1
 	
 	call alterlist(enc_flex_before->list, cnt)
@@ -324,6 +329,7 @@ select into "NL:"
 from
 	ENCNTR_FLEX_HIST efh
  
+ 	;006
 	, (left join ENCNTR_ALIAS eaf on eaf.encntr_id = efh.encntr_id
 		and eaf.encntr_alias_type_cd = fin_var
 		and eaf.active_ind = 1)
@@ -333,16 +339,18 @@ from
 plan d1
 
 join efh 
-where
-	efh.person_id = enc_flex->list[d1.seq].person_id
+where 1 = 1
+;	and efh.person_id = enc_flex->list[d1.seq].person_id ;006
 	and efh.encntr_id = enc_flex->list[d1.seq].encntr_id
 	and efh.encntr_type_cd = canceluponreview_var
 	
-join eaf
+;	and efh.person_id in (15742078) ; TODO: TESTING
+	
+join eaf ;006
 	
 order by
 	efh.person_id
-	, efh.transaction_dt_tm
+	, efh.transaction_dt_tm desc ;006
 	, efh.encntr_id
  
  
@@ -350,7 +358,7 @@ order by
 head report
 	cnt = 0
 	
-head efh.person_id		
+head efh.encntr_id ;006
 	cnt = cnt + 1
 	
 	call alterlist(enc_flex_after->list, cnt)
@@ -358,7 +366,7 @@ head efh.person_id
 	enc_flex_after->cnt									= cnt
 	enc_flex_after->list[cnt].encntr_id					= efh.encntr_id
 	enc_flex_after->list[cnt].person_id					= efh.person_id
-	enc_flex_after->list[cnt].fin						= cnvtalias(eaf.alias, eaf.alias_pool_cd)
+	enc_flex_after->list[cnt].fin						= cnvtalias(eaf.alias, eaf.alias_pool_cd) ;006
 	enc_flex_after->list[cnt].encntr_class_cd			= efh.encntr_class_cd ;006
 	enc_flex_after->list[cnt].encntr_type_cd			= efh.encntr_type_cd ;006
 	enc_flex_after->list[cnt].transaction_dt_tm			= efh.transaction_dt_tm
@@ -461,6 +469,8 @@ where
 ;												 1, enc_flex_after->list[num2].has_coding_summary)
 	and e.encntr_type_cd = canceluponreview_var
 	and e.active_ind = 1
+	
+;	and e.person_id in (15742078) ; TODO: TESTING
  
 order by
 	e.encntr_id ;003
@@ -489,24 +499,26 @@ head e.encntr_id
 	endif
 	
 	;006
-	; determine if will be excluded
-	idx = 0
-	is_excluded = 0
-	excluding_fin = fillstring(20, "")
-	
-	idx = locateval(numx, 1, enc_flex_after->cnt, e.person_id, enc_flex_after->list[numx].person_id)
-			
-	if (idx > 0)
-		is_excluded = 1
-		excluding_fin = enc_flex_after->list[idx].fin
-	endif
+;	; determine if will be excluded
+;	idx = 0
+;	is_excluded = 0
+;	excluding_fin = fillstring(20, "")
+;	
+;;	idx = locateval(numx, 1, enc_flex_after->cnt, e.person_id, enc_flex_after->list[numx].person_id)
+;	idx = locateval(numx, 1, enc_flex_after->cnt, e.encntr_id, enc_flex_after->list[numx].encntr_id) ;006
+;			
+;	if (idx > 0)
+;		is_excluded = 1
+;		excluding_fin = enc_flex_after->list[idx].fin
+;	endif
 	
 	;006
 	; determine if has coding summary
 	idx = 0
 	has_coding_summary = 0
 	
-	idx = locateval(numx, 1, enc_flex->cnt, e.person_id, enc_flex->list[numx].person_id)
+;	idx = locateval(numx, 1, enc_flex->cnt, e.person_id, enc_flex->list[numx].person_id)
+	idx = locateval(numx, 1, enc_flex->cnt, e.encntr_id, enc_flex->list[numx].encntr_id) ;006
 			
 	if (idx > 0)
 		has_coding_summary = enc_flex->list[idx].has_coding_summary
@@ -520,7 +532,7 @@ head e.encntr_id
 		
 		enc->cnt								= cnt	
 		enc->list[cnt].encntr_id				= e.encntr_id	
-		enc->list[cnt].encntr_class_cd			= e.encntr_class_cd
+		enc->list[cnt].encntr_class_cd			= e.encntr_class_cd ;006
 		enc->list[cnt].encntr_type_cd			= e.encntr_type_cd
 		enc->list[cnt].med_service_cd			= e.med_service_cd ;005
 		enc->list[cnt].location_cd	 			= e.location_cd
@@ -538,8 +550,8 @@ head e.encntr_id
 		enc->list[cnt].has_appts				= if (sa.sch_appt_id > 0.0) 1 else 0 endif
 		enc->list[cnt].appt_dt_tm				= sa.beg_dt_tm ;006
 		
-		enc->list[cnt].is_excluded				= is_excluded ;006
-		enc->list[cnt].excluding_fin			= excluding_fin ;006
+;		enc->list[cnt].is_excluded				= is_excluded ;006
+;		enc->list[cnt].excluding_fin			= excluding_fin ;006
 		enc->list[cnt].has_coding_summary		= has_coding_summary ;006
 	endif
 	
@@ -557,14 +569,14 @@ if (validate(request->batch_selection) = 1 or $output_file = 1)
 endif
  
 select if (validate(request->batch_selection) = 1 or $output_file = 1)
-	with nocounter, outerjoin = d1, pcformat (^"^, ^,^, 1), format = stream, format, time = 120
+	with nocounter, outerjoin = d1, pcformat (^"^, ^,^, 1), format = stream, format, time = 120 ;006
 else
-	with nocounter, outerjoin = d1, separator = " ", format, time = 120
+	with nocounter, outerjoin = d1, separator = " ", format, time = 120 ;006
 endif
  
-distinct into value(output_var)
+distinct into value(output_var) ;006
 	encntr_id				= enc->list[d1.seq].encntr_id
-	, encntr_class			= trim(uar_get_code_display(enc->list[d1.seq].encntr_class_cd), 3)
+	, encntr_class			= trim(uar_get_code_display(enc->list[d1.seq].encntr_class_cd), 3) ;006
 	, encntr_type			= trim(uar_get_code_display(enc->list[d1.seq].encntr_type_cd), 3)
 	, prev_encntr_type		= trim(uar_get_code_display(enc_flex_before->list[d3.seq].encntr_type_cd), 3) ;006
 	, med_service			= trim(uar_get_code_display(enc->list[d1.seq].med_service_cd), 3)
@@ -588,8 +600,8 @@ distinct into value(output_var)
 	, appt_dt_tm				= enc->list[d1.seq].appt_dt_tm "mm/dd/yyyy hh:mm:ss;;q" ;006
 	
 	;006
-	, is_excluded				= evaluate(enc->list[d1.seq].is_excluded, 1, "YES", "NO")
-	, excluding_fin				= trim(enc->list[d1.seq].excluding_fin, 3)
+;	, is_excluded				= evaluate(enc->list[d1.seq].is_excluded, 1, "YES", "NO")
+;	, excluding_fin				= trim(enc->list[d1.seq].excluding_fin, 3)
 ;	, has_coding_summary		= evaluate(enc->list[d1.seq].has_coding_summary, 1, "YES", "NO")
 	
 from
@@ -615,10 +627,10 @@ order by
 	enc_flex->list[d2.seq].transaction_dt_tm
 	, patient_name
 	, person_id
-	, encntr_id
-	, fin
+	, encntr_id ;006
+	, fin ;006
 	
-with nocounter, outerjoin = d1
+with nocounter, outerjoin = d1 ;006
  
  
 /**************************************************************/

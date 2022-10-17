@@ -1,0 +1,705 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Todd A. Blanchard
+	Date Written:		03/11/2019
+	Solution:			Revenue Cycle - Charge Services
+	Source file name:	cov_cs_PharmacyChargeMaster.prg
+	Object name:		cov_cs_PharmacyChargeMaster
+	Request #:			3681, 6011, 8942
+ 
+	Program purpose:	Produces extract file of pharmacy data for
+						Charge Master audit tools.
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+ 	Mod Date	Developer				Comment
+ 	----------	--------------------	--------------------------------------
+001	04/18/2019	Todd A. Blanchard		Changed DispItemId value from
+ 										MEDICATION_DEFINITION.item_id to
+ 										BILL_ITEM.bill_item_id.
+002	04/30/2019	Todd A. Blanchard		Adjusted criteria for BILL_ITEM_MODIFIER.
+003	06/07/2019	Todd A. Blanchard		Adjusted criteria for BILL_ITEM_MODIFIER.
+004	01/15/2020	Todd A. Blanchard		Adjusted CCL for more accurate results.
+005	02/04/2020	Todd A. Blanchard		Added secondary NDC.
+006	04/23/2020	Todd A. Blanchard		Added columns strength, strength_unit,
+										volume, volume_unit, given_strength,
+										default_route.
+										Added Covenant Corporation Hospital.
+007	05/15/2020	Todd A. Blanchard		Changed cs_qcf to cs_cpt4modqcf.
+008	05/20/2020	Todd A. Blanchard		Removed date/time stamp from file name.
+009	11/08/2021	Todd A. Blanchard		Added Covenant Health Diagnostics West.
+010	01/25/2022	Todd A. Blanchard		Added:
+											LCMC Infusion Clinic - Blount
+											LCMC Infusion Clinic - Downtown
+											LCMC Infusion Clinic - Sevier
+											LCMC Infusion Clinic - West
+ 
+******************************************************************************/
+ 
+drop program cov_cs_PharmacyChgMaster_TEST:DBA go
+create program cov_cs_PharmacyChgMaster_TEST:DBA
+ 
+prompt 
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "Output To File" = 0                   ;* Output to file 
+
+with OUTDEV, output_file
+ 
+ 
+/**************************************************************
+; DVDev DECLARED SUBROUTINES
+**************************************************************/
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+ 
+declare hosptechtier_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 13035, "HOSPITALTECHNICALTIER"))
+
+declare activitytype_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 13036, "ACTIVITYTYPECD"))
+declare cdmsched_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 13036, "CDMSCHED"))
+declare cpt4modifier_var		= f8 with constant(uar_get_code_by("MEANING", 13036, "MODIFIER"))
+declare organization_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 13036, "ORGANIZATION"))
+
+declare pharmacy_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 106, "PHARMACY"))
+
+declare hcpcs_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 14002, "HCPCS"))
+declare cpt_var					= f8 with constant(uar_get_code_by("DISPLAYKEY", 14002, "CPT"))
+declare hosp_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 14002, "HOSPITAL340BTECHMODIFIER"))
+
+declare brand_name_var			= f8 with constant(uar_get_code_by("MEANING", 11000, "BRAND_NAME"))
+declare cdm_var					= f8 with constant(uar_get_code_by("MEANING", 11000, "CDM"))
+declare desc_var				= f8 with constant(uar_get_code_by("MEANING", 11000, "DESC"))
+declare desc_short_var			= f8 with constant(uar_get_code_by("MEANING", 11000, "DESC_SHORT"))
+declare generic_name_var		= f8 with constant(uar_get_code_by("MEANING", 11000, "GENERIC_NAME"))
+declare hcpcs2_var           	= f8 with constant(uar_get_code_by("MEANING", 11000, "HCPCS"))
+declare inner_ndc_var			= f8 with constant(uar_get_code_by("MEANING", 11000, "INNER_NDC"))
+declare ndc_var					= f8 with constant(uar_get_code_by("MEANING", 11000, "NDC"))
+declare pyxis_var           	= f8 with constant(uar_get_code_by("MEANING", 11000, "PYXIS"))
+
+declare med_def_flex_var		= f8 with constant(uar_get_code_by("MEANING", 13016, "MED DEF FLEX"))
+
+declare awp_var					= f8 with constant(uar_get_code_by("MEANING", 4050, "AWP"))
+
+declare syspkgtyp_var			= f8 with constant(uar_get_code_by("MEANING", 4062, "SYSPKGTYP"))
+declare system_var				= f8 with constant(uar_get_code_by("MEANING", 4062, "SYSTEM"))
+
+declare inpatient_var			= f8 with constant(uar_get_code_by("MEANING", 4500, "INPATIENT"))
+
+declare primary_var				= f8 with constant(uar_get_code_by("MEANING", 6011, "PRIMARY"))
+ 
+declare file_dt_tm				= vc with constant(format(sysdate, "yyyymmdd;;d"))
+declare file_var				= vc with constant(build("pharmacy_cm_extract", ".csv"))
+ 
+declare temppath_var			= vc with constant(build("cer_temp:", file_var))
+declare temppath2_var			= vc with constant(build("$cer_temp/", file_var))
+ 
+declare filepath_var			= vc with constant(build("/cerner/w_custom/", cnvtlower(curdomain),
+														 "_cust/to_client_site/RevenueCycle/ChargeServices/", file_var))
+declare output_var				= vc with noconstant("")
+ 
+declare cmd						= vc with noconstant("")
+declare len						= i4 with noconstant(0)
+declare stat					= i4 with noconstant(0)
+ 
+ 
+; define output value
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set output_var = value(temppath_var)
+else
+	set output_var = value($OUTDEV)
+endif
+ 
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+
+;004
+record tier_data (
+	1	tier_cnt				= i4
+	1	list[*]
+		2	tier_row_num		= i4
+		2	organization_id		= f8
+		2	org_name			= c100
+		2	cpt4_modifier_id	= f8
+		2	cpt4_modifier		= c40
+)
+
+;004
+record org_data (
+	1	org_cnt					= i4
+	1	list[*]
+		2	organization_id		= f8
+		2	org_name			= c100
+)
+
+record pharm_data (
+	1 pharm_cnt					= i4
+	1 list[*]
+		2 item_id				= f8	;005
+		2 cdm					= c30	;005
+		2 default_dose			= c30	;005
+		2 default_route			= c40	;006
+		2 bill_item_id			= f8	;005
+;		2 facility_id			= f8	;004 ;005
+;		2 facility				= c40	;005
+		2 organization_id		= f8	;004
+		2 org_name				= c100	;004
+		2 form					= c40
+		2 strength				= f8	;006
+		2 strength_unit			= c40	;006
+		2 volume				= f8	;006
+		2 volume_unit			= c40	;006
+		2 given_strength		= c25
+		2 primary_ndc			= c20	;005
+		2 secondary_ndc			= c20	;005
+		2 sequence				= i4	;005
+		2 awp					= f8
+		2 description			= c200
+		2 brand_name			= c100	;005
+		2 price_schedule		= c100	;005
+		2 generic_name			= c100	;005
+		2 waste_charge			= i2	;004
+		2 hcpcs					= c10	;004 ;005
+				
+		2 cs_cpt4modqcf			= f8	;007
+		2 cs_cpt4mod_id			= f8	;004
+		2 cs_cpt4mod			= c10	;004 ;005
+		
+		2 cs_hcpcsqcf			= f8	;004
+		2 cs_hcpcs				= c10	;004 ;005
+		
+		2 cs_cptqcf				= f8	;004
+		2 cs_cpt				= c10	;004 ;005
+)
+
+;004
+record final_data (
+	1 final_cnt					= i4
+	1 list[*]
+		2 item_id				= f8	;005
+		2 cdm					= c30	;005
+		2 default_dose			= c30	;005
+		2 default_route			= c40	;006
+		2 bill_item_id			= f8	;005
+		2 org_name				= c100
+		2 form					= c40
+		2 strength				= f8	;006
+		2 strength_unit			= c40	;006
+		2 volume				= f8	;006
+		2 volume_unit			= c40	;006
+		2 given_strength		= c25
+		2 primary_ndc			= c20	;005
+		2 secondary_ndc			= c20	;005
+		2 sequence				= i4	;005
+		2 awp					= f8
+		2 description			= c200
+		2 brand_name			= c100	;005
+		2 price_schedule		= c100	;005
+		2 generic_name			= c100	;005
+		2 waste_charge			= i2
+		2 hcpcs					= c10	;005
+				
+		2 cs_cpt4modqcf			= f8	;007
+		2 cs_cpt4mod			= c10	;005
+		
+		2 cs_hcpcsqcf			= f8
+		2 cs_hcpcs				= c10	;005
+		
+		2 cs_cptqcf				= f8
+		2 cs_cpt				= c10	;005
+)
+
+
+/**************************************************************/
+; select tier data ;004
+select into "NL:"	
+from
+	TIER_MATRIX tm
+	
+	, (left join TIER_MATRIX tm_org on tm_org.tier_row_num = tm.tier_row_num
+		and tm_org.tier_group_cd = hosptechtier_var
+		and tm_org.tier_cell_type_cd = organization_var
+		and tm_org.end_effective_dt_tm > sysdate
+		and tm_org.active_ind = 1)
+		
+	, (left join ORGANIZATION org on org.organization_id = tm_org.tier_cell_value_id)
+	
+	, (left join TIER_MATRIX tm_cdm on tm_cdm.tier_row_num = tm.tier_row_num
+		and tm_cdm.tier_group_cd = hosptechtier_var
+		and tm_cdm.tier_cell_type_cd = cdmsched_var
+		and tm_cdm.end_effective_dt_tm > sysdate
+		and tm_cdm.active_ind = 1)
+	
+	, (left join TIER_MATRIX tm_cpt on tm_cpt.tier_row_num = tm.tier_row_num
+		and tm_cpt.tier_group_cd = hosptechtier_var
+		and tm_cpt.tier_cell_type_cd = cpt4modifier_var
+		and tm_cpt.end_effective_dt_tm > sysdate
+		and tm_cpt.active_ind = 1)
+ 
+where 
+	tm.tier_group_cd = hosptechtier_var
+	and tm.tier_cell_type_cd = activitytype_var
+	and tm.end_effective_dt_tm > sysdate
+	and tm.tier_cell_entity_name = "CODE_VALUE"
+	and tm.tier_cell_value_id = pharmacy_var
+	
+order by
+	tm.tier_row_num
+ 
+ 
+; populate tier_data record structure
+head report
+	cnt = 0
+ 
+detail
+	cnt = cnt + 1
+ 
+	call alterlist(tier_data->list, cnt)
+ 
+	tier_data->tier_cnt						= cnt
+	tier_data->list[cnt].tier_row_num		= tm.tier_row_num
+	tier_data->list[cnt].organization_id	= org.organization_id
+	tier_data->list[cnt].org_name			= org.org_name
+	tier_data->list[cnt].cpt4_modifier_id	= tm_cpt.tier_cell_value_id
+	tier_data->list[cnt].cpt4_modifier		= uar_get_code_display(tm_cpt.tier_cell_value_id)
+	
+WITH nocounter, time = 60
+
+
+/**************************************************************/
+; select organization data ;004
+select into "NL:"	
+from
+	ORGANIZATION org
+	
+where
+	org.organization_id in (
+		; acute
+		3144501.00, 675844.00, 3144505.00, 3144499.00, 3144502.00, 3144503.00, 3144504.00
+		; clinic
+		, 3898154.00 ;009
+		, 3234049.00, 3234050.00, 3234053.00, 3234054.00 ;010
+		; bh
+		, 3234074.00
+		; covenant corp hosp
+		, 3144524.00 ;006
+	)
+ 
+ 
+; populate org_data record structure
+head report
+	cnt = 0
+ 
+detail
+	cnt = cnt + 1
+ 
+	call alterlist(org_data->list, cnt)
+ 
+	org_data->org_cnt						= cnt
+	org_data->list[cnt].organization_id		= org.organization_id
+	org_data->list[cnt].org_name			= org.org_name
+	
+WITH nocounter, time = 60
+	
+ 
+/**************************************************************/
+; select pharmacy data
+select into "NL:"
+from
+	MEDICATION_DEFINITION md
+ 
+	, (inner join MED_DISPENSE mdisp on mdisp.item_id = md.item_id
+    	and mdisp.pharmacy_type_cd = inpatient_var)
+ 
+	, (inner join MED_DEF_FLEX mdf on mdf.item_id = md.item_id
+	    and mdf.flex_type_cd = system_var
+	    and mdf.pharmacy_type_cd = inpatient_var
+	    and mdf.active_ind = 1)
+ 
+	, (inner join MED_FLEX_OBJECT_IDX mfoi on mfoi.med_def_flex_id = mdf.med_def_flex_id
+    	and mfoi.parent_entity_name = "MED_OE_DEFAULTS"
+    	and mfoi.active_ind = 1)
+ 
+	, (inner join MED_OE_DEFAULTS mod on mod.med_oe_defaults_id = mfoi.parent_entity_id
+		and mod.active_ind = 1)
+ 
+	, (inner join MED_IDENTIFIER mi on mi.item_id = md.item_id
+	    and mi.primary_ind = 1
+	    and mi.med_product_id = 0
+	    and mi.med_identifier_type_cd = desc_var
+	    and mi.pharmacy_type_cd = inpatient_var
+		and mi.active_ind = 1)
+ 
+	, (inner join MED_IDENTIFIER mi2 on mi2.item_id = md.item_id
+	    and mi2.primary_ind = 1
+	    and mi2.med_product_id != 0
+	    and mi2.med_identifier_type_cd = ndc_var
+	    and mi2.pharmacy_type_cd = inpatient_var
+	    and mi2.active_ind = 1)
+ 
+ 	;005
+	, (inner join MED_FLEX_OBJECT_IDX mfoi2 on mfoi2.med_def_flex_id = mdf.med_def_flex_id
+		and mfoi2.parent_entity_id = mi2.med_product_id
+		and mfoi2.parent_entity_name = "MED_PRODUCT"
+;		and mfoi2.sequence = 1
+		and mfoi2.active_ind = 1)
+ 
+	, (left join MED_COST_HX mch on mch.med_product_id = mi2.med_product_id
+	    and mch.cost_type_cd = awp_var
+	    and mch.active_ind = 1)
+ 
+	, (inner join MED_DEF_FLEX mdf2 on mdf2.item_id = md.item_id
+	    and mdf2.flex_type_cd = syspkgtyp_var
+	    and mdf2.pharmacy_type_cd = inpatient_var
+	    and mdf2.active_ind = 1)
+ 
+	, (inner join MED_FLEX_OBJECT_IDX mfoi3 on mfoi3.med_def_flex_id = mdf2.med_def_flex_id)
+	
+	;004
+	, (inner join LOCATION l on l.location_cd = mfoi3.parent_entity_id)
+	
+	;004
+	, (inner join ORGANIZATION org on org.organization_id = l.organization_id
+;		and org.organization_id in (3234049.00, 3234050.00, 3234053.00, 3234054.00) ; TODO: TEST
+		)
+ 
+	, (inner join ORDER_CATALOG_ITEM_R ocir on ocir.item_id = md.item_id)
+ 
+	, (left join ORDER_CATALOG_SYNONYM ocs on ocs.synonym_id = mod.ord_as_synonym_id)
+ 
+	, (left join ORDER_CATALOG_SYNONYM ocs2 on ocs2.catalog_cd = ocir.catalog_cd
+   		and ocs2.mnemonic_type_cd = primary_var)
+ 
+	, (left join PRICE_SCHED p on p.price_sched_id = mod.price_sched_id)
+ 
+	, (inner join NOMENCLATURE n on n.nomenclature_id = md.mdx_gfc_nomen_id)
+ 
+	, (inner join ORDER_CATALOG oc on oc.catalog_cd = ocir.catalog_cd)
+ 
+	, (left join MED_IDENTIFIER mi3 on mi3.item_id = md.item_id
+	    and mi3.med_identifier_type_cd = pyxis_var
+	    and mi3.active_ind = 1)
+ 
+	, (left join MED_IDENTIFIER mi4 on mi4.item_id = mi2.item_id
+	    and mi4.med_identifier_type_cd = inner_ndc_var
+	    and mi4.med_product_id = mi2.med_product_id
+	    and mi4.active_ind = 1)
+ 
+	, (left join MED_IDENTIFIER mi5 on mi5.item_id = mi.item_id
+	    and mi5.primary_ind = 1
+	    and mi5.med_product_id = 0
+	    and mi5.med_identifier_type_cd = brand_name_var
+	    and mi5.active_ind = 1)
+ 
+	, (left join MED_IDENTIFIER mi6 on mi6.item_id = mi.item_id
+;		and mi6.value in ("RX04223") ;TODO: TEST
+;		and mi6.value in ("RX01210") ;TODO: TEST
+	    and mi6.primary_ind = 1
+	    and mi6.med_product_id = 0
+	    and mi6.med_identifier_type_cd = cdm_var
+	    and mi6.active_ind = 1)
+ 
+	, (left join MED_IDENTIFIER mi7 on mi7.item_id = mi.item_id
+	    and mi7.primary_ind = 1
+	    and mi7.med_product_id = 0
+	    and mi7.med_identifier_type_cd = generic_name_var
+	    and mi7.active_ind = 1)
+ 
+	, (left join MED_IDENTIFIER mi8 on mi8.item_id = mi.item_id
+	    and mi8.primary_ind = 1
+	    and mi8.med_product_id = 0
+	    and mi8.med_identifier_type_cd = hcpcs2_var
+	    and mi8.active_ind = 1)
+ 
+	, (left join MED_IDENTIFIER mi9 on mi9.item_id = mi.item_id
+	    and mi9.primary_ind = 1
+	    and mi9.med_product_id = 0
+	    and mi9.med_identifier_type_cd = desc_short_var
+	    and mi9.active_ind = 1)
+ 
+	, (inner join MED_PACKAGE_TYPE mpt on mpt.med_package_type_id = mdf2.med_package_type_id)
+ 
+	, (left join BILL_ITEM bi on bi.ext_parent_reference_id = mdf.med_def_flex_id
+		and bi.ext_parent_contributor_cd = med_def_flex_var
+		and bi.beg_effective_dt_tm < cnvtdatetime(curdate, curtime3)
+		and bi.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
+		and bi.active_ind = 1)
+ 
+	, (left join BILL_ITEM_MODIFIER bim on bim.bill_item_id = bi.bill_item_id
+		and bim.key1_id = hosp_var
+		and bim.beg_effective_dt_tm < cnvtdatetime(curdate, curtime3)
+		and bim.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
+		and bim.active_ind = 1)
+ 
+	, (left join BILL_ITEM_MODIFIER bim2 on bim2.bill_item_id = bi.bill_item_id
+		and bim2.key1_id = hcpcs_var
+		and bim2.beg_effective_dt_tm < cnvtdatetime(curdate, curtime3)
+		and bim2.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
+		and bim2.active_ind = 1)
+ 
+	, (left join BILL_ITEM_MODIFIER bim3 on bim3.bill_item_id = bi.bill_item_id
+		and bim3.key1_id = cpt_var
+		and bim3.beg_effective_dt_tm < cnvtdatetime(curdate, curtime3)
+		and bim3.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
+		and bim3.active_ind = 1)
+ 
+where
+	md.item_id > 0.0
+	and isnumeric(cnvtalphanum(mi6.value, 1)) = 1 ;004
+
+;005
+;order by
+;	mi.item_id
+;	, bi.bill_item_id
+;	, org.organization_id
+;	, mfoi2.sequence
+;	, bim.key1_id ;005
+
+ 
+; populate pharm_data record structure
+head report
+	cnt = 0
+ 
+detail
+	cnt = cnt + 1
+	
+	call alterlist(pharm_data->list, cnt)
+ 
+	pharm_data->pharm_cnt					= cnt
+	pharm_data->list[cnt].item_id			= mi.item_id
+	pharm_data->list[cnt].cdm				= mi6.value
+	pharm_data->list[cnt].default_dose		= evaluate2(
+											    if (mod.strength_unit_cd > 0)
+											    	concat(trim(format(mod.strength, "#######.####;T(1)"), 7), " ",
+											    		uar_get_code_display(mod.strength_unit_cd))
+											    elseif (mod.volume_unit_cd > 0)
+											    	concat(trim(format(mod.volume, "#######.####;T(1)"), 7), " ",
+											    		uar_get_code_display(mod.volume_unit_cd))
+											    else
+											    	mod.freetext_dose
+											    endif
+											   )
+	pharm_data->list[cnt].default_route		= trim(uar_get_code_display(mod.route_cd), 3) ;006
+	pharm_data->list[cnt].bill_item_id		= bi.bill_item_id
+;	pharm_data->list[cnt].facility_id		= l.location_cd ;005
+;	pharm_data->list[cnt].facility			= uar_get_code_display(l.location_cd) ;005
+	pharm_data->list[cnt].organization_id	= org.organization_id ;004
+	pharm_data->list[cnt].org_name			= org.org_name ;004
+	pharm_data->list[cnt].form				= uar_get_code_display(md.form_cd)
+	pharm_data->list[cnt].strength			= mod.strength ;006
+	pharm_data->list[cnt].strength_unit		= trim(uar_get_code_display(mod.strength_unit_cd, 3)) ;006
+	pharm_data->list[cnt].volume			= mod.volume ;006
+	pharm_data->list[cnt].volume_unit		= trim(uar_get_code_display(mod.volume_unit_cd, 3)) ;006
+	pharm_data->list[cnt].given_strength	= md.given_strength
+	pharm_data->list[cnt].primary_ndc		= evaluate(mfoi2.sequence, 1, mi2.value, "") ;005
+	pharm_data->list[cnt].secondary_ndc		= evaluate(mfoi2.sequence, 1, "", mi2.value) ;005
+	pharm_data->list[cnt].sequence			= mfoi2.sequence ;005
+	pharm_data->list[cnt].awp				= mch.cost
+	pharm_data->list[cnt].description		= mi.value
+	pharm_data->list[cnt].brand_name		= mi5.value
+	pharm_data->list[cnt].price_schedule	= replace(replace(p.price_sched_desc, char(10), ""), char(13), "")
+	pharm_data->list[cnt].generic_name		= mi7.value
+	pharm_data->list[cnt].waste_charge		= mdisp.waste_charge_ind ;004
+	pharm_data->list[cnt].hcpcs				= mi8.value ;004
+	
+	pharm_data->list[cnt].cs_cpt4modqcf		= bim.bim1_nbr ;007
+	pharm_data->list[cnt].cs_cpt4mod_id		= bim.key1_id ;004
+	pharm_data->list[cnt].cs_cpt4mod		= bim.key6 ;004
+	
+	pharm_data->list[cnt].cs_hcpcsqcf		= bim2.bim1_nbr ;004
+	pharm_data->list[cnt].cs_hcpcs			= bim2.key6 ;004
+	
+	pharm_data->list[cnt].cs_cptqcf			= bim3.bim1_nbr ;004
+	pharm_data->list[cnt].cs_cpt			= bim3.key6 ;004	
+  
+WITH nocounter, time = 600
+
+ 
+/**************************************************************/
+; select final data ;004
+select distinct into "NL:"
+from
+	(dummyt d1 with seq = value(pharm_data->pharm_cnt))
+			 		
+plan d1
+
+order by
+	pharm_data->list[d1.seq].cdm
+	, pharm_data->list[d1.seq].item_id
+	, pharm_data->list[d1.seq].bill_item_id
+	, pharm_data->list[d1.seq].org_name
+	, pharm_data->list[d1.seq].sequence
+	
+
+; populate final_data record structure
+head report
+	cnt = 0
+	
+detail
+	found = 0
+	hasmod = 0
+	
+	; determine if org is in tier data
+	for (i = 1 to tier_data->tier_cnt)
+		if (pharm_data->list[d1.seq].organization_id = tier_data->list[i].organization_id)
+			found = 1
+			
+			if (pharm_data->list[d1.seq].cs_cpt4mod_id = tier_data->list[i].cpt4_modifier_id)
+				hasmod = 1
+			endif
+		endif
+	endfor
+	
+	; determine if org is in org data
+	if (found = 0)
+		for (j = 1 to org_data->org_cnt)
+			if (pharm_data->list[d1.seq].organization_id = org_data->list[j].organization_id)
+				found = 1
+			endif
+		endfor
+	endif
+	
+	; process data
+	if (found = 1)
+		cnt = cnt + 1
+	 
+		call alterlist(final_data->list, cnt)
+		
+		final_data->final_cnt					= cnt
+		final_data->list[cnt].item_id			= pharm_data->list[d1.seq].item_id
+		final_data->list[cnt].cdm				= pharm_data->list[d1.seq].cdm
+		final_data->list[cnt].default_dose		= pharm_data->list[d1.seq].default_dose
+		final_data->list[cnt].default_route		= pharm_data->list[d1.seq].default_route ;006
+		final_data->list[cnt].bill_item_id		= pharm_data->list[d1.seq].bill_item_id
+		final_data->list[cnt].org_name			= pharm_data->list[d1.seq].org_name
+		final_data->list[cnt].form				= pharm_data->list[d1.seq].form
+		final_data->list[cnt].strength			= pharm_data->list[d1.seq].strength ;006
+		final_data->list[cnt].strength_unit		= pharm_data->list[d1.seq].strength_unit ;006
+		final_data->list[cnt].volume			= pharm_data->list[d1.seq].volume ;006
+		final_data->list[cnt].volume_unit		= pharm_data->list[d1.seq].volume_unit ;006
+		final_data->list[cnt].given_strength	= pharm_data->list[d1.seq].given_strength
+		final_data->list[cnt].primary_ndc		= pharm_data->list[d1.seq].primary_ndc
+		final_data->list[cnt].secondary_ndc		= pharm_data->list[d1.seq].secondary_ndc ;005
+		final_data->list[cnt].sequence			= pharm_data->list[d1.seq].sequence ;005
+		final_data->list[cnt].awp				= pharm_data->list[d1.seq].awp
+		final_data->list[cnt].description		= pharm_data->list[d1.seq].description
+		final_data->list[cnt].brand_name		= pharm_data->list[d1.seq].brand_name
+		final_data->list[cnt].price_schedule	= pharm_data->list[d1.seq].price_schedule
+		final_data->list[cnt].generic_name		= pharm_data->list[d1.seq].generic_name
+		final_data->list[cnt].hcpcs				= pharm_data->list[d1.seq].hcpcs
+		final_data->list[cnt].waste_charge		= pharm_data->list[d1.seq].waste_charge
+		
+		final_data->list[cnt].cs_cpt4modqcf		= evaluate(hasmod, 1, pharm_data->list[d1.seq].cs_cpt4modqcf, 0.0) ;007
+		final_data->list[cnt].cs_cpt4mod		= evaluate(hasmod, 1, pharm_data->list[d1.seq].cs_cpt4mod, "")
+		
+		final_data->list[cnt].cs_hcpcsqcf		= pharm_data->list[d1.seq].cs_hcpcsqcf
+		final_data->list[cnt].cs_hcpcs			= pharm_data->list[d1.seq].cs_hcpcs
+		
+		final_data->list[cnt].cs_cptqcf			= pharm_data->list[d1.seq].cs_cptqcf
+		final_data->list[cnt].cs_cpt			= pharm_data->list[d1.seq].cs_cpt
+	endif
+	
+WITH nocounter, time = 600
+
+ 
+/**************************************************************/
+; select data ;004
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set modify filestream
+endif
+ 
+select if (validate(request->batch_selection) = 1 or $output_file = 1)
+	with nocounter, pcformat (^"^, ^,^, 1, 0), format = stream, format, time = 600
+else
+	with nocounter, separator = " ", format, time = 600
+endif
+
+;distinct 
+into value(output_var)
+	CDM							= trim(final_data->list[d1.seq].cdm, 3)
+	, Formulary_Code			= trim(cnvtalphanum(final_data->list[d1.seq].cdm, 1), 3)
+	, Dispense_Size 			= trim(final_data->list[d1.seq].default_dose, 3)
+	, Default_Route 			= trim(final_data->list[d1.seq].default_route, 3) ;006
+	, Bill_Item_ID 				= final_data->list[d1.seq].bill_item_id
+	, Facility					= trim(final_data->list[d1.seq].org_name, 3)
+	, Form						= trim(final_data->list[d1.seq].form, 3)
+	, Strength					= final_data->list[d1.seq].strength ;006
+	, Strength_Unit				= final_data->list[d1.seq].strength_unit ;006
+	, Volume					= final_data->list[d1.seq].volume ;006
+	, Volume_Unit				= final_data->list[d1.seq].volume_unit ;006
+	, Given_Strength				= trim(final_data->list[d1.seq].given_strength, 3) ;006
+	, Primary_NDC				= trim(final_data->list[d1.seq].primary_ndc, 3)
+	, Secondary_NDC				= trim(final_data->list[d1.seq].secondary_ndc, 3) ;005
+	
+	, Sequence					= final_data->list[d1.seq].sequence
+	
+	, Current_AWP				= final_data->list[d1.seq].awp "#####.###"
+	, Med_Description			= trim(final_data->list[d1.seq].description, 3) ;006
+	, Current_Brand_Name			= trim(final_data->list[d1.seq].brand_name, 3)
+	, Pricing_Formula			= trim(final_data->list[d1.seq].price_schedule, 3)
+	, Generic_Name				= trim(final_data->list[d1.seq].generic_name, 3)
+	, Waste_Charge				= evaluate(final_data->list[d1.seq].waste_charge, 1, "Y", "N") ;004
+	, HCPCS						= trim(final_data->list[d1.seq].hcpcs, 3)
+			
+	, CS_CPT4MODQCF				= final_data->list[d1.seq].cs_cpt4modqcf "#####.#####" ;007
+	, CS_CPT4MOD				= trim(final_data->list[d1.seq].cs_cpt4mod, 3)
+	
+	, CS_HCPCSQCF				= final_data->list[d1.seq].cs_hcpcsqcf "#####.#####"
+	, CS_HCPCS					= trim(final_data->list[d1.seq].cs_hcpcs, 3)
+	
+	, CS_CPTQCF					= final_data->list[d1.seq].cs_cptqcf "#####.#####"
+	, CS_CPT					= trim(final_data->list[d1.seq].cs_cpt, 3)
+			 
+from
+	(dummyt d1 with seq = value(final_data->final_cnt))
+	
+plan d1
+
+;005
+;order by
+;	CDM
+;	, final_data->list[d1.seq].item_id
+;	, BillItemID
+;	, Facility
+;	, final_data->list[d1.seq].sequence
+	
+with nocounter
+	
+ 
+; copy file to AStream
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set cmd = build2("cp ", temppath2_var, " ", filepath_var)
+	set len = size(trim(cmd))
+ 
+	call dcl(cmd, len, stat)
+	call echo(build2(cmd, " : ", stat))
+endif
+ 
+ 
+call echorecord(tier_data)
+call echorecord(org_data)
+;call echorecord(pharm_data)
+call echorecord(final_data)
+
+;go to exitscript
+ 
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+ 
+#exitscript
+ 
+end
+go
+ 

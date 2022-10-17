@@ -1,0 +1,789 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Todd A. Blanchard
+	Date Written:		06/21/2021
+	Solution:			Revenue Cycle - HIM
+	Source file name:	cov_him_DuplicateData_Extract.prg
+	Object name:		cov_him_DuplicateData_Extract
+	Request #:			7966
+ 
+	Program purpose:	Lists possible duplicate patient data.
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:		Report Type
+ 							0 - Detail
+ 							1 - Summary
+ 							
+ 						Data set
+ 							0 - SSN
+ 							1 - Name, Gender, DOB
+ 							
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+ 	Mod Date	Developer				Comment
+ 	----------	--------------------	--------------------------------------
+001	02/09/2022	Todd A. Blanchard		Added logic to export to multiple files.
+ 
+******************************************************************************/
+ 
+drop program cov_him_DuplicateData_Extract:DBA go
+create program cov_him_DuplicateData_Extract:DBA
+ 
+prompt 
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "Report Type" = 0
+	, "Data Set" = 0
+	, "Output To File" = 0                   ;* Output to file 
+
+with OUTDEV, report_type, data_set, output_file
+ 
+ 
+/**************************************************************
+; DVDev DECLARED SUBROUTINES
+**************************************************************/
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+ 
+declare ssn_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 4, "SSN"))
+declare cmrn_var			= f8 with constant(uar_get_code_by("MEANING", 4, "CMRN"))
+declare contract_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "CONTRACT"))
+declare newborn_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "NEWBORN"))
+declare person_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 302, "PERSON"))
+declare mrn_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 319, "MRN"))
+declare fin_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 319, "FINNBR"))
+
+declare file0_var			= vc with constant("him_dup_ssn.csv") ;001
+declare file1_var			= vc with constant("him_dup_demog.csv") ;001
+declare file_var			= vc with noconstant("") ;001
+
+;001
+if ($data_set = 0)
+	set file_var = file0_var
+	
+elseif ($data_set = 1)
+	set file_var = file1_var
+	
+endif
+ 
+declare temppath_var		= vc with constant(build("cer_temp:", file_var))
+declare temppath2_var		= vc with constant(build("$cer_temp/", file_var))
+ 
+declare filepath_var		= vc with constant(build("/cerner/w_custom/", cnvtlower(curdomain),
+													 "_cust/to_client_site/RevenueCycle/HIM/Duplicates/", file_var))
+ 
+declare output_var			= vc with noconstant("")
+declare num					= i4 with noconstant(0)
+declare num2				= i4 with noconstant(0)
+ 
+declare cmd					= vc with noconstant("")
+declare len					= i4 with noconstant(0)
+declare stat				= i4 with noconstant(0)
+ 
+ 
+; define output value
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set output_var = value(temppath_var)
+else
+	set output_var = value($OUTDEV)
+endif
+ 
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+
+free record excludedata
+record excludedata (
+	1 cnt						= i4
+	1 qual [*]
+		2 person_id				= f8
+)
+
+free record ssndata
+record ssndata (
+	1 cnt						= i4
+	1 qual [*]
+		2 ssn					= c9
+		2 total_ssn 			= i4
+		2 total_dob 			= i4
+		2 total_cmrn 			= i4
+		2 total_person_id 		= i4
+		
+		2 sort_ind				= i2
+		
+		2 pcnt					= i4
+		2 person [*]
+			3 person_id			= f8
+			3 patient_name		= c100
+			3 dob				= dq8
+			3 cmrn 				= c20
+			3 contributor		= c100
+			3 updated_by		= c100
+			3 updt_dt_tm		= dq8
+)
+
+free record persondata
+record persondata (
+	1 cnt						= i4
+	1 qual [*]
+		2 name_first_key		= c100
+		2 name_last_key			= c100
+		2 gender				= f8
+		2 dob					= dq8
+		2 total_cmrn 			= i4
+		2 total_person_id 		= i4
+		
+		2 sort_ind				= i2
+		
+		2 pcnt					= i4
+		2 person [*]
+			3 person_id			= f8
+			3 patient_name		= c100
+			3 gender			= c10
+			3 dob				= dq8
+			3 cmrn 				= c20
+			3 contributor		= c100
+			3 updated_by		= c100
+			3 updt_dt_tm		= dq8
+)
+ 
+ 
+/**************************************************************/
+; select patient exclusion data
+select distinct into "nl:"
+from 
+	PERSON p 
+	
+	, (left join ENCOUNTER e on e.person_id = p.person_id
+		and e.encntr_type_cd = contract_var)
+	
+where 
+	p.person_type_cd = person_var
+	and (
+		operator(p.name_first_key, "REGEXPLIKE", "[0-9]") or
+		operator(nullval(p.name_middle_key, " "), "REGEXPLIKE", "[0-9]") or 
+		operator(p.name_last_key, "REGEXPLIKE", "[0-9]") or 
+
+		operator(p.name_first_key, "REGEXPLIKE", "^[A-Z].*TEST") or
+		operator(p.name_last_key, "REGEXPLIKE", "^[A-Z].*TEST") or
+		operator(p.name_last_key, "REGEXPLIKE", "^FFF.*") or
+		operator(p.name_last_key, "REGEXPLIKE", "^TTT.*") or
+		operator(p.name_last_key, "REGEXPLIKE", "^ZZZ.*") or
+
+		operator(p.name_first_key, "REGEXPLIKE", "DCS|UNKNOWN|COUNTY|FAMILY|DOLLYWOOD|EMPLOYEE|GENLAB|NURSING|PATIENT|ALLSCRIPTS|DONOTUSE|HOSPITAL") or 
+		operator(nullval(p.name_middle_key, " "), "REGEXPLIKE", "DCS|UNKNOWN|COUNTY|FAMILY|DOLLYWOOD|EMPLOYEE|GENLAB") or 
+		operator(p.name_last_key, "REGEXPLIKE", "DCS|UNKNOWN|COUNTY|FAMILY|DOLLYWOOD|EMPLOYEE|GENLAB|PHARMACY|TESTONLY|TESTING|TESTPATIENT|UNIVERSITY|THEATRE|HOSPITAL") or
+
+		p.name_first_key in ("ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE", "TEN") or
+		p.name_first_key in ("ELEVEN", "TWELVE", "THIRTEEN", "FOURTEEN", "FIFTEEN", "SIXTEEN", "SEVENTEEN", "EIGHTTEEN", "NINETEEN", "TWENTY") or
+		nullval(p.name_middle_key, " ") in ("ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE", "TEN") or
+		p.name_last_key in ("ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE", "TEN") or
+	
+		p.name_first_key in ("LAB", "TEST") or
+		nullval(p.name_middle_key, " ") in ("LAB", "TEST") or
+		p.name_last_key in ("LAB", "TEST") or
+
+		p.name_last_key = "DOE" or
+		
+		p.birth_dt_tm <= cnvtdatetime("01-JAN-1900") or
+		
+		nullval(e.encntr_type_cd, 0.0) = contract_var
+	)
+	and p.active_ind = 1
+	
+; populate record structure
+head report
+	cnt = 0
+ 
+detail
+	cnt += 1
+	
+	call alterlist(excludedata->qual, cnt)
+ 
+	excludedata->cnt						= cnt
+	excludedata->qual[cnt].person_id		= p.person_id
+
+with nocounter, time = 1800
+
+;call echorecord(excludedata)
+
+;go to exitscript
+ 
+ 
+/**************************************************************/
+; select patient combine data to exclude
+select distinct into "nl:"	
+from 
+	PERSON_COMBINE pc 
+		
+where 
+	pc.active_ind = 1
+	and not expand(num, 1, excludedata->cnt, pc.to_person_id, excludedata->qual[num].person_id)
+	
+; populate record structure
+head report
+	cnt = excludedata->cnt
+ 
+detail
+	cnt += 1
+	
+	call alterlist(excludedata->qual, cnt)
+ 
+	excludedata->cnt						= cnt
+	excludedata->qual[cnt].person_id		= pc.to_person_id
+
+with nocounter, expand = 1, time = 600
+
+;call echorecord(excludedata)
+
+;go to exitscript
+ 
+ 
+/**************************************************************/
+; select duplicate ssn data
+if ($data_set = 0)
+	select into "nl:"
+	from 
+		PERSON_ALIAS pa
+		
+		, (inner join PERSON p on p.person_id = pa.person_id
+			and p.person_type_cd = person_var
+			and p.active_ind = 1)
+		
+	where 
+		not expand(num, 1, excludedata->cnt, pa.person_id, excludedata->qual[num].person_id)
+		and pa.person_alias_type_cd = ssn_var
+		and pa.end_effective_dt_tm > sysdate
+		and pa.active_ind = 1
+		
+	group by 
+		pa.alias
+		
+	having 
+		count(*) > 1
+		 
+	; populate record structure
+	head report
+		cnt = 0
+	 
+	detail
+		cnt += 1
+		
+		call alterlist(ssndata->qual, cnt)
+	 
+		ssndata->cnt					= cnt
+		ssndata->qual[cnt].ssn			= pa.alias
+		ssndata->qual[cnt].sort_ind		= 
+			if (pa.alias in (			
+				"000000000", "111111111", "222222222", "333333333", "444444444",
+				"555555555", "666666666", "777777777", "888888888", "999999999",
+				"123456789"
+				)) 1
+			else 0
+			endif
+	
+	with nocounter, expand = 1, time = 600
+	
+endif
+
+;call echorecord(ssndata)
+
+;go to exitscript
+
+ 
+/**************************************************************/
+; select ssn detail data
+if (($data_set = 0) and ($report_type = 0))
+	select into "nl:"	
+	from 
+		PERSON_ALIAS pa 
+		
+		, (inner join PERSON p on p.person_id = pa.person_id
+			and p.person_type_cd = person_var
+			and p.active_ind = 1)
+		
+		, (left join PERSON_ALIAS pa2 on pa2.person_id = pa.person_id
+			and pa2.person_alias_type_cd = cmrn_var
+			and pa2.active_ind = 1)
+			
+		, (left join PRSNL per on per.person_id = pa.updt_id)
+		
+	where 
+		expand(num, 1, ssndata->cnt, pa.alias, ssndata->qual[num].ssn)
+		and not expand(num2, 1, excludedata->cnt, pa.person_id, excludedata->qual[num2].person_id)
+		and pa.person_alias_type_cd = ssn_var
+		and pa.end_effective_dt_tm > sysdate
+		and pa.active_ind = 1
+		
+	order by
+		pa.alias
+		, pa.person_id
+		 
+	; populate record structure
+	head pa.alias
+		numx = 0
+		idx = 0
+		pcnt = 0
+		
+		idx = locateval(numx, 1, ssndata->cnt, pa.alias, ssndata->qual[numx].ssn)
+	
+	detail
+	 	if (idx > 0)
+	 		pcnt += 1
+		
+			call alterlist(ssndata->qual[idx].person, pcnt)
+	 			
+	 		ssndata->qual[idx].pcnt								= pcnt
+			ssndata->qual[idx].person[pcnt].person_id			= p.person_id
+			ssndata->qual[idx].person[pcnt].patient_name		= p.name_full_formatted
+			ssndata->qual[idx].person[pcnt].dob					= cnvtdatetimeutc(datetimezone(p.birth_dt_tm, p.birth_tz), 1)
+			ssndata->qual[idx].person[pcnt].cmrn 				= pa2.alias
+			ssndata->qual[idx].person[pcnt].contributor			= uar_get_code_display(pa.contributor_system_cd)
+			ssndata->qual[idx].person[pcnt].updated_by			= per.name_full_formatted
+			ssndata->qual[idx].person[pcnt].updt_dt_tm			= pa.updt_dt_tm
+		endif
+	
+	with nocounter, expand = 1, time = 600
+
+endif
+
+;call echorecord(ssndata)
+ 
+ 
+/**************************************************************/
+; select ssn summary data
+if (($data_set = 0) and ($report_type = 1))
+	select into "nl:"
+		total_ssn = count(*) over(partition by pa.alias)
+		, total_dob = count(distinct format(p.birth_dt_tm, "mm/dd/yyyy;;d")) over(partition by pa.alias)
+		, total_cmrn = count(distinct pa2.alias) over(partition by pa.alias)
+		, total_person_id = count(distinct pa.person_id) over(partition by pa.alias)
+		
+	from 
+		PERSON_ALIAS pa 
+		
+		, (inner join PERSON p on p.person_id = pa.person_id
+			and p.person_type_cd = person_var
+			and p.active_ind = 1)
+		
+		, (left join PERSON_ALIAS pa2 on pa2.person_id = pa.person_id
+			and pa2.person_alias_type_cd = cmrn_var
+			and pa2.active_ind = 1)
+		
+	where 
+		expand(num, 1, ssndata->cnt, pa.alias, ssndata->qual[num].ssn)
+		and not expand(num2, 1, excludedata->cnt, pa.person_id, excludedata->qual[num2].person_id)
+		and pa.person_alias_type_cd = ssn_var
+		and pa.end_effective_dt_tm > sysdate
+		and pa.active_ind = 1
+		
+	order by
+		pa.alias
+		 
+	; populate record structure
+	head pa.alias
+		numx = 0
+		idx = 0
+		
+		idx = locateval(numx, 1, ssndata->cnt, pa.alias, ssndata->qual[numx].ssn)
+	 
+	 	if (idx > 0)
+			ssndata->qual[idx].total_ssn 			= total_ssn
+			ssndata->qual[idx].total_dob 			= total_dob
+			ssndata->qual[idx].total_cmrn 			= total_cmrn
+			ssndata->qual[idx].total_person_id		= total_person_id
+		endif
+	
+	with nocounter, expand = 1, time = 600
+
+endif
+
+;call echorecord(ssndata)
+; 
+;go to exitscript
+ 
+ 
+/**************************************************************/
+; select duplicate name, gender, dob data
+if ($data_set = 1)
+	select into "nl:"
+	from 
+		PERSON p
+	
+		, (inner join PERSON_ALIAS pa on pa.person_id = p.person_id
+			and pa.person_alias_type_cd = cmrn_var
+			and pa.active_ind = 1)
+		
+	where 
+		not expand(num, 1, excludedata->cnt, p.person_id, excludedata->qual[num].person_id)
+		and p.person_type_cd = person_var
+		and p.name_last_key is not null
+		and p.active_ind = 1
+		
+;		; TODO: TEST
+;		and p.name_last_key between "DOVER" and "DOWDY"
+		
+	group by 
+		p.name_last_key
+		, p.name_first_key
+		, p.sex_cd
+		, p.birth_dt_tm
+		
+	having 
+		count(distinct p.person_id) > 1
+		and count(distinct pa.alias) > 1
+		
+	order by 
+		p.name_last_key
+		, p.name_first_key
+		, p.sex_cd
+		, p.birth_dt_tm
+		 
+	; populate record structure
+	head report
+		cnt = 0
+	 
+	detail
+		cnt += 1
+		
+		call alterlist(persondata->qual, cnt)
+	 
+		persondata->cnt								= cnt
+		persondata->qual[cnt].name_first_key		= p.name_first_key
+		persondata->qual[cnt].name_last_key			= p.name_last_key
+		persondata->qual[cnt].gender				= p.sex_cd
+		persondata->qual[cnt].dob					= p.birth_dt_tm
+	
+	with nocounter, expand = 1, time = 600
+	
+endif
+
+;call echorecord(persondata)
+
+;go to exitscript
+
+ 
+/**************************************************************/
+; select name, gender, dob detail data
+if (($data_set = 1) and ($report_type = 0))
+	select into "nl:"
+	from 
+		PERSON p
+	
+		, (inner join PERSON_ALIAS pa on pa.person_id = p.person_id
+			and pa.person_alias_type_cd = cmrn_var
+			and pa.active_ind = 1)
+			
+		, (left join PRSNL per on per.person_id = p.updt_id)
+		
+	where 
+		expand(num, 1, persondata->cnt, p.name_first_key, persondata->qual[num].name_first_key
+			, p.name_last_key, persondata->qual[num].name_last_key
+			, p.sex_cd, persondata->qual[num].gender
+			, p.birth_dt_tm, persondata->qual[num].dob)
+		and not expand(num2, 1, excludedata->cnt, p.person_id, excludedata->qual[num2].person_id)
+		and p.person_type_cd = person_var
+		and p.active_ind = 1
+		
+;		; TODO: TEST
+;		and p.name_last_key between "DOVER" and "DOWDY"
+		
+	order by
+		p.name_last_key
+		, p.name_first_key
+		, p.sex_cd
+		, p.birth_dt_tm
+		, p.person_id
+		
+	; populate record structure
+	head p.name_last_key 
+		null
+	
+	head p.name_first_key 
+		null
+	
+	head p.sex_cd 
+		null
+	
+	head p.birth_dt_tm
+		numx = 0
+		idx = 0
+		pcnt = 0
+		
+		idx = locateval(numx, 1, persondata->cnt, p.name_first_key, persondata->qual[numx].name_first_key
+			, p.name_last_key, persondata->qual[numx].name_last_key
+			, p.sex_cd, persondata->qual[numx].gender
+			, p.birth_dt_tm, persondata->qual[numx].dob)
+	
+	detail
+	 	if (idx > 0)
+	 		pcnt += 1
+		
+			call alterlist(persondata->qual[idx].person, pcnt)
+	 			
+	 		persondata->qual[idx].pcnt							= pcnt
+			persondata->qual[idx].person[pcnt].person_id		= p.person_id
+			persondata->qual[idx].person[pcnt].patient_name		= p.name_full_formatted
+			persondata->qual[idx].person[pcnt].gender			= uar_get_code_display(p.sex_cd)
+			persondata->qual[idx].person[pcnt].dob				= cnvtdatetimeutc(datetimezone(p.birth_dt_tm, p.birth_tz), 1)
+			persondata->qual[idx].person[pcnt].cmrn 			= pa.alias
+			persondata->qual[idx].person[pcnt].contributor		= uar_get_code_display(p.contributor_system_cd)
+			persondata->qual[idx].person[pcnt].updated_by		= per.name_full_formatted
+			persondata->qual[idx].person[pcnt].updt_dt_tm		= p.updt_dt_tm
+		endif
+	
+	with nocounter, expand = 1, time = 600
+
+endif
+
+;call echorecord(persondata)
+
+;go to exitscript
+ 
+ 
+/**************************************************************/
+; select name, gender, dob summary data
+if (($data_set = 1) and ($report_type = 1))
+	select into "nl:"
+		p.name_last_key
+		, p.name_first_key
+		, p.sex_cd
+		, p.birth_dt_tm
+		, total_cmrn = count(distinct pa.alias)
+		, total_person_id = count(distinct p.person_id)
+		
+	from 
+		PERSON p
+	
+		, (inner join PERSON_ALIAS pa on pa.person_id = p.person_id
+			and pa.person_alias_type_cd = cmrn_var
+			and pa.active_ind = 1)
+			
+		, (left join PRSNL per on per.person_id = p.updt_id)
+		
+	where 
+		expand(num, 1, persondata->cnt, p.name_first_key, persondata->qual[num].name_first_key
+			, p.name_last_key, persondata->qual[num].name_last_key
+			, p.sex_cd, persondata->qual[num].gender
+			, p.birth_dt_tm, persondata->qual[num].dob)
+		and not expand(num2, 1, excludedata->cnt, p.person_id, excludedata->qual[num2].person_id)
+		and p.person_type_cd = person_var
+		and p.active_ind = 1
+		
+	group by 
+		p.name_last_key
+		, p.name_first_key
+		, p.sex_cd
+		, p.birth_dt_tm
+		
+	order by
+		p.name_last_key
+		, p.name_first_key
+		, p.sex_cd
+		, p.birth_dt_tm
+		 
+	; populate record structure
+	head p.name_last_key 
+		null
+	
+	head p.name_first_key 
+		null
+	
+	head p.sex_cd 
+		null
+	
+	head p.birth_dt_tm
+		numx = 0
+		idx = 0
+		
+		idx = locateval(numx, 1, persondata->cnt, p.name_first_key, persondata->qual[numx].name_first_key
+			, p.name_last_key, persondata->qual[numx].name_last_key
+			, p.sex_cd, persondata->qual[numx].gender
+			, p.birth_dt_tm, persondata->qual[numx].dob)
+	
+	detail
+	 	if (idx > 0)	 			
+			persondata->qual[idx].total_cmrn			= total_cmrn
+			persondata->qual[idx].total_person_id		= total_person_id
+		endif
+	
+	with nocounter, expand = 1, time = 600
+
+endif
+
+;call echorecord(persondata)
+; 
+;go to exitscript
+
+if ($data_set = 0)
+	call echorecord(ssndata)
+elseif ($data_set = 1)
+	call echorecord(persondata)
+endif
+
+
+/**************************************************************/
+; select data
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set modify filestream
+endif
+
+; ssn detail
+if (($data_set = 0) and ($report_type = 0))
+	select if (validate(request->batch_selection) = 1 or $output_file = 1)
+		with nocounter, pcformat (^"^, ^,^, 1), format = stream, format
+	else
+		with nocounter, separator = " ", format
+	endif
+ 
+	into value(output_var)
+		ssn						= ssndata->qual[d1.seq].ssn
+		, person_id				= ssndata->qual[d1.seq].person[d2.seq].person_id
+		, patient_name			= ssndata->qual[d1.seq].person[d2.seq].patient_name
+		, dob					= format(ssndata->qual[d1.seq].person[d2.seq].dob, "mm/dd/yyyy;;d")
+		, cmrn 					= ssndata->qual[d1.seq].person[d2.seq].cmrn
+		, contributor_system	= ssndata->qual[d1.seq].person[d2.seq].contributor
+		, updated_by			= ssndata->qual[d1.seq].person[d2.seq].updated_by
+		, updt_dt_tm			= format(ssndata->qual[d1.seq].person[d2.seq].updt_dt_tm, "mm/dd/yyyy hh:mm;;q")
+	 
+	from 
+		(dummyt d1 with seq = value(ssndata->cnt))
+		, (dummyt d2 with seq = 1)
+	 
+	plan d1
+	where
+		maxrec(d2, ssndata->qual[d1.seq].pcnt)
+	
+	join d2
+	
+	order by
+		ssndata->qual[d1.seq].sort_ind
+		, ssn
+		, patient_name
+		, person_id
+
+endif
+
+
+; ssn summary
+if (($data_set = 0) and ($report_type = 1))
+	select if (validate(request->batch_selection) = 1 or $output_file = 1)
+		with nocounter, pcformat (^"^, ^,^, 1), format = stream, format
+	else
+		with nocounter, separator = " ", format
+	endif
+	 
+	into value(output_var)
+		ssn						= ssndata->qual[d1.seq].ssn	
+		, total_ssn				= ssndata->qual[d1.seq].total_ssn
+		, total_dob 			= ssndata->qual[d1.seq].total_dob
+		, total_cmrn 			= ssndata->qual[d1.seq].total_cmrn
+		, total_person_id		= ssndata->qual[d1.seq].total_person_id
+	 
+	from 
+		(dummyt d1 with seq = value(ssndata->cnt))
+	 
+	plan d1
+	
+	order by
+		ssndata->qual[d1.seq].sort_ind
+		, ssn
+		
+endif
+
+
+; name, gender, dob detail
+if (($data_set = 1) and ($report_type = 0))
+	select if (validate(request->batch_selection) = 1 or $output_file = 1)
+		with nocounter, pcformat (^"^, ^,^, 1), format = stream, format
+	else
+		with nocounter, separator = " ", format
+	endif
+ 
+	into value(output_var)
+		person_id				= persondata->qual[d1.seq].person[d2.seq].person_id
+		, patient_name			= persondata->qual[d1.seq].person[d2.seq].patient_name
+		, gender				= persondata->qual[d1.seq].person[d2.seq].gender
+		, dob					= format(persondata->qual[d1.seq].person[d2.seq].dob, "mm/dd/yyyy;;d")
+		, cmrn 					= persondata->qual[d1.seq].person[d2.seq].cmrn
+		, contributor_system	= persondata->qual[d1.seq].person[d2.seq].contributor
+		, updated_by			= persondata->qual[d1.seq].person[d2.seq].updated_by
+		, updt_dt_tm			= format(persondata->qual[d1.seq].person[d2.seq].updt_dt_tm, "mm/dd/yyyy hh:mm;;q")
+	 
+	from 
+		(dummyt d1 with seq = value(persondata->cnt))
+		, (dummyt d2 with seq = 1)
+	 
+	plan d1
+	where
+		maxrec(d2, persondata->qual[d1.seq].pcnt)
+	
+	join d2
+	
+	order by
+		persondata->qual[d1.seq].name_last_key
+		, persondata->qual[d1.seq].name_first_key
+		, person_id
+
+endif
+
+
+; name, gender, dob summary
+if (($data_set = 1) and ($report_type = 1))
+	select if (validate(request->batch_selection) = 1 or $output_file = 1)
+		with nocounter, pcformat (^"^, ^,^, 1), format = stream, format
+	else
+		with nocounter, separator = " ", format
+	endif
+	 
+	into value(output_var)
+		name_last_key			= persondata->qual[d1.seq].name_last_key
+		, name_first_key		= persondata->qual[d1.seq].name_first_key	
+		, gender				= uar_get_code_display(persondata->qual[d1.seq].gender)
+		, dob					= format(persondata->qual[d1.seq].dob, "mm/dd/yyyy;;d")
+		, total_cmrn 			= persondata->qual[d1.seq].total_cmrn
+		, total_person_id		= persondata->qual[d1.seq].total_person_id
+	 
+	from 
+		(dummyt d1 with seq = value(persondata->cnt))
+	 
+	plan d1
+	
+	order by
+		name_last_key
+		, name_first_key
+		, gender
+		, persondata->qual[d1.seq].dob
+		
+endif
+ 
+ 
+/**************************************************************/
+; copy file to AStream
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set cmd = build2("cp ", temppath2_var, " ", filepath_var)
+	set len = size(trim(cmd))
+ 
+	call dcl(cmd, len, stat)
+	call echo(build2(cmd, " : ", stat))
+endif
+
+ 
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+ 
+#exitscript
+ 
+end
+go
+ 

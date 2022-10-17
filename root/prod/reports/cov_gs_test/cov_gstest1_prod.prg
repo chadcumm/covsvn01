@@ -30,8 +30,8 @@ and ce.performed_prsnl_id = pr.person_id
 and ce.verified_prsnl_id = pr1.person_id
 and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
 ;and ce.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
-;and ce.encntr_id =   129535221.00
-and ea.alias = '2300578928'
+and ce.encntr_id = 131102430.00
+;and ea.alias = '2300056040' ;'5222901296' - scheduling Selena on 8/16/22
 ;and ce.event_cd =     415132.00
 ;and ce.person_id =    16193220.00
 ;and ce.event_id = 3574908627.00
@@ -1009,10 +1009,12 @@ with nocounter, separator=" ", format, time = 300 ; uar_code(d,1), format(date,"
  and c.result_val = 'Primary service to address prophylaxis orders'
  and c.performed_prsnl_id = reqinfo->updt_id
  
- head report log_retval =0
+ head report 
+ 	log_retval =0
  	log_message = 'Override Reason of Primary Service to Address Not Found'
  
- detail log_retval = 100
+ detail 
+ 	log_retval = 100
  	log_misc1 = format(c.event_end_dt_tm, 'dd-mmm-yyyy hh:mm:ss;;q')
  	log_message = concat( 'Override Reason of Primary Service to Address Found from ', log_misc1)
  
@@ -1143,6 +1145,27 @@ SELECT * FROM ENCNTR_ALIAS EA WHERE EA.alias = '5203200826'
  
    128213503.00
  
+ 
+select ea.alias
+from encntr_alias ea
+where ea.encntr_alias_type_cd = 1077
+
+
+select  
+	h.plan_name, h.active_ind, h.beg_effective_dt_tm, h.end_effective_dt_tm
+	,h.health_plan_id, epr.encntr_id, epr.person_id, epr.priority_seq
+from	health_plan h, encntr_plan_reltn epr, encntr_alias ea
+ 
+plan epr where epr.encntr_id = 128213503.00
+	and epr.priority_seq = 1
+ 
+join h where h.health_plan_id = epr.health_plan_id
+	and (cnvtupper(h.plan_name) = "BLUECARE" or cnvtupper(h.plan_name) = "TENNCARE*")
+	and (cnvtupper(h.plan_name) != "BLUECARE PLUS")
+	and h.active_ind = 1
+ 
+
+
  
 select ; distinct into 'nl:'
  
@@ -1602,13 +1625,146 @@ or cnvtlower(ce.result_val) = '*therapeutic hypothermia'
 with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
 
  
+5222703238	  131195898.00	   15043179.00
  
+======================== AMERIGROUP ========================================================= 
  
+select
+	org.org_name,h.plan_name, epr.encntr_id,epr.updt_dt_tm
+	, h.active_ind, h.beg_effective_dt_tm, h.end_effective_dt_tm
+	,h.health_plan_id, epr.person_id, epr.priority_seq, epr.*
  
+from	encntr_plan_reltn epr, health_plan h, org_plan_reltn o, organization org
  
+plan epr where epr.person_id = 15043179.00
+	;epr.encntr_id = encntrid
+	and epr.priority_seq = 1
+	and epr.active_ind = 1
  
+join h where h.health_plan_id = epr.health_plan_id
+	and h.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
+	and h.active_ind = 1
+ 
+join o where o.health_plan_id = h.health_plan_id
+	and o.org_plan_reltn_cd = 1200.00
+	and o.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
+	and o.active_ind = 1
+ 
+join org where org.organization_id = o.organization_id
+	and org.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
+	;and org.org_name = 'Amerigroup'
+	and org.active_ind = 1
+  
+order by epr.person_id, epr.encntr_id 
+ 
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1)
+
+--------------------------------------------------------------------------------------
+;PREVIOUS ENCOUNTER
+select 
+  org.org_name, h.plan_name, h.active_ind, h.beg_effective_dt_tm, epr_actine_ind = epr.active_ind
+, h.end_effective_dt_tm, h.health_plan_id, epr.encntr_id, epr.person_id, epr.updt_dt_tm, i.erank
+ 
+from	encntr_plan_reltn epr, health_plan h, org_plan_reltn o, organization org
+ 
+,((	select distinct e.person_id, e.encntr_id, e.reg_dt_tm
+	,erank = rank() over(partition by e.person_id order by e.reg_dt_tm desc)
+	from person p, encounter e
+	where e.person_id = (select e1.person_id from encounter e1 where e1.encntr_id = 131195898.00)
+	and p.person_id = e.person_id
+	and e.disch_dt_tm != null
+	with sqltype("f8", "f8", "dq8", "i4") )i
+ )
+ 
+plan i where i.erank = 2;1
+ 
+join epr where epr.encntr_id = i.encntr_id
+	;epr.person_id = i.person_id
+	and epr.priority_seq = 1
+	and epr.active_ind = 1
+ 
+join h where h.health_plan_id = epr.health_plan_id
+	and h.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
+	and h.active_ind = 1
+ 
+join o where o.health_plan_id = h.health_plan_id
+	and o.org_plan_reltn_cd = 1200.00
+	and o.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
+	and o.active_ind = 1
+ 
+join org where org.organization_id = o.organization_id
+	and org.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
+	and org.org_name = 'Amerigroup'
+	and org.active_ind = 1
+
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1)
 
 
+select * from encntr_plan_reltn epr
+where epr.encntr_id = 113062810.00
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1)
 
+========================================================================================================
 
+;Interpreter Redesign
+
+select ;into 'nl:'
+	ce.*
+ from clinical_event ce
+ where ce.encntr_id =   110764270.00 ;trigger_encntrid 
+ ;and ce.person_id = trigger_personid
+ and ce.event_cd = value(uar_get_code_by("DISPLAY", 72, "Requested Communication Tools"))
+ ;and ce.result_val in('Video interpretation', 'In-person interpretation', 'Telephone interpretation')
+ and ce.result_val in('Video interpretation, In-person interpretation, Telephone interpretation')
+ and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+ and ce.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
+ 
+ head report 
+ 	log_retval =0
+ 	log_message = 'Interpreter Request Not Found'
+ 
+ detail 
+ 	log_retval = 100
+ 	log_misc1 = build2(trim(ce.result_val, format(ce.event_end_dt_tm, 'dd-mmm-yyyy hh:mm:ss;;q'))
+ 	log_message = concat( 'Interpreter Request Found on ', log_misc1)
+ 
+ with nullreport go
+ 
+ 
+----------------------------------------------------------------------      
+      
+select pp.interp_required_cd, pp.interp_type_cd, pp.* from person_patient pp where pp.person_id =    15556726.00     
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1);, maxrow = 10000
+      
+ 
+      
+select pa.encntr_id, pa.alert_source, pa.alert_txt, pa.passive_alert_id, pa.updt_dt_tm
+from passive_alert pa 
+where pa.updt_dt_tm >= cnvtdatetime('01-AUG-2021 00:00:00')
+and pa.alert_source = 'COV_SZ_INTERP_REQ'
+;and pa.alert_txt = 
+order by pa.updt_dt_tm desc
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+      
+      
+select e.encntr_id, e.reg_dt_tm, e.encntr_type_cd, p.name_full_formatted, p.person_id
+from person p, encounter e 
+where e.person_id = p.person_id
+and p.name_full_formatted = 'TTTTMAYO, FSRTEST'
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+ENCNTR_ID	  REG_DT_TM	            ENCNTR_TYPE_DISPLAY	NAME_FULL_FORMATTED	PERSON_ID
+110353215.00  04-02-2018 13:10:50	Quick Lab Registration	TTTTMAYO, FSRTEST	   16432316.00
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       

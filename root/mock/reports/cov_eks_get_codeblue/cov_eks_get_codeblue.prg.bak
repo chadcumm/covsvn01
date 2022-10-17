@@ -23,8 +23,8 @@ Mod Date	Developer			Comment
  
 ******************************************************************************/
 
-drop program cov_eks_get_codeblue:dba go
-create program cov_eks_get_codeblue:dba
+drop program cov_eks_get_interp_req:dba go
+create program cov_eks_get_interp_req:dba
 
 
 /**************************************************************
@@ -52,8 +52,6 @@ declare outpat_var     = f8 with constant(uar_get_code_by("DISPLAY", 71, "Outpat
 declare bh_var         = f8 with constant(uar_get_code_by("DISPLAY", 71, "Behavioral Health")), protect
 declare cardio_var     = f8 with constant(uar_get_code_by("DISPLAY", 72, "Date, Time of Cardiopulmonary Arrest")), protect
 
-
-;   21910883.00	Date, Time of Cardiopulmonary Arrest
  
 /**************************************************************
 ; DVDev Start Coding
@@ -80,7 +78,6 @@ join ce where ce.encntr_id = e.encntr_id
 		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
 		and ce1.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
 		group by ce1.encntr_id, ce1.event_cd)
-
 join cdr 
 	
 order by ce.encntr_id

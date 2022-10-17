@@ -1,0 +1,506 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Todd A. Blanchard
+	Date Written:		03/31/2020
+	Solution:			Revenue Cycle - Registration Management
+	Source file name:	cov_rm_Appointments_NoCMRN.prg
+	Object name:		cov_rm_Appointments_NoCMRN
+	Request #:			6954
+ 
+	Program purpose:	Lists scheduled appointments without CMRNs.
+						Lists MRNs without CMRNs.
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+ 	Mod Date	Developer				Comment
+ 	----------	--------------------	--------------------------------------				
+ 
+******************************************************************************/
+ 
+drop program cov_rm_Appointments_NoCMRN:DBA go
+create program cov_rm_Appointments_NoCMRN:DBA
+ 
+prompt 
+	"Output to File/Printer/MINE" = "MINE"
+	, "Start Date" = "SYSDATE"
+	, "End Date" = "SYSDATE"
+	, "Output To File" = 0                   ;* Output to file 
+
+with OUTDEV, start_datetime, end_datetime, output_file
+ 
+ 
+/**************************************************************
+; DVDev DECLARED SUBROUTINES
+**************************************************************/
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+
+;declare start_datetime			= dq8 with noconstant(cnvtlookbehind("10, d", cnvtdatetime(curdate, 000000)))
+declare start_datetime			= dq8 with noconstant(cnvtdatetime("01-MAY-2018 000000"))
+declare end_datetime			= dq8 with noconstant(cnvtlookbehind("1, d", cnvtdatetime(curdate, 235959)))
+
+declare cmrn_var				= f8 with constant(uar_get_code_by("MEANING", 4, "CMRN"))
+declare p_mrn_var				= f8 with constant(uar_get_code_by("MEANING", 4, "MRN"))
+declare mrn_var					= f8 with constant(uar_get_code_by("DISPLAYKEY", 319, "MRN"))
+declare fin_var					= f8 with constant(uar_get_code_by("DISPLAYKEY", 319, "FINNBR"))
+ 
+declare file_var				= vc with constant("ccl_sched_nocmrn.csv")
+ 
+declare temppath_var			= vc with constant(build("cer_temp:", file_var))
+declare temppath2_var			= vc with constant(build("$cer_temp/", file_var))
+ 
+declare filepath_var			= vc with constant(build("/cerner/w_custom/", cnvtlower(curdomain),
+														 "_cust/to_client_site/RevenueCycle/R2W/EnterpriseEcare/", file_var))
+declare output_var				= vc with noconstant("")
+
+declare cmd						= vc with noconstant("")
+declare len						= i4 with noconstant(0)
+declare stat					= i4 with noconstant(0)
+ 
+ 
+; define output value
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set output_var = value(temppath_var)
+else
+	set output_var = value($OUTDEV)
+endif
+ 
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+ 
+record sched_appt (
+	1	p_start_datetime	= vc
+	1	p_end_datetime		= vc
+ 
+	1	sched_cnt			= i4
+	1	list[*]
+		2	sch_appt_id		= f8
+		2	appt_dt_tm		= dq8
+		2	location		= c40
+		2	org_name		= c100
+ 
+		2	schedule_id		= f8
+		2	sch_event_id	= f8
+		2	action			= c40
+		2	action_dt_tm	= dq8
+		2	action_prsnl	= c100
+		2	updt_by			= c100
+		2	updt_task		= c200
+ 
+		2	person_id		= f8
+		2	patient_name	= c100
+		2	dob				= dq8
+		2	dob_tz			= i4
+		2	cmrn			= c20
+		2	p_mrn			= c20
+		
+		2	prsnl_ind			= i2
+		2	prsnl_active_ind	= i2
+		2	physician_ind		= i2
+ 
+ 		2	encntr_id		= f8
+		2	fin				= c20
+		2	mrn				= c20
+)
+ 
+ 
+/**************************************************************/
+; populate record structure with prompt data
+if (validate(request->batch_selection) = 1)
+	set sched_appt->p_start_datetime = format(start_datetime, "mm/dd/yyyy hh:mm;;q")
+	set sched_appt->p_end_datetime = format(end_datetime, "mm/dd/yyyy hh:mm;;q")
+else
+	set sched_appt->p_start_datetime = format(cnvtdatetime($start_datetime), "mm/dd/yyyy hh:mm;;q")
+	set sched_appt->p_end_datetime = format(cnvtdatetime($end_datetime), "mm/dd/yyyy hh:mm;;q")
+ 
+	set start_datetime = cnvtdatetime($start_datetime)
+	set end_datetime = cnvtdatetime($end_datetime)
+endif
+ 
+ 
+/**************************************************************/
+; select scheduled appointment data
+select into "NL:"
+from
+ 	; scheduled patient
+	SCH_APPT sa
+ 
+ 	; scheduled event
+	, (inner join SCH_EVENT sev on sev.sch_event_id = sa.sch_event_id
+		and sev.sch_state_cd > 0.0
+		and sev.active_ind = 1)
+	
+	; last action
+	, (inner join SCH_EVENT_ACTION seva on seva.sch_event_id = sev.sch_event_id
+		and seva.schedule_id = sa.schedule_id
+		and seva.action_meaning not in ("VIEW")
+		and seva.action_dt_tm between cnvtdatetime(start_datetime) and cnvtdatetime(end_datetime)
+		and seva.sch_action_id = (
+			select max(sch_action_id)
+			from SCH_EVENT_ACTION
+			where
+				sch_event_id = seva.sch_event_id
+				and schedule_id = sa.schedule_id
+				and action_meaning not in ("VIEW")
+				and action_dt_tm between cnvtdatetime(start_datetime) and cnvtdatetime(end_datetime)
+				and seva.action_prsnl_id > 0.0
+				and active_ind = 1
+			group by
+				sch_event_id
+				, schedule_id
+		)
+		and seva.action_prsnl_id > 0.0
+		and seva.active_ind = 1)
+ 
+	, (inner join PRSNL per_seva on per_seva.person_id = seva.action_prsnl_id
+		and per_seva.person_id > 0.0)
+ 
+	, (inner join PRSNL per_seva2 on per_seva2.person_id = seva.updt_id
+		and per_seva2.person_id > 0.0)
+		
+	, (left join APPLICATION_TASK at on at.task_number = seva.updt_task)
+ 
+ 	; patient
+	, (inner join PERSON p on p.person_id = sa.person_id
+		and p.person_type_cd != 900 ; Freetext
+		and p.name_first_key not in ("CERNER*", "SYSTEM*", "MODEL*")
+		and p.name_last_key not in ("CERNER*", "SYSTEM*", "MODEL*")
+		and p.name_last_key not in ("NONE", "UNABLE")
+		and p.name_last_key not in ("TT*", "FF*", "ZZ*")
+		and p.end_effective_dt_tm > sysdate
+		and p.active_ind = 1
+		
+		; TODO: TEST
+;		and p.person_id in (17165866.00)
+;		and p.name_first_key = "ANDREW" and p.name_last_key = "BARNA"
+;		and p.birth_dt_tm = cnvtdate2("02/19/1973", "mm/dd/yyyy"
+		)
+ 
+	, (left join PERSON_ALIAS pa on pa.person_id = p.person_id
+		and pa.person_alias_type_cd = cmrn_var
+		and pa.active_ind = 1)
+ 
+	, (left join PERSON_ALIAS pa2 on pa2.person_id = p.person_id
+		and pa2.person_alias_type_cd = p_mrn_var
+		and pa2.active_ind = 1)
+		
+	, (left join PRSNL per on per.person_id = p.person_id
+		and per.end_effective_dt_tm = (
+			select max(end_effective_dt_tm)
+			from PRSNL
+			where person_id = per.person_id
+			group by person_id
+		))
+ 
+ 	; encounter
+	, (left join ENCOUNTER e on e.person_id = sa.person_id
+		and e.encntr_id = sa.encntr_id
+		and e.active_ind = 1)
+ 
+	, (left join ENCNTR_ALIAS eaf on eaf.encntr_id = e.encntr_id
+		and eaf.encntr_alias_type_cd = fin_var
+		and eaf.active_ind = 1)
+ 
+	, (left join ENCNTR_ALIAS eam on eam.encntr_id = e.encntr_id
+		and eam.encntr_alias_type_cd = mrn_var
+		and eam.active_ind = 1)
+ 
+	; patient location
+	, (inner join LOCATION l on l.location_cd = sa.appt_location_cd)
+ 
+ 	; encounter organization
+	, (inner join ORGANIZATION org on org.organization_id = l.organization_id)
+ 
+where
+	sa.beg_dt_tm >= cnvtdatetime(curdate, 000000)
+	and sa.role_meaning = "PATIENT"
+	and sa.sch_state_cd > 0.0
+;	and sa.active_ind = 1
+	and pa.person_alias_id is null
+ 
+order by
+	sa.sch_appt_id
+	, e.encntr_id
+ 
+ 
+; populate sched_appt record structure
+head report
+	cnt = 0
+ 
+head sa.sch_appt_id
+	null
+	
+head e.encntr_id
+	cnt = cnt + 1
+ 
+	call alterlist(sched_appt->list, cnt)
+ 
+	sched_appt->sched_cnt					= cnt
+	sched_appt->list[cnt].sch_appt_id		= sa.sch_appt_id
+	sched_appt->list[cnt].appt_dt_tm		= sa.beg_dt_tm
+	sched_appt->list[cnt].location			= trim(uar_get_code_display(sa.appt_location_cd), 3)
+	sched_appt->list[cnt].org_name			= trim(org.org_name, 3)
+	
+	sched_appt->list[cnt].schedule_id		= sa.schedule_id
+	sched_appt->list[cnt].sch_event_id		= sa.sch_event_id
+	
+	sched_appt->list[cnt].action			= uar_get_code_display(seva.sch_action_cd)
+	sched_appt->list[cnt].action_dt_tm		= seva.action_dt_tm
+	sched_appt->list[cnt].action_prsnl		= per_seva.name_full_formatted
+	sched_appt->list[cnt].updt_by			= per_seva2.name_full_formatted
+	sched_appt->list[cnt].updt_task			= at.description
+	
+	sched_appt->list[cnt].person_id			= p.person_id
+	sched_appt->list[cnt].patient_name		= p.name_full_formatted
+	sched_appt->list[cnt].dob				= p.birth_dt_tm
+	sched_appt->list[cnt].dob_tz			= p.birth_tz
+	sched_appt->list[cnt].cmrn				= cnvtalias(pa.alias, pa.alias_pool_cd)
+	sched_appt->list[cnt].p_mrn				= cnvtalias(pa2.alias, pa2.alias_pool_cd)
+	
+	sched_appt->list[cnt].prsnl_ind			= evaluate(per.person_id, 0.0, 0, 1)
+	sched_appt->list[cnt].prsnl_active_ind	= per.active_ind
+	sched_appt->list[cnt].physician_ind		= per.physician_ind
+	
+	sched_appt->list[cnt].encntr_id			= e.encntr_id
+	sched_appt->list[cnt].fin				= eaf.alias
+	sched_appt->list[cnt].mrn				= cnvtalias(eam.alias, eam.alias_pool_cd)
+ 
+WITH nocounter, time = 600
+ 
+ 
+/**************************************************************/
+; select encounter data
+select into "NL:"
+from
+	ENCOUNTER e 
+	
+	, (inner join ENCNTR_ALIAS eam on eam.encntr_id = e.encntr_id
+		and eam.encntr_alias_type_cd = mrn_var
+		and eam.active_ind = 1) 
+ 
+	, (left join ENCNTR_ALIAS eaf on eaf.encntr_id = e.encntr_id
+		and eaf.encntr_alias_type_cd = fin_var
+		and eaf.active_ind = 1)
+ 
+	, (inner join PERSON p on p.person_id = e.person_id
+		and p.person_type_cd != 900 ; Freetext
+		and p.name_first_key not in ("CERNER*", "SYSTEM*", "MODEL*")
+		and p.name_last_key not in ("CERNER*", "SYSTEM*", "MODEL*")
+		and p.name_last_key not in ("NONE", "UNABLE")
+		and p.name_last_key not in ("TT*", "FF*", "ZZ*")
+		and p.end_effective_dt_tm > sysdate
+		and p.active_ind = 1
+		
+		; TODO: TEST
+;		and p.person_id in (17165866.00)
+;		and p.name_first_key = "ANDREW" and p.name_last_key = "BARNA"
+;		and p.birth_dt_tm = cnvtdate2("02/19/1973", "mm/dd/yyyy"
+		)
+ 
+	, (left join PERSON_ALIAS pa on pa.person_id = p.person_id
+		and pa.person_alias_type_cd = cmrn_var
+		and pa.active_ind = 1)
+ 
+	, (left join PERSON_ALIAS pa2 on pa2.person_id = p.person_id
+		and pa2.person_alias_type_cd = p_mrn_var
+		and pa2.active_ind = 1)
+		
+	, (left join PRSNL per on per.person_id = p.person_id
+		and per.end_effective_dt_tm = (
+			select max(end_effective_dt_tm)
+			from PRSNL
+			where person_id = per.person_id
+			group by person_id
+		))
+		
+	, (left join SCH_APPT sa on sa.person_id = p.person_id
+		and sa.encntr_id = e.encntr_id
+		and sa.beg_dt_tm >= cnvtdatetime(curdate, 000000)
+		and sa.role_meaning = "PATIENT"
+		and sa.sch_state_cd > 0.0
+		and sa.active_ind = 1)
+ 
+ 	; scheduled event
+	, (left join SCH_EVENT sev on sev.sch_event_id = sa.sch_event_id
+		and sev.sch_state_cd > 0.0
+		and sev.active_ind = 1)
+	
+	; last action
+	, (left join SCH_EVENT_ACTION seva on seva.sch_event_id = sev.sch_event_id
+		and seva.schedule_id = sa.schedule_id
+		and seva.action_meaning not in ("VIEW")
+		and seva.action_dt_tm between cnvtdatetime(start_datetime) and cnvtdatetime(end_datetime)
+		and seva.sch_action_id = (
+			select max(sch_action_id)
+			from SCH_EVENT_ACTION
+			where
+				sch_event_id = seva.sch_event_id
+				and schedule_id = sa.schedule_id
+				and action_meaning not in ("VIEW")
+				and action_dt_tm between cnvtdatetime(start_datetime) and cnvtdatetime(end_datetime)
+				and action_prsnl_id > 0.0
+				and active_ind = 1
+			group by
+				sch_event_id
+				, schedule_id
+		)
+		and seva.action_prsnl_id > 0.0
+		and seva.active_ind = 1)
+ 
+	, (left join PRSNL per_seva on per_seva.person_id = seva.action_prsnl_id
+		and per_seva.person_id > 0.0)
+ 
+	, (left join PRSNL per_seva2 on per_seva2.person_id = seva.updt_id
+		and per_seva2.person_id > 0.0)
+		
+	, (left join APPLICATION_TASK at on at.task_number = seva.updt_task)
+ 
+	; patient location
+	, (left join LOCATION l on l.location_cd = sa.appt_location_cd)
+ 
+ 	; encounter organization
+	, (left join ORGANIZATION org on org.organization_id = l.organization_id)
+		
+where
+	e.active_ind = 1
+	and pa.person_id is null
+ 
+order by
+	e.encntr_id
+	, sa.sch_appt_id
+ 
+ 
+; populate sched_appt record structure
+head report
+	cnt = sched_appt->sched_cnt
+ 
+head e.encntr_id
+	cnt = cnt + 1
+	
+	call alterlist(sched_appt->list, cnt)
+ 
+	sched_appt->sched_cnt					= cnt
+	sched_appt->list[cnt].sch_appt_id		= sa.sch_appt_id
+	sched_appt->list[cnt].appt_dt_tm		= sa.beg_dt_tm
+	sched_appt->list[cnt].location			= trim(uar_get_code_display(sa.appt_location_cd), 3)
+	sched_appt->list[cnt].org_name			= trim(org.org_name, 3)
+	
+	sched_appt->list[cnt].schedule_id		= sa.schedule_id
+	sched_appt->list[cnt].sch_event_id		= sa.sch_event_id
+	
+	sched_appt->list[cnt].action			= uar_get_code_display(seva.sch_action_cd)
+	sched_appt->list[cnt].action_dt_tm		= seva.action_dt_tm
+	sched_appt->list[cnt].action_prsnl		= per_seva.name_full_formatted
+	sched_appt->list[cnt].updt_by			= per_seva2.name_full_formatted
+	sched_appt->list[cnt].updt_task			= at.description
+	
+	sched_appt->list[cnt].person_id			= p.person_id
+	sched_appt->list[cnt].patient_name		= p.name_full_formatted
+	sched_appt->list[cnt].dob				= p.birth_dt_tm
+	sched_appt->list[cnt].dob_tz			= p.birth_tz
+	sched_appt->list[cnt].cmrn				= cnvtalias(pa.alias, pa.alias_pool_cd)
+	sched_appt->list[cnt].p_mrn				= cnvtalias(pa2.alias, pa2.alias_pool_cd)
+	
+	sched_appt->list[cnt].prsnl_ind			= evaluate(per.person_id, 0.0, 0, 1)
+	sched_appt->list[cnt].prsnl_active_ind	= per.active_ind
+	sched_appt->list[cnt].physician_ind		= per.physician_ind
+	
+	sched_appt->list[cnt].encntr_id			= e.encntr_id
+	sched_appt->list[cnt].fin				= eaf.alias
+	sched_appt->list[cnt].mrn				= cnvtalias(eam.alias, eam.alias_pool_cd)
+ 
+WITH nocounter, time = 600
+ 
+ 
+/**************************************************************/
+; select data
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set modify filestream
+endif
+ 
+select if (validate(request->batch_selection) = 1 or $output_file = 1)
+	with nocounter, pcformat (^"^, ^,^, 1), format = stream, format, time = 600
+else
+	with nocounter, separator = " ", format, time = 600
+endif
+
+into value(output_var)
+	person_id				= sched_appt->list[d1.seq].person_id
+	, patient_name			= sched_appt->list[d1.seq].patient_name
+	, dob					= format(cnvtdatetimeutc(datetimezone(
+								sched_appt->list[d1.seq].dob,
+								sched_appt->list[d1.seq].dob_tz), 1), "mm/dd/yyyy;;d")	
+	
+	, prsnl_ind				= evaluate(sched_appt->list[d1.seq].prsnl_ind, 1, "Y", "N")
+	, prsnl_active_ind		= evaluate(sched_appt->list[d1.seq].prsnl_active_ind, 1, "Y", "N")
+	, physician_ind			= evaluate(sched_appt->list[d1.seq].physician_ind, 1, "Y", "N")
+	
+	, cmrn					= sched_appt->list[d1.seq].cmrn
+	, p_mrn					= sched_appt->list[d1.seq].p_mrn
+	
+	, encntr_id				= sched_appt->list[d1.seq].encntr_id
+	, fin					= sched_appt->list[d1.seq].fin
+	, mrn					= sched_appt->list[d1.seq].mrn
+	, appt_dt_tm			= format(sched_appt->list[d1.seq].appt_dt_tm, "mm/dd/yyyy hh:mm:ss;;Q")
+	, location				= sched_appt->list[d1.seq].location
+	, org_name				= sched_appt->list[d1.seq].org_name
+	
+	, rpt_beg_dt_tm			= format(start_datetime, "mm/dd/yyyy hh:mm:ss;;Q")
+	, rpt_end_dt_tm			= format(end_datetime, "mm/dd/yyyy hh:mm:ss;;Q")
+	
+	, action				= sched_appt->list[d1.seq].action
+	, action_dt_tm			= format(sched_appt->list[d1.seq].action_dt_tm, "mm/dd/yyyy hh:mm:ss;;Q")
+	, action_prsnl			= sched_appt->list[d1.seq].action_prsnl
+	
+	, updt_by				= sched_appt->list[d1.seq].updt_by
+	, updt_task				= sched_appt->list[d1.seq].updt_task
+ 
+from
+	(dummyt d1 with seq = value(sched_appt->sched_cnt))
+ 
+plan d1
+ 
+order by
+	patient_name
+	, person_id
+	, sched_appt->list[d1.seq].appt_dt_tm
+	, location
+	, sched_appt->list[d1.seq].action_dt_tm
+	, sched_appt->list[d1.seq].encntr_id
+ 
+ 
+; copy file to AStream
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set cmd = build2("cp ", temppath2_var, " ", filepath_var)
+	set len = size(trim(cmd))
+ 
+	call dcl(cmd, len, stat)
+	call echo(build2(cmd, " : ", stat))
+endif
+ 
+ 
+;call echorecord(sched_appt)
+;go to exitscript
+ 
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+ 
+#exitscript
+ 
+end
+go
+ 

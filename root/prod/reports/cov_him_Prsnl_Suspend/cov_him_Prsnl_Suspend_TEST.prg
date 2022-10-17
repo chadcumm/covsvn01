@@ -14,7 +14,13 @@
  
 	Executing from:		CCL
  
- 	Special Notes:		
+ 	Special Notes:		Prompts change the where statement to filter by:
+							- Reminder Letter
+							- Incomplete Letter
+							- Suspension Letter
+							
+						This is a report/extract CCL.  Changes have to be
+						coordinated with downstream processes.
  
 ******************************************************************************
   GENERATED MODIFICATION CONTROL LOG
@@ -31,9 +37,10 @@ create program cov_him_Prsnl_Suspend_TEST:dba
 prompt 
 	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
 	, "Letter Type" = 0
-	, "Facility" = 0 
+	, "Facility" = 0
+	, "Output To File" = 0                   ;* Output to file 
 
-with OUTDEV, letter_type, facility
+with OUTDEV, letter_type, facility, output_file
  
 /**************************************************************
 ; DVDev DECLARED SUBROUTINES
@@ -44,6 +51,11 @@ with OUTDEV, letter_type, facility
 **************************************************************/
 
 declare fin_var						= f8 with constant(uar_get_code_by("DISPLAYKEY", 319, "FINNBR")), protect
+declare mrn_var						= f8 with constant(uar_get_code_by("DISPLAYKEY", 319, "MRN")), protect
+declare reminder_letter_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 14429, "REMINDERLETTER")), protect
+declare incomplete_letter_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 14429, "INCOMPLETELETTER")), protect
+declare suspension_letter_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 14429, "SUSPENSIONLETTER")), protect
+
 declare status_pending_var			= i2 with constant(1), protect
 declare type_completed_var			= i2 with constant(2), protect
 declare tempord_none_var			= i2 with constant(0), protect
@@ -51,6 +63,45 @@ declare tempord_template_var		= i2 with constant(1), protect
 
 declare phys_ind					= i2 with constant(1), protect
 declare num							= i4 with noconstant(0), protect
+
+declare file0_var					= vc with constant("reminder_letter.csv")
+declare file1_var					= vc with constant("incomplete_letter.csv")
+declare file2_var					= vc with constant("suspension_letter.csv")
+declare file_var					= vc with noconstant("")
+
+
+; determine letter type
+if ($letter_type = reminder_letter_var)
+	set file_var = file0_var
+	
+elseif ($letter_type = incomplete_letter_var)
+	set file_var = file1_var
+	
+elseif ($letter_type = suspension_letter_var)
+	set file_var = file2_var
+	
+endif
+ 
+ 
+declare temppath_var				= vc with constant(build("cer_temp:", file_var))
+declare temppath2_var				= vc with constant(build("$cer_temp/", file_var))
+
+declare filepath_var				= vc with constant(build("/cerner/w_custom/", cnvtlower(curdomain),
+												"_cust/to_client_site/RevenueCycle/HIM/", file_var))
+															 
+declare output_var					= vc with noconstant("")
+ 
+declare cmd							= vc with noconstant("")
+declare len							= i4 with noconstant(0)
+declare stat						= i4 with noconstant(0)
+ 
+ 
+; define output value
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set output_var = value(temppath_var)
+else
+	set output_var = value($OUTDEV)
+endif
 
 
 /**************************************************************
@@ -152,13 +203,20 @@ record final_data (
 		2 prsnl_id			= f8
 		2 phys_ind			= i2
 		2 hold_ind			= i2
+		2 position			= c40
 		
+		2 defic_dt_tm		= dq8
 		2 defic				= c100
-		2 total_age			= i4
+		2 total_age			= f8
+		2 order_notif_id	= f8
+		2 him_event_id		= f8
 		
 		2 patient_name		= c100
+		2 mrn				= c20
 		2 fin				= c20
 		2 disch_date		= dq8
+		2 pat_type			= c40
+		2 payor				= c40
 		2 org_name			= c100
 )
 
@@ -242,12 +300,23 @@ call echorecord(1120018_reply)
 /**************************************************************/ 
 ; select him age for letters data
 
-set idx1 = locateval(num, 1, size(1120018_reply->qual[1].ext, 5), "Day Start Range", 1120018_reply->qual[1].ext[num].field_name)
-set idx2 = locateval(num, 1, size(1120018_reply->qual[1].ext, 5), "Day End Range", 1120018_reply->qual[1].ext[num].field_name)
-set idx3 = locateval(num, 1, size(1120018_reply->qual[1].ext, 5), "Print Most Severe Ind", 1120018_reply->qual[1].ext[num].field_name)
-set idx4 = locateval(num, 1, size(1120018_reply->qual[1].ext, 5), "Qualified Defs Only Ind", 1120018_reply->qual[1].ext[num].field_name)
-set idx5 = locateval(num, 1, size(1120018_reply->qual[1].ext, 5), "Qualified Charts Only Ind", 1120018_reply->qual[1].ext[num].field_name)
-set idx6 = locateval(num, 1, size(1120018_reply->qual[1].ext, 5), "Visit_Status_Flag", 1120018_reply->qual[1].ext[num].field_name)
+set idx1 = locateval(num, 1, size(1120018_reply->qual[1].ext, 5), "Day Start Range"
+																, 1120018_reply->qual[1].ext[num].field_name)
+																
+set idx2 = locateval(num, 1, size(1120018_reply->qual[1].ext, 5), "Day End Range"
+																, 1120018_reply->qual[1].ext[num].field_name)
+
+set idx3 = locateval(num, 1, size(1120018_reply->qual[1].ext, 5), "Print Most Severe Ind"
+																, 1120018_reply->qual[1].ext[num].field_name)
+
+set idx4 = locateval(num, 1, size(1120018_reply->qual[1].ext, 5), "Qualified Defs Only Ind"
+																, 1120018_reply->qual[1].ext[num].field_name)
+
+set idx5 = locateval(num, 1, size(1120018_reply->qual[1].ext, 5), "Qualified Charts Only Ind"
+																, 1120018_reply->qual[1].ext[num].field_name)
+
+set idx6 = locateval(num, 1, size(1120018_reply->qual[1].ext, 5), "Visit_Status_Flag"
+																, 1120018_reply->qual[1].ext[num].field_name)
 
 set 1120041_request->debug_ind					= 0
 set 1120041_request->start_age					= cnvtint(1120018_reply->qual[1].ext[idx1].field_value)
@@ -271,10 +340,16 @@ call echorecord(1120041_reply)
 select into "NL:"	
 from
 	HIM_EVENT_ALLOCATION hea
+	
+	, PRSNL per
+	
+	, CLINICAL_EVENT ce
 
 	, ENCOUNTER e
 	
-	, ENCNTR_ALIAS ea
+	, ENCNTR_ALIAS eaf
+	
+	, ENCNTR_ALIAS eam
 	
 	, ORGANIZATION org
 	
@@ -295,15 +370,30 @@ where
 	and hea.completed_dt_tm > cnvtdatetime(curdate, curtime)
 	and hea.request_dt_tm != null
 	
+join per
+where
+	per.person_id = 1120041_reply->reply_qual[d1.seq].physician_id
+	
+join ce
+where
+	ce.event_id = hea.event_id
+	and ce.valid_until_dt_tm > cnvtdatetime(curdate, curtime)
+	
 join e
 where
 	e.encntr_id = hea.encntr_id
 	
-join ea
+join eaf
 where
-	ea.encntr_id = e.encntr_id
-	and ea.encntr_alias_type_cd = fin_var
-	and ea.active_ind = 1
+	eaf.encntr_id = e.encntr_id
+	and eaf.encntr_alias_type_cd = fin_var
+	and eaf.active_ind = 1
+	
+join eam
+where
+	eam.encntr_id = e.encntr_id
+	and eam.encntr_alias_type_cd = mrn_var
+	and eam.active_ind = 1
 	
 join org
 where
@@ -324,7 +414,8 @@ head report
 	cnt = 0
  
 detail
-	total_age = cnvtint(round(datetimediff(sysdate, e.disch_dt_tm), 0))
+	total_age_days = datetimediff(sysdate, e.disch_dt_tm)
+	total_age = cnvtint(round(total_age_days, 0))
 	
 	if (total_age between 1120041_request->start_age and 1120041_request->stop_age)
 		cnt = cnt + 1
@@ -336,13 +427,19 @@ detail
 		final_data->qual[cnt].prsnl_id			= 1120041_reply->reply_qual[d1.seq].physician_id
 		final_data->qual[cnt].phys_ind			= 1120041_reply->reply_qual[d1.seq].phys_ind
 		final_data->qual[cnt].hold_ind			= 1120041_reply->reply_qual[d1.seq].hold_ind
+		final_data->qual[cnt].position			= uar_get_code_display(per.position_cd)
 	
 		final_data->qual[cnt].defic				= uar_get_code_display(hea.event_cd)
-		final_data->qual[cnt].total_age			= total_age
+		final_data->qual[cnt].defic_dt_tm		= ce.event_end_dt_tm
+		final_data->qual[cnt].total_age			= total_age_days
+		final_data->qual[cnt].him_event_id		= hea.event_id
 		
 		final_data->qual[cnt].patient_name		= p.name_full_formatted
-		final_data->qual[cnt].fin				= ea.alias
+		final_data->qual[cnt].mrn				= cnvtalias(eam.alias, eam.alias_pool_cd)
+		final_data->qual[cnt].fin				= eaf.alias
 		final_data->qual[cnt].disch_date		= e.disch_dt_tm
+		final_data->qual[cnt].pat_type			= uar_get_code_display(e.encntr_type_cd)
+		final_data->qual[cnt].payor				= uar_get_code_display(e.financial_class_cd)
 		final_data->qual[cnt].org_name			= org.org_name
 	endif
 	
@@ -357,11 +454,15 @@ select into "NL:"
 from
 	ORDER_NOTIFICATION ot
 	
+	, PRSNL per
+	
 	, ORDERS o
 
 	, ENCOUNTER e
 	
-	, ENCNTR_ALIAS ea
+	, ENCNTR_ALIAS eaf
+	
+	, ENCNTR_ALIAS eam
 	
 	, ORGANIZATION org
 	
@@ -382,6 +483,10 @@ where
 	and ot.notification_status_flag = status_pending_var
 	and ot.notification_type_flag = type_completed_var
 	
+join per
+where
+	per.person_id = 1120041_reply->reply_qual[d1.seq].physician_id
+	
 join o
 where
 	o.order_id = ot.order_id
@@ -392,11 +497,17 @@ join e
 where
 	e.encntr_id = o.encntr_id
 	
-join ea
+join eaf
 where
-	ea.encntr_id = e.encntr_id
-	and ea.encntr_alias_type_cd = fin_var
-	and ea.active_ind = 1
+	eaf.encntr_id = e.encntr_id
+	and eaf.encntr_alias_type_cd = fin_var
+	and eaf.active_ind = 1
+	
+join eam
+where
+	eam.encntr_id = e.encntr_id
+	and eam.encntr_alias_type_cd = mrn_var
+	and eam.active_ind = 1
 	
 join org
 where
@@ -417,7 +528,8 @@ head report
 	cnt = final_data->cnt
  
 detail
-	total_age = cnvtint(round(datetimediff(sysdate, e.disch_dt_tm), 0))
+	total_age_days = datetimediff(sysdate, e.disch_dt_tm)
+	total_age = cnvtint(round(total_age_days, 0))
 	
 	if (total_age between 1120041_request->start_age and 1120041_request->stop_age)
 		cnt = cnt + 1
@@ -429,13 +541,19 @@ detail
 		final_data->qual[cnt].prsnl_id			= 1120041_reply->reply_qual[d1.seq].physician_id
 		final_data->qual[cnt].phys_ind			= 1120041_reply->reply_qual[d1.seq].phys_ind
 		final_data->qual[cnt].hold_ind			= 1120041_reply->reply_qual[d1.seq].hold_ind
+		final_data->qual[cnt].position			= uar_get_code_display(per.position_cd)
 	
 		final_data->qual[cnt].defic				= o.order_mnemonic
-		final_data->qual[cnt].total_age			= total_age
+		final_data->qual[cnt].defic_dt_tm		= o.current_start_dt_tm
+		final_data->qual[cnt].total_age			= total_age_days
+		final_data->qual[cnt].order_notif_id	= ot.order_notification_id
 	
 		final_data->qual[cnt].patient_name		= p.name_full_formatted
-		final_data->qual[cnt].fin				= ea.alias
+		final_data->qual[cnt].mrn				= cnvtalias(eam.alias, eam.alias_pool_cd)
+		final_data->qual[cnt].fin				= eaf.alias
 		final_data->qual[cnt].disch_date		= e.disch_dt_tm
+		final_data->qual[cnt].pat_type			= uar_get_code_display(e.encntr_type_cd)
+		final_data->qual[cnt].payor				= uar_get_code_display(e.financial_class_cd)
 		final_data->qual[cnt].org_name			= org.org_name
 	endif
 	
@@ -444,20 +562,38 @@ with nocounter, time = 180
 call echorecord(final_data)
  
  
-/**************************************************************/ 
-; select data
-select distinct into value($OUTDEV)
+/**************************************************************/
+; select final data for output
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set modify filestream
+endif
+ 
+select if (validate(request->batch_selection) = 1 or $output_file = 1)
+	with nocounter, pcformat (^"^, ^,^, 1), format = stream, format, time = 180
+else
+	with nocounter, separator = " ", format, time = 180
+endif
+
+distinct into value(output_var)
 	provider_name				= final_data->qual[d1.seq].provider_name
 	, prsnl_id					= final_data->qual[d1.seq].prsnl_id
-	, phys_ind					= evaluate(final_data->qual[d1.seq].phys_ind, 1, "Y", "")
-	, hold_ind					= evaluate(final_data->qual[d1.seq].hold_ind, 1, "Y", "")
+	, phys_ind					= evaluate(final_data->qual[d1.seq].phys_ind, 1, "Y", " ")
+	, hold_ind					= evaluate(final_data->qual[d1.seq].hold_ind, 1, "Y", " ")
+	, position					= trim(final_data->qual[d1.seq].position, 3)
 
 	, deficiency				= trim(final_data->qual[d1.seq].defic, 3)
+	, defic_dt_tm				= format(final_data->qual[d1.seq].defic_dt_tm, "mm/dd/yyyy;;d")
 	, total_age					= final_data->qual[d1.seq].total_age
+	, letter_type				= trim(replace(uar_get_code_display($letter_type), "Letter", ""), 3)
+	, him_event_id				= final_data->qual[d1.seq].him_event_id
+	, order_notif_id			= final_data->qual[d1.seq].order_notif_id
 	
 	, patient_name				= final_data->qual[d1.seq].patient_name
+	, mrn						= final_data->qual[d1.seq].mrn
 	, fin						= final_data->qual[d1.seq].fin
-	, disch_date				= final_data->qual[d1.seq].disch_date "mm/dd/yyyy;;d"
+	, disch_date				= format(final_data->qual[d1.seq].disch_date, "mm/dd/yyyy;;d")
+	, pat_type					= trim(final_data->qual[d1.seq].pat_type, 3)
+	, payor						= trim(final_data->qual[d1.seq].payor, 3)
 	, org_name					= trim(final_data->qual[d1.seq].org_name, 3)
 	
 from
@@ -473,7 +609,18 @@ order by
 	, total_age desc
 	, final_data->qual[d1.seq].disch_date
 	
-with nocounter, separator = " ", format, time = 180
+with nocounter
+
+
+/**************************************************************/
+; copy file to AStream
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set cmd = build2("cp ", temppath2_var, " ", filepath_var)
+	set len = size(trim(cmd))
+ 
+	call dcl(cmd, len, stat)
+	call echo(build2(cmd, " : ", stat))
+endif
 	
 
 /**************************************************************

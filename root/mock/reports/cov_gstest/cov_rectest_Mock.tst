@@ -1,9 +1,22 @@
+;cov_rectest_Mock.tst
 
- ;Call Echorecord(reqinfo) Go
+;Call Echorecord(reqinfo) Go
  
 ;  Call Echorecord(request) Go
 
-cov_eks_get_codeblue "mine" go
+
+
+;cov_eks_get_codeblue "mine" go
+
+;cov_test_rule_ccl "mine" go
+
+;cov_eks_get_interp_req "mine" go
+
+;cov_phq_flu_ekm_adhoc  "mine" go
+
+;cov_sz_codeblue_ekm "mine" go
+
+cov_phq_deaf_hoh_interp_log "mine", "02-AUG-2022 00:00:00", "29-AUG-2022 23:59:00" , 2552503645.00 go
  
 ;cov_dsch_medrec_alert_tracking "mine", "22-FEB-2022 00:00:00", "22-FEB-2022 23:59:00", 2552503645.00 go
  
@@ -507,6 +520,12 @@ for(lCnt = 1 to size(enc->qual, 5))
   set stat = alterlist(enc->qual[lCnt].problems, max_size)
 endfor
  
+COMPARE TWO DATES 
+The datetimecmp() function compares two datetime values ignoring the
+time and returns the difference in a number of days. You can use
+datetimecmp() in qualifications. For example:
+
+Where datetimecmp(E.DISCH_DT_TM , PC.CASE_COLLECT_DT_TM) >= 1 
  
 ;----------------------------------------------------------------------------------------------------------------
  
@@ -532,3 +551,4 @@ allow subsequent EKS templates to access the list of items.
 */
  
  
+

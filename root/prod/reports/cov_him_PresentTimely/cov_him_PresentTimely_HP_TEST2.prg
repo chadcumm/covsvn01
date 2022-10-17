@@ -63,6 +63,7 @@ declare otg_var						= f8 with constant(uar_get_code_by("DISPLAYKEY", 25, "OTG")
 declare mdoc_var					= f8 with constant(uar_get_code_by("DISPLAYKEY", 53, "MDOC")), protect
 declare doc_var						= f8 with constant(uar_get_code_by("DISPLAYKEY", 53, "DOC")), protect
 declare date_var					= f8 with constant(uar_get_code_by("DISPLAYKEY", 53, "DATE")), protect
+declare preadmit_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 69, "PREADMIT")), protect
 declare daysurgery_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "DAYSURGERY")), protect
 declare inpatient_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "INPATIENT")), protect
 declare observation_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 71, "OBSERVATION")), protect
@@ -121,6 +122,7 @@ record hpdata (
 		2 person_id					= f8
 		2 arrive_dt_tm				= dq8 ;003
 		2 reg_dt_tm					= dq8
+		2 reg_dt_tm_initial			= dq8 ;003
 		2 admit_physician_id		= f8
 		2 performed_dt_tm			= dq8
 		2 performed_prsnl_id		= f8
@@ -200,7 +202,7 @@ with persistscript
  
  
 /**************************************************************/ 
-; select history and physical data
+; select history and physical data - first H&P
 select into "nl:"
 from
 	CLINICAL_EVENT ce
@@ -226,6 +228,18 @@ from
 		and parser(op_encntr_type_var)
 		and e.reg_dt_tm between cnvtdatetime($start_datetime) and cnvtdatetime($end_datetime)
 		and e.active_ind = 1)
+	
+	;003
+	, (inner join ENCNTR_FLEX_HIST efh on efh.encntr_id = e.encntr_id
+		and efh.encntr_flex_hist_id in (
+			select min(efh2.encntr_flex_hist_id)
+			from
+				ENCNTR_FLEX_HIST efh2
+			where
+				efh2.encntr_id = efh.encntr_id
+				and efh2.encntr_type_class_cd not in (preadmit_var)
+				and efh2.reg_dt_tm is not null
+		))
 		
 	, (left join ENCNTR_PRSNL_RELTN epr on epr.encntr_id = e.encntr_id
 		and epr.encntr_prsnl_r_cd = admitphysician_var
@@ -266,6 +280,7 @@ head ce.encntr_id
 	hpdata->qual[cnt].person_id					= ce.person_id
 	hpdata->qual[cnt].arrive_dt_tm				= e.arrive_dt_tm ;003
 	hpdata->qual[cnt].reg_dt_tm					= e.reg_dt_tm
+	hpdata->qual[cnt].reg_dt_tm_initial			= efh.reg_dt_tm ;003
 	hpdata->qual[cnt].admit_physician_id		= epr.prsnl_person_id
 	hpdata->qual[cnt].performed_dt_tm			= ce.performed_dt_tm
 	hpdata->qual[cnt].performed_prsnl_id		= ce.performed_prsnl_id
@@ -282,7 +297,8 @@ head ce.encntr_id
 ;	if ($report_type = 1) ;003
 ;		hpdata->qual[cnt].admit_dt_tm = hpdata->qual[cnt].arrive_dt_tm ;003
 ;	else
-		hpdata->qual[cnt].admit_dt_tm = hpdata->qual[cnt].reg_dt_tm
+;		hpdata->qual[cnt].admit_dt_tm = hpdata->qual[cnt].reg_dt_tm ;003
+		hpdata->qual[cnt].admit_dt_tm = hpdata->qual[cnt].reg_dt_tm_initial ;003
 ;	endif
 	
 	if (hpdata->qual[cnt].is_scanned)
@@ -298,7 +314,7 @@ call echo(">>>select history and physical data")
  
  
 /**************************************************************/ 
-; select wqm history and physical data ;003
+; select wqm history and physical data - first H&P ;003
 select into "nl:"
 from
 	CDI_TRANS_LOG ctl
@@ -327,6 +343,18 @@ from
 		and parser(op_encntr_type_var)
 		and e.reg_dt_tm between cnvtdatetime($start_datetime) and cnvtdatetime($end_datetime)
 		and e.active_ind = 1)
+	
+	;003
+	, (inner join ENCNTR_FLEX_HIST efh on efh.encntr_id = e.encntr_id
+		and efh.encntr_flex_hist_id in (
+			select min(efh2.encntr_flex_hist_id)
+			from
+				ENCNTR_FLEX_HIST efh2
+			where
+				efh2.encntr_id = efh.encntr_id
+				and efh2.encntr_type_class_cd not in (preadmit_var)
+				and efh2.reg_dt_tm is not null
+		))
 		
 	, (left join ENCNTR_PRSNL_RELTN epr on epr.encntr_id = e.encntr_id
 		and epr.encntr_prsnl_r_cd = admitphysician_var
@@ -364,6 +392,7 @@ head ctl.encntr_id
 	hpdata->qual[cnt].person_id					= ce.person_id
 	hpdata->qual[cnt].arrive_dt_tm				= e.arrive_dt_tm
 	hpdata->qual[cnt].reg_dt_tm					= e.reg_dt_tm
+	hpdata->qual[cnt].reg_dt_tm_initial			= efh.reg_dt_tm ;003
 	hpdata->qual[cnt].admit_physician_id		= epr.prsnl_person_id
 	hpdata->qual[cnt].performed_dt_tm			= ce.performed_dt_tm
 	hpdata->qual[cnt].performed_prsnl_id		= ce.performed_prsnl_id
@@ -380,7 +409,8 @@ head ctl.encntr_id
 ;	if ($report_type = 1)
 ;		hpdata->qual[cnt].admit_dt_tm = hpdata->qual[cnt].arrive_dt_tm
 ;	else
-		hpdata->qual[cnt].admit_dt_tm = hpdata->qual[cnt].reg_dt_tm
+;		hpdata->qual[cnt].admit_dt_tm = hpdata->qual[cnt].reg_dt_tm ;003
+		hpdata->qual[cnt].admit_dt_tm = hpdata->qual[cnt].reg_dt_tm_initial ;003
 ;	endif
 	
 	if ((hpdata->qual[cnt].is_scanned) or (ce2.entry_mode_cd = undefined_var))
@@ -724,7 +754,7 @@ call echo(">>>select indicator data")
  
  
 /**************************************************************/ 
-; select history and physical update data
+; select history and physical update data - all H&P Updates
 if (hpdata->cnt > 0) ;002
 	select distinct into "nl:"
 	from
@@ -825,7 +855,7 @@ call echo(">>>select history and physical update data")
 
 
 /**************************************************************/ 
-; select wqm history and physical update data ;003
+; select wqm history and physical update data - all H&P Updates ;003
 if (hpdata->cnt > 0)
 	select distinct into "nl:"
 	from
@@ -1032,6 +1062,9 @@ select distinct into value($OUTDEV)
 	; surgical case							  	
 	, surgeon					= hpdata->qual[d1.seq].surgeon
 	, surg_start_dt_tm			= hpdata->qual[d1.seq].surg_start_dt_tm "mm/dd/yyyy hh:mm;;q"
+	
+;	, reg_dt_tm					= hpdata->qual[d1.seq].reg_dt_tm "mm/dd/yyyy hh:mm;;q" ;003
+;	, reg_dt_tm_initial			= hpdata->qual[d1.seq].reg_dt_tm_initial "mm/dd/yyyy hh:mm;;q" ;003
 	
 from
 	(dummyt d1 with seq = value(hpdata->cnt))

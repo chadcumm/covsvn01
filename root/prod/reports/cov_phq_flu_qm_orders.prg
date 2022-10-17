@@ -106,6 +106,7 @@ join elh where elh.encntr_id = e.encntr_id
 join o where o.encntr_id = e.encntr_id
 	and not exists(select o2.encntr_id from orders o2
 				where o2.encntr_id = o.encntr_id
+				and o2.order_status_cd = 2550.00 ;Ordered
 				and o2.catalog_cd in(imm_qm_var, flu_scren_var)
 				;in(22337316.00, 3900687815.00)
 				;Immunizations Quality Measures, Influenza Screening Current Flu Season
@@ -162,7 +163,8 @@ join elh where elh.encntr_id = e.encntr_id
 join o where o.encntr_id = e.encntr_id
 	and o.active_ind = 1
 	and o.catalog_cd in(imm_qm_var, flu_scren_var)
-				
+	and o.order_status_cd = 2550.00 ;Ordered
+					
 order by e.encntr_id, o.catalog_cd				
 
 Head report
@@ -205,7 +207,7 @@ from
 
 plan d1
 
-order by fin,order_name
+order by patient_name,order_name
 
 with nocounter, separator=" ", format
 

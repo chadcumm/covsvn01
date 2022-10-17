@@ -1,0 +1,165 @@
+ 
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:			Geetha Paramasivam
+	Date Written:		Oct'21
+	Solution:			PathNet - General laboratory - Speciman Management
+	Source file name:	      cov_gl_amerigroup_rule.prg
+	Object name:		cov_gl_amerigroup_rule
+	Request#:			10912
+ 	Program purpose:	      Part of Amerigroup rule
+ 	Executing from:		Rule
+  	Special Notes:
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+Mod Date	Developer			Comment
+----------	------------------------------------------------------------------
+08/15/22    Geetha        Initial Release    
+
+******************************************************************************/
+ 
+ 
+DROP PROGRAM cov_gl_amerigroup_rule:DBA GO
+CREATE PROGRAM cov_gl_amerigroup_rule:DBA
+ 
+declare encntrid = f8 with noconstant(0.0), protect
+declare personid = f8 with noconstant(0.0), protect
+declare q1_plan_name_var = vc with noconstant(" "), protect
+declare q2_plan_name_var = vc with noconstant(" "), protect
+declare q3_plan_name_var = vc with noconstant(" "), protect
+ 
+set personid = trigger_personid
+set encntrid = trigger_encntrid
+set retval = 0
+ 
+ 
+;----- q1 ---------------------------------------------------------
+;Current encounter with AMERIGROUP
+ 
+select distinct into 'nl:'
+	org.org_name,h.plan_name, h.active_ind, h.beg_effective_dt_tm, h.end_effective_dt_tm
+	,h.health_plan_id, epr.encntr_id, epr.person_id, epr.priority_seq, , epr_actine_ind = epr.active_ind
+ 
+from	encntr_plan_reltn epr, health_plan h, org_plan_reltn o, organization org
+ 
+plan epr where epr.encntr_id = encntrid
+	and epr.priority_seq = 1
+	and epr.active_ind = 1
+ 
+join h where h.health_plan_id = epr.health_plan_id
+	and h.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
+	and h.active_ind = 1
+ 
+join o where o.health_plan_id = h.health_plan_id
+	and o.org_plan_reltn_cd = 1200.00
+	and o.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
+	and o.active_ind = 1
+ 
+join org where org.organization_id = o.organization_id
+	and org.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
+	and org.org_name = 'Amerigroup'
+	and org.active_ind = 1
+ 
+detail
+	q1_plan_name_var = h.plan_name
+ 
+with nocounter
+ 
+call echo(build2('q1 = ', q1_plan_name_var)) ;Current encounter have AMERIGROUP as a primary (rule should alert)
+ 
+ 
+;----- q2 -------------------------------------
+;Previous Encounter
+ 
+select distinct into 'nl:'
+  org.org_name, h.plan_name, h.active_ind, h.beg_effective_dt_tm, epr_actine_ind = epr.active_ind
+, h.end_effective_dt_tm, h.health_plan_id, epr.encntr_id, epr.person_id
+ 
+from	encntr_plan_reltn epr, health_plan h, org_plan_reltn o, organization org
+ 
+,((	select distinct e.person_id, e.encntr_id, e.reg_dt_tm
+	,erank = rank() over(partition by e.person_id order by e.reg_dt_tm desc)
+	from person p, encounter e
+	where e.person_id = (select e1.person_id from encounter e1 where e1.encntr_id = encntrid)
+	and p.person_id = e.person_id
+	and e.disch_dt_tm != null
+	with sqltype("f8", "f8", "dq8", "i4") )i
+ )
+ 
+plan i where i.erank = 2
+ 
+join epr where epr.encntr_id = i.encntr_id
+	;epr.person_id = i.person_id
+	and epr.priority_seq = 1
+	and epr.active_ind = 1
+ 
+join h where h.health_plan_id = epr.health_plan_id
+	and h.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
+	and h.active_ind = 1
+ 
+join o where o.health_plan_id = h.health_plan_id
+	and o.org_plan_reltn_cd = 1200.00
+	and o.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
+	and o.active_ind = 1
+ 
+join org where org.organization_id = o.organization_id
+	and org.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
+	and org.org_name = 'Amerigroup'
+	and org.active_ind = 1
+ 
+detail
+	q2_plan_name_var = h.plan_name
+ 
+with nocounter
+ 
+call echo(build2('q2 = ', q2_plan_name_var)) ;(previous encounter have AMERIGROUP as a primary)
+ 
+;----- q3 -------------------------------------------------------
+ 
+;Current encounter - is there a primary insurance(any kind)? If so then rule should not look into the previous encounter.
+ 
+select distinct into 'nl:'
+ 	h.plan_name, h.active_ind, h.beg_effective_dt_tm, h.end_effective_dt_tm
+	,h.health_plan_id, epr.encntr_id, epr.person_id, epr.priority_seq,  epr_actine_ind = epr.active_ind
+ 
+from	health_plan h, encntr_plan_reltn epr
+ 
+plan epr where epr.encntr_id = encntrid
+	and epr.priority_seq = 1
+	and epr.active_ind = 1
+ 
+join h where h.health_plan_id = epr.health_plan_id
+	and h.active_ind = 1
+ 
+detail
+	q3_plan_name_var = h.plan_name
+ 
+with nocounter
+ 
+call echo(build2('q3 = ', q3_plan_name_var)) ;(current encounter have some kind of active primary insurance)
+ 
+;-----------------------------------------------------------------------------------------------
+ 
+if(q1_plan_name_var != '') ;(current have AMERIGROUP as a primary so rule should alert)
+	 set retval = 100
+elseif(q2_plan_name_var != '' and q3_plan_name_var = '') ;(currrent have no primary(any kind) but previous have AMERIGROUP as primary
+	set retval = 100
+endif
+ 
+call echo(build2('retval = ', retval))
+ 
+ 
+ 
+end
+go
+ 
+ 
+ 
+ 
+ 

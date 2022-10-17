@@ -55,6 +55,7 @@ declare file_var			= vc with constant(build(fin_var, "_cerner_labels_nb_",
 													 format(cnvtdatetime(curdate, curtime), "yyyymmddhhmm;;q"), ".spl"))
 													 
 declare temppath_var		= vc with constant(build("cer_temp:", file_var))
+declare temppath2_var		= vc with constant(build("$cer_temp/", file_var))
 
 declare output_var			= vc with noconstant("")
 
@@ -216,10 +217,10 @@ detail
 	row + 1
 	
 	; line 2
-;;	col 0 address1
-;;	col 50 city
-;;	col 60 state
-;;	col 63 zipcode
+;;	col 0	address1
+;;	col 50	city
+;;	col 60	state
+;;	col 63	zipcode
 	row + 1
 	
 	; line 3
@@ -321,7 +322,7 @@ with nocounter, nullreport, pcformat (^"^, ^,^, 1), format = stream, format, lan
  
   
 ; send file to print queue
-set cmd = build2("lpr -P ", pmdbdoc_2->printer_name, " ", output_var)
+set cmd = build2("lpr -P ", pmdbdoc_2->printer_name, " ", temppath2_var)
 set len = size(trim(cmd))
  
 call dcl(cmd, len, stat)

@@ -27,6 +27,10 @@ set log_retval = 1
 ; CCL SCRIPT STARTS HERE
 **************************************************************/
  
+ 
+ 
+ 
+/* 
 select into "nl:" 
 from 
 	clinical_event ce

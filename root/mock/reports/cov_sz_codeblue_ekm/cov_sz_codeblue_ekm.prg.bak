@@ -1,0 +1,146 @@
+ 
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+	Author:			Geetha Paramasivam
+	Date Written:		Aug'22
+	Solution:			All
+	Source file name:		cov_sz_codeblue_ekm.prg
+	Object name:		cov_sz_codeblue_ekm
+	Request#:			13014
+	Program purpose:	      Expert_event call - Ops will run the job once a day around 12 am
+	Executing from:		Ops
+ 	Special Notes:		Rule name : cov_sz_code_blue_alert
+ 
+;********************************************************************************/
+ 
+ 
+drop program cov_sz_codeblue_ekm:dba go
+create program cov_sz_codeblue_ekm:dba
+ 
+prompt
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+ 
+with OUTDEV
+ 
+ 
+ 
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+ 
+; Include files used to call EXPERT_EVENT
+; The first include file creates the EKSOPSRequest record structure which is used to pass patient info to the Discern Expert System
+ 
+ 
+%i cclsource:eks_rprq3091001.inc
+%i cclsource:eks_run3091001.inc
+ 
+ 
+/**************************************************************
+; VARIABLE DECLARATION
+**************************************************************/
+ 
+declare cnt = i4
+declare diff_var = f8 
+declare inpatient_var  = f8 with constant(uar_get_code_by("DISPLAY", 71, "Inpatient")), protect
+declare obs_var        = f8 with constant(uar_get_code_by("DISPLAY", 71, "Observation")), protect
+declare outpat_bed_var = f8 with constant(uar_get_code_by("DISPLAY", 71, "Outpatient in a Bed")), protect
+declare ed_var         = f8 with constant(uar_get_code_by("DISPLAY", 71, "Emergency")), protect
+declare outpat_var     = f8 with constant(uar_get_code_by("DISPLAY", 71, "Outpatient")), protect
+declare bh_var         = f8 with constant(uar_get_code_by("DISPLAY", 71, "Behavioral Health")), protect
+declare cardio_var     = f8 with constant(uar_get_code_by("DISPLAY", 72, "Date, Time of Cardiopulmonary Arrest")), protect
+ 
+ 
+/**************************************************************
+; CCL SCRIPT STARTS HERE
+**************************************************************/
+ 
+/* 
+Record EKSOPSRequest (
+   1 expert_trigger = vc
+   1 qual[*]
+	   2 person_id = f8
+         2 sex_cd = f8
+         2 birth_dt_tm = dq8
+         2 encntr_id = f8
+         2 accession_id = f8
+         2 order_id = f8
+         2 data[*]
+      	   3 vc_var  = vc
+               3 double_var = f8
+               3 long_var  = i4
+               3 short_var = i2
+   )
+*/   
+ 
+ 
+;-------------------------------------------------------------------------
+ 
+select into $outdev
+
+ce.encntr_id, ce.event_cd,  ce.result_val, ce.event_end_dt_tm
+, diff_var = datetimediff(cnvtdatetime(curdate,curtime3), cnvtdatetime(ce.event_end_dt_tm) ,3)
+
+from encounter e
+	, clinical_event ce
+	, (left join ce_date_result cdr on cdr.event_id = ce.event_id)
+
+plan e where e.encntr_type_cd in(inpatient_var, obs_var, outpat_bed_var, ed_var, outpat_var, bh_var)
+	and e.encntr_status_cd = 854.00 ;Active
+	and e.loc_facility_cd in(21250403 ,2552503645 ,2552503649 ,2552503653 ,2552503635 
+						,2552503613 ,2552503639 ,2552503657 ,2553765531 ,2553765475 ,2553765467 ,2553765707)
+
+join ce where ce.encntr_id = e.encntr_id
+	and ce.person_id = e.person_id
+	and ce.event_id = (select max(ce1.event_id) from clinical_event ce1
+		where ce1.encntr_id = ce.encntr_id
+		and ce1.event_cd = cardio_var
+		and ce1.result_val != ' '
+		and ce1.event_end_dt_tm >= cnvtlookbehind("72,H")
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+		and ce1.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
+		group by ce1.encntr_id, ce1.event_cd)
+join cdr 
+	
+order by ce.encntr_id
+ 
+ 
+;with nocounter, separator=" ", format, uar_code(d,1), format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 120
+ 
+
+Head report
+	cnt = 0
+	EKSOPSRequest->expert_trigger = "COV_CODEBLUE_OPS"
+ 
+Detail
+	cnt += 1
+	if(mod(cnt,10) = 1)
+		stat = alterlist(EKSOPSRequest->qual, cnt + 9)
+	endif
+	EKSOPSRequest->qual[cnt].person_id = ce.person_id
+	EKSOPSRequest->qual[cnt].encntr_id = ce.encntr_id
+ 
+Foot report
+stat = alterlist(EKSOPSRequest->qual, cnt)
+ 
+with nocounter 
+ 
+call echorecord(EKSOPSRequest)
+ 
+ 
+;**********************************************
+; Call EXPERT_EVENT
+;**********************************************
+
+if (cnt > 0)
+	set dparam = 0
+      call srvRequest(dparam)
+endif
+
+ 
+end
+go
+ 
+ 

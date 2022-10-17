@@ -14,14 +14,14 @@ with OUTDEV
  
 select fin = ea.alias, ce.encntr_id, ce.event_cd
 , event = uar_get_code_display(ce.event_cd), ce.result_val, event_end_dt = format(ce.event_end_dt_tm, 'mm/dd/yyyy hh:mm:ss;;d')
-, ce.ce_dynamic_label_id, ce.valid_until_dt_tm, ce.result_status_cd, normalcy = uar_get_code_display(ce.normalcy_cd)
-, ce.event_title_text, ce.event_tag, verify_dt = format(ce.verified_dt_tm, 'mm/dd/yyyy hh:mm:ss;;d')
+,verify_dt = format(ce.verified_dt_tm, 'mm/dd/yyyy hh:mm:ss;;d'), ce.result_status_cd
+, ce.event_title_text, ce.event_tag 
 , perform_dt = format(ce.performed_dt_tm, 'mm/dd/yyyy hh:mm:ss;;d')
 , performed_by = pr.name_full_formatted, verified_by = pr1.name_full_formatted
 , ce.event_id, ce.parent_event_id, ce.result_status_cd, ce.order_id
 , e.person_id, fac = uar_get_code_display(e.loc_facility_cd), e.loc_facility_cd
 , event_start_dt  = format(ce.event_start_dt_tm, 'mm/dd/yyyy hh:mm:ss;;d')
-, ce.view_level, ce.publish_flag
+, ce.view_level, ce.publish_flag,normalcy = uar_get_code_display(ce.normalcy_cd), ce.ce_dynamic_label_id, ce.valid_until_dt_tm
  
 from clinical_event ce, encntr_alias ea, prsnl pr, prsnl pr1, encounter e
  
@@ -33,11 +33,12 @@ and ce.performed_prsnl_id = pr.person_id
 and ce.verified_prsnl_id = pr1.person_id
 and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
 and ce.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
-and ce.encntr_id = 125348890.00
-;and ea.alias = '2118703131'
+and ce.encntr_id = 130143712                
+;and ce.person_id =    18862688.00
+;and ea.alias = '2210800002';'5219900004';'2124600147'
 ;and ce.event_id = 3686938696.00
 ;and ce.ce_dynamic_label_id =      11367714587.00
-order by event_end_dt desc
+order by ce.verified_dt_tm desc
  
 ;and ce.event_cd in(34439957, 24604416)
 ;and ce.ce_dynamic_label_id in(11219940744.00, 11219968729.00,11220775967.00)
@@ -71,7 +72,7 @@ order by event_end_dt desc
  
  
 select ce.event_cd, ce.result_val, ce.event_end_dt_tm,ce.verified_prsnl_id, ce.*
- from clinical_event ce where ce.encntr_id = 125199206
+ from clinical_event ce where ce.encntr_id = 129183724                
  order by ce.event_end_dt_tm desc
  with nocounter, separator=" ", format, uar_code(d,1), format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180
  
@@ -411,7 +412,13 @@ where cnvtupper(pr.name_last) = 'COLLIER'
 MONDAY, SHARON N RN	SMONDAY	Nurse - Supervisor	   16720049.00
 HANKINS, HEATHER	HHANKINS	IT - PowerChart	   17789909.00
  
-or position_var = 'Nurse - Supervisor' or position_var = 'IT - PowerChart'
+
+
+select PR.name_full_formatted, pr.username, pos = uar_get_code_display(pr.position_cd), pr.*
+from prsnl pr 
+where pr.position_cd
+
+; 'Nurse - Supervisor' or position_var = 'IT - PowerChart'
  
  
 select PR.name_full_formatted, pr.username, pos = uar_get_code_display(pr.position_cd)
@@ -517,7 +524,7 @@ select * from orders o where o.order_id =  3689131747.00
  
 select * from long_text lt where lt.long_text_id in( 1063170047.00, 1063213581.00)
  
-select tt = format(CNVTLOOKBEHIND("3,M"),'mm/dd/yy hh:mm:ss;;d') from dummyt
+select tt = format(CNVTLOOKBEHIND("72,H"),'mm/dd/yy hh:mm:ss;;d') from dummyt
  
 select * from person p where p.person_id in(14499390.00,15501045.00)
  
@@ -2896,6 +2903,8 @@ ENCNTR_ID
  
  
  
+ 
+ 
 select ore.encntr_id, ore.order_recon_id, ore.recon_status_cd, ore.recon_type_flag, ore.performed_dt_tm,ore.performed_prsnl_id
 from order_recon ore
 where ore.encntr_id = 125454902 ;125457611.00;trigger_encntrid
@@ -2920,18 +2929,21 @@ select log_misc1 = piece("    3664703.00|17-DEC-2021 11:24:14|", "|" , 2, "NOTFO
  
  WH    125338265.00
  
- 
-select distinct
+=============================== AMERIGROUP =============================================================================== 
+select 
 	epr.encntr_id, org.org_name,h.plan_name, h.active_ind, h.beg_effective_dt_tm, h.end_effective_dt_tm
-	,h.health_plan_id, epr.encntr_id, epr.person_id, epr.priority_seq
+	,e.encntr_type_cd,h.health_plan_id, epr.encntr_id, epr.person_id, epr.priority_seq
  
-from	encntr_plan_reltn epr, health_plan h, org_plan_reltn o, organization org
+from	encntr_plan_reltn epr, health_plan h, org_plan_reltn o, organization org, encounter e
  
 plan h where h.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
 	and h.active_ind = 1
  
 join epr where epr.health_plan_id = h.health_plan_id
 	and epr.priority_seq = 1
+ 
+join e where e.encntr_id = epr.encntr_id
+	and not(e.encntr_type_cd in(309308.00,309310.00,309312.00,19962820.00))
  
 join o where o.health_plan_id = h.health_plan_id
 	and o.org_plan_reltn_cd = 1200.00
@@ -2942,10 +2954,10 @@ join org where org.organization_id = o.organization_id
 	and org.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
 	and org.org_name = 'Amerigroup'
 	and org.active_ind = 1
- 
+	
 with nocounter, separator=" ", format, uar_code(d,1), format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180
  
- 
+======================================================================================================================  
  
  select E.encntr_id, E.loc_facility_cd, ea.alias, e.reg_dt_tm
  from encounter e, ENCNTR_ALIAS EA
@@ -2992,6 +3004,17 @@ order by emad.updt_dt_tm
  from clinical_event ce where ce.encntr_id = 125359334
  order by ce.event_end_dt_tm desc
  with nocounter, separator=" ", format, uar_code(d,1), format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180
+ 
+ 
+ 
+
+     309308.00	Inpatient
+     309312.00	Observation
+   19962820.00	Outpatient in a Bed
+     309309.00	Outpatient
+     309310.00	Emergency
+
+ 
  
  
  
@@ -3344,18 +3367,72 @@ Detail
 
 select * ; pa.encntr_id, pa.alert_source, pa.alert_txt, pa.passive_alert_id, pa.alert_txt, pa.updt_dt_tm
 from passive_alert pa 
-where pa.encntr_id = 125359334 ;Devgrp               
+;where pa.alert_source = 'COV_SZ_CODE_BLUE_ALERT'
+where pa.person_id =    22376109.00
+;where pa.encntr_id = 130141712
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
 
-select * ;pa.encntr_id, pa.alert_source, pa.alert_txt, pa.passive_alert_id, pa.updt_dt_tm
+
+
+select * from passive_alert_position pap where pap.passive_alert_id =       1587634.00
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+
+      9032493.00
+      9034493.00
+      9030493.00
+
+
+select pa.encntr_id, pa.alert_source, pa.alert_txt, pa.passive_alert_id, pa.updt_dt_tm
 from passive_alert pa 
-where pa.updt_dt_tm >= cnvtdatetime('28-JUN-2022 00:00:00')
+where pa.updt_dt_tm >= cnvtdatetime('28-MAY-2021 00:00:00')
+and pa.alert_source = 'COV_SZ_CODE_BLUE_ALERT'
+;and pa.alert_txt = 
 order by pa.updt_dt_tm desc
 with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
 
+select pa.encntr_id, pa.alert_source, pa.alert_txt, pa.passive_alert_id, pa.updt_dt_tm
+from passive_alert pa 
+where pa.encntr_id = 125484071  
+and pa.alert_source = 'COV_SZ_INTERP_REMINDER*'
+and pa.alert_txt = '*Interpreter needed'
+order by pa.updt_dt_tm desc
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+
+
+select pa.encntr_id, pa.alert_source, pa.alert_txt, pa.passive_alert_id, pa.updt_dt_tm
+from passive_alert pa 
+where pa.updt_dt_tm >= cnvtdatetime('01-JAN-2021 00:00:00')
+;and pa.alert_source = 'COV_SZ_INTERP_REQ'
+and cnvtlower(pa.alert_txt) = '*interpre*'
+order by pa.updt_dt_tm desc
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+select fin = ea.alias, pa.encntr_id, pa.person_id,pa.alert_source, pa.alert_txt, pa.passive_alert_id, pa.updt_dt_tm
+from passive_alert pa, encntr_alias ea
+where pa.updt_dt_tm >= cnvtdatetime('01-JAN-2021 00:00:00')
+and ea.encntr_id = pa.encntr_id
+and ea.encntr_alias_type_cd = 1077
+;and pa.alert_source = 'COV_SZ_INTERP_REQ'
+and cnvtlower(pa.alert_txt) = '*interpre*'
+order by pa.updt_dt_tm desc
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+
+
+
 select * 
 from passive_alert_action paa
-where paa.updt_dt_tm >= cnvtdatetime('28-JUN-2022 00:00:00')
+where paa.passive_alert_id in(257456.00,257454.00)
+
+;where paa.updt_dt_tm >= cnvtdatetime('28-JUN-2022 00:00:00')
 order by paa.updt_dt_tm desc
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+
+select * from passive_alert_position pap
+where pap.passive_alert_id = 255358.00
 with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
 
 
@@ -3368,23 +3445,424 @@ order by paa.updt_dt_tm desc
 with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
 
 
-
-
 select DIFF = DATETIMEDIFF(cnvtdatetime(curdate,curtime3), cnvtdatetime('29-JUN-2022 00:00:00') ,3)from dummyt
 
+select trunc_date = datetimetrunc(cnvtdatetime("02-Apr-2008 10:55:29"), "dd") ';;q' from dummyt
+
+select trunc_date = datetimetrunc(cnvtdatetime("02-Apr-2008 10:55:29"), "dd") ';;q' 
+, today_dt = datetimetrunc(cnvtdatetime(curdate,curtime3), "dd") ';;q' 
+from dummyt
 
 
 
+;RULE SETUP
+select * ; pa.encntr_id, pa.alert_source, pa.alert_txt, pa.passive_alert_id, pa.alert_txt, pa.updt_dt_tm
+from passive_alert pa 
+;where pa.alert_source = 'COV_SZ_CODE_BLUE_ALERT'
+where pa.person_id =    22376109.00
+;where pa.encntr_id = 130141712
+and pa.active_ind = 1
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
 
 
 
+select * from passive_alert_position pap where pap.passive_alert_id =       1587634.00
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
 
+
+select * 
+from passive_alert_action paa
+where paa.passive_alert_id in(9032493.00,9034493.00,9030493.00)
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+
+
+select *
+from passive_alert pa
+where pa.passive_alert_id = 9034493.00
+;and pa.active_ind = 1
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+      
 
 
 ==============================================================================================
 
+;Interpreter
+
+select pp.interp_required_cd, pp.interp_type_cd, pp.* 
+from person_patient pp 
+where pp.person_id =      15208438.00; 15556719.00
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1);, maxrow = 10000   
 
 
+select pp.interp_required_cd, pp.interp_type_cd, pp.* 
+from person_patient pp 
+where pp.interp_required_cd = 634768.00	;Yes
+;where pp.person_id =      15208438.00; 15556719.00
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000   	
+	
+Code set - 329
+CODE_VALUE	DISPLAY
+     634767.00	No
+     634768.00	Yes
+   	
+   	
+   	
+;Find FIN and enc info   	
+select fin = ea.alias, e.encntr_id, e.person_id, p.name_full_formatted
+from person p, encounter e, encntr_alias ea 
+where p.name_full_formatted = 'ZZZTEST, SELENA'   	
+and e.person_id = p.person_id
+and ea.encntr_id = e.encntr_id
+and ea.encntr_alias_type_cd = 1077
+and ea.active_ind = 1
+and e.active_ind = 1
+and p.active_ind = 1
+   	
+   	
+;Find FIN and Interpreter   	
+select fin = ea.alias, e.encntr_id, e.person_id, p.name_full_formatted, pp.interp_required_cd, pp.interp_type_cd, pp.updt_dt_tm
+from person p, encounter e, encntr_alias ea, person_patient pp 
+;WHERE p.person_id = 18862688
+where p.name_full_formatted =  'ZZZTEST, CUSTDEV'
+;'ZZZTEST, SELENA'  ;'ZZZTEST, OLDHARLEY' ;'ZZZTEST, RAD';'ZZZTEST, SELENA'   	
+and e.person_id = p.person_id
+and pp.person_id = p.person_id
+and ea.encntr_id = e.encntr_id
+and ea.encntr_alias_type_cd = 1077
+and ea.active_ind = 1
+and e.active_ind = 1
+and p.active_ind = 1
+order by p.updt_dt_tm desc
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+SELECT P.*
+from person p
+where p.name_full_formatted =  'ZZZTEST, CUSTDEV'
+
+select * from person_patient pp where pp.person_id = 21391781
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+select pm.n_encntr_type_cd, pm.n_encntr_type_class_cd, pm.* 
+from pm_transaction pm 
+WHERE pm.n_name_formatted = 'TEST, CUSTDEV' ;Cert
+;where pm.n_person_id 
+;where pm.n_encntr_id = 127911711
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+N_LANGUAGE_DISPLAY
+Sign Language
+
+21391781        127911711
+;-------------------------------------------------------------------
+;From Todd - scheduling
+   	
+There's a table named SCH_EVENT_DETAIL that contains various pieces of information for scheduled appointments.
+Related to that table are two others: ORDER_ENTRY_FIELDS and OE_FIELD_MEANING.
+
+They join like this:
+
+"	SCH_EVENT_DETAIL sed
+"	ORDER_ENTRY_FIELDS oef on oef.oe_field_id = sed.oe_field_id
+"	OE_FIELD_MEANING ofm on ofm.oe_field_meaning_id = oef.oe_field_meaning_id
+
+From there you can find info for an appointment, e.g.:
+
+OE_FIELD_ID      CODESET  DESCRIPTION            OE_FIELD_MEANING_ID
+23290423.00       329     Interpreter Required   3580.00
+25789963.00       104051  Sch Interpreter        2088.00
+2562479461.00     100360  Sch BH Interpreter     9000.00
+
+OE_FIELD_MEANING_ID    OE_FIELD_MEANING     DESCRIPTION
+3580.0	           SCHINTERPRETER      Interpreter Required
+
+
+Once you know what info you need, you can join to the appointment table:
+
+o	SCH_EVENT_DETAIL sed
+o	SCH_APPT sa on sa.sch_event_id = sed.sch_event_id
+   	
+   	
+select * from order_entry_fields oef where oef.oe_field_id = 25789963.00
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+select * from oe_field_meaning ofm   	
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+
+select sa.orig_beg_dt_tm, sa.orig_end_dt_tm, sa.* 
+from sch_appt sa where sa.encntr_id = 125487173.00
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+select * from sch_event sab where sab.candidate_id =   868463261.00   	
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+   	
+   	
+select sa.encntr_id, sa.person_id, sed.oe_field_display_value, sed.beg_effective_dt_tm,sed.updt_dt_tm, oef.oe_field_id, ofm.description
+, ofm.oe_field_meaning, ofm.oe_field_meaning_id, oef.*, sed.*
+from  sch_appt sa, sch_event_detail sed, order_entry_fields oef, oe_field_meaning ofm
+where sa.person_id =     20785859.00 ;ZZZTEST, SELENA
+;and sa.encntr_id =   125487173.00
+and sed.sch_event_id = sa.sch_event_id
+and oef.oe_field_id = sed.oe_field_id
+and ofm.oe_field_meaning_id = oef.oe_field_meaning_id
+and sed.oe_field_id in(25789963.00,3910266653.00) ;req
+and sed.beg_effective_dt_tm >= cnvtdatetime("24-AUG-2022 00:00:00")
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+
+select sa.encntr_id, sa.person_id, sed.oe_field_display_value, sed.beg_effective_dt_tm,sed.updt_dt_tm, oef.oe_field_id, ofm.description
+, ofm.oe_field_meaning, ofm.oe_field_meaning_id, oef.*, sed.*
+from  sch_appt sa, sch_event_detail sed, order_entry_fields oef, oe_field_meaning ofm
+where sa.encntr_id = 125487734.00
+;where sa.person_id =     20785859.00 ;ZZZTEST, SELENA
+and sed.sch_event_id = sa.sch_event_id
+and oef.oe_field_id = sed.oe_field_id
+and ofm.oe_field_meaning_id = oef.oe_field_meaning_id
+and sed.oe_field_id in(23290423.00,25789963.00,2562479461.00, 3910266653.00) ;req
+and sed.beg_effective_dt_tm >= cnvtdatetime("24-AUG-2022 00:00:00")
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+
+
+select pm.n_encntr_type_cd, pm.n_encntr_type_class_cd, pm.* 
+from pm_transaction pm 
+;where pm.n_person_id = 20785859.00 ;ZZZTEST, SELENA
+;where pm.n_encntr_id = 127911711
+where pm.n_name_formatted = 'ZZZTEST, SELENA'
+order by pm.activity_dt_tm desc
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+'ZZZTEST, SELENA' - have multiple person_id's
+
+   20799866.00	  125487734.00
+
+
+select * from encounter e where e.encntr_id = 125487113.00
+
+select * from encntr_alias ea where ea.encntr_id =   125487113.00
+
+
+ENCNTR_ID		   PERSON_ID	OE_FIELD_DISPLAY_VALUE			BEG_EFFECTIVE_DT_TM	UPDT_DT_TM
+  125486513.00	   20785859.00	No						08-17-2022 10:19:14	08-17-2022 10:19:14
+  125486927.00	   20785859.00	Unknown at time of scheduling		08-24-2022 10:28:08	08-24-2022 10:28:08
+  125486924.00	   20785859.00	Yes - Language other than English	08-24-2022 10:28:08	08-24-2022 10:28:08
+  125486921.00	   20785859.00	Yes - Deaf/HOH				08-24-2022 10:28:08	08-24-2022 10:28:08
+  125486918.00	   20785859.00	No						08-24-2022 10:28:08	08-24-2022 10:28:08
+
+;----------------------------------------------------------------------
+; FIndings for rule
+;ZZZTEST, RAD
+select sa.encntr_id, sa.person_id, sed.oe_field_display_value, sed.beg_effective_dt_tm,sed.updt_dt_tm
+from sch_appt sa, sch_event_detail sed
+where sa.encntr_id =   125486516.00
+;where sa.person_id =  19914916.00 ;zzztest, rad
+and sed.sch_event_id = sa.sch_event_id
+and sed.oe_field_id in(23290423.00,25789963.00,2562479461.00)
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+ENCNTR_ID	  PERSON_ID	   OE_FIELD_DISPLAY_VALUE	   BEG_EFFECTIVE_DT_TM	UPDT_DT_TM
+125486516.00  19914916.00  Yes - Hard of hearing - Deaf  08-17-2022 10:21:49	08-17-2022 10:21:49
+
+
+select pp.interp_required_cd, pp.interp_type_cd, pp.* 
+from person_patient pp where pp.person_id = 20785859.00; 19914916.00 ;zzztest, rad
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+
+select patient = p1.name_full_formatted, pp.person_id
+,interpreter_request = uar_get_code_display(pp.interp_required_cd)
+,contributor_system = uar_get_code_display(pp.contributor_system_cd)
+,person_activated = p.name_full_formatted, format(pp.last_atd_activity_dt_tm,"mm-dd-yyyy hh:mm:ss;;d")
+from person_patient pp, person p, person p1 
+where pp.person_id = 20785859.00; 19914916.00 ;zzztest, rad
+and p.person_id = pp.data_status_prsnl_id
+and p1.person_id = pp.person_id
+
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+
+INTERP_REQUIRED_DISPLAY	INTERP_TYPE_DISPLAY	PERSON_ID	 UPDT_DT_TM
+No		   						19914916.00	 08-17-2022 10:21:48
+
+
+select * from 
+;-------------------------------------------
+;ZZZTEST,OLDHARLEY
+
+select sa.encntr_id, sa.person_id, sed.oe_field_display_value, sed.beg_effective_dt_tm,sed.updt_dt_tm
+from sch_appt sa, sch_event_detail sed
+where sa.encntr_id =   125486519.00
+;where sa.person_id =  18862688.00
+and sed.sch_event_id = sa.sch_event_id
+and sed.oe_field_id in(23290423.00,25789963.00,2562479461.00)
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+ENCNTR_ID	PERSON_ID		OE_FIELD_DISPLAY_VALUE	           BEG_EFFECTIVE_DT_TM	UPDT_DT_TM
+125486519.00 18862688.00	Yes - Language other than English	08-17-2022 10:23:21	08-17-2022 10:23:21
+
+
+FIN		ENCNTR_ID		   PERSON_ID	NAME_FULL_FORMATTED	INTERP_REQUIRED_DISPLAY	INTERP_TYPE_DISPLAY	UPDT_DT_TM
+1928801253	  116825749.00	   18862688.00	ZZZTEST, OLDHARLEY	No							08-17-2022 10:23:19
+2017100005	  125328238.00	   18862688.00	ZZZTEST, OLDHARLEY	No							08-17-2022 10:23:19
+1931002055	  117145238.00	   18862688.00	ZZZTEST, OLDHARLEY	No							08-17-2022 10:23:19
+
+;---------------------------------------------------------------------------
+
+CODE_VALUE		DISPLAY
+   49244345.00	No
+ 3910155181.00	Yes - Hard of hearing - Deaf
+ 3910155191.00	Yes - Language other than English
+ 3910155195.00	Unknown at time of scheduling
+
+   	
+select * from order_entry_fields oef    	
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+
+select * from oe_field_meaning ofm
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+
+select pm.n_encntr_type_cd, pm.n_encntr_type_class_cd, pm.* 
+from pm_transaction pm 
+where pm.n_person_id = 20755830
+;where pm.n_encntr_id =   125487113.00  ;125486519.00
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+select pp.interp_required_cd, pp.interp_type_cd, pp.*
+from PERSON_PATIENT PP where pp.person_id = 20755830
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+select fin = ea.alias, e.encntr_id, e.person_id, e.encntr_type_cd, ce.result_val 
+from encntr_alias ea, encounter e, clinical_event ce
+where e.reg_dt_tm >= cnvtdatetime('01-JUN-2022 00:00:00')
+and ea.encntr_id = e.encntr_id
+and ea.encntr_alias_type_cd = 1077
+and ce.encntr_id = e.encntr_id
+and ce.event_cd = 704849.00 ;Information Given by
+and ce.result_val != 'Unable to obtain'
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+
+select ;pa.encntr_id, pa.alert_source, pa.alert_txt, pa.passive_alert_id, pa.updt_dt_tm
+pa.person_id, pa.encntr_id, pa.passive_alert_id, pa.beg_effective_dt_tm ';;q', pa.end_effective_dt_tm ';;q', pa.alert_source
+, pa.active_ind;, trunc_beg_dt = datetimetrunc(cnvtdatetime(pa.end_effective_dt_tm), "dd") ';;q' 
+,pa.alert_txt, diff = datetimecmp(datetimetrunc(cnvtdatetime(curdate,curtime3), "dd"), pa.end_effective_dt_tm)
+from passive_alert pa 
+where pa.encntr_id = 130141715.00
+and pa.alert_source = 'COV_SZ_INTERP_REMINDER*'
+and pa.alert_txt = '*Interpreter needed'
+order by pa.updt_dt_tm desc
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+ENCNTR_ID	PERSON_ID
+  130141715.00	   22376109.00
+
+
+
+select o.ordered_as_mnemonic, o.encntr_id, o.person_id
+from orders o 
+where o.order_status_cd = 2546.00 ;Future
+and o.orig_order_dt_tm >= cnvtdatetime("01-JAN-2022 00:00:00")
+;and o.encntr_id != 0
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+
+
+select o.ordered_as_mnemonic,o.order_status_cd
+from orders o;, person p
+;where o.person_id = o.person_id 
+where o.person_id =    20768097.00
+and o.order_status_cd = 2546.00 ;Future
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1);, maxrow = 10000
+
+
+select * from person p where p.person_id = 20768097.00
+
+22386109        130145712 
+
+================== RULE TEST ================================================================================================
+select ema.*, emad.*
+from eks_module_audit_det emad, eks_module_audit ema 
+where emad.module_audit_id = ema.rec_id
+and emad.encntr_id = 130145712 
+order by emad.updt_dt_tm desc
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1);, maxrow = 10000
+==============================================================================================================================
+
+select * from order_entry_fields oef where oef.description = '*Interpreter type'
+where oef.oe_field_id in(23290423.00,25789963.00,2562479461.00, 3910266653.00)
+
+
+select pm.n_encntr_type_cd, pm.n_encntr_type_class_cd, pm.* 
+from pm_transaction pm 
+where pm.n_person_id = 20785859.00 ;ZZZTEST, SELENA
+;where pm.n_encntr_id = 125487173.00
+;where pm.n_name_formatted = 'ZZZTEST, SELENA'
+order by pm.activity_dt_tm desc
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+select sa.orig_beg_dt_tm, sa.orig_end_dt_tm, sa.* 
+from sch_appt sa where sa.encntr_id = 125487173.00
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+select sa.appt_location_cd, sa.beg_dt_tm, sa.end_dt_tm, sed.beg_effective_dt_tm, sed.end_effective_dt_tm
+,sa.encntr_id, sa.person_id, sed.oe_field_display_value, sed.beg_effective_dt_tm,sed.updt_dt_tm
+, oef.oe_field_id, ofm.description, ofm.oe_field_meaning, ofm.oe_field_meaning_id, oef.*, sed.*
+from  sch_appt sa, sch_event_detail sed, order_entry_fields oef, oe_field_meaning ofm
+where sa.person_id =     20785859.00 ;ZZZTEST, SELENA
+;and sa.encntr_id =   125487173.00
+and sed.sch_event_id = sa.sch_event_id
+and oef.oe_field_id = sed.oe_field_id
+and ofm.oe_field_meaning_id = oef.oe_field_meaning_id
+and sed.oe_field_id in(25789963.00,3910266653.00) ;req
+and sed.beg_effective_dt_tm >= cnvtdatetime("24-AUG-2022 00:00:00")
+
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+ 	
+select 
+sa.encntr_id, sa.person_id, sa.appt_location_cd
+,sed.oe_field_display_value, sed.beg_effective_dt_tm,sed.updt_dt_tm, sed.oe_field_id, ofm.description
+from  sch_appt sa
+	, sch_event_detail sed
+	, oe_field_meaning ofm
+
+plan sa where 
+	and sa.active_ind = 1
+
+join sed where sed.sch_event_id = sa.sch_event_id
+	and sed.beg_effective_dt_tm BETWEEN cnvtdatetime("01-AUG-2022 00:00:00") and cnvtdatetime("20-SEP-2022 00:00:00")
+	;and sed.oe_field_id in(sch_interp_res_var, sch_interp_typ_var)
+	and sed.oe_field_id in(25789963.00,3910266653.00) ;req
+	and sed.active_ind = 1
+
+join ofm where ofm.oe_field_meaning_id = sed.oe_field_meaning_id
+ 	
+   	
+   	
+select sysdate ';;q',diff = datetimediff(sysdate, pa.end_effective_dt_tm,3),pa.*
+from passive_alert pa
+plan pa where pa.person_id =    22386109.00 ;trigger_personid 
+	and pa.alert_txt = 'Code Blue Event On*'
+	;and pa.end_effective_dt_tm <= sysdate
+	/*and pa.passive_alert_id = (select max(pa1.passive_alert_id) from passive_alert pa1 
+			where pa1.person_id = pa.person_id
+			and pa1.alert_txt = pa.alert_txt
+			group by pa1.person_id)*/
+
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+Head report 
+ 	log_retval = 0
+ 	log_message = 'Codeblue Alert Not expired'
+Detail
+	log_retval = 100
+	log_misc1 = format(pa.end_effective_dt_tm, 'mm/dd/yy hh:mm;;q')
+ 	log_message = build2('Codeblue Alert expired - ', log_misc1)
+With nocounter, nullreport go   	
    	
    	
    	
@@ -3395,3 +3873,17 @@ select DIFF = DATETIMEDIFF(cnvtdatetime(curdate,curtime3), cnvtdatetime('29-JUN-
    	
    	
    	
+   	
+   	
+   	
+   	
+   	
+   	
+   	
+   	
+   	
+   	
+   	
+   	
+   	
+

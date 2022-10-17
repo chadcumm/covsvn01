@@ -52,8 +52,6 @@ declare outpat_var     = f8 with constant(uar_get_code_by("DISPLAY", 71, "Outpat
 declare bh_var         = f8 with constant(uar_get_code_by("DISPLAY", 71, "Behavioral Health")), protect
 declare cardio_var     = f8 with constant(uar_get_code_by("DISPLAY", 72, "Date, Time of Cardiopulmonary Arrest")), protect
 
-
-;   21910883.00	Date, Time of Cardiopulmonary Arrest
  
 /**************************************************************
 ; DVDev Start Coding

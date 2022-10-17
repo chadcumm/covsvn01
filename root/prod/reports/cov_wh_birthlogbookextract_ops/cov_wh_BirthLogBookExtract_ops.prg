@@ -22,16 +22,18 @@
  
   	Rev#	Mod Date    Developer               Comment
   	----	----------	--------------------	------------------------------
+  	002		02-2021     Dan Herren              CR9510
+ 	003		05-2021		Dan Herren				CR10240
  
 ******************************************************************************/
  
 drop program cov_wh_BirthLogBookExtract_ops :dba go
 create program cov_wh_BirthLogBookExtract_ops :dba
  
-prompt 
+prompt
 	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
-	, "Output To File" = 0                   ;* Output to file (used for testing by IT) 
-
+	, "Output To File" = 0                   ;* Output to file (used for testing by IT)
+ 
 with OUTDEV, output_file
  
  
@@ -89,7 +91,7 @@ record rec (
 		2 episiotomy_location			= vc
 		2 episiotomy					= vc
 		2 previous_cs					= vc
-		2 cs_indictions					= vc
+		2 cs_indications				= vc
 		2 induction_method				= vc
 		2 augmentation_method 			= vc
 		2 presenting_part				= vc
@@ -98,6 +100,7 @@ record rec (
 		2 tobacco_dt					= dq8
 		2 risk_factors					= vc
 		2 estimated_blood_loss			= vc
+		2 measured_blood_loss			= i4 ;002
 		2 transcribed_blood_type		= vc
 		2 labor_onset_dt				= dq8
 		2 labor_room					= vc
@@ -123,7 +126,7 @@ record rec (
 			3 amniotic_fluid			= vc
 			3 placenta_delivery_dt		= dq8
 			3 maternal_delivery_comp	= vc
-			3 newborn_gender			= vc
+			3 newborn_birth_sex			= vc
 			3 birth_weight				= vc
 			3 baby_fin					= vc
 			3 baby_mrn					= vc
@@ -149,8 +152,9 @@ record rec (
 			3 attending_physician		= vc
 	      	3 delivery_rn_1 			= vc
 	      	3 delivery_rn_2 			= vc
+			3 nursery_baby_nurse		= vc ;003
 			3 anesth_attending			= vc
-			3 anesthesist				= vc
+			3 anesthetist				= vc
 			3 resuscitation_rn_1		= vc
  			3 person_id					= f8
 			3 event_id					= f8
@@ -184,7 +188,7 @@ declare DELIVERYTYPE_VAR			= f8 with constant(uar_get_code_by("DISPLAY",72,"Deli
 declare INDUCTIONMETHOD_VAR			= f8 with constant(uar_get_code_by("DISPLAY",72,"Induction Methods:")),protect
 declare AUGMENTATIONMETHOD_VAR		= f8 with constant(uar_get_code_by("DISPLAY",72,"Augmentation Methods:")),protect
 declare PREVIOUS_CS_VAR 			= f8 with constant(uar_get_code_by("DISPLAY",72,"Previous Cesarean Delivery")),protect
-declare CS_INDICTIONS_VAR 			= f8 with constant(uar_get_code_by("DISPLAY",72,"Reason for C-Section:")),protect
+declare CS_INDICATIONS_VAR 			= f8 with constant(uar_get_code_by("DISPLAY",72,"Reason for C-Section:")),protect
 declare ROM_DT_VAR 					= f8 with constant(uar_get_code_by("DISPLAY",72,"ROM Date, Time:")),protect
 declare ROM_TYPE_VAR 				= f8 with constant(uar_get_code_by("DISPLAY",72,"Membrane Status:")),protect
 declare AMNIOTIC_FLUID_VAR 			= f8 with constant(uar_get_code_by("DISPLAY",72,"Amniotic Fluid Color/Description:")),protect
@@ -198,10 +202,11 @@ declare EPIS_DEGREE_VAR				= f8 with constant(uar_get_code_by("DISPLAY",72,"Epis
 declare EPIS_LOCATION_VAR 			= f8 with constant(uar_get_code_by("DISPLAY",72,"Episiotomy Location Transcribed")),protect
 declare PLACENTA_DELIVERY_DT_VAR	= f8 with constant(uar_get_code_by("DISPLAY",72,"Placenta Delivery Date, Time:")),protect
 declare ESTIMATED_BLOOD_LOSS_VAR	= f8 with constant(uar_get_code_by("DISPLAY",72,"Delivery EBL")),protect
+declare MEASURED_BLOOD_LOSS_VAR		= f8 with constant(uar_get_code_by("DISPLAY",72,"Measured Blood Loss")),protect ;002
 declare ABORH_VAR					= f8 with constant(uar_get_code_by("DISPLAY",72,"ABORh")),protect
 declare MATERNAL_DEL_COMP_VAR		= f8 with constant(uar_get_code_by("DISPLAY",72,"Maternal Delivery Complications:")),protect
 declare MOTHER_TO_VAR				= f8 with constant(uar_get_code_by("DISPLAY",72,"Transfer To/From")),protect
-declare GENDER_VAR					= f8 with constant(uar_get_code_by("DISPLAY",72,"Gender:")),protect
+declare GENDER_VAR					= f8 with constant(uar_get_code_by("DISPLAY",72,"Birth Sex")),protect
 declare BIRTH_WEIGHT_VAR			= f8 with constant(uar_get_code_by("DISPLAY",72,"Birth Weight:")),protect
 declare NEO_OUTCOME_VAR				= f8 with constant(uar_get_code_by("DISPLAY",72,"Neonate Outcome:")),protect
 declare NEO_COMPLICATIONS_VAR		= f8 with constant(uar_get_code_by("DISPLAY",72,"Neonate Complications:")),protect
@@ -228,10 +233,11 @@ declare ASSISTANT_PHYSICIAN_2_VAR	= f8 with constant(uar_get_code_by("DISPLAY",7
 declare ATTENDING_PHYSICIAN_VAR		= f8 with constant(uar_get_code_by("DISPLAY",72,"Attending Physician:")),protect
 declare DELIVERY_RN_1_VAR			= f8 with constant(uar_get_code_by("DISPLAY",72,"Delivery RN #1:")),protect
 declare DELIVERY_RN_2_VAR			= f8 with constant(uar_get_code_by("DISPLAY",72,"Delivery RN #2:")),protect
+declare NURSERY_BABY_NURSE_VAR		= f8 with constant(uar_get_code_by("DISPLAY",72,"Nursery/Baby Nurse:")),protect ;003
 declare ANESTH_ATTENDING_VAR		= f8 with constant(uar_get_code_by("DISPLAY",72,"Anesthesiologist Attending Delivery:")),protect
 declare ANESTHETIST_VAR 			= f8 with constant(uar_get_code_by("DISPLAY",72,"Anesthetist/ CRNA:")),protect
 declare HOSPITAL_PEDIATRICIAN_VAR 	= f8 with constant(uar_get_code_by("DISPLAY",72,"Pediatrician Selected")),protect
-declare FOLLOWUP_PEDIATRICIAN_VAR	= f8 with constant(uar_get_code_by("DISPLAY",72,"Pediatrician After Discharge:")),protect ;003
+declare FOLLOWUP_PEDIATRICIAN_VAR	= f8 with constant(uar_get_code_by("DISPLAY",72,"Pediatrician After Discharge:")),protect
 declare RESUSCITATION_RN_1_VAR		= f8 with constant(uar_get_code_by("DISPLAY",72,"Resuscitation RN #1:")),protect
 declare NITROUS_OXIDE_ACTIVITY_VAR	= f8 with constant(uar_get_code_by("DISPLAY",72,"Nitrous Oxide Activity")), protect
 declare RF_ANTI_CUR_PREG_VAR 		= f8 with constant(uar_get_code_by("DISPLAY",72,"Risk Factors, Antepartum Current Preg")),protect
@@ -284,48 +290,41 @@ with nocounter
  
  
 ;**************************************************************
-; SET DATA-RANGE VARIABLES FOR THE PREVIOUS WEEK, MON-SUN
+; SET DATE-RANGE VARIABLES
 ;**************************************************************
-declare START_DATE = f8
-declare END_DATE   = f8
-
-; PREVIOUS WEEK DATE RANGE 
-;set START_DATE = cnvtlookbehind("7,D")
-;set START_DATE = datetimefind(START_DATE,"W","B","B")
-;set START_DATE = cnvtlookahead("1,D",START_DATE)
-;set END_DATE   = datetimefind(START_DATE,"W","E","E")
-;set END_DATE   = cnvtlookahead("1,D",END_DATE)
-
-; 60 DAYS BACK FROM CURRENT DATE
-set START_DATE = cnvtlookbehind("61,D")
-set START_DATE = datetimefind(START_DATE,"D","B","B")
-set START_DATE = cnvtlookahead("1,D",START_DATE)
-set END_DATE   = cnvtlookahead("60,D",START_DATE)
-set END_DATE   = cnvtlookbehind("1,SEC", END_DATE)
+declare START_DATETIME_VAR = f8
+declare END_DATETIME_VAR   = f8
+ 
+; SET 30 DAYS BACK FROM CURRENT DATE
+set START_DATETIME_VAR = cnvtlookbehind("31,D")
+set START_DATETIME_VAR = datetimefind(START_DATETIME_VAR,"D","B","B")
+set START_DATETIME_VAR = cnvtlookahead("1,D",START_DATETIME_VAR)
+set END_DATETIME_VAR   = cnvtlookahead("30,D",START_DATETIME_VAR)
+set END_DATETIME_VAR   = cnvtlookbehind("1,SEC", END_DATETIME_VAR)
  
 ;-----------------------------
 ; SET FOR MANUAL EXTRACT RUN
 ;-----------------------------
-set START_DATE = CNVTDATETIME("14-DEC-2020 0")
-set END_DATE   = CNVTDATETIME("15-DEC-2020 23:59")
+;set START_DATETIME_VAR = CNVTDATETIME("03-OCT-2022 0")
+;set END_DATETIME_VAR   = CNVTDATETIME("05-OCT-2022 23:59")
  
  
 ;**************************************************************
 ; SET DATA-FILE VARIABLES
 ;**************************************************************
-declare filename_var	= vc with constant(build("djhtest", ".txt"))
-;declare filename_var	= vc with constant(build("birthlogweekly", ".txt"))
+;declare filename_var	= vc with constant(build("djhtest", ".txt"))
+declare filename_var	= vc with constant(build("birthlogweekly", ".txt"))
 ;
 declare dirname1_var	= vc with constant(build("cer_temp:",  filename_var))
 declare dirname2_var	= vc with constant(build("$cer_temp/", filename_var))
  
 ;--PRODUCTION ASTREAM--
-;declare filepath_var	= vc with constant(build("/cerner/w_custom/", cnvtlower(curdomain),
-;													"_cust/to_client_site/ClinicalNursing/Surgery/PAExports/", filename_var))
+declare filepath_var	= vc with constant(build("/cerner/w_custom/", cnvtlower(curdomain),
+													"_cust/to_client_site/ClinicalNursing/Surgery/PAExports/", filename_var))
  
 ;--DEVELOPMENT FILE PATH FOR TESTING-
-declare filepath_var	= vc with constant(build("/cerner/w_custom/", cnvtlower(curdomain),
-													"_cust/to_client_site/CernerCCL/", filename_var))
+;declare filepath_var	= vc with constant(build("/cerner/w_custom/", cnvtlower(curdomain),
+;													"_cust/to_client_site/CernerCCL/", filename_var))
  
 declare output_var		= vc with noconstant("")
 declare cmd				= vc with noconstant("")
@@ -346,8 +345,8 @@ endif
 ; DVDev START CODE
 ;**************************************************************
 ; SET DATES VARIABLES TO RECORD STRUCTURE
-set rec->startdate = START_DATE
-set rec->enddate   = END_DATE
+set rec->startdate = START_DATETIME_VAR
+set rec->enddate   = END_DATETIME_VAR
  
  
 ;SET FACILITY VARIABLE
@@ -374,14 +373,14 @@ from ENCOUNTER e
 		and ce.valid_until_dt_tm > cnvtdatetime (curdate ,curtime3))
  
 	,(inner join CE_DATE_RESULT cdr on cdr.event_id = ce.event_id
-   		and (cdr.result_dt_tm >= cnvtdatetime(START_DATE) and cdr.result_dt_tm <= cnvtdatetime(END_DATE))
+   		and (cdr.result_dt_tm >= cnvtdatetime(START_DATETIME_VAR) and cdr.result_dt_tm <= cnvtdatetime(END_DATETIME_VAR))
 		and cdr.valid_until_dt_tm > cnvtdatetime (curdate ,curtime3))
  
 	,(inner join CE_DYNAMIC_LABEL cdl on cdl.ce_dynamic_label_id = ce.ce_dynamic_label_id
 		and cdl.ce_dynamic_label_id > 0.0)
  
 where e.active_ind = 1
-;;	and e.loc_facility_cd = 
+;;	and e.loc_facility_cd =
 ;	and e.person_id in (17694400)
  
 order by e.encntr_id, cdl.label_name
@@ -442,31 +441,31 @@ from ENCOUNTER e
 		and p.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
 		and p.active_ind = 1)
  
-	,(inner join PERSON_NAME_HIST pnh on pnh.person_id = p.person_id
+	,(left join PERSON_NAME_HIST pnh on pnh.person_id = p.person_id
 ;;;		and pnh.name_type_cd = PREV_NAME_TYPE_VAR ;771
 		and ((e.reg_dt_tm between pnh.beg_effective_dt_tm and pnh.end_effective_dt_tm))
 		and pnh.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
 		and pnh.active_ind = 1)
  
-	,(inner join PERSON_NAME pn on pn.person_name_id = pnh.person_name_id
+	,(left join PERSON_NAME pn on pn.person_name_id = pnh.person_name_id
 		and pn.end_effective_dt_tm > cnvtdatetime(curdate, curtime3)
 		and pn.active_ind = 1)
  
 	,(inner join CLINICAL_EVENT ce on ce.encntr_id = e.encntr_id and ce.person_id = e.person_id
+		and ce.result_status_cd in (AUTH_VAR, MODIFIED_VAR, ALTERED_VAR) ;25,34,35
+		and ce.event_tag != "Date\Time Correction"
 		and ce.event_cd in (
 			ABORH_VAR, ANESTHESIA_TYPE_VAR, UC_MON_VAR, MOTHER_TO_VAR, LACER_PERFORMED_VAR, LACER_DEGREE_VAR,
 			LACER_LOCATION_VAR, EPIS_TRANSCRIBED_VAR, EPIS_DEGREE_VAR, EPIS_LOCATION_VAR, PREVIOUS_CS_VAR,
-			CS_INDICTIONS_VAR, INDUCTIONMETHOD_VAR, AUGMENTATIONMETHOD_VAR, ESTIMATED_BLOOD_LOSS_VAR, LABOR_ONSET_DT_VAR,
-			TRANS_BLOOD_TYPE_VAR, DATETIME_BIRTH_VAR, DELIVERYTYPE_VAR, ROM_DT_VAR, ROM_TYPE_VAR, AMNIOTIC_FLUID_VAR,
-			PRESENTING_PART_VAR, PLACENTA_DELIVERY_DT_VAR, TRANS_BLOOD_TYPE_VAR, MATERNAL_DEL_COMP_VAR, GENDER_VAR,
-			BIRTH_WEIGHT_VAR, NEO_OUTCOME_VAR, NEO_COMPLICATIONS_VAR, RISK_FACTORS_VAR, APGAR_SCORE_1_MINUTE_VAR,
+			CS_INDICATIONS_VAR, INDUCTIONMETHOD_VAR, AUGMENTATIONMETHOD_VAR, ESTIMATED_BLOOD_LOSS_VAR,
+			LABOR_ONSET_DT_VAR, TRANS_BLOOD_TYPE_VAR, DATETIME_BIRTH_VAR, DELIVERYTYPE_VAR, ROM_DT_VAR, ROM_TYPE_VAR,
+			AMNIOTIC_FLUID_VAR, PRESENTING_PART_VAR, PLACENTA_DELIVERY_DT_VAR, TRANS_BLOOD_TYPE_VAR, MATERNAL_DEL_COMP_VAR,
+			GENDER_VAR, BIRTH_WEIGHT_VAR, NEO_OUTCOME_VAR, NEO_COMPLICATIONS_VAR, RISK_FACTORS_VAR, APGAR_SCORE_1_MINUTE_VAR,
 			APGAR_SCORE_5_MINUTE_VAR, APGAR_SCORE_10_MINUTE_VAR, APGAR_SCORE_15_MINUTE_VAR, APGAR_SCORE_20_MINUTE_VAR,
 			NEWBORN_TO_VAR, FHR_MON_VAR, ROM_TO_DEL_HRS_VAR, LENGTH_LABOR_2ND_STAGE_VAR, LENGTH_LABOR_3RD_STAGE_VAR,
 			NITROUS_OXIDE_ACTIVITY_VAR, DELIVERY_PROVIDER_VAR, ASSISTANT_PHYSICIAN_1_VAR, ASSISTANT_PHYSICIAN_2_VAR,
 			ATTENDING_PHYSICIAN_VAR, DELIVERY_RN_1_VAR, DELIVERY_RN_2_VAR, ANESTH_ATTENDING_VAR, ANESTHETIST_VAR,
-			HOSPITAL_PEDIATRICIAN_VAR, FOLLOWUP_PEDIATRICIAN_VAR, RESUSCITATION_RN_1_VAR
-			)
-		and ce.result_status_cd in (AUTH_VAR, MODIFIED_VAR, ALTERED_VAR) ;25,34,35
+			HOSPITAL_PEDIATRICIAN_VAR, FOLLOWUP_PEDIATRICIAN_VAR, RESUSCITATION_RN_1_VAR )
 		and ce.valid_until_dt_tm > cnvtdatetime (curdate ,curtime3))
  
 	,(left join CE_DATE_RESULT cdr on cdr.event_id = ce.event_id
@@ -525,7 +524,7 @@ head ce.event_id
 		of EPIS_DEGREE_VAR				: rec->mother[cnt].episiotomy_degree		= ce.result_val
 		of EPIS_LOCATION_VAR			: rec->mother[cnt].episiotomy_location		= ce.result_val
 		of PREVIOUS_CS_VAR				: rec->mother[cnt].previous_cs				= ce.result_val
-		of CS_INDICTIONS_VAR			: rec->mother[cnt].cs_indictions			= ce.result_val
+		of CS_INDICATIONS_VAR			: rec->mother[cnt].cs_indications			= ce.result_val
 		of INDUCTIONMETHOD_VAR			: rec->mother[cnt].induction_method			= ce.result_val
 		of AUGMENTATIONMETHOD_VAR		: rec->mother[cnt].augmentation_method		= ce.result_val
 		of PRESENTING_PART_VAR			: rec->mother[cnt].presenting_part			= ce.result_val
@@ -547,7 +546,7 @@ head ce.event_id
 foot report
 	stat = alterlist(rec->mother, cnt)
  
-with nocounter, expand = 1, time=300
+with nocounter, expand = 1
  
 ;call echorecord(rec)
 ;go to exitscript
@@ -612,17 +611,18 @@ join d2
  
 join ce where ce.encntr_id = rec->mother[d1.seq].encntr_id
 	and ce.result_status_cd in (AUTH_VAR, MODIFIED_VAR, ALTERED_VAR) ;25,34,35
-	and ce.valid_until_dt_tm > cnvtdatetime (curdate ,curtime3)
-	and ce.event_cd in (
-			DATETIME_BIRTH_VAR, DELIVERYTYPE_VAR, ROM_DT_VAR, ROM_TYPE_VAR, AMNIOTIC_FLUID_VAR,
-			PLACENTA_DELIVERY_DT_VAR, MATERNAL_DEL_COMP_VAR, GENDER_VAR, BIRTH_WEIGHT_VAR, NEO_OUTCOME_VAR,
-			NEO_COMPLICATIONS_VAR, APGAR_SCORE_1_MINUTE_VAR, APGAR_SCORE_5_MINUTE_VAR, APGAR_SCORE_10_MINUTE_VAR,
-			APGAR_SCORE_15_MINUTE_VAR, APGAR_SCORE_20_MINUTE_VAR, CORD_BLOOD_BANKING_VAR, CORD_BLOOD_PH_VAR,
-			BABY_BAND_NUM_VAR, NEWBORN_TO_VAR, FHR_MON_VAR, ROM_TO_DEL_HRS_VAR, LENGTH_LABOR_2ND_STAGE_VAR,
-			LENGTH_LABOR_3RD_STAGE_VAR, DELIVERY_PROVIDER_VAR, ASSISTANT_PHYSICIAN_1_VAR, ASSISTANT_PHYSICIAN_2_VAR,
-			ATTENDING_PHYSICIAN_VAR, DELIVERY_RN_1_VAR, DELIVERY_RN_2_VAR, ANESTH_ATTENDING_VAR, ANESTHETIST_VAR,
-			RESUSCITATION_RN_1_VAR )
+	and ce.event_tag != "Date\Time Correction"
 	and ce.ce_dynamic_label_id > 0.0
+	and ce.event_cd in (
+		DATETIME_BIRTH_VAR, DELIVERYTYPE_VAR, ROM_DT_VAR, ROM_TYPE_VAR, AMNIOTIC_FLUID_VAR,
+		PLACENTA_DELIVERY_DT_VAR, MATERNAL_DEL_COMP_VAR, GENDER_VAR, BIRTH_WEIGHT_VAR, NEO_OUTCOME_VAR,
+		NEO_COMPLICATIONS_VAR, APGAR_SCORE_1_MINUTE_VAR, APGAR_SCORE_5_MINUTE_VAR, APGAR_SCORE_10_MINUTE_VAR,
+		APGAR_SCORE_15_MINUTE_VAR, APGAR_SCORE_20_MINUTE_VAR, CORD_BLOOD_BANKING_VAR, CORD_BLOOD_PH_VAR,
+		BABY_BAND_NUM_VAR, NEWBORN_TO_VAR, FHR_MON_VAR, ROM_TO_DEL_HRS_VAR, LENGTH_LABOR_2ND_STAGE_VAR,
+		LENGTH_LABOR_3RD_STAGE_VAR, DELIVERY_PROVIDER_VAR, ASSISTANT_PHYSICIAN_1_VAR, ASSISTANT_PHYSICIAN_2_VAR,
+		ATTENDING_PHYSICIAN_VAR, DELIVERY_RN_1_VAR, DELIVERY_RN_2_VAR, NURSERY_BABY_NURSE_VAR, ANESTH_ATTENDING_VAR,
+		ANESTHETIST_VAR, RESUSCITATION_RN_1_VAR )  ;003
+	and ce.valid_until_dt_tm > cnvtdatetime (curdate ,curtime3)
  
 join cdl where cdl.ce_dynamic_label_id = ce.ce_dynamic_label_id
 	and cdl.label_name = rec->mother[d1.seq].baby[d2.seq].label_name
@@ -653,7 +653,7 @@ head ce.event_id
 		of AMNIOTIC_FLUID_VAR			: rec->mother[d1.seq].baby[d2.seq].amniotic_fluid			= ce.result_val
 		of PLACENTA_DELIVERY_DT_VAR		: rec->mother[d1.seq].baby[d2.seq].placenta_delivery_dt		= cdr.result_dt_tm
 		of MATERNAL_DEL_COMP_VAR		: rec->mother[d1.seq].baby[d2.seq].maternal_delivery_comp	= ce.result_val
-		of GENDER_VAR					: rec->mother[d1.seq].baby[d2.seq].newborn_gender			= ce.result_val
+		of GENDER_VAR					: rec->mother[d1.seq].baby[d2.seq].newborn_birth_sex		= ce.result_val
 		of BIRTH_WEIGHT_VAR				: rec->mother[d1.seq].baby[d2.seq].birth_weight				=
     			if ((ce.result_units_cd = G_CD_VAR)) ce.result_val
     			elseif ((ce.result_units_cd = KG_CD_VAR)) cnvtstring ((cnvtreal (ce.result_val) * 1000))
@@ -680,15 +680,16 @@ head ce.event_id
 		of ATTENDING_PHYSICIAN_VAR		: rec->mother[d1.seq].baby[d2.seq].attending_physician		= ce.result_val
 		of DELIVERY_RN_1_VAR			: rec->mother[d1.seq].baby[d2.seq].delivery_rn_1			= ce.result_val
 		of DELIVERY_RN_2_VAR			: rec->mother[d1.seq].baby[d2.seq].delivery_rn_2			= ce.result_val
+		of NURSERY_BABY_NURSE_VAR		: rec->mother[d1.seq].baby[d2.seq].nursery_baby_nurse		= ce.result_val ;003
 		of ANESTH_ATTENDING_VAR			: rec->mother[d1.seq].baby[d2.seq].anesth_attending			= ce.result_val
-		of ANESTHETIST_VAR				: rec->mother[d1.seq].baby[d2.seq].anesthesist				= ce.result_val
+		of ANESTHETIST_VAR				: rec->mother[d1.seq].baby[d2.seq].anesthetist				= ce.result_val
 		of RESUSCITATION_RN_1_VAR		: rec->mother[d1.seq].baby[d2.seq].resuscitation_rn_1		= ce.result_val
 	endcase
  
 foot report
 	row+1
  
-with nocounter, outerjoin=d3, time=120
+with nocounter, outerjoin=d3
  
 ;call echorecord(rec)
 ;go to exitscript
@@ -940,7 +941,7 @@ endfor
 ;==============================================================================
 call echo(build("*** GET GRAVIDA, PARAFULLTERM, PARAPRETERM DATA ***"))
 select into "nl:"
-	result_val = max(ce.result_val) keep (dense_rank first order by ce.event_end_dt_tm) over (partition by ce.encntr_id)
+	result_val = max(ce.result_val) keep (dense_rank first order by ce.event_end_dt_tm desc) over (partition by ce.person_id)
  
 from CLINICAL_EVENT ce
  
@@ -1042,6 +1043,39 @@ with nocounter
  
 ;call echorecord(rec)
 ;go to exitscript
+ 
+ 
+;begin 002
+;==============================================================================
+; GET MEASURE BLOOD LOSS (MBL) DATA
+;==============================================================================
+call echo(build("*** GET MEASURE BLOOD LOSS (MBL) DATA ***"))
+select into "nl:"
+from CLINICAL_EVENT ce
+ 
+where expand(num, 1, size(rec->mother, 5), ce.encntr_id, rec->mother[num].encntr_id)
+	and ce.event_cd = MEASURED_BLOOD_LOSS_VAR ;29968793.00
+	and ce.result_status_cd in (AUTH_VAR, MODIFIED_VAR, ALTERED_VAR) ;25,34,35
+	and ce.valid_until_dt_tm > cnvtdatetime (curdate ,curtime3)
+ 
+detail
+	idx = 0
+	pos = 0
+ 
+	pos = locateval(idx, 1, size(rec->mother,5), ce.encntr_id, rec->mother[idx].encntr_id)
+ 
+	while (pos > 0)
+ 
+		rec->mother[pos].measured_blood_loss = (rec->mother[pos].measured_blood_loss + cnvtint(ce.result_val))
+ 
+		pos = locateval(idx, pos+1, size(rec->mother,5), ce.encntr_id, rec->mother[idx].encntr_id)
+	endwhile
+ 
+with nocounter, expand = 1
+ 
+;call echorecord(rec)
+;go to exitscript
+;end 002
  
  
 ;==============================================================================
@@ -1280,13 +1314,13 @@ endif
 select
 	if (validate(request->batch_selection) = 1 or $OUTPUT_FILE = 1)
 ;		with nocounter, format, formfeed=stream, maxcol=2000, separator='|'  ;with padding
-		with nocounter, pcformat (^"^, ^|^, 1), format, format=stream, formfeed=none  ;no padding
+		with nocounter, pcformat (^^, ^|^, 1,1), format, format=stream, formfeed=none  ;no padding/eliminates nulls
+;		with nocounter, pcformat (^"^, ^|^, 1), format, format=stream, formfeed=none  ;no padding
 	else
 		with nocounter, separator = " ", format ;, time = 240
 	endif
  
 into value(output_var)
-;		 fac			      			= rec->mother[d.seq].facility_abbr
 		 mother_name	   				= trim(substring(1,50,rec->mother[d.seq].mother_name))
 ;		 mother_name	   				= substring(1,50,if(rec->mother[d.seq].mother_name_hist_type != "Current")
 ;											concat(rec->mother[d.seq].mother_name, " *") else rec->mother[d.seq].mother_name endif)
@@ -1315,7 +1349,7 @@ into value(output_var)
 											char(13), " ", 0), char(10), " ", 0))
 		,previous_cs					= substring(1,100,replace(replace(rec->mother[d.seq].previous_cs,
 											char(13), " ", 0), char(10), " ", 0))
-		,cs_indictions					= substring(1,100,rec->mother[d.seq].cs_indictions)
+		,cs_indications					= substring(1,100,rec->mother[d.seq].cs_indications)
 		,rom_dt							= format(rec->mother[d.seq].baby[d2.seq].rom_dt, "mm/dd/yyyy hh:mm;;q")
 		,rom_type						= substring(1,100,rec->mother[d.seq].baby[d2.seq].rom_type)
 		,amniotic_fluid_desc			= substring(1,100,rec->mother[d.seq].baby[d2.seq].amniotic_fluid)
@@ -1326,6 +1360,8 @@ into value(output_var)
 		,placenta_delivery_dt			= format(rec->mother[d.seq].baby[d2.seq].placenta_delivery_dt, "mm/dd/yyyy hh:mm;;q")
 		,delivery_ebl					= if(rec->mother[d.seq].estimated_blood_loss != null)
 											substring(1,20,concat(rec->mother[d.seq].estimated_blood_loss, " mL")) else null endif
+		,measured_blood_loss			= if(rec->mother[d.seq].measured_blood_loss != null)
+											substring(1,20,concat(trim(cnvtstring(rec->mother[d.seq].measured_blood_loss)), " mL")) else null endif ;002
 		,aborh_lab_resulted				= substring(1,20,rec->mother[d.seq].aborh)
 		,transcribed_blood_type			= substring(1,100,rec->mother[d.seq].transcribed_blood_type)
 ;;		,risk_factors_current_pregnancy	= substring(1,255,replace(replace(rec->mother[d.seq].preg_risk_factors,
@@ -1335,7 +1371,7 @@ into value(output_var)
 		,mother_to						= substring(1,100,rec->mother[d.seq].mother_to)
 		,labor_room						= substring(1,20,rec->mother[d.seq].labor_room)
 		,postpartum_room				= substring(1,20,rec->mother[d.seq].postpartum_room)
-		,newborn_gender					= substring(1,10,rec->mother[d.seq].baby[d2.seq].newborn_gender)
+		,newborn_birth_sex				= substring(1,10,rec->mother[d.seq].baby[d2.seq].newborn_birth_sex)
 		,birth_weight_g					= substring(1,10,rec->mother[d.seq].baby[d2.seq].birth_weight)
 		,baby_fin						= substring(1,10,rec->mother[d.seq].baby[d2.seq].baby_fin)
 		,baby_mrn						= substring(1,10,rec->mother[d.seq].baby[d2.seq].baby_mrn)
@@ -1365,14 +1401,15 @@ into value(output_var)
 		,delivery_provider				= substring(1,50,rec->mother[d.seq].baby[d2.seq].delivery_provider)
 		,assistant_physician_1			= substring(1,50,rec->mother[d.seq].baby[d2.seq].assistant_physician_1)
 		,assistant_physician_2			= substring(1,50,rec->mother[d.seq].baby[d2.seq].assistant_physician_2)
-		,delivery_rn_#1					= substring(1,50,rec->mother[d.seq].baby[d2.seq].delivery_rn_1)
-		,delivery_rn_#2					= substring(1,50,rec->mother[d.seq].baby[d2.seq].delivery_rn_2)
+		,delivery_rn_1					= substring(1,50,rec->mother[d.seq].baby[d2.seq].delivery_rn_1)
+		,delivery_rn_2					= substring(1,50,rec->mother[d.seq].baby[d2.seq].delivery_rn_2)
+		,nursery_baby_nurse				= substring(1,50,rec->mother[d.seq].baby[d2.seq].nursery_baby_nurse) ;003
 		,anesthesiologist				= substring(1,50,rec->mother[d.seq].baby[d2.seq].anesth_attending)
-		,anesthesist					= substring(1,50,rec->mother[d.seq].baby[d2.seq].anesthesist)
+		,anesthetist					= substring(1,50,rec->mother[d.seq].baby[d2.seq].anesthetist)
 		,hospital_pediatrician			= substring(1,50,rec->mother[d.seq].hospital_pediatrician)
 ;;		,followup_pediatrician			= substring(1,50,replace(replace(rec->mother[d.seq].followup_pediatrician,
 ;;											char(13), " ", 0), char(10), " ", 0))
-		,resus_rn_#1					= substring(1,50,rec->mother[d.seq].baby[d2.seq].resuscitation_rn_1)
+		,resus_rn_1						= substring(1,50,rec->mother[d.seq].baby[d2.seq].resuscitation_rn_1)
 		,facility_desc 					= substring(1,50,rec->mother[d.seq].facility_desc)
 ;;		,attending_physician			= substring(1,50,rec->mother[d.seq].attending_physician)  ;no data comment-out
 ;		,preg_start_dt					= format(rec->mother[d.seq].preg_start_dt, "mm/dd/yyyy hh:mm;;q")
@@ -1406,13 +1443,17 @@ into value(output_var)
 ;==============================
 ; COPY FILE TO AStream
 ;==============================
-;if (validate(request->batch_selection) = 1 or $OUTPUT_FILE = 1)
-;	set cmd = build2("cp ", dirname2_var, " ", filepath_var)
-;	set len = size(trim(cmd))
-; 
-;	call dcl(cmd, len, stat)
-;	call echo(build2(cmd, " : ", stat))
-;endif
+if (validate(request->batch_selection) = 1 or $OUTPUT_FILE = 1)
+	set cmd = build2("cp ", dirname2_var, " ", filepath_var)
+	set len = size(trim(cmd))
+ 
+	call dcl(cmd, len, stat)
+	call echo(build2(cmd, " : ", stat))
+endif
+ 
+;;call echo("**************************************************")
+;;call echo(build2("*** Directory/File name: ", dirname2_var))
+;;call echo("**************************************************")
  
 #exitscript
 end

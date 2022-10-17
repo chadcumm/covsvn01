@@ -8,7 +8,7 @@
 	Solution:			Revenue Cycle - Scheduling Management
 	Source file name:	cov_sm_SchedulingExtract.prg
 	Object name:		cov_sm_SchedulingExtract
-	Request #:			3740, 6711, 7783, 8541, 8942, 9327, 10339
+	Request #:			3740, 6711, 7783, 8541, 8942, 9327, 10339, 12349, 13343
  
 	Program purpose:	Lists scheduled appointments for selected organizations.
  
@@ -45,6 +45,8 @@
 013	11/10/2021	Todd A. Blanchard		Added Covenant Health Diagnostics West.
 014	01/18/2022	Todd A. Blanchard		Added person language and estimated arrival date.
 015	01/27/2022	Todd A. Blanchard		Added person gender.
+016	03/08/2022	Todd A. Blanchard		Changed practice site display to org name.
+017	08/03/2022	Todd A. Blanchard		Changed default date range values.
  
 ******************************************************************************/
  
@@ -69,7 +71,7 @@ with OUTDEV, facility, start_datetime, end_datetime, output_file
 ; DVDev DECLARED VARIABLES
 **************************************************************/
  
-declare start_datetime			= dq8 with noconstant(cnvtlookbehind("30, d", cnvtdatetime(curdate, 000000))) ;002 ;006
+declare start_datetime			= dq8 with noconstant(cnvtlookbehind("35, d", cnvtdatetime(curdate, 000000))) ;002 ;006; 017
 declare end_datetime			= dq8 with noconstant(cnvtlookahead("70, d", cnvtdatetime(curdate, 235959))) ;001 ;006 ;007
 
 declare ssn_var					= f8 with constant(uar_get_code_by("DISPLAYKEY", 4, "SSN"))
@@ -510,6 +512,9 @@ from
  	;006
 	, (left join PRACTICE_SITE ps on ps.practice_site_id = pr.parent_entity_id)
 	
+	;016
+	, (left join ORGANIZATION org_ps on org_ps.organization_id = ps.organization_id)
+	
 	;006
 	; comments
 	, (left join SCH_EVENT_DETAIL sed3 on sed3.sch_event_id = sev.sch_event_id
@@ -627,7 +632,7 @@ detail
 	;004
 	sched_appt->list[idx].order_phy					= trim(sed2.oe_field_display_value, 3) ;006
 	sched_appt->list[idx].order_phy_id				= trim(pera2.alias, 3) ;006
-	sched_appt->list[idx].ord_phys_group			= trim(ps.practice_site_display, 3)	;006
+	sched_appt->list[idx].ord_phys_group			= trim(org_ps.org_name, 3) ;006 ;016
 	sched_appt->list[idx].practice_site_id			= ps.practice_site_id ;011
 												  
 	sched_appt->list[idx].pre_reg_dt_tm				= e.pre_reg_dt_tm ;006

@@ -8,7 +8,7 @@
 	Solution:			Revenue Cycle - Scheduling Management
 	Source file name:	cov_sm_PreRegNotes.prg
 	Object name:		cov_sm_PreRegNotes
-	Request #:			11, 6085, 7312, 11683
+	Request #:			11, 6085, 7312, 11683, 13598
  
 	Program purpose:	Accomodates foreign registration workflows surrounding
 						scheduling and registration communication.
@@ -34,24 +34,25 @@
 006	07/31/2018	Todd A. Blanchard		Revised criteria for orders query.
 007	08/02/2018	Todd A. Blanchard		Revised queries for scheduled events and procedures.
 008	08/13/2018	Todd A. Blanchard		Revised CCL for diagnosis code.
-009	09/17/2018	Todd A. Blanchard		Revised queries to exclude Joint Class department.
+009	09/17/2018	Todd A. Blanchard		Revised queries to exclude Joint Class resources.
 010	11/01/2018	Todd A. Blanchard		Revised DOB to account for timezone.
 011	10/24/2019	Todd A. Blanchard		Revised CCL for cpt codes and comments.
 012	03/16/2020	Todd A. Blanchard		Revised CCL for surgeon.
 013	12/02/2021	Todd A. Blanchard		Added Covenant Health Diagnostics West to prompt.
+014	09/06/2022	Todd A. Blanchard		Revised query to exclude FLMC Radiologist resource.
  
 ******************************************************************************/
  
 drop program cov_sm_PreRegNotes:DBA go
 create program cov_sm_PreRegNotes:DBA
  
-prompt 
+prompt
 	"Output to File/Printer/MINE" = "MINE"
 	, "Facility" = 0
 	, "Department" = 0
 	, "Start Date" = "SYSDATE"
-	, "End Date" = "SYSDATE" 
-
+	, "End Date" = "SYSDATE"
+ 
 with OUTDEV, facility, department, start_datetime, end_datetime
  
  
@@ -186,6 +187,7 @@ from
 		and sab3.appt_book_id not in ( ;009
 			1639442.00		; MMC Joint Center
 			, 1644773.00	; PWMC Joint Center
+			, 1669309.00	; FLMC Radiologist ;014
 		))
 	, (left join SCH_BOOK_LIST sbl3 on sbl3.appt_book_id = sab3.appt_book_id)
  

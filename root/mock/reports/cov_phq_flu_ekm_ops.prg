@@ -75,10 +75,10 @@ p.name_full_formatted, e.encntr_id, e.reg_dt_tm, age = cnvtage(p.birth_dt_tm);, 
  
 from encounter e, person p, encntr_loc_hist elh, orders o
  
-plan e where e.encntr_type_cd in(309308.00, 309312.00);Inpatient,Observation
-	and e.loc_facility_cd in(2552503635.00);lcmc
+plan e where e.encntr_type_cd in(309308.00, 309312.00, 2555137051.00);Inpatient,Observation,Behavioral Health
+	;and e.loc_facility_cd in(2552503635.00);lcmc
  	;and e.loc_facility_cd in(21250403.00, 2552503613.00, 2552503635.00, 2552503639.00, 2552503645.00, 2552503649.00, 2552503653.00)
- 	;and e.encntr_id in(125348735.00)      ;(125348410.00,125359334.00)
+ 	and e.encntr_id = 125348732.00 
 	and e.active_ind = 1
 	and e.disch_dt_tm is null
 	and e.encntr_status_cd = 854.00 ;Active
@@ -95,12 +95,15 @@ join o where o.encntr_id = e.encntr_id
 				where o2.encntr_id = o.encntr_id
 				and o2.catalog_cd in(22337316.00, 3900687815.00)
 				;Immunizations Quality Measures, Influenza Screening Current Flu Season
-				and o2.active_ind = 1 )
+				and o2.active_ind = 1 
+				and o2.order_status_cd = 2550.00) ;Ordered
+				;2542.00) ;Canceled
+
  
  
-with nocounter, separator=" ", format, uar_code(d,1), format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 120
+;with nocounter, separator=" ", format, uar_code(d,1), format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 120
  
-/*
+
 Head report
 	cnt = 0
 	EKSOPSRequest->expert_trigger = "CALL_FLU_IMM_EKM_FROM_OPS"
@@ -125,15 +128,14 @@ call echorecord(EKSOPSRequest)
 ;**********************************************
 ; Call EXPERT_EVENT
 ;**********************************************
- /*
+ 
 if (cnt > 0)
 	set dparam = 0
       call srvRequest(dparam)
 endif
-*/
+
  
 end
 go
- 
  
  

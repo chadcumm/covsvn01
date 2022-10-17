@@ -1,0 +1,278 @@
+ /*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 	Author:			Geetha Paramasivam
+
+******************************************************************************/
+
+drop program cov_test_rule_ccl:dba go
+create program cov_test_rule_ccl:dba
+
+prompt 
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to. 
+
+with OUTDEV
+
+
+/**************************************************************
+; VARIABLE DECLARATION
+**************************************************************/
+ 
+declare encntrid_var = f8 with noconstant(0.0), protect
+declare personid_var = f8 with noconstant(0.0), protect
+declare userid_var   = f8 with noconstant(0.0), protect
+declare message_var  = vc with noconstant('')
+declare log_message  = vc with noconstant('')
+declare log_misc1    = vc with noconstant('')
+ 
+set encntrid_var = 125359334 ;trigger_encntrid 
+;set userid_var   = 16489162.00 ;reqinfo->updt_id ;12428721.00
+set retval = 0
+ 
+ 
+/**************************************************************
+; CCL SCRIPT STARTS HERE
+**************************************************************/
+  
+select into 'nl:' 
+from clinical_event ce
+plan ce where ce.encntr_id =   125348890.00 ;trigger_encntrid
+	and ce.event_id = (select max(ce1.event_id) from clinical_event ce1
+		where ce1.encntr_id = ce.encntr_id
+		and ce1.event_cd = value(uar_get_code_by("DISPLAY", 72, "Requested Communication Tools"))
+		and ce1.result_val in('Patient declined')
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+		and ce1.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
+		group by ce1.encntr_id, ce1.event_cd)
+	
+Head report 
+ 	retval = 0
+ 	log_message = 'Patient Declined Not Found'
+Detail
+	retval = 100
+	log_misc1 = uar_get_code_display(ce.event_cd)
+ 	log_message = build2('Patient Declined Found - ', log_misc1)
+
+With nocounter
+  
+  
+;Interpreter Redesign
+
+select pp.*;into "nl:"
+from	person_patient pp
+plan pp where pp.person_id =    20580047.00 ;trigger_personid
+and pp.interp_required_cd = value(uar_get_code_by("DISPLAY", 329, "Yes"))
+Head report
+	retval = 0
+	log_message = "Interpreter Request not found"
+Detail
+	retval = 100
+	log_misc1 = 'DEAF/HOH: Interpreter needed'
+ 	log_message = build2('Interpreter Request Found - ', log_misc1)
+With nocounter;, nullreport go
+
+
+
+
+
+
+;SCHEDULED
+
+select pm.n_encntr_type_cd, pm.n_encntr_type_class_cd, pm.* 
+from pm_transaction pm where pm.n_encntr_id = 125486519.00
+
+
+
+;----------------------
+select ;into 'nl:'
+sa.encntr_id, sa.person_id, sed.oe_field_display_value, sed.beg_effective_dt_tm,sed.updt_dt_tm
+;, sed.*;, ofm.description, ofm.*
+
+from sch_appt sa, sch_event_detail sed, oe_field_meaning ofm
+
+plan sa where sa.encntr_id =   125486519.00
+	and sa.active_ind = 1
+
+join sed where sed.sch_event_id = sa.sch_event_id
+	and sed.oe_field_id in(23290423.00,25789963.00,2562479461.00)
+	and sed.active_ind = 1
+
+join ofm where ofm.oe_field_meaning_id = sed.oe_field_meaning_id
+
+Head report 
+ 	retval = 0
+ 	log_message = 'Interpreter Request Not Found'
+Detail
+ 	if(sed.oe_field_display_value = 'Yes - Deaf/HOH'
+ 		log_misc1 = 'DEAF/HOH: Interpreter needed'
+ 	elseif (sed.oe_field_display_value = 'Yes - Language other than English')	
+ 		log_misc1 = 'LANGUAGE: Interpreter needed'
+ 	endif	
+	retval = 100
+ 	log_message = build2('Interpreter Request Found - ', log_misc1)
+With nocounter;, nullreport go
+
+
+
+
+;Yes - Hard of hearing - Deaf
+;Yes - Language other than English
+
+
+
+/*
+select into $outdev
+from clinical_event ce, clinical_event ce2
+plan ce where ce.person_id = trigger_personid
+	and ce.event_id = (select max(ce1.event_id) from clinical_event ce1
+		where ce1.person_id = ce.person_id
+		and ce1.event_cd = value(uar_get_code_by("DISPLAY", 72, "Requested Communication Tools"))
+		and ce1.result_val in('Video interpretation', 'In-person interpretation', 'Telephone interpretation')
+		and ce1.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+		and ce1.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
+		group by ce1.person_id, ce1.event_cd)
+	
+join ce2 where ce2.encntr_id = ce.encntr_id
+	and ce2.event_cd = value(uar_get_code_by("DISPLAY", 72, "Lang/Communication/Education Barriers"))	
+	and ce2.result_val in('Deaf', 'Hearing impaired, left ear', 'Hearing impaired, right ear', 'Other Language Preferred')
+	and ce2.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+	and ce2.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
+	
+Head report 
+ 	log_retval = 0
+ 	log_message = 'Interpreter Request Not Found'
+Detail
+ 	if((ce2.result_val = 'Deaf') or (ce2.result_val = 'Hearing impaired, left ear')
+ 	  	or (ce2.result_val = 'Hearing impaired, right ear'))
+ 		log_misc1 = 'Deaf'
+ 	elseif (ce2.result_val = 'Other Language Preferred')	
+ 		log_misc1 = 'Language'
+ 	endif	
+	log_retval = 100
+ 	log_message = build2('Interpreter Request Found - ', log_misc1)
+With nocounter;, nullreport go
+
+
+/*
+select ;into 'nl:'
+	ce.*
+ from clinical_event ce
+ where ce.encntr_id =   125348890 ;trigger_encntrid 
+ ;and ce.person_id = trigger_personid
+ and ce.event_cd = value(uar_get_code_by("DISPLAY", 72, "Requested Communication Tools"))
+ and ce.result_val in('Video interpretation', 'In-person interpretation', 'Telephone interpretation')
+ and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
+ and ce.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
+ 
+ head report 
+ 	retval = 0
+ 	log_message = 'Interpreter Request Not Found'
+ 
+ detail 
+ 	retval = 100
+ 	log_misc1 = build2(trim(ce.result_val),' On ', format(ce.verified_dt_tm, 'dd-mmm-yyyy hh:mm:ss;;q'))
+ 	log_message = build2('Interpreter Request Found - ', log_misc1)
+ 
+ with nocounter; nullreport go
+ 
+ call echo(build2('log message = ',log_message, '--  retval = ', retval))
+
+ 
+/* 
+;---------------------------------------------------------------------------------- 
+;Discharge Med rec complete?
+ 
+select ore.* ;into "nl:"
+from order_recon ore
+ 
+plan ore where ore.encntr_id = 125359334 ;125467523.00 ;encntrid_var ;trigger_encntrid   125467523.00
+	and ore.recon_type_flag = 3
+	and ore.recon_status_cd != value(uar_get_code_by("DISPLAY", 4002695,"Complete"))
+ 
+Head report
+	log_message = "Discharge Medrec Completed"
+	retval = 0
+Detail
+	log_message = "Not completed Discharge Medrec Orders Found"
+	retval = 100
+with nocounter;, nullreport go
+ 
+
+;--------------------------------------------------------------------------------
+select into "nl:"
+from
+	clinical_event ce
+plan ce
+	where ce.encntr_id = encntrid_var ;@ENCOUNTERID:1
+	and   ce.event_cd =  value(uar_get_code_by("DISPLAY",72,"D-VTE Open Chart"))
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate,curtime3)
+	and	ce.result_status_cd in(
+									  value(uar_get_code_by("MEANING",8,"AUTH"))
+									 ,value(uar_get_code_by("MEANING",8,"MODIFIED"))
+									 ,value(uar_get_code_by("MEANING",8,"ALTERED"))
+								)
+	and   ce.valid_until_dt_tm >= cnvtdatetime(curdate, curtime3)
+	and   ce.event_tag        != "Date\Time Correction"
+	and   ce.result_val = "VTE Close Chart - Not Responsible Provider"   ;"*Not Responsible Provider"
+	and   ce.verified_prsnl_id = reqinfo->updt_id
+head report
+	log_message = "Not Responsible Provider - Not Found"
+	log_retval = 0
+detail
+	log_message = build2("Not Responsible Provider Found on ",format(ce.event_end_dt_tm,";;q"))
+	log_misc1 = format(ce.event_end_dt_tm,";;q")
+	log_retval = 100
+with nocounter;, nullreport go
+ 
+ 
+ 
+/*
+select into 'nl:'
+ea.alias
+from encntr_alias ea
+where ea.encntr_id = 125338413 ;trigger_encntrid
+	and ea.encntr_alias_type_cd = value(uar_get_code_by("DISPLAY", 319, "FIN NBR"))
+	and ea.active_ind = 1
+Head report
+	log_message = "No Alias found"
+	log_retval = 0
+	log_misc1 = ' '
+Detail
+ 	log_retval = 100
+ 	log_misc1 = ea.alias
+ 	log_message = concat( 'Alias Found - ', log_misc1)
+with nocounter;, nullreport go
+ */
+ 
+ 
+ /*
+select ;into 'nl:'
+eh.encntr_id, eh.send_dt_tm, eh.alert_id, eh.updt_dt_tm, aid = cnvtstring(eh.alert_id)
+from eks_alert_esc_hist eh
+plan eh where eh.encntr_id = 125359334 ;trigger_encntrid
+	and eh.updt_dt_tm between cnvtlookbehind("3,m") and cnvtdatetime(curdate,curtime3)
+	and eh.msg_type_cd = value(uar_get_code_by("DISPLAY", 30420, "Notify"))
+	and eh.subject_text = '*Discharge Medication Alert - Case Management'
+	and eh.alert_source IN('COV_DSCH_MEDREC_TSK', 'COV_DSCH_MEDREC_TSK_REMIN')
+order by eh.encntr_id, eh.alert_id
+ 
+Head report
+	log_message = "No Alerts found"
+	log_retval = 0
+	log_misc1 = ' '
+Detail
+ 	log_retval = 100
+ 	log_misc1 = concat('Case Management Alert - ', aid)
+ 	log_message = concat( 'Alert Found - ', log_misc1)
+with nocounter;, nullreport go
+ */
+ 
+call echo(build2('log message = ',log_message, '--  retval = ', retval))
+ 
+ 
+ 
+end go
+ 
+ 
+

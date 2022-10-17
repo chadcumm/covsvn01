@@ -1,0 +1,139 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Todd A. Blanchard
+	Date Written:		02/23/2021
+	Solution:			Revenue Cycle - Patient Accounting
+	Source file name:	cov_pa_Prov_DE_etHIN_Extract.prg
+	Object name:		cov_pa_Prov_DE_etHIN_Extract
+	Request #:			9391
+ 
+	Program purpose:	Provides extract file of provider information for etHIN.
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:		Called by ops job(s).					
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+ 	Mod Date	Developer				Comment
+ 	----------	--------------------	--------------------------------------
+ 
+******************************************************************************/
+ 
+drop program cov_pa_Prov_DE_etHIN_Extract:DBA go
+create program cov_pa_Prov_DE_etHIN_Extract:DBA
+ 
+prompt 
+	"Output to File/Printer/MINE" = "MINE"
+	, "Output To File" = 0                   ;* Output to file 
+
+with OUTDEV, output_file
+ 
+ 
+/**************************************************************
+; DVDev DECLARED SUBROUTINES
+**************************************************************/
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+ 
+declare npi_var					= f8 with constant(uar_get_code_by("DISPLAYKEY", 263, "NATIONALPROVIDERIDENTIFIER"))
+declare stardocnum_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 263, "STARDOCTORNUMBER"))
+declare internalemail_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 43, "INTERNALSECUREEMAIL"))
+ 
+declare file_var				= vc with constant("provider_de_ethin.csv")
+
+declare temppath_var			= vc with constant(build("cer_temp:", file_var))
+declare temppath2_var			= vc with constant(build("$cer_temp/", file_var))
+
+declare filepath_var			= vc with constant(build("/cerner/w_custom/", cnvtlower(curdomain),
+											"_cust/to_client_site/RevenueCycle/PatientAccounting/", file_var))
+															 
+declare output_var				= vc with noconstant("")
+ 
+declare cmd						= vc with noconstant("")
+declare len						= i4 with noconstant(0)
+declare stat					= i4 with noconstant(0)
+	
+ 
+; define output value
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set output_var = value(temppath_var)
+else
+	set output_var = value($OUTDEV)
+endif
+ 
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+ 
+ 
+/**************************************************************/
+; select data
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set modify filestream
+endif
+
+select if (validate(request->batch_selection) = 1 or $output_file = 1)
+	with nocounter, expand = 1, pcformat (^"^, ^,^, 1), format = stream, format, time = 600
+else
+	with nocounter, expand = 1, separator = " ", format, time = 600
+endif
+
+into value(output_var)
+	npi							= trim(pa1.alias, 3)
+	, star_id					= trim(pa2.alias, 3)
+	, direct_email_address		= trim(ph.phone_num, 3)
+ 
+from
+	PRSNL per
+	
+	, (inner join PRSNL_ALIAS pa1 on pa1.person_id = per.person_id
+		and pa1.alias_pool_cd = npi_var
+		and pa1.end_effective_dt_tm > sysdate
+		and pa1.active_ind = 1)
+	
+	, (inner join PRSNL_ALIAS pa2 on pa2.person_id = per.person_id
+		and pa2.alias_pool_cd = stardocnum_var
+		and pa2.end_effective_dt_tm > sysdate
+		and pa2.active_ind = 1)
+	
+	, (inner join PHONE ph on ph.parent_entity_id = per.person_id
+		and ph.parent_entity_name = "PERSON"
+		and ph.phone_type_cd = internalemail_var
+		and ph.end_effective_dt_tm > sysdate
+		and ph.active_ind = 1)
+		
+where
+	per.physician_ind = 1
+	and per.end_effective_dt_tm > sysdate
+	and per.active_ind = 1
+
+with nocounter
+
+ 
+; copy file to AStream
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set cmd = build2("cp ", temppath2_var, " ", filepath_var)
+	set len = size(trim(cmd))
+ 
+	call dcl(cmd, len, stat)
+	call echo(build2(cmd, " : ", stat))
+endif
+
+ 
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+ 
+end
+go
+ 
+

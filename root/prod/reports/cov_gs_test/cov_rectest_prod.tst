@@ -1,6 +1,10 @@
 
 ;cov_gstest6 "mine" go
 
+;cov_test_rule_ccl "mine" go
+
+cov_phq_deaf_hoh_interp_log "mine", "09-AUG-2022 00:00:00", "09-AUG-2022 23:59:00", 2552503635.00 go ;FLMC
+
 ;cov_phq_process_metrics  "mine", "23-JUN-2022 00:00:00", "23-JUN-2022 23:59:00", 2552503645.00, 'Process' go
 
 ;cov_gstest3 "mine", "23-JUN-2022 00:00:00", "23-JUN-2022 23:59:00", 2553766075.00, '0.0' go
@@ -11,7 +15,7 @@
 
 ;cov_gstest2 "mine", "01-MAY-2022 00:00:00", "16-JUN-2022 23:59:00", 2552503645.00 go
 
-cov_phq_code_blue_test "mine", "01-JUL-2022 00:00:00", "15-JUL-2022 23:59:00", 2552503645.00,0 go
+;cov_phq_code_blue_test "mine", "01-JUL-2022 00:00:00", "15-JUL-2022 23:59:00", 2552503645.00,0 go
 
 ;2552508533.00 go ;MHHS NURSERY
 
@@ -407,6 +411,7 @@ cov_phq_code_blue_test "mine", "01-JUL-2022 00:00:00", "15-JUL-2022 23:59:00", 2
  2552503649.00, ;RMC
  2552503653.00, ;LCMC
  ;2552503657.00 ;CMC
+ 
  
 ;l.facility_accn_prefix_cd = $acute_facilities
  

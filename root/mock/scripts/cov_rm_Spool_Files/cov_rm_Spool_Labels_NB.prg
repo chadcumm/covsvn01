@@ -78,6 +78,7 @@ free record pmdbdoc_2
 record pmdbdoc_2 (
 	1 printer_name = vc
 	1 printer_desc = vc
+	1 printer_prefix = vc
 	1 diagnosis_disp = vc
 	1 financial_class_disp = vc
 )
@@ -114,6 +115,7 @@ set pmdbdoc_2->financial_class_disp =
 select into "NL:"
 from
 	OUTPUT_DEST od
+	, (inner join DEVICE d on d.device_cd = od.device_cd)
 
 where
 	od.output_dest_cd = request->destination[1].output_dest_cd
@@ -121,11 +123,13 @@ where
 detail
 	pmdbdoc_2->printer_name = trim(od.name, 3)
 	pmdbdoc_2->printer_desc = trim(od.description, 3)
+	pmdbdoc_2->printer_prefix = trim(substring(1, findstring(" ", d.description, 1, 0), d.description), 3)
 
 with nocounter
 
 call echo(build2("printer_name: ", pmdbdoc_2->printer_name))
 call echo(build2("printer_desc: ", pmdbdoc_2->printer_desc))
+call echo(build2("printer_prefix: ", pmdbdoc_2->printer_prefix))
 		
 
 /**************************************************************/
@@ -134,7 +138,7 @@ set modify filestream
 
 select into value(output_var)
 	; line 0
-	output_dest_name		= trim(substring(1, 10, pmdbdoc_2->printer_desc), 3)
+	output_dest_name		= trim(substring(1, 10, pmdbdoc_2->printer_prefix), 3)
 	, form_name				= "PWNEWBORN"
 	, print_dt_tm			= format(cnvtdatetime(curdate, curtime), "mm/dd/yy hh:mm;;q")
 	
@@ -217,10 +221,10 @@ detail
 	row + 1
 	
 	; line 2
-;;	col 0 address1
-;;	col 50 city
-;;	col 60 state
-;;	col 63 zipcode
+;;	col 0	address1
+;;	col 50	city
+;;	col 60	state
+;;	col 63	zipcode
 	row + 1
 	
 	; line 3

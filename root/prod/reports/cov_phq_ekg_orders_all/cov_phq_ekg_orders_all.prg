@@ -37,7 +37,8 @@ with OUTDEV, start_datetime, end_datetime, acute_facility_list
 ; DVDev DECLARED VARIABLES
 **************************************************************/
  
-declare ekg_elect_12_var  = f8 with constant(value(uar_get_code_by('DISPLAY',200, 'Electrocardiogram 12 Lead'))), protect
+declare ekg_elect_12_var    = f8 with constant(value(uar_get_code_by('DISPLAY',200, 'Electrocardiogram 12 Lead'))), protect
+declare ed_ekg_elect_12_var = f8 with constant(value(uar_get_code_by('DISPLAY',200, 'ED Electrocardiogram 12 Lead'))), protect
 declare dnr_var           = f8 with constant(value(uar_get_code_by("DISPLAY",200, "Resuscitation Status/Medical Interventions"))),protect
 declare comfort_meas_var  = f8 with constant(value(uar_get_code_by('DISPLAY',200, 'Comfort Measures'))), protect
 declare ordered_var       = f8 with constant(value(uar_get_code_by('DISPLAY',6004, 'Ordered'))), protect

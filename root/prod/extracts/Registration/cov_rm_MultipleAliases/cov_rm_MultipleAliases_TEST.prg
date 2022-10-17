@@ -1,0 +1,647 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+	Author:				Todd A. Blanchard
+	Date Written:		05/02/2019
+	Solution:			Revenue Cycle - Registration Management
+	Source file name:	cov_rm_MultipleAliases.prg
+	Object name:		cov_rm_MultipleAliases
+	Request #:			4669
+ 
+	Program purpose:	Select data for patients where there are
+						multiple MRNs for facilities or
+						multiple CMRNs for patients or
+						multiple FINs for patients.
+						To be extracted to files.
+ 
+	Executing from:		CCL
+ 
+ 	Special Notes:		Output files:
+ 							0 - multiple_aliases_mrn.asc
+ 							1 - multiple_aliases_cmrn.asc
+ 							2 - multiple_aliases_fin.asc
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+ 	Mod Date	Developer				Comment
+ 	----------	--------------------	--------------------------------------
+001	05/21/2020	Todd A. Blanchard		Fixed issue with page numbering.
+ 
+******************************************************************************/
+ 
+drop program cov_rm_MultipleAliases_TEST:DBA go
+create program cov_rm_MultipleAliases_TEST:DBA
+ 
+prompt 
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "File Type" = 0
+	, "Output To File" = 0                   ;* Output to file (used for testing by IT) 
+
+with OUTDEV, file_type, output_file
+ 
+ 
+/**************************************************************
+; DVDev DECLARED SUBROUTINES
+**************************************************************/
+ 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+ 
+declare mrn_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 4, "MRN"))
+declare cmrn_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 4, "COMMUNITYMEDICALRECORDNUMBER"))
+declare cernermrn_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 263, "CERNERMRN"))
+declare fin_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 319, "FINNBR"))
+ 
+declare file_mrn_var		= vc with constant(build("multiple_aliases_mrn", ".asc"))
+declare file_cmrn_var		= vc with constant(build("multiple_aliases_cmrn", ".asc"))
+declare file_fin_var		= vc with constant(build("multiple_aliases_fin", ".asc"))
+ 
+declare temppath_var		= vc with constant("cer_temp:")
+declare temppath_mrn_var	= vc with constant(build(temppath_var, file_mrn_var))
+declare temppath_cmrn_var	= vc with constant(build(temppath_var, file_cmrn_var))
+declare temppath_fin_var	= vc with constant(build(temppath_var, file_fin_var))
+ 
+declare temppath2_var		= vc with constant("$cer_temp/")
+declare temppath2_mrn_var	= vc with constant(build(temppath2_var, file_mrn_var))
+declare temppath2_cmrn_var	= vc with constant(build(temppath2_var, file_cmrn_var))
+declare temppath2_fin_var	= vc with constant(build(temppath2_var, file_fin_var))
+ 
+declare filepath_var		= vc with constant(build("/cerner/w_custom/", cnvtlower(curdomain),
+													 "_cust/to_client_site/RevenueCycle/R2W/EnterpriseEcare/"))
+ 
+declare filepath_mrn_var	= vc with constant(build(filepath_var, file_mrn_var))
+declare filepath_cmrn_var	= vc with constant(build(filepath_var, file_cmrn_var))
+declare filepath_fin_var	= vc with constant(build(filepath_var, file_fin_var))
+ 
+declare output_mrn_var		= vc with noconstant("")
+declare output_cmrn_var		= vc with noconstant("")
+declare output_fin_var		= vc with noconstant("")
+ 
+declare cmd					= vc with noconstant("")
+declare len					= i4 with noconstant(0)
+declare stat				= i4 with noconstant(0)
+ 
+ 
+; define output value
+if (validate(request->batch_selection) = 1 or $output_file = 1)
+	set output_mrn_var = value(temppath_mrn_var)
+	set output_cmrn_var = value(temppath_cmrn_var)
+	set output_fin_var = value(temppath_fin_var)
+else
+	set output_mrn_var = value($OUTDEV)
+	set output_cmrn_var = value($OUTDEV)
+	set output_fin_var = value($OUTDEV)
+endif
+ 
+ 
+/**************************************************************
+; DVDev Start Coding
+**************************************************************/
+ 
+/**************************************************************/
+; select mrn data
+if ($file_type = 0)
+	if (validate(request->batch_selection) = 1 or $output_file = 1)
+		set modify filestream
+	endif
+ 
+	select if (validate(request->batch_selection) = 1 or $output_file = 1)
+		with nocounter, nullreport, pcformat (^"^, ^,^, 1), format = stream, format, landscape, compress, maxcol = 192
+	else
+		with nocounter, nullreport, separator = " ", format, landscape, compress, maxcol = 192
+	endif
+ 
+	into value(output_mrn_var)
+		person_id = p.person_id ";L;"
+		, patient_name = p.name_full_formatted
+		, dob = format(cnvtdatetimeutc(datetimezone(p.birth_dt_tm, p.birth_tz), 1), "mm/dd/yyyy;;d")
+ 
+		, cmrn = cnvtalias(pa.alias, pa.alias_pool_cd)
+ 
+		, person_alias_id = pa2.person_alias_id ";L;"
+		, mrn = cnvtalias(pa2.alias, pa2.alias_pool_cd)
+		, mrn_beg_effective_dt_tm = pa2.beg_effective_dt_tm "mm/dd/yyyy;;d"
+		, mrn_end_effective_dt_tm = pa2.end_effective_dt_tm "mm/dd/yyyy;;d"
+ 
+		, prsnl_name = evaluate2(
+			if (per.name_last_key = "CONTRIBUTORSYSTEM")
+				build2("CONTRIBUTOR-", per.name_first)
+			elseif (per.name_last_key = "SCRIPTINGUPDATES")
+				build2("SCRIPT-", per.name_first)
+			else
+				per.name_full_formatted
+			endif
+			)
+ 
+		, updt_task = pa2.updt_task ";L;"
+		, at.description
+ 
+	from
+		PERSON p
+ 
+		, (inner join PERSON_ALIAS pa on pa.person_id = p.person_id
+			and pa.person_alias_type_cd = cmrn_var
+			and pa.end_effective_dt_tm > sysdate
+			and pa.active_ind = 1)
+ 
+		, (inner join PERSON_ALIAS pa2 on pa2.person_id = pa.person_id
+			and pa2.person_alias_type_cd = mrn_var
+			and pa2.alias_pool_cd != cernermrn_var
+			and pa2.end_effective_dt_tm > sysdate
+			and pa2.active_ind = 1)
+ 
+		, (inner join PRSNL per on per.person_id = pa2.active_status_prsnl_id)
+ 
+		, (inner join APPLICATION_TASK at on at.task_number = pa2.updt_task)
+ 
+		, ((
+			select
+				pa.person_id, pa.alias_pool_cd
+ 
+			from
+				PERSON_ALIAS pa
+ 
+			where
+				pa.person_alias_type_cd = mrn_var
+				and pa.alias_pool_cd != cernermrn_var
+				and pa.end_effective_dt_tm > sysdate
+				and pa.active_ind = 1
+ 
+			group by
+				pa.person_id, pa.alias_pool_cd
+ 
+			having
+				count(*) > 1
+ 
+			with sqltype("f8", "f8")
+		) pa3)
+ 
+	where
+		p.end_effective_dt_tm > sysdate
+		and p.active_ind = 1
+		and pa2.person_id = pa3.person_id
+		and pa2.alias_pool_cd = pa3.alias_pool_cd
+ 
+	order by
+		p.name_full_formatted
+		, p.person_id
+		, pa.beg_effective_dt_tm
+		, mrn
+		, pa2.beg_effective_dt_tm
+ 
+	head report
+		fcnt = 0
+		pagenum = 0
+ 
+	head page
+		if (curpage = 1)
+			row + 1
+		endif
+ 
+		pagenum = pagenum + 1
+ 
+		col 0	"Date:"
+		col 7	dt = format(sysdate, "mm/dd/yyyy;;d"), dt
+		col 180	"Page:"
+		col 187	pagenum "####" ;001
+		row + 1
+ 
+		col 0	"Time:"
+		col 7	tm = format(sysdate, "hh:mm:ss;;s"), tm
+		row + 1
+ 
+		col 0	"Report:"
+		col 9	prog = curprog, prog
+		row + 2
+ 
+		col 0	"Facility ID:"
+		col 14	"N/A"
+		row + 2
+ 
+	 	title = "Patients With Duplicate MRNs In eCare"
+;	 	subtitle = facility_desc 
+		call center(title, 1, 192)
+;		row + 1
+;		call center(subtitle, 1, 192)
+		row + 2
+ 
+		col 0	"PERSON ID"
+		col 15	"PATIENT NAME"
+		col 40	"DOB"
+		col 52	"CMRN"
+		col 63	"ALIAS ID"
+		col 78	"MRN"
+		col 93	"BEG DATE"
+		col 105	"END DATE"
+		col 117	"PRSNL NAME"
+		col 144	"UPDATE TASK"
+		col 156	"DESCRIPTION"
+		row + 1
+ 
+		col 0	s = fillstring(190, "-"), s
+		row + 1
+ 
+	head person_id
+		col 0	person_id
+		col 15	pn = substring(1, 23, patient_name), pn
+		col 40	dob
+ 
+	head cmrn
+		col 52	c = substring(1, 10, cmrn), c
+ 
+	detail
+		if (row > 45)
+			break
+		endif
+ 
+		col 63	person_alias_id
+		col 78	m = substring(1, 13, mrn), m
+		col 93	mrn_beg_effective_dt_tm
+		col 105	mrn_end_effective_dt_tm
+		col 117	pern = substring(1, 25, prsnl_name), pern
+		col 144	updt_task
+		col 156	d = substring(1, 34, at.description), d
+		row + 1
+ 
+	foot person_id
+		row + 1
+ 
+	with nocounter
+ 
+ 
+	; copy mrn file to AStream
+	if (validate(request->batch_selection) = 1 or $output_file = 1)
+		set cmd = build2("cp ", temppath2_mrn_var, " ", filepath_mrn_var)
+		set len = size(trim(cmd))
+ 
+		call dcl(cmd, len, stat)
+		call echo(build2(cmd, " : ", stat))
+	endif
+endif
+ 
+ 
+/**************************************************************/
+; select cmrn data
+if ($file_type = 1)
+	if (validate(request->batch_selection) = 1 or $output_file = 1)
+		set modify filestream
+	endif
+ 
+	select if (validate(request->batch_selection) = 1 or $output_file = 1)
+		with nocounter, nullreport, pcformat (^"^, ^,^, 1), format = stream, format, landscape, compress, maxcol = 192
+	else
+		with nocounter, nullreport, separator = " ", format, landscape, compress, maxcol = 192
+	endif
+ 
+	into value(output_cmrn_var)
+		person_id = p.person_id ";L;"
+		, patient_name = p.name_full_formatted
+		, dob = format(cnvtdatetimeutc(datetimezone(p.birth_dt_tm, p.birth_tz), 1), "mm/dd/yyyy;;d")
+ 
+		, cmrn = cnvtalias(pa.alias, pa.alias_pool_cd)
+ 
+		, person_alias_id = pa.person_alias_id ";L;"
+		, cmrn_beg_effective_dt_tm = pa.beg_effective_dt_tm "mm/dd/yyyy;;d"
+		, cmrn_end_effective_dt_tm = pa.end_effective_dt_tm "mm/dd/yyyy;;d"
+ 
+		, prsnl_name = evaluate2(
+			if (per.name_last_key = "CONTRIBUTORSYSTEM")
+				build2("CONTRIBUTOR-", per.name_first)
+			elseif (per.name_last_key = "SCRIPTINGUPDATES")
+				build2("SCRIPT-", per.name_first)
+			else
+				per.name_full_formatted
+			endif
+			)
+ 
+		, updt_task = pa.updt_task ";L;"
+		, at.description
+ 
+	from
+		PERSON p
+ 
+		, (inner join PERSON_ALIAS pa on pa.person_id = p.person_id
+			and pa.person_alias_type_cd = cmrn_var
+			and pa.end_effective_dt_tm > sysdate
+			and pa.active_ind = 1)
+ 
+		, (inner join PRSNL per on per.person_id = pa.active_status_prsnl_id)
+ 
+		, (inner join APPLICATION_TASK at on at.task_number = pa.updt_task)
+ 
+		, ((
+			select
+				pa.person_id
+ 
+			from
+				PERSON_ALIAS pa
+ 
+			where
+				pa.person_alias_type_cd = cmrn_var
+				and pa.end_effective_dt_tm > sysdate
+				and pa.active_ind = 1
+ 
+			group by
+				pa.person_id
+ 
+			having
+				count(*) > 1
+ 
+			with sqltype("f8")
+		) pa2)
+ 
+	where
+		p.end_effective_dt_tm > sysdate
+		and p.active_ind = 1
+		and pa.person_id = pa2.person_id
+ 
+	order by
+		p.name_full_formatted
+		, p.person_id
+		, pa.beg_effective_dt_tm
+ 
+	head report
+		fcnt = 0
+		pagenum = 0
+ 
+	head page
+		if (curpage = 1)
+			row + 1
+		endif
+ 
+		pagenum = pagenum + 1
+ 
+		col 0	"Date:"
+		col 7	dt = format(sysdate, "mm/dd/yyyy;;d"), dt
+		col 180	"Page:"
+		col 187	pagenum "####" ;001
+		row + 1
+ 
+		col 0	"Time:"
+		col 7	tm = format(sysdate, "hh:mm:ss;;s"), tm
+		row + 1
+ 
+		col 0	"Report:"
+		col 9	prog = curprog, prog
+		row + 2
+ 
+		col 0	"Facility ID:"
+		col 14	"N/A"
+		row + 2
+ 
+	 	title = "Patients With Duplicate CMRNs In eCare"
+;	 	subtitle = facility_desc 
+		call center(title, 1, 192)
+;		row + 1
+;		call center(subtitle, 1, 192)
+		row + 2
+ 
+		col 0	"PERSON ID"
+		col 15	"PATIENT NAME"
+		col 40	"DOB"
+		col 52	"CMRN"
+		col 63	"ALIAS ID"
+		col 93	"BEG DATE"
+		col 105	"END DATE"
+		col 117	"PRSNL NAME"
+		col 144	"UPDATE TASK"
+		col 156	"DESCRIPTION"
+		row + 1
+ 
+		col 0	s = fillstring(190, "-"), s
+		row + 1
+ 
+	head person_id
+		col 0	person_id
+		col 15	pn = substring(1, 23, patient_name), pn
+		col 40	dob
+ 
+	detail
+		if (row > 45)
+			break
+		endif
+ 
+		col 52	c = substring(1, 10, cmrn), c
+		col 63	person_alias_id
+		col 93	cmrn_beg_effective_dt_tm
+		col 105	cmrn_end_effective_dt_tm
+		col 117	pern = substring(1, 25, prsnl_name), pern
+		col 144	updt_task
+		col 156	d = substring(1, 34, at.description), d
+		row + 1
+ 
+	foot person_id
+		row + 1
+ 
+	with nocounter
+ 
+ 
+;	; copy cmrn file to AStream
+	if (validate(request->batch_selection) = 1 or $output_file = 1)
+		set cmd = build2("cp ", temppath2_cmrn_var, " ", filepath_cmrn_var)
+		set len = size(trim(cmd))
+ 
+		call dcl(cmd, len, stat)
+		call echo(build2(cmd, " : ", stat))
+	endif
+endif
+ 
+ 
+/**************************************************************/
+; select fin data
+if ($file_type = 2)
+	if (validate(request->batch_selection) = 1 or $output_file = 1)
+		set modify filestream
+	endif
+ 
+	select if (validate(request->batch_selection) = 1 or $output_file = 1)
+		with nocounter, nullreport, pcformat (^"^, ^,^, 1), format = stream, format, landscape, compress, maxcol = 192
+	else
+		with nocounter, nullreport, separator = " ", format, landscape, compress, maxcol = 192
+	endif
+ 
+	into value(output_fin_var)
+		person_id = p.person_id ";L;"
+		, patient_name = p.name_full_formatted
+		, dob = format(cnvtdatetimeutc(datetimezone(p.birth_dt_tm, p.birth_tz), 1), "mm/dd/yyyy;;d")
+ 
+		, cmrn = cnvtalias(pa.alias, pa.alias_pool_cd)
+ 
+		, encntr_alias_id = ea.encntr_alias_id ";L;"
+		, fin = cnvtalias(ea.alias, ea.alias_pool_cd)
+		, fin_beg_effective_dt_tm = ea.beg_effective_dt_tm "mm/dd/yyyy;;d"
+		, fin_end_effective_dt_tm = ea.end_effective_dt_tm "mm/dd/yyyy;;d"
+ 
+		, prsnl_name = evaluate2(
+			if (per.name_last_key = "CONTRIBUTORSYSTEM")
+				build2("CONTRIBUTOR-", per.name_first)
+			elseif (per.name_last_key = "SCRIPTINGUPDATES")
+				build2("SCRIPT-", per.name_first)
+			else
+				per.name_full_formatted
+			endif
+			)
+ 
+		, updt_task = ea.updt_task ";L;"
+		, at.description
+ 
+	from
+		ENCNTR_ALIAS ea
+ 
+		, (inner join ENCOUNTER e on e.encntr_id = ea.encntr_id)
+ 
+		, (inner join PERSON p on p.person_id = e.person_id
+			and p.end_effective_dt_tm > sysdate
+			and p.active_ind = 1)
+ 
+		, (inner join PERSON_ALIAS pa on pa.person_id = p.person_id
+			and pa.person_alias_type_cd = cmrn_var
+			and pa.end_effective_dt_tm > sysdate
+			and pa.active_ind = 1)
+ 
+		, (inner join PRSNL per on per.person_id = ea.active_status_prsnl_id)
+ 
+		, (inner join APPLICATION_TASK at on at.task_number = ea.updt_task)
+ 
+		, ((
+			select
+				ea.alias
+ 
+			from
+				ENCNTR_ALIAS ea
+ 
+				, (inner join ENCOUNTER e on e.encntr_id = ea.encntr_id)
+ 
+				, (inner join PERSON p on p.person_id = e.person_id
+					and p.end_effective_dt_tm > sysdate
+					and p.active_ind = 1)
+ 
+			where
+				ea.encntr_alias_type_cd = fin_var
+				and ea.end_effective_dt_tm > sysdate
+				and ea.active_ind = 1
+ 
+			group by
+				ea.alias
+ 
+			having
+				count(*) > 1
+ 
+			with sqltype("vc")
+		) ea2)
+ 
+	where
+		ea.encntr_alias_type_cd = fin_var
+		and ea.end_effective_dt_tm > sysdate
+		and ea.active_ind = 1
+		and ea.alias = ea2.alias
+ 
+	order by
+		p.name_full_formatted
+		, p.person_id
+		, fin
+		, ea.beg_effective_dt_tm
+ 
+	head report
+		fcnt = 0
+		pagenum = 0
+ 
+	head page
+		if (curpage = 1)
+			row + 1
+		endif
+ 
+		pagenum = pagenum + 1
+ 
+		col 0	"Date:"
+		col 7	dt = format(sysdate, "mm/dd/yyyy;;d"), dt
+		col 180	"Page:"
+		col 187	pagenum "####" ;001
+		row + 1
+ 
+		col 0	"Time:"
+		col 7	tm = format(sysdate, "hh:mm:ss;;s"), tm
+		row + 1
+ 
+		col 0	"Report:"
+		col 9	prog = curprog, prog
+		row + 2
+ 
+		col 0	"Facility ID:"
+		col 14	"N/A"
+		row + 2
+ 
+	 	title = "Patients With Duplicate FINs In eCare"
+;	 	subtitle = facility_desc 
+		call center(title, 1, 192)
+;		row + 1
+;		call center(subtitle, 1, 192)
+		row + 2
+ 
+		col 0	"PERSON ID"
+		col 15	"PATIENT NAME"
+		col 40	"DOB"
+		col 52	"CMRN"
+		col 63	"ALIAS ID"
+		col 78	"FIN"
+		col 93	"BEG DATE"
+		col 105	"END DATE"
+		col 117	"PRSNL NAME"
+		col 144	"UPDATE TASK"
+		col 156	"DESCRIPTION"
+		row + 1
+ 
+		col 0	s = fillstring(190, "-"), s
+		row + 1
+ 
+	head person_id
+		col 0	person_id
+		col 15	pn = substring(1, 23, patient_name), pn
+		col 40	dob
+ 
+	head cmrn
+		col 52	c = substring(1, 10, cmrn), c
+ 
+	detail
+		if (row > 45)
+			break
+		endif
+ 
+		col 63	encntr_alias_id
+		col 78	f = substring(1, 13, fin), f
+		col 93	fin_beg_effective_dt_tm
+		col 105	fin_end_effective_dt_tm
+		col 117	pern = substring(1, 25, prsnl_name), pern
+		col 144	updt_task
+		col 156	d = substring(1, 34, at.description), d
+		row + 1
+ 
+	foot person_id
+		row + 1
+ 
+	with nocounter
+ 
+ 
+;	; copy fin file to AStream
+	if (validate(request->batch_selection) = 1 or $output_file = 1)
+		set cmd = build2("cp ", temppath2_fin_var, " ", filepath_fin_var)
+		set len = size(trim(cmd))
+ 
+		call dcl(cmd, len, stat)
+		call echo(build2(cmd, " : ", stat))
+	endif
+endif
+ 
+ 
+/**************************************************************
+; DVDev DEFINED SUBROUTINES
+**************************************************************/
+ 
+end
+go
+ 
