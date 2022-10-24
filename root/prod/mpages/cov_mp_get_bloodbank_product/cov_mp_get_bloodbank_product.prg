@@ -181,7 +181,7 @@ subroutine GetEncounterInfo(null)
 	select into "nl:"
 	
 	from encounter e
-	plan e where e.person_id = 20812082.00 ;criterion->person_id ;20812082.00
+	plan e where e.person_id = criterion->person_id 
 	order by e.person_id
 	
 	head report
@@ -213,7 +213,7 @@ subroutine GetBloodBankProducts(null)
 	
 	plan d1
 
-	join pe where pe.person_id = prodinfo->list[d1.seq].personid ;20812082.00
+	join pe where pe.person_id = prodinfo->list[d1.seq].personid 
 		and pe.event_type_cd in(assign_var, cross_var, dispen_var, trans_var)
 		and pe.active_ind = 1
 	
@@ -246,6 +246,7 @@ subroutine GetBloodBankProducts(null)
 				ccnt += 1
 				stat = alterlist(prodinfo->list[d1.seq].crossed, ccnt)
 				prodinfo->list[d1.seq].prd_c_cnt = ccnt
+				cross_rec_cnt_var = ccnt
 				prodinfo->list[d1.seq].crossed[ccnt].cross_cnt = ccnt
 				prodinfo->list[d1.seq].crossed[ccnt].c_product_event_label = prod_label
 				prodinfo->list[d1.seq].crossed[ccnt].c_product_status_dt = format(pe.event_dt_tm, 'mm/dd/yy hh:mm:ss;;q')
@@ -290,7 +291,8 @@ subroutine GetBloodBankProducts(null)
 					for (k = 1 to prodinfo->list[i].prd_d_cnt)
 						if(prodinfo->list[i].crossed[j].c_product_number = prodinfo->list[i].dispensed[k].d_product_number)
 							set prodinfo->list[i].crossed[j].c_product_status = 'Dispensed'	
-							set cross_rec_cnt_var = prodinfo->list[i].prd_c_cnt - 1
+							;set cross_rec_cnt_var = prodinfo->list[i].prd_c_cnt - 1
+							set cross_rec_cnt_var -= 1
 						endif	
 					endfor
 				

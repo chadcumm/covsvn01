@@ -3,22 +3,23 @@
   Knoxville, Tennessee
 ******************************************************************************
  	Author:			Geetha Paramasivam
-	Date Written:		Feb'2020
-	Solution:			Quality
-	Source file name:  	cov_autoset_suicide_assess.prg
-	Object name:		cov_autoset_suicide_assess
-	CR#:				7063
-	Program purpose:		Supporting CCL for cov_phq_suicide_risk_assment.prg
+	Date Written:		Oct'2022
+	Solution:			BH
+	Source file name:  	cov_autoset_sbu_access.prg
+	Object name:		cov_autoset_sbu_access
+	CR#:				
+	Program purpose:		Supporting CCL to limit access to only SBU people
 	Executing from:		CCL
-  	Special Notes:		Used to get prsnl and their work location
+  	Special Notes:		
  
 ******************************************************************************
 *  GENERATED MODIFICATION CONTROL LOG
 *
 ******************************************************************************/
  
-drop program cov_autoset_suicide_assess:dba go
-create program cov_autoset_suicide_assess:dba
+drop program cov_autoset_sbu_access:dba go
+create program cov_autoset_sbu_access:dba
+
  
 /**************************************************************
 ; DVDev DECLARED VARIABLES
@@ -57,7 +58,6 @@ from
  
 plan p where p.active_ind = 1
 	and p.person_id = reqinfo->updt_id
-	;and p.username = 'CDAY2'
  
 join o where o.prsnl_id = p.person_id
 	and o.active_ind = 1
@@ -113,32 +113,24 @@ if(work_location_var = 'All Facilities (with BH)' and position_var = 'BH - Nurse
 	 	or position_var = 'IT - Advanced Access PC' or position_var = 'BH - Therapist/Psychologist'
 	 	or position_var = 'Nurse - Supervisor' or position_var = 'IT - PowerChart'
 	 	or position_var = 'IT - Perioperative')
-	where l.location_cd in(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00
-		,2552503649.00, 2553765475.00, 2553765531.00)
+	where l.location_cd in(2553765531.00, 2553765475.00) ;PW Senior Behav, MHHS Behav Hlth	 	
+
 ;MHHS
 elseif(work_location_var = 'MHHS Senior BH Unit' and position_var = 'BH - Nurse*' or position_var = 'DBA'
 		or position_var = 'BH - Family Nurse Practitioner' or position_var = 'BH - Ambulatory RN/LPN'
 	 	or position_var = 'IT - Advanced Access PC' or position_var = 'BH - Therapist/Psychologist'
 	 	or position_var = 'Nurse - Supervisor' or position_var = 'IT - PowerChart'
 	 	or position_var = 'IT - Perioperative')
-	where l.location_cd in(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00
-				  ,2552503649.00,2553765475)
+	where l.location_cd in(2553765531.00, 2553765475.00) ;PW Senior Behav, MHHS Behav Hlth	 	 	
+
 ;PW
 elseif(work_location_var = 'PW Senior BH Unit' and position_var = 'BH - Nurse*' or position_var = 'DBA'
 		or position_var = 'BH - Family Nurse Practitioner' or position_var = 'BH - Ambulatory RN/LPN'
 	 	or position_var = 'IT - Advanced Access PC' or position_var = 'BH - Therapist/Psychologist'
 	 	or position_var = 'Nurse - Supervisor' or position_var = 'IT - PowerChart'
 	 	or position_var = 'IT - Perioperative')
-	where l.location_cd in(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00
-				  ,2552503649.00,2553765531.00)
-;All location without BH
-elseif(work_location_var = 'All Facilities (no BH)' or position_var != 'BH - Nurse*' or position_var != 'DBA'
-		or position_var != 'BH - Family Nurse Practitioner'  or position_var != 'BH - Ambulatory RN/LPN'
-	 	or position_var != 'IT - Advanced Access PC' or position_var != 'BH - Therapist/Psychologist'
-	 	or position_var != 'Nurse - Supervisor' or position_var != 'IT - PowerChart'
-	 	or position_var != 'IT - Perioperative')
-	where l.location_cd in(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00
-				,2552503649.00)
+	where l.location_cd in(2553765531.00, 2553765475.00) ;PW Senior Behav, MHHS Behav Hlth 	
+
 endif
  
 into 'nl:'
@@ -151,7 +143,7 @@ from location l
 	and l.active_ind = 1
  
 order by facility
- 
+
 Head report
 	stat = MakeDataSet(10)
 Detail
@@ -160,7 +152,7 @@ Foot report
 	stat = CloseDataSet(0)
  
 with ReportHelp, Check
- 
+
  
 ;--------------------------------------------------------------------------------------------
  

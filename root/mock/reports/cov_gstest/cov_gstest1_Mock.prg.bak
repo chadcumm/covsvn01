@@ -22,7 +22,7 @@ select fin = ea.alias, ce.encntr_id, ce.event_cd
 , e.person_id, fac = uar_get_code_display(e.loc_facility_cd), e.loc_facility_cd
 , event_start_dt  = format(ce.event_start_dt_tm, 'mm/dd/yyyy hh:mm:ss;;d')
 , ce.view_level, ce.publish_flag,normalcy = uar_get_code_display(ce.normalcy_cd), ce.ce_dynamic_label_id, ce.valid_until_dt_tm
-, ce.* 
+;, ce.* 
 from clinical_event ce, encntr_alias ea, prsnl pr, prsnl pr1, encounter e
  
 where ce.encntr_id = ea.encntr_id
@@ -33,9 +33,9 @@ and ce.performed_prsnl_id = pr.person_id
 and ce.verified_prsnl_id = pr1.person_id
 and ce.valid_until_dt_tm = cnvtdatetime ("31-DEC-2100 00:00:00" )
 and ce.result_status_cd IN (23.00, 34.00, 25.00, 35.00)
-;and ce.encntr_id = 130143712                
-;and ce.person_id =    18862688.00
-and ea.alias = '2125900109'
+;and ce.encntr_id = 125486659.00               
+and ce.person_id = 20812082.00
+;and ea.alias = '4000000186'
 ;and ce.event_id = 3686938696.00
 ;and ce.ce_dynamic_label_id =      11367714587.00
 order by ce.verified_dt_tm desc
@@ -3971,10 +3971,10 @@ and pe.event_dt_tm >= cnvtdatetime('01-JAN-2022 00:00:00')
 order by pe.person_id, pe.event_dt_tm desc
 with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
 
-
-select 
+;Products
+select; - live 
 pe.person_id, pe.encntr_id, pe.event_dt_tm, prod_event = uar_get_code_display(pe.event_type_cd)
-,pe.product_id, pe.product_event_id;, pr.*
+,pe.product_id, pe.product_event_id, pe.*, pr.*
 , productcd = uar_get_code_display(pr.product_cd), prod_catcd = uar_get_code_display(pr.product_cat_cd)
 , product = build2(trim(uar_get_code_display(pr.product_cd))," ",trim(uar_get_code_display(pr.product_cat_cd)))
 , abo_rh = build2(trim(uar_get_code_display(bp.cur_abo_cd))," ",trim(uar_get_code_display(bp.cur_rh_cd)))
@@ -3996,15 +3996,109 @@ order by prod_event, pe.product_event_id
 with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
 
 
+;OVERVIEW
+
+select 
+pe.person_id, pe.encntr_id, pe.event_dt_tm, prod_event = uar_get_code_display(pe.event_type_cd)
+,pe.product_id, pe.product_event_id,st.*
+;, productcd = uar_get_code_display(pr.product_cd), prod_catcd = uar_get_code_display(pr.product_cat_cd)
+;, product = build2(trim(uar_get_code_display(pr.product_cd))," ",trim(uar_get_code_display(pr.product_cat_cd)))
+;, abo_rh = build2(trim(uar_get_code_display(bp.cur_abo_cd))," ",trim(uar_get_code_display(bp.cur_rh_cd)))
+;, pr.product_nbr;, bp.*
+
+from product_event pe
+	, special_testing_result st
+	;, product pr
+	;, blood_product   bp
+
+plan pe where pe.person_id = 20812082.00
+	and pe.active_ind = 1
+	
+;join pr where pr.product_id = pe.product_id
+
+join st where st.product_id = pe.product_id
+	;nd st.active_ind = 1
+
+join bp where bp.product_id = outerjoin(pr.product_id)
+
+order by prod_event, pe.product_event_id
+
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
 
 
-
+select * from special_testing_result str
+where str.result_id =    846020920.00
+in(846018985.00,  846018989.00,   846020934.00)
+;where str.product_id in(4212109.00,4212111.00,4212107.00,4212105.00,4212106.00)
  
-       1429.00	Assigned
-       1433.00	Crossmatched
-       1436.00	Dispensed
-       1448.00	Transfused
-       1439.00	In Progress
+select * from special_testing str where str.
+where str.product_id in(4212109.00,4212111.00,4212107.00,4212105.00,4212106.00)
+
+select * from TRANSFUSION str 
+where str.product_event_id in(846019007.00,846019016.00,846018984.00,846018988.00,846018992.00,846018995.00)
+;where str.person_id = 20812082.00
+;where str.product_id in(4212109.00,4212111.00,4212107.00,4212105.00,4212106.00)
+
+
+select * from person_trans_req ptr where ptr.encntr_id = 125486659.00
+code set = 1611
+use : transfusion_requirement table
+
+   20812082.00	  125486659.00
+
+select * from person_antibody pa where pa.encntr_id = 125486659.00
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+ANTIBODY_DISPLAY
+Anti-D
+
+bbt_tag_crossmatch
+
+select * from person_antigen pa where pa.encntr_id = 125486659.00
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+ANTIGEN_DISPLAY
+D-
+
+clinical_event - result
+ 21810661.00	Antibody ID	Anti-D
+   21810663.00	Antigen Type	D-
+   20136583.00	ABORh	O Neg
+
+
+
+select * from procedure_specimen_type pst where pst.catalog_cd =    21286621.00
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+select * from COLLECTION_INFO_QUALIFIERS CI 
+where ci.specimen_type_cd = 1765.00 ;pst.specimen_type_cd
+and ci.catalog_cd = 21286621.00
+
+select * from person_aborh_result par where par.person_id = 20812082.00
+SPECIMEN_ID		CONTAINER_ID	
+  321807566.00	  321807567.00
+  321806807.00	  321806808.00
+  321806799.00	  321806801.00
+
+RESULT_ID
+  846020879.00
+  846018967.00
+  846018881.00
+
+
+select * from container_event ce where ce.container_id in(  321807567.00,  321806808.00,  321806801.00)
+
+select * from specimen_usage su where su.specimen_id in(321807566.00,321806807.00,321806799.00)
+
+
+select O.* from orders O where O.order_id =  4748415901.00 ;go
+
+
+select * from order_detail od where od.order_id = 4748415901.00
+with nocounter, separator=" ", format;, format(date,"mm-dd-yyyy hh:mm:ss;;d"), time = 180, uar_code(d,1), maxrow = 10000
+
+BB_SPEC_EXPIRE_OVRD
+
+select * from bb_spec_expire_ovrd ov where ov.specimen_id in(321807566.00,321806807.00,321806799.00)
+
 
  
  select

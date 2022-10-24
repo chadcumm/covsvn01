@@ -181,7 +181,7 @@ subroutine GetEncounterInfo(null)
 	select into "nl:"
 	
 	from encounter e
-	plan e where e.person_id = 20812082.00 ;criterion->person_id ;20812082.00
+	plan e where e.person_id = criterion->person_id 
 	order by e.person_id
 	
 	head report
@@ -213,7 +213,7 @@ subroutine GetBloodBankProducts(null)
 	
 	plan d1
 
-	join pe where pe.person_id = prodinfo->list[d1.seq].personid ;20812082.00
+	join pe where pe.person_id = prodinfo->list[d1.seq].personid 
 		and pe.event_type_cd in(assign_var, cross_var, dispen_var, trans_var)
 		and pe.active_ind = 1
 	
