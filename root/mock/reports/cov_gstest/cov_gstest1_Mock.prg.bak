@@ -4058,6 +4058,9 @@ with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), ti
 ANTIGEN_DISPLAY
 D-
 
+
+
+125486659.00
 clinical_event - result
  21810661.00	Antibody ID	Anti-D
    21810663.00	Antigen Type	D-

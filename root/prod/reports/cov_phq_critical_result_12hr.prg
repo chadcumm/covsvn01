@@ -20,6 +20,7 @@ Mod Date		Developer			Comment
 -------------------------------------------------------------------------------------------------------
 03/08/21  CR#9360  Geetha	 Look back 12hrs and include nurse units in prompt
 05/26/21  CR#10394 Geetha	 Add missimg Hct result and show only verified results
+					 LORI - ON 10/21/22 - keep it 15 min to 12hr	
 *******************************************************************************************************/
  
 drop program cov_phq_critical_result_12hr:dba go
@@ -618,8 +619,9 @@ join ce where ce.encntr_id = chart->plist[d1.seq].encntrid
 	and ce.person_id = chart->plist[d1.seq].personid
  	/*and (ce.event_end_dt_tm between cnvtdatetime(chart->plist[d1.seq].result[d2.seq].lab_result_cmnt_dt)
 		and cnvtlookahead('12, h',cnvtdatetime(chart->plist[d1.seq].result[d2.seq].lab_result_cmnt_dt)))*/; 02/10/22
- 	and (ce.event_end_dt_tm between cnvtlookbehind('5, m',cnvtdatetime(chart->plist[d1.seq].result[d2.seq].lab_result_cmnt_dt))
-		and cnvtlookahead('12, h',cnvtdatetime(chart->plist[d1.seq].result[d2.seq].lab_result_cmnt_dt)))
+		;LORI - ON 10/21/22 - keep it 15 min to 12hr
+ 	and (ce.event_end_dt_tm between cnvtlookbehind('15, MIN',cnvtdatetime(chart->plist[d1.seq].result[d2.seq].lab_result_cmnt_dt))
+		and cnvtlookahead('12, H',cnvtdatetime(chart->plist[d1.seq].result[d2.seq].lab_result_cmnt_dt)))
 	and ce.event_cd in(prsnl_notify_var, call_reason_var, prsnl_name_var, prsnl_notify_dt_var, prsnl_response_dt_var
 			, test_value_notify_var, prsnl_req_invent_var, prsnl_no_response_var)
 	and ce.result_status_cd in(25,34,35)

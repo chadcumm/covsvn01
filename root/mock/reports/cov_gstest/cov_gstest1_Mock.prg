@@ -4162,7 +4162,8 @@ select * from bb_spec_expire_ovrd ov where ov.specimen_id in(321807566.00,321806
 =======================================================================================================================
    	
    	
-   	
+select * from order_detail od where od.order_id in(4749161091,4749161089)
+order by od.order_id
    	
    	
    	

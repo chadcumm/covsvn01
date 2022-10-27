@@ -19,12 +19,12 @@
 Mod Date	Developer			Comment
 -------------------------------------------------------------------------------
  
-/22    Geetha    CR#13014     Initial release
+10/26/22    Geetha    CR#13014     Initial release
  
 ******************************************************************************/
 
-drop program cov_eks_get_interp_req:dba go
-create program cov_eks_get_interp_req:dba
+drop program cov_eks_get_codeblue:dba go
+create program cov_eks_get_codeblue:dba
 
 
 /**************************************************************

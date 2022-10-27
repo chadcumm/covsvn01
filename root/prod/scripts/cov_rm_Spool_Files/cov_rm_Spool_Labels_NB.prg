@@ -8,7 +8,7 @@
 	Solution:			Revenue Cycle - Registration Management
 	Source file name:	cov_rm_Spool_Labels_NB.prg
 	Object name:		cov_rm_Spool_Labels_NB
-	Request #:			?
+	Request #:			12918
  
 	Program purpose:	Generates spool files to be routed to and processed by
 						PatientWorks for newborn labels.
@@ -16,7 +16,7 @@
 	Executing from:		Registration
  
  	Special Notes:		Output files:
- 							{fin}_cerner_labels.spl
+ 							{fin}_cerner_labels_nb_yyyymmddhhmm.spl
  
 ******************************************************************************
   GENERATED MODIFICATION CONTROL LOG
@@ -48,10 +48,14 @@ execute pmdbdocs_driver
 ; DVDev DECLARED VARIABLES
 **************************************************************/
 
+declare covenant_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 73, "COVENANT"))
 declare fin_var				= vc with constant(pmdbdoc->patient_data.person.encounter.finnbr.fin_formatted)
 
-declare file_var			= vc with constant(build(fin_var, "_cerner_labels_nb", ".spl"))
+declare file_var			= vc with constant(build(fin_var, "_cerner_labels_nb_", 
+													 format(cnvtdatetime(curdate, curtime), "yyyymmddhhmm;;q"), ".spl"))
+													 
 declare temppath_var		= vc with constant(build("cer_temp:", file_var))
+declare temppath2_var		= vc with constant(build("$cer_temp/", file_var))
 
 declare output_var			= vc with noconstant("")
 
@@ -61,39 +65,85 @@ declare stat				= i4 with noconstant(0)
  
  
 ; define output value
-;if (validate(request->batch_selection) = 1)
-	set output_var = value(temppath_var)
-;else
-;	set output_var = value($OUTDEV)
-;endif
+set output_var = value(temppath_var)
+
+call echo(build2("output_var: ", output_var))
  
  
 /**************************************************************
 ; DVDev Start Coding
 **************************************************************/
 
+free record pmdbdoc_2
+record pmdbdoc_2 (
+	1 printer_name = vc
+	1 printer_desc = vc
+	1 printer_prefix = vc
+	1 diagnosis_disp = vc
+	1 financial_class_disp = vc
+)
+
+
+; set outbound aliases
+set pmdbdoc->patient_data.person.encounter.encntr_type_disp = 
+		GetOutboundAlias(pmdbdoc->patient_data.person.encounter.encntr_type_cd)
+		
+set pmdbdoc->patient_data.person.encounter.loc_facility_disp = 
+		GetOutboundAlias(pmdbdoc->patient_data.person.encounter.loc_facility_cd)
+
+set pmdbdoc->patient_data.person.encounter.med_service_disp = 
+		GetOutboundAlias(pmdbdoc->patient_data.person.encounter.med_service_cd)
+
+set pmdbdoc->patient_data.person.encounter.loc_room_disp = 
+		GetOutboundAlias(pmdbdoc->patient_data.person.encounter.loc_room_cd)
+
+set pmdbdoc->patient_data.person.encounter.loc_bed_disp = 
+		GetOutboundAlias(pmdbdoc->patient_data.person.encounter.loc_bed_cd)
+
+set pmdbdoc->patient_data.person.encounter.loc_nurse_unit_disp = 
+		GetOutboundAlias(pmdbdoc->patient_data.person.encounter.loc_nurse_unit_cd)
+
+set pmdbdoc_2->diagnosis_disp = 
+		GetDiagnosisDisplay(pmdbdoc->patient_data.person.encounter.diagnosis_01.diagnosis_id)
+
+set pmdbdoc_2->financial_class_disp = 
+		GetCodeValueAlias(pmdbdoc->patient_data.person.encounter.financial_class_cd)
+
+
+/**************************************************************/
+; select printer data
+select into "NL:"
+from
+	OUTPUT_DEST od
+	, (inner join DEVICE d on d.device_cd = od.device_cd)
+
+where
+	od.output_dest_cd = request->destination[1].output_dest_cd
+	
+detail
+	pmdbdoc_2->printer_name = trim(od.name, 3)
+	pmdbdoc_2->printer_desc = trim(od.description, 3)
+	pmdbdoc_2->printer_prefix = trim(substring(1, findstring(" ", d.description, 1, 0), d.description), 3)
+
+with nocounter
+
+call echo(build2("printer_name: ", pmdbdoc_2->printer_name))
+call echo(build2("printer_desc: ", pmdbdoc_2->printer_desc))
+call echo(build2("printer_prefix: ", pmdbdoc_2->printer_prefix))
+		
+
 /**************************************************************/
 ; build spool file
-;if (validate(request->batch_selection) = 1)
-	set modify filestream
-;endif
-; 
-;select if (validate(request->batch_selection) = 1 or $output_file = 1)
-;	with nocounter, nullreport, pcformat (^"^, ^,^, 1), format = stream, format, landscape, compress, maxcol = 80
-;else
-;	with nocounter, nullreport, separator = " ", format, landscape, compress, maxcol = 80
-;endif
-;
-;into value(output_var)
+set modify filestream
 
 select into value(output_var)
-	; line 1
-	output_dest_name		= trim(substring(1, 10, od.description), 3)
+	; line 0
+	output_dest_name		= trim(substring(1, 10, pmdbdoc_2->printer_prefix), 3)
 	, form_name				= "PWNEWBORN"
 	, print_dt_tm			= format(cnvtdatetime(curdate, curtime), "mm/dd/yy hh:mm;;q")
 	
-	; line 2
-	, patient_name		= trim(substring(1, 20, pmdbdoc->patient_data.person.name_full_formatted), 3)
+	; line 1
+	, patient_name		= trim(substring(1, 24, pmdbdoc->patient_data.person.name_full_formatted), 3)
 	, gender			= trim(substring(1, 1, pmdbdoc->patient_data.person.sex_disp), 3)
 	, gender_desc		= trim(substring(1, 6, pmdbdoc->patient_data.person.sex_disp), 3)
 	
@@ -101,172 +151,259 @@ select into value(output_var)
 							pmdbdoc->patient_data.person.birth_dt_tm, 
 							pmdbdoc->patient_data.person.birth_tz), 1), "mm/dd/yy;;d")
 							
-	, age				= trim(substring(1, 4, pmdbdoc->patient_data.person.age), 3)
-	, ssn				= trim(substring(1, 11, pmdbdoc->patient_data.person.ssn.alias), 3)
+	, age				= trim(substring(1, 3, pmdbdoc->patient_data.person.age), 3)
+	, ssn				= trim(substring(1, 11, pmdbdoc->patient_data.person.ssn.ssn_formatted), 3)
 	, cmrn				= trim(substring(1, 8, pmdbdoc->patient_data.person.cmrn.alias), 3)
 	
+	; line 2
+;;	, address1		= trim(substring(1, 24, pmdbdoc->patient_data.person.home_address.street_addr), 3)
+;;	, city			= trim(substring(1, 9, pmdbdoc->patient_data.person.home_address.city), 3)
+;;	, state			= trim(substring(1, 2, pmdbdoc->patient_data.person.home_address.state), 3)
+;;	, zipcode		= trim(substring(1, 10, pmdbdoc->patient_data.person.home_address.zipcode), 3)
+	
 	; line 3
-	, address1		= trim(substring(1, 25, pmdbdoc->patient_data.person.home_address.street_addr), 3)
-	, address2		= trim(substring(1, 25, pmdbdoc->patient_data.person.home_address.street_addr2), 3)
-	, city			= trim(substring(1, 18, pmdbdoc->patient_data.person.home_address.city), 3)
-	, state			= trim(substring(1, 2, pmdbdoc->patient_data.person.home_address.state), 3)
-	, zipcode		= trim(substring(1, 10, pmdbdoc->patient_data.person.home_address.zipcode), 3)
+	, mrn			= trim(substring(1, 10, pmdbdoc->patient_data.person.mrn.alias), 3)
+	, phone			= trim(substring(1, 13, pmdbdoc->patient_data.person.home_phone.phone_formatted), 3)
 	
 	; line 4
-	; TODO: Continue here	
+	, language		= trim(substring(1, 18, pmdbdoc->patient_data.person.language_disp), 3)
 	
-;	, fin			= substring(1, 10, pmdbdoc->patient_data.person.encounter.finnbr.fin_formatted)
+	; line 5
+	, fin				= trim(substring(1, 10, pmdbdoc->patient_data.person.encounter.finnbr.fin_formatted), 3)
+	, enc_type			= trim(substring(1, 2, pmdbdoc->patient_data.person.encounter.encntr_type_disp), 3)
+	, loc_facility		= trim(substring(1, 1, pmdbdoc->patient_data.person.encounter.loc_facility_disp), 3)
+	, admit_dt			= format(pmdbdoc->patient_data.person.encounter.reg_dt_tm, "mm/dd/yy;;d")
+	, admit_tm			= format(pmdbdoc->patient_data.person.encounter.reg_dt_tm, "hhmm;;q")
+	, med_svc_cd		= trim(substring(1, 3, pmdbdoc->patient_data.person.encounter.med_service_disp), 3)
+	, med_svc_desc		= trim(substring(1, 21, uar_get_code_display(pmdbdoc->patient_data.person.encounter.med_service_cd)), 3)
+
+	; line 6
+	, rm_bed			= build2(substring(1, 3, pmdbdoc->patient_data.person.encounter.loc_room_disp), " - ",
+								 substring(1, 3, pmdbdoc->patient_data.person.encounter.loc_bed_disp))
+							
+	, nurse_unit		= trim(substring(1, 4, pmdbdoc->patient_data.person.encounter.loc_nurse_unit_disp), 3)
+		
+	; line 9
+	, admit_phy			= trim(substring(1, 18, pmdbdoc->patient_data.person.encounter.admitdoc.name_full_formatted), 3)	
+	, attend_phy		= trim(substring(1, 18, pmdbdoc->patient_data.person.encounter.attenddoc.name_full_formatted), 3)		
+;	, refer_phy			= trim(substring(1, 18, pmdbdoc->patient_data.person.encounter.referdoc.name_full_formatted), 3)	
+	, primary_phy		= trim(substring(1, 18, pmdbdoc->patient_data.person.pcp.name_full_formatted), 3)
+	
+	; line 10
+	, admit_diag		= trim(substring(1, 33, pmdbdoc_2->diagnosis_disp), 3)
+	, med_comment		= trim(substring(1, 31, pmdbdoc->patient_data.person.encounter.comment_01.long_text), 3)
+	
+	; line 13
+	, fin_class			= trim(substring(1, 2, pmdbdoc_2->financial_class_disp), 3)
+	
+	; line 22
+	, employee_name		= trim(substring(1, 50, pmdbdoc->patient_data.person.encounter.reg_prsnl_name_full), 3)
 	
 from
-	OUTPUT_DEST od
-
-	, (dummyt d with seq = 1)
+	dummyt d
 	
 plan d
-
-join od
-where
-	od.output_dest_cd = request->destination[1].output_dest_cd
  
 detail
-	; line 1
+	; line 0
 	col 0	output_dest_name, ":", output_dest_name, ":", form_name, ",1"
 	col 64	print_dt_tm
 	row + 1
 	
-	; line 2
-;	col 0	"Line 2"
-	col 0	" ", patient_name
-	col 31	gender, " ", gender_desc
-	col 40	birth_dt, " ", age
+	; line 1
+	col 1	patient_name
+	col 31	gender
+	col 33	gender_desc
+	col 40	birth_dt
+	col 49	age
 	col 54	ssn
 	col 67	cmrn
 	row + 1
 	
+	; line 2
+;;	col 0	address1
+;;	col 50	city
+;;	col 60	state
+;;	col 63	zipcode
+	row + 1
+	
 	; line 3
-;	col 0	"Line 3"
-	col 0	address1
-	col 25	address2
-	col 50	city, ",", state, " ", zipcode
+	col 0	mrn
+	col 10	phone
 	row + 1
 	
 	; line 4
-	col 0	"Line 4"
+	col 31	language
 	row + 1
 	
 	; line 5
-	col 0	"Line 5"
+	col 0	fin
+	col 13	enc_type
+	col 15	loc_facility
+	col 17	admit_dt
+	col 26	admit_tm
+	col 35	med_svc_cd
+	col 39	med_svc_desc
 	row + 1
 	
 	; line 6
-	col 0	"Line 6"
+	col 0	rm_bed
+	col 16	nurse_unit
 	row + 1
 	
 	; line 7
-	col 0	"Line 7"
 	row + 1
 	
 	; line 8
-	col 0	"Line 8"
 	row + 1
 	
 	; line 9
-	col 0	"Line 9"
+	col 0	admit_phy
+	col 19	attend_phy
+;	col 38	refer_phy
+	col 57	primary_phy
 	row + 1
 	
 	; line 10
-	col 0	"Line 10"
+	col 0	admit_diag
+	col 34	med_comment
 	row + 1
 	
 	; line 11
-	col 0	"Line 11"
 	row + 1
 	
 	; line 12
-	col 0	"Line 12"
 	row + 1
 	
 	; line 13
-	col 0	"Line 13"
+	col 0	fin_class
 	row + 1
 	
 	; line 14
-	col 0	"Line 14"
 	row + 1
 	
 	; line 15
-	col 0	"Line 15"
 	row + 1
 	
 	; line 16
-	col 0	"Line 16"
 	row + 1
 	
 	; line 17
-	col 0	"Line 17"
 	row + 1
 	
 	; line 18
-	col 0	"Line 18"
 	row + 1
 	
 	; line 19
-	col 0	"Line 19"
 	row + 1
 	
 	; line 20
-	col 0	"Line 20"
 	row + 1
 	
 	; line 21
-	col 0	"Line 21"
 	row + 1
 	
 	; line 22
-	col 0	"Line 22"
+	col 0	employee_name
 	row + 1
 	
 	; line 23
-	col 0	"Line 23"
 	row + 1
 	
 	; line 24
-	col 0	"Line 24"
 	row + 1
 	
 	; line 25
-	col 0	"Line 25"
 	row + 1
 	
 	; line 26
-	col 0	"Line 26"
 	row + 1
 	
 	; line 27
-	col 0	"Line 27"
-	row + 1
-	
-	; line 28
 	col 0	ff = char(12), ff
  
-;with nocounter
-
 with nocounter, nullreport, pcformat (^"^, ^,^, 1), format = stream, format, landscape, compress, maxcol = 80
  
   
 ; send file to print queue
-;if (validate(request->batch_selection) = 1 or $output_file = 1)
-;	set cmd = build2("lpr -P ", output_var, " ", temppath_var)
-;	set len = size(trim(cmd))
-; 
-;	call dcl(cmd, len, stat)
-;	call echo(build2(cmd, " : ", stat))
-;endif
+set cmd = build2("lpr -P ", pmdbdoc_2->printer_name, " ", temppath2_var)
+set len = size(trim(cmd))
+ 
+call dcl(cmd, len, stat)
+call echo(build2(cmd, " : ", stat))
 
  
 /**************************************************************
 ; DVDev DEFINED SUBROUTINES
 **************************************************************/
+
+declare GetOutboundAlias(value = f8) = vc
+
+subroutine GetOutboundAlias(value)
+
+	declare outval = vc with noconstant("")
+
+    select into "NL:"
+    from
+    	CODE_VALUE_OUTBOUND cvo
+    where
+    	cvo.contributor_source_cd = covenant_var
+    	and cvo.code_value = value
+    	
+    detail
+    	outval = cvo.alias
+    	
+    with nocounter
+    
+    return(trim(outval, 3))
+
+end
+
+
+declare GetCodeValueAlias(value = f8) = vc
+
+subroutine GetCodeValueAlias(value)
+
+	declare outval = vc with noconstant("")
+
+    select into "NL:"
+    from
+    	CODE_VALUE_ALIAS cva
+    where
+    	cva.contributor_source_cd = covenant_var
+    	and cva.code_value = value
+    	
+    detail
+    	outval = cva.alias
+    	
+    with nocounter
+    
+    return(trim(outval, 3))
+
+end
+
+
+declare GetDiagnosisDisplay(value = f8) = vc
+
+subroutine GetDiagnosisDisplay(value)
+
+	declare outval = vc with noconstant("")
+
+    select into "NL:"
+    from
+    	DIAGNOSIS d
+    where
+    	d.diagnosis_id = value
+    	
+    detail
+    	outval = d.diagnosis_display
+    	
+    with nocounter
+    
+    return(trim(outval, 3))
+
+end
+
  
 end
 go
