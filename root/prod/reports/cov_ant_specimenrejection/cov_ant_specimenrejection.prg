@@ -22,6 +22,7 @@
 *  	Revision #  Mod Date    Developer           Comment
 *  	----------- ----------  ------------------	---------------------------
 *	001			12/2020		Dan Herren			CR 9226
+	002			09/2022		Dan Herren			CR 13597 (djherren_13597.prg)
 *
 **************************************************************************************/
  
@@ -32,11 +33,11 @@ drop program cov_ant_SpecimenRejection go
 create program cov_ant_SpecimenRejection
  
 prompt
-	"Output to File/Printer/MINE" = "MINE"                  ;* Enter or select the printer or file name to send this report to.
+	"Output to File/Printer/MINE" = "MINE"             ;* Enter or select the printer or file name to send this report to.
 	, "Select Status Type" = 0
 	, "Select Facility" = 0
 	, "Select Nursing Unit" = VALUE(1.0)
-	, "Select Ordering Physician" = VALUE(1.0           )
+	, "Select Ordering Physician" = VALUE(0.0)
 	, "Select Cancel Reason" = VALUE(1.0           )
 	, "Select the Begin Date" = "SYSDATE"
 	, "Select the End Date" = "SYSDATE"
@@ -71,6 +72,7 @@ record a
 	2	col_loc			= 	vc ;001
 	2	collevent		=	vc
 	2	colleventdttm	=	vc
+	2 	cancelcomment	=	vc ;002
 	2	viewflg			=	i2
 )
  
@@ -82,29 +84,30 @@ record a
 /**************************************************************
 ; DVDev DECLARED VARIABLES
 **************************************************************/
-declare EXPSZ			= i4 with constant(200), protect
-declare EXPSTART 		= i4 with noconstant(1), protect
-declare EXPSTOP			= i4 with noconstant(200), protect
-declare ACTSZ			= i4 with noconstant(0), protect
-declare EXPTOT			= i4 with noconstant(0), protect
-declare INDX			= i4 with noconstant(0), protect
+declare EXPSZ				= i4 with constant(200), protect
+declare EXPSTART 			= i4 with noconstant(1), protect
+declare EXPSTOP				= i4 with noconstant(200), protect
+declare ACTSZ				= i4 with noconstant(0), protect
+declare EXPTOT				= i4 with noconstant(0), protect
+declare INDX				= i4 with noconstant(0), protect
 ;
-declare FIN_VAR     	= f8 with constant(uar_get_code_by('DISPLAYKEY',  319, 'FINNBR')),protect
-declare CANCEL_VAR 		= f8 with constant(uar_get_code_by('DISPLAYKEY',14281, 'CANCELED')), protect
-declare MODRECOL_VAR	= f8 with constant(uar_get_code_by('DISPLAYKEY', 2061, 'MODIFYRECOLLECT')), protect
-declare ACTCANCEL_VAR	= f8 with constant(uar_get_code_by('DISPLAYKEY', 6003, 'CANCEL')), protect
-declare ORDER_VAR 		= f8 with constant(uar_get_code_by('DISPLAYKEY', 6003, 'ORDER')), protect
-declare COLLECTED_VAR	= f8 with constant(uar_get_code_by('DISPLAYKEY', 2061, 'COLLECTED')), protect ;001
-declare MODIFY_VAR 		= f8 with constant(uar_get_code_by('DISPLAYKEY', 6003, 'MODIFY')), protect
-declare GENLAB_VAR 		= f8 with constant(uar_get_code_by('DISPLAYKEY',  106, 'GENERALLAB')), protect
-declare MICRO_VAR 		= f8 with constant(uar_get_code_by('DISPLAYKEY',  106, 'MICRO')), protect
-declare BLOODBANK_VAR 	= f8 with constant(uar_get_code_by('DISPLAYKEY',  106, 'BLOODBANK')), protect
-declare INDICES_VAR 	= f8 with constant(uar_get_code_by('DISPLAYKEY',  200, 'INDICES')), protect
-declare AUTODIFF_VAR 	= f8 with constant(uar_get_code_by('DISPLAYKEY',  200, 'AUTOMATEDDIFF')), protect
+declare FIN_VAR     		= f8 with constant(uar_get_code_by('DISPLAYKEY',  319, 'FINNBR')),protect
+declare CANCEL_VAR 			= f8 with constant(uar_get_code_by('DISPLAYKEY',14281, 'CANCELED')), protect
+declare CANCEL_COMMENT_VAR	= f8 with constant(uar_get_code_by('DISPLAYKEY',   14, 'CANCELREASON')), protect
+declare MODRECOL_VAR		= f8 with constant(uar_get_code_by('DISPLAYKEY', 2061, 'MODIFYRECOLLECT')), protect
+declare ACTCANCEL_VAR		= f8 with constant(uar_get_code_by('DISPLAYKEY', 6003, 'CANCEL')), protect
+declare ORDER_VAR 			= f8 with constant(uar_get_code_by('DISPLAYKEY', 6003, 'ORDER')), protect
+declare COLLECTED_VAR		= f8 with constant(uar_get_code_by('DISPLAYKEY', 2061, 'COLLECTED')), protect ;001
+declare MODIFY_VAR 			= f8 with constant(uar_get_code_by('DISPLAYKEY', 6003, 'MODIFY')), protect
+declare GENLAB_VAR 			= f8 with constant(uar_get_code_by('DISPLAYKEY',  106, 'GENERALLAB')), protect
+declare MICRO_VAR 			= f8 with constant(uar_get_code_by('DISPLAYKEY',  106, 'MICRO')), protect
+declare BLOODBANK_VAR 		= f8 with constant(uar_get_code_by('DISPLAYKEY',  106, 'BLOODBANK')), protect
+declare INDICES_VAR 		= f8 with constant(uar_get_code_by('DISPLAYKEY',  200, 'INDICES')), protect
+declare AUTODIFF_VAR 		= f8 with constant(uar_get_code_by('DISPLAYKEY',  200, 'AUTOMATEDDIFF')), protect
 ;
-declare UNIT_VAR		= vc with noconstant(fillstring(2,' ')), protect
-declare PHYS_VAR		= vc with noconstant(fillstring(2,' ')), protect
-declare CANCELRSN_VAR	= vc with noconstant(fillstring(2,' ')), protect
+declare UNIT_VAR			= vc with noconstant(fillstring(2,' ')), protect
+declare PHYS_VAR			= vc with noconstant(fillstring(2,' ')), protect
+declare CANCELRSN_VAR		= vc with noconstant(fillstring(2,' ')), protect
  
  
 /**************************************************************
@@ -143,7 +146,7 @@ endif
 ;Ordering Physician
 if (substring(1,1,reflect(parameter(parameter2($ORDPHYS_PMPT),0)))="L")
 	set PHYS_VAR = "IN"
-elseif (parameter(parameter2($ORDPHYS_PMPT),1) = 1.0)
+elseif (parameter(parameter2($ORDPHYS_PMPT),1) = 0.0)
 	set PHYS_VAR = "!="
 else
 	set PHYS_VAR = "="
@@ -546,6 +549,7 @@ foot report
  
 with nocounter
  
+ 
 ;begin 001
 ;===================================================================
 ; GET COLLECTION LOCATION
@@ -610,6 +614,65 @@ foot report
 with nocounter
 ;end 001
  
+ 
+;begin 002
+;===================================================================
+; GET CANCELLED COMMENTS
+  call echo ('Get Cancelled Comments')
+;===================================================================
+if ($STATUSTYPE_PMPT = 0) ;CANCELED
+	;set up expand
+	set INDX = 0
+	set ACTSZ = a->rec_cnt
+	set EXPTOT = ACTSZ + (EXPSZ - mod(ACTSZ,EXPSZ))
+ 
+	;call echo(build('ACTSZ :', ACTSZ))
+	;call echo(build('EXPSZ :', EXPSZ))
+	;call echo(build('EXPTOT :', EXPTOT))
+ 
+	set stat = alterlist(a->qual, EXPTOT)
+ 
+	for (idx = ACTSZ+1 to EXPTOT)
+		set a->qual[idx].orderid = a->qual[ACTSZ].orderid
+	endfor
+ 
+	select into 'nl:'
+	from (DUMMYT 		d with seq = EXPTOT/EXPSZ)
+		 ,ORDER_COMMENT oc
+		 ,LONG_TEXT 	lt
+ 
+	plan d
+		where assign(EXPSTART,evaluate(d.seq,1,1,EXPSTART+EXPSZ))
+		and assign(EXPSTOP,EXPSTART+(EXPSZ-1))
+ 
+	join oc
+		where expand(INDX,EXPSTART,EXPSTOP,oc.order_id,a->qual[INDX].orderid)
+		and oc.comment_type_cd = CANCEL_COMMENT_VAR ;48
+ 
+	join lt
+		where lt.long_text_id = oc.long_text_id
+		and lt.active_ind = 1
+ 
+	head report
+		pos = 0
+		idx = 0
+ 
+	head oc.order_id
+		pos = locateval(idx,1,a->rec_cnt,oc.order_id,a->qual[idx].orderid)
+ 
+		a->qual[pos].cancelcomment = replace(replace(lt.long_text, char(13), " ", 0), char(10), " ", 0)
+ 
+	foot oc.order_id
+		pos = 0
+		idx = 0
+ 
+	foot report
+		stat = alterlist(a->qual, ACTSZ)
+ 
+	with nocounter
+endif
+;end 002
+ 
 ;===================================================================
 ; REPORT OUTPUT
 ;===================================================================
@@ -626,7 +689,8 @@ if ($STATUSTYPE_PMPT = 0) ;CANCELLED
 			CollectedBy 		= substring(1,30,a->qual[d.seq].collprsnl),
 			CollectedDateTime	= substring(1,30,a->qual[d.seq].colldttm),
 			CancelledDateTime 	= substring(1,30,a->qual[d.seq].canceldttm),
-			CancelledReason 	= substring(1,50,a->qual[d.seq].cancelrsn)
+			CancelledReason 	= substring(1,50,a->qual[d.seq].cancelrsn),
+			CancelComment		= substring(1,500,a->qual[d.seq].cancelcomment)
  
 		from (DUMMYT d with seq = a->rec_cnt)
  

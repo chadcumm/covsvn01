@@ -339,10 +339,10 @@ from ENCOUNTER e
  
 	,(left join PRSNL_GROUP pg on pg.prsnl_group_id = sc.surg_specialty_id
 		and pg.active_ind = 1)
-
+ 
 	,(inner join CODE_VALUE cv on cv.code_value = ih.manufacturer_cd
 		and parser(OPR_MANUFACTURER_VAR))
-
+ 
 where operator(e.loc_facility_cd, OPR_FAC_VAR, $FACILITY_PMPT)
 	;	and e.loc_facility_cd =  2553765467.00 ;2552503645 ;2552503645 ; 21250403
 		and e.active_ind = 1
@@ -464,42 +464,42 @@ if (output->encntr_cnt > 0)
  
 	select distinct into value ($OUTDEV)
 		 patient_name  				= substring(1,50,output->list[d.seq].patient_name)
-;		,fin		   				= substring(1,20,output->list[d.seq].fin)
+		,fin		   				= substring(1,20,output->list[d.seq].fin)
 		,nurse_unit					= substring(1,50,output->list[d.seq].nurse_unit)
 		,implant_type				= substring(1,50,output->list[d.seq].implant_type)
 		,mfr_catalog_number			= substring(1,50,output->list[d.seq].catalog_number)
 		,item_number				= substring(1,50,output->list[d.seq].item_number)
 		,item_description			= substring(1,50,output->list[d.seq].item_description)
-;		,implant_item_ft			= substring(1,255,output->list[d.seq].implant_item_ft)
-;		,implant_data_source		= substring(1,50,output->list[d.seq].implant_data_source)
+		,implant_item_ft			= substring(1,255,output->list[d.seq].implant_item_ft)
+		,implant_data_source		= substring(1,50,output->list[d.seq].implant_data_source)
 		,lot_number					= substring(1,255,output->list[d.seq].lot_number)
 		,serial_number				= substring(1,255,output->list[d.seq].serial_number)
-;		,implanted_quantity			= output->list[d.seq].implanted_quantity
-;		,body_site					= substring(1,50,output->list[d.seq].body_site)
-;		,biological_imp_src			= substring(1,50,output->list[d.seq].biological_imp_src)
-;		,non_biological_imp_type	= substring(1,50,output->list[d.seq].non_biological_imp_type)
-;		,donor_number_txt			= substring(1,50,output->list[d.seq].donor_number_txt)
-;		,implanted_facility			= substring(1,50,output->list[d.seq].implanted_facility)
-;		,implanted_facility_ft		= substring(1,255,output->list[d.seq].implanted_facility_ft)
-;		,implanted_dt_tm			= format(output->list[d.seq].implanted_dt_tm, "mm/dd/yyyy hh:mm;;q")
-;		,explant_dt_tm				= format(output->list[d.seq].explant_dt_tm, "mm/dd/yyyy hh:mm;;q")
-;		,explant_reason				= substring(1,50,output->list[d.seq].explant_reason)
-;		,udi_txt					= substring(1,255,output->list[d.seq].udi_txt)
-;		,updt_dt_tm					= format(output->list[d.seq].updt_dt_tm, "mm/dd/yyyy hh:mm;;q")
-;		,expiration_dt_tm			= format(output->list[d.seq].expiration_dt_tm, "mm/dd/yyyy hh:mm;;q")
-;		,gmdn_pt_name				= substring(1,50,output->list[d.seq].gmdn_pt_name)
-;		,manufactured_dt_tm			= format(output->list[d.seq].manufactured_dt_tm, "mm/dd/yyyy hh:mm;;q")
+		,implanted_quantity			= output->list[d.seq].implanted_quantity
+		,body_site					= substring(1,50,output->list[d.seq].body_site)
+		,biological_imp_src			= substring(1,50,output->list[d.seq].biological_imp_src)
+		,non_biological_imp_type	= substring(1,50,output->list[d.seq].non_biological_imp_type)
+		,donor_number_txt			= substring(1,50,output->list[d.seq].donor_number_txt)
+		,implanted_facility			= substring(1,50,output->list[d.seq].implanted_facility)
+		,implanted_facility_ft		= substring(1,255,output->list[d.seq].implanted_facility_ft)
+		,implanted_dt_tm			= format(output->list[d.seq].implanted_dt_tm, "mm/dd/yyyy hh:mm;;q")
+		,explant_dt_tm				= format(output->list[d.seq].explant_dt_tm, "mm/dd/yyyy hh:mm;;q")
+		,explant_reason				= substring(1,50,output->list[d.seq].explant_reason)
+		,udi_txt					= substring(1,255,output->list[d.seq].udi_txt)
+		,updt_dt_tm					= format(output->list[d.seq].updt_dt_tm, "mm/dd/yyyy hh:mm;;q")
+		,expiration_dt_tm			= format(output->list[d.seq].expiration_dt_tm, "mm/dd/yyyy hh:mm;;q")
+		,gmdn_pt_name				= substring(1,50,output->list[d.seq].gmdn_pt_name)
+		,manufactured_dt_tm			= format(output->list[d.seq].manufactured_dt_tm, "mm/dd/yyyy hh:mm;;q")
 		,manufacturer				= substring(1,50,output->list[d.seq].manufacturer)
 		,manufacturer_ft			= substring(1,255,output->list[d.seq].manufacturer_ft)
-;		,manufacturer_model_nbr_txt	= substring(1,255,output->list[d.seq].manufacturer_model_nbr_txt)
-;		,mr_classification			= substring(1,50,output->list[d.seq].mr_classification)
+		,manufacturer_model_nbr_txt	= substring(1,255,output->list[d.seq].manufacturer_model_nbr_txt)
+		,mr_classification			= substring(1,50,output->list[d.seq].mr_classification)
 		,facility      				= substring(1,50,output->list[d.seq].facility)
-;		,procedure					= substring(1,50,output->list[d.seq].procedure)
-;		,procedure_ft				= substring(1,255,output->list[d.seq].procedure_ft)
-;		,proc_text					= substring(1,255,output->list[d.seq].proc_text)
-;		,surg_case_nbr				= substring(1,50,output->list[d.seq].surg_case_nbr)
-;		,surgical_area				= substring(1,50,output->list[d.seq].surgical_area)
-;		,surgeon_prsnl				= substring(1,50,output->list[d.seq].surgeon_prsnl)
+		,procedure					= substring(1,50,output->list[d.seq].procedure)
+		,procedure_ft				= substring(1,255,output->list[d.seq].procedure_ft)
+		,proc_text					= substring(1,255,output->list[d.seq].proc_text)
+		,surg_case_nbr				= substring(1,50,output->list[d.seq].surg_case_nbr)
+		,surgical_area				= substring(1,50,output->list[d.seq].surgical_area)
+		,surgeon_prsnl				= substring(1,50,output->list[d.seq].surgeon_prsnl)
  
 ;;		,surgical_case_table		= substring(1,50,output->list[d.seq].surgical_case_table)
 ;;		,surgeon_specialty			= substring(1,50,output->list[d.seq].surgeon_specialty)
@@ -525,7 +525,7 @@ if (output->encntr_cnt > 0)
 ;;		,startdate_pmpt				= output->startdate
 ;;		,enddate_pmpt  				= output->enddate
 ;;		,encntr_cnt	   				= output->encntr_cnt
-		,implanted_dt_tm			= format(output->list[d.seq].implanted_dt_tm, "mm/dd/yyyy hh:mm;;q")
+;;		,implanted_dt_tm			= format(output->list[d.seq].implanted_dt_tm, "mm/dd/yyyy hh:mm;;q")
  
 	from
 		 (DUMMYT d  with seq = value(size(output->list,5)))

@@ -82,8 +82,9 @@ order by ema.module_name, emad.updt_dt_tm desc
 select ema.module_name, emad.*
 from eks_module_audit ema, eks_module_audit_det emad
 where ema.rec_id = emad.module_audit_id
-and emad.encntr_id = 128655117
-and ema.module_name = 'COV_DSCH_MEDREC_TSK'
+;and emad.encntr_id = 128655117
+and ema.module_name = 'COV_LH_STK_STATIN_DSCHMED'
+and ema.updt_dt_tm >= cnvtdatetime('25-OCT-2022 00:00:00')
 order by ema.module_name, emad.updt_dt_tm desc
  
  
@@ -98,7 +99,8 @@ select fin = ea.alias, patient_name = p.name_full_formatted
 ;, emad.template_type, ema.begin_dt_tm, emad.logging, ema.*, emad.*
 from eks_module_audit_det emad, eks_module_audit ema , encntr_alias ea, prsnl pr, person p
 where emad.module_audit_id = ema.rec_id
-and ea.encntr_id = emad.encntr_id and ea.encntr_alias_type_cd = 1077
+and ea.encntr_id = emad.encntr_id 
+and ea.encntr_alias_type_cd = 1077
 and pr.person_id = emad.updt_id
 and p.person_id = emad.person_id
 ;and emad.encntr_id = 131990841.00
@@ -114,9 +116,7 @@ with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), ua
 
 select fin = ea.alias, patient_name = p.name_full_formatted
 , user_received_alert = pr.name_full_formatted, alert_dt = ema.begin_dt_tm ';;q'
-, ema.module_name, emad.logging,emad.template_name,emad.template_alias, emad.template_return
-;,emad.encntr_id,ema.module_name,emad.template_name,emad.template_alias, emad.template_return, emad.template_number
-;, emad.template_type, ema.begin_dt_tm, emad.logging, ema.*, emad.*
+, ema.module_name;, emad.logging,emad.template_name
 from eks_module_audit_det emad, eks_module_audit ema , encntr_alias ea, prsnl pr, person p
 where emad.module_audit_id = ema.rec_id
 and ea.encntr_id = emad.encntr_id and ea.encntr_alias_type_cd = 1077
@@ -124,13 +124,55 @@ and pr.person_id = emad.updt_id
 and p.person_id = emad.person_id
 ;and emad.encntr_id = 131990841.00
 and ema.module_name = 'LH_STK_ANTICOA_DSCHMED_14'
-and emad.template_number = 8 
+;and emad.template_number = 8 
+;and emad.template_return = 100
+and emad.template_type = 'A'
 and emad.template_return = 100
 and ema.updt_dt_tm >= cnvtdatetime('01-AUG-2022 00:00:00')
+order by ema.begin_dt_tm
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), uar_code(d,1);, time = 360;, maxrow = 10000
+ 
+
+;STATIN ALERT
+select 
+;fin = ea.alias, patient_name = p.name_full_formatted, 
+emad.encntr_id, alert_dt = ema.begin_dt_tm ';;q'
+;, user_received_alert = pr.name_full_formatted
+, ema.module_name, emad.logging,emad.template_name,emad.template_alias, emad.template_return, emad.template_number, ema.*, emad.*
+from eks_module_audit_det emad, eks_module_audit ema; , encntr_alias ea, prsnl pr, person p
+where emad.module_audit_id = ema.rec_id
+;and ea.encntr_id = emad.encntr_id and ea.encntr_alias_type_cd = 1077
+;and pr.person_id = emad.updt_id
+;and p.person_id = emad.person_id
+;and emad.encntr_id = 132229318
+and ema.module_name = 'COV_LH_STK_STATIN_DSCHMED'
+and emad.template_type = 'A'
+and emad.template_return = 100
+;and emad.template_number = 25
+;and emad.template_return = 100
+and ema.updt_dt_tm >= cnvtdatetime('01-OCT-2022 00:00:00')
 order by ema.module_name
 ;order by emad.updt_dt_tm, emad.template_number asc
 with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), uar_code(d,1);, time = 360;, maxrow = 10000
- 
+
+
+select 
+fin = ea.alias, patient_name = p.name_full_formatted, alert_dt = ema.begin_dt_tm ';;q'
+, user_received_alert = pr.name_full_formatted, ema.module_name;, emad.logging
+;,emad.template_name,emad.template_alias, emad.template_return, emad.template_number, ema.*, emad.*
+from eks_module_audit_det emad, eks_module_audit ema , encntr_alias ea, prsnl pr, person p
+where emad.module_audit_id = ema.rec_id
+and ea.encntr_id = emad.encntr_id and ea.encntr_alias_type_cd = 1077
+and pr.person_id = emad.updt_id
+and p.person_id = emad.person_id
+;and emad.encntr_id = 132229318
+and ema.module_name = 'COV_LH_STK_STATIN_DSCHMED'
+and emad.template_type = 'A'
+and emad.template_return = 100
+and ema.updt_dt_tm >= cnvtdatetime('01-AUG-2022 00:00:00')
+order by ema.begin_dt_tm
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), uar_code(d,1);, time = 360;, maxrow = 10000
+
 
 ;-------------------------------------------------------------------------------------
 

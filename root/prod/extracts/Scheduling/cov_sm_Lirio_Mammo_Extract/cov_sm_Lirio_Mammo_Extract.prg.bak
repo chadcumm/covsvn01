@@ -56,6 +56,7 @@ declare end_year				= i4 with constant(datetimepart(cnvtagedatetime(min_age, 0, 
 declare start_datetime			= dq8 with constant(datetimefind(cnvtlookbehind("1,Y", cnvtdatetime(curdate, curtime)),'Y','B','B'))
 
 declare cmrn_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 4, "COMMUNITYMEDICALRECORDNUMBER"))
+declare messaging_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 4, "MESSAGING"))
 declare in_error_var			= f8 with constant(uar_get_code_by("MEANING", 8, "IN ERROR"))
 declare inerrnomut_var			= f8 with constant(uar_get_code_by("MEANING", 8, "INERRNOMUT"))
 declare inerrnoview_var			= f8 with constant(uar_get_code_by("MEANING", 8, "INERRNOVIEW"))
@@ -196,13 +197,18 @@ from
 		and pa.person_alias_type_cd = cmrn_var
 		and pa.active_ind = 1)
 	
+	, (left join PERSON_ALIAS pa2 on pa2.person_id = p.person_id
+		and pa2.person_alias_type_cd = messaging_var
+		and pa2.active_ind = 1)
+	
 	, (inner join ADDRESS a on a.parent_entity_id = p.person_id
 		and a.parent_entity_name = "PERSON"
 		and a.address_type_cd = addr_home_var
-		and a.zipcode_key in (
-			"37772", "37902", "37909", "37916", "37919", "37921",
-			"37922", "37923", "37931", "37932", "37934"
-		)
+		and a.zipcode_key in ("37932")
+;		and a.zipcode_key in (
+;			"37772", "37902", "37909", "37916", "37919", "37921",
+;			"37922", "37923", "37931", "37932", "37934"
+;		)
 		and a.active_ind = 1)
 		
 	, (inner join PERSON_PLAN_RELTN ppr on ppr.person_id = p.person_id
@@ -221,7 +227,8 @@ from
 		and ppr.active_ind = 1)
 		
 where
-	year(p.birth_dt_tm) between start_year and end_year
+	p.name_last_key not in ("ZZZ*")
+	and year(p.birth_dt_tm) between start_year and end_year
 	and p.deceased_cd in (no_var, 0.0)
 	and p.active_ind = 1
 	
@@ -258,6 +265,7 @@ head p.person_id
 	patient_data->list[cnt].language			= uar_get_code_display(p.language_cd)
 	
 	patient_data->list[cnt].cmrn				= cnvtalias(pa.alias, pa.alias_pool_cd)
+	patient_data->list[cnt].portal_username		= evaluate(textlen(pa2.alias), 0, "N", "Y")
 	
 	patient_data->list[cnt].street_addr			= a.street_addr
 	patient_data->list[cnt].street_addr2		= a.street_addr2
@@ -290,6 +298,7 @@ where
 	and a.parent_entity_name = "PERSON"
 	and a.address_type_cd = addr_email_var
 	and a.street_addr in ("*@*.*")
+	and a.street_addr not in ("*@.*")
 	and a.active_ind = 1
 
 order by
@@ -568,11 +577,11 @@ plan d1
  
 ; populate patient_data record structure
 detail	
-	patient_data->list[d1.seq].channel_pref			= "Email"
-	patient_data->list[d1.seq].portal_username		= "N"
+	patient_data->list[d1.seq].channel_pref			= " "
+	patient_data->list[d1.seq].portal_username		= " "
 	patient_data->list[d1.seq].optout_ind			= 0
-	patient_data->list[d1.seq].rltn_ind				= "Established"
-	patient_data->list[d1.seq].consent_ind			= 1
+	patient_data->list[d1.seq].rltn_ind				= " "
+	patient_data->list[d1.seq].consent_ind			= 0
 	patient_data->list[d1.seq].crm_id				= " "
  
 with nocounter, expand = 1, time = 300
@@ -610,7 +619,7 @@ into value(output_var)
 									
 	, language					= trim(patient_data->list[d1.seq].language, 3)
 	, address1					= trim(patient_data->list[d1.seq].street_addr, 3)
-	, address1					= trim(patient_data->list[d1.seq].street_addr2, 3)
+	, address2					= trim(patient_data->list[d1.seq].street_addr2, 3)
 	, city						= trim(patient_data->list[d1.seq].city, 3)
 	, state						= trim(patient_data->list[d1.seq].state, 3)
 	, zip						= trim(patient_data->list[d1.seq].zipcode, 3)
@@ -622,10 +631,10 @@ into value(output_var)
 	, channel_preference		= trim(patient_data->list[d1.seq].channel_pref, 3)
 	, primary_care_provider		= trim( patient_data->list[d1.seq].pcp_npi, 3)
 	, portal_username			= trim(patient_data->list[d1.seq].portal_username, 3)
-	, optout_indicator			= cnvtbool(patient_data->list[d1.seq].optout_ind)
+	, optout_indicator			= " " ;cnvtbool(patient_data->list[d1.seq].optout_ind)
 	, deceased_indicator		= cnvtbool(patient_data->list[d1.seq].deceased)
 	, relationship_indicator	= trim(patient_data->list[d1.seq].rltn_ind, 3)
-	, consent_indicator			= cnvtbool(patient_data->list[d1.seq].consent_ind)
+	, consent_indicator			= " " ;cnvtbool(patient_data->list[d1.seq].consent_ind)
 	, crm_id					= trim(patient_data->list[d1.seq].crm_id, 3)
 	
 	; TODO: TESTING

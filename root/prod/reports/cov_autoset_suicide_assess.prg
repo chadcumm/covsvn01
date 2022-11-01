@@ -114,7 +114,7 @@ if(work_location_var = 'All Facilities (with BH)' and position_var = 'BH - Nurse
 	 	or position_var = 'Nurse - Supervisor' or position_var = 'IT - PowerChart'
 	 	or position_var = 'IT - Perioperative')
 	where l.location_cd in(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00
-		,2552503649.00, 2553765475.00, 2553765531.00)
+		,2552503649.00, 2553765475.00, 2553765531.00, 2552503657.00)
 ;MHHS
 elseif(work_location_var = 'MHHS Senior BH Unit' and position_var = 'BH - Nurse*' or position_var = 'DBA'
 		or position_var = 'BH - Family Nurse Practitioner' or position_var = 'BH - Ambulatory RN/LPN'
@@ -122,7 +122,7 @@ elseif(work_location_var = 'MHHS Senior BH Unit' and position_var = 'BH - Nurse*
 	 	or position_var = 'Nurse - Supervisor' or position_var = 'IT - PowerChart'
 	 	or position_var = 'IT - Perioperative')
 	where l.location_cd in(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00
-				  ,2552503649.00,2553765475)
+				  ,2552503649.00,2553765475,2552503657.00)
 ;PW
 elseif(work_location_var = 'PW Senior BH Unit' and position_var = 'BH - Nurse*' or position_var = 'DBA'
 		or position_var = 'BH - Family Nurse Practitioner' or position_var = 'BH - Ambulatory RN/LPN'
@@ -130,7 +130,7 @@ elseif(work_location_var = 'PW Senior BH Unit' and position_var = 'BH - Nurse*' 
 	 	or position_var = 'Nurse - Supervisor' or position_var = 'IT - PowerChart'
 	 	or position_var = 'IT - Perioperative')
 	where l.location_cd in(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00
-				  ,2552503649.00,2553765531.00)
+				  ,2552503649.00,2553765531.00,2552503657.00)
 ;All location without BH
 elseif(work_location_var = 'All Facilities (no BH)' or position_var != 'BH - Nurse*' or position_var != 'DBA'
 		or position_var != 'BH - Family Nurse Practitioner'  or position_var != 'BH - Ambulatory RN/LPN'
@@ -138,7 +138,7 @@ elseif(work_location_var = 'All Facilities (no BH)' or position_var != 'BH - Nur
 	 	or position_var != 'Nurse - Supervisor' or position_var != 'IT - PowerChart'
 	 	or position_var != 'IT - Perioperative')
 	where l.location_cd in(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00
-				,2552503649.00)
+				,2552503649.00, 2552503657.00)
 endif
  
 into 'nl:'
