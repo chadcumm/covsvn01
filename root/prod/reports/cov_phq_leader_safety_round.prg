@@ -19,7 +19,9 @@
 Mod Date   Developer			Comment
 --------------------------------------------------------------------------------------------------------------------
 12/16/21   Geetha  CR#11742 	Add admission form to the report
-03/09/22   Geetha             Fixed the Detailed layout error as this was left out on some of the record stu.fields.  
+03/09/22   Geetha             Fixed the Detailed layout error as this was left out on some of the record stu.fields.
+11/01/22   Geetha  CR#13041   CMC added
+  
 --------------------------------------------------------------------------------------------------------------------*/
  
  

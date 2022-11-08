@@ -18,7 +18,8 @@
  
 Mod Date	Developer		     Comment
 ----------	---------------- ------------------------------------------
-08/09/21    Geetha	 PNRC & Peninisula Locations added to the prompt
+08/09/21    Geetha	PNRC & Peninisula Locations added to the prompt
+11/01/22    Geetha      CR# 13041 - CMC added
 ******************************************************************************/
  
 drop program cov_autoset_acute_and_sbu:dba go
@@ -119,7 +120,7 @@ if(work_location_var = 'All Facilities (with BH)' and position_var = 'BH - Nurse
 	 	or position_var = 'Nurse - Supervisor' or position_var = 'IT - PowerChart' 
 	 	or position_var = 'BH - Discharge Planner Supervisor' )
 	where l.location_cd in(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00
-		,2552503649.00, 2553765571, 2553765475.00, 2553765531.00, 2553765579.00)
+		,2552503649.00, 2553765571, 2553765475.00, 2553765531.00, 2553765579.00,2552503657.00)
 ;MHHS
 elseif(work_location_var = 'MHHS Senior BH Unit' and position_var = 'BH - Nurse*' or position_var = 'DBA'
 		or position_var = 'BH - Family Nurse Practitioner' or position_var = 'BH - Ambulatory RN/LPN'
@@ -128,7 +129,7 @@ elseif(work_location_var = 'MHHS Senior BH Unit' and position_var = 'BH - Nurse*
 	 	or position_var = 'Nurse - Supervisor' or position_var = 'IT - PowerChart'
 	 	or position_var = 'BH - Discharge Planner Supervisor')
 	where l.location_cd in(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00
-				  ,2552503649.00,2553765475)
+				  ,2552503649.00,2553765475,2552503657.00)
 ;PW
 elseif(work_location_var = 'PW Senior BH Unit' and position_var = 'BH - Nurse*' or position_var = 'DBA'
 		or position_var = 'BH - Family Nurse Practitioner' or position_var = 'BH - Ambulatory RN/LPN'
@@ -137,7 +138,7 @@ elseif(work_location_var = 'PW Senior BH Unit' and position_var = 'BH - Nurse*' 
 	 	or position_var = 'Nurse - Supervisor' or position_var = 'IT - PowerChart'
 	 	or position_var = 'BH - Discharge Planner Supervisor')
 	where l.location_cd in(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00
-				  ,2552503649.00,2553765531.00)
+				  ,2552503649.00,2553765531.00,2552503657.00)
 				  
 ;Peninsula (REMOVED - couldn't find users with only Peninsula BH access)
 /*elseif(work_location_var =  Senior BH Unit' and position_var = 'BH - Nurse*' or position_var = 'DBA'
@@ -157,7 +158,7 @@ elseif(work_location_var = 'All Facilities (no BH)' or position_var != 'BH - Nur
 	 	or position_var != 'Nurse - Supervisor' or position_var != 'IT - PowerChart'
 	 	or position_var = 'BH - Discharge Planner Supervisor')
 	where l.location_cd in(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00
-				,2552503649.00, 2553765571)
+				,2552503649.00, 2553765571,2552503657.00)
 endif
  
 into 'nl:'

@@ -16,8 +16,9 @@
   GENERATED MODIFICATION CONTROL LOG
 ******************************************************************************
  
-Mod Date	Developer			     Comment
-----------	--------------------	------------------------------------------
+Mod Date	Developer		Comment
+------------------------------------------------------------------------------
+11/02/22   Geetha     CR#13889  Add Glucose Lvl to the feed
  
 ******************************************************************************/
  
@@ -40,11 +41,13 @@ declare fin_var 	 = f8 with constant(uar_get_code_by("MEANING",319,"FIN NBR")),p
 declare cmrn_var   = f8 with constant(uar_get_code_by("MEANING",4,"CMRN")),protect
 declare mrn_var    = f8 with constant(uar_get_code_by("MEANING",319,"MRN")),protect
  
-declare glucose_poc_var   = f8 with constant(20136462.00), protect
-declare glucose_art_var   = f8 with constant(2556636107.00), protect
-declare blood_glucose_var = f8 with constant(2569900609.00), protect
-declare ptt_var           = f8 with constant(21705254.00), protect
- 
+
+declare glucose_poc_var    = f8 with constant(value(uar_get_code_by("DISPLAY", 72,"Glucose POC"))),protect
+declare glucose_art_var    = f8 with constant(value(uar_get_code_by("DISPLAY", 72,"Glucose Art"))),protect
+declare blood_glucose_var  = f8 with constant(value(uar_get_code_by("DISPLAY", 72,"Blood Glucose"))),protect
+declare glucose_lvl_var    = f8 with constant(value(uar_get_code_by("DISPLAY", 72,"Glucose Lvl"))),protect  
+declare ptt_var            = f8 with constant(value(uar_get_code_by("DISPLAY", 72,"Partial Thromboplastin Time"))),protect
+
 declare lab_parser_var = vc
 declare result_parser_var = vc
  
@@ -66,7 +69,7 @@ declare astream_filepath_var = vc with noconstant("/cerner/w_custom/p0665_cust/t
 if(validate(request->batch_selection) = 1)
  	set iOpsInd = 1
 endif
-
+ 
  
 /**************************************************************
 ; DVDev Start Coding
@@ -78,8 +81,10 @@ Record gluco(
 		2 mrn = vc
 		2 cmrn = vc
 		2 patient_name = vc
+		2 measure_name = vc
 		2 result_value = vc
 		2 result_unit = vc
+		2 result_dt = vc
 		2 verified_dt = vc
 		2 event_id = f8
 )
@@ -87,7 +92,7 @@ Record gluco(
 ;------------------------------------------------------------------------------------------------------
 ;Get patient population for Glucose
  
-select into 'NL:'
+select into $outdev
  
 facility = uar_get_code_display(e.loc_facility_cd)
 , fin = ea.alias
@@ -96,6 +101,7 @@ facility = uar_get_code_display(e.loc_facility_cd)
 , mrn = ea1.alias
 , cmrn = pa.alias
 , pat_name = trim(p.name_full_formatted)
+, ce.event_cd, event = uar_get_code_display(ce.event_cd)
 , res_val = cnvtint(ce.result_val)
 , unit = uar_get_code_display(ce.result_units_cd)
 , result_status = uar_get_code_display(ce.result_status_cd)
@@ -125,7 +131,8 @@ from
 , clinical_event ce
 , person p
  
-plan e where e.loc_facility_cd in(2552503645.00, 2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503649.00)
+plan e where e.loc_facility_cd in(2552503645.00, 2552503635.00, 21250403.00,2552503653.00,2552503639.00
+						,2552503613.00,2552503649.00, 2552503657.00)
 	and e.encntr_type_cd = 309308.00 ;Inpatient
 	and e.disch_dt_tm is null
 	and e.active_ind = 1
@@ -138,7 +145,7 @@ join ce where ce.person_id = e.person_id
 	and ce.verified_dt_tm between cnvtdatetime($start_datetime) and cnvtdatetime($end_datetime)
 	and ce.result_status_cd = 25.00 ;Auth (Verified)
 	and ce.result_val != " "
-	and ce.event_cd in(glucose_poc_var, glucose_art_var, blood_glucose_var)
+	and ce.event_cd in(glucose_poc_var, glucose_art_var, glucose_lvl_var, blood_glucose_var)
 	and isnumeric(ce.result_val) > 0
  
 join p where p.person_id = e.person_id
@@ -157,8 +164,10 @@ Detail
 	gluco->elist[cnt].mrn = mrn
 	gluco->elist[cnt].cmrn = cmrn
 	gluco->elist[cnt].patient_name = pat_name
+	gluco->elist[cnt].measure_name = event
 	gluco->elist[cnt].result_value = trim(ce.result_val)
 	gluco->elist[cnt].result_unit = unit
+	gluco->elist[cnt].result_dt = format(ce.event_end_dt_tm, "mm/dd/yyyy hh:mm;;d")
 	gluco->elist[cnt].verified_dt = verifi_dt
 	gluco->elist[cnt].event_id = ce.event_id
  
@@ -182,8 +191,10 @@ if(iOpsInd = 1) ;Ops
 			,wrap3("mrn")
 			,wrap3("cmrn")
 			,wrap3("Patient Name")
+			,wrap3("Measure")
 			,wrap3("Result_value")
 			,wrap3("Result_unit")
+			,wrap3("Result_dt")
 			,wrap3("Verified_dt")
 			,wrap3("event_id")
 			)
@@ -201,8 +212,10 @@ if(iOpsInd = 1) ;Ops
 			,wrap3(gluco->elist[d.seq].mrn)
 			,wrap3(gluco->elist[d.seq].cmrn)
 			,wrap3(gluco->elist[d.seq].patient_name)
+			,wrap3(gluco->elist[d.seq].measure_name)
 			,wrap3(gluco->elist[d.seq].result_value)
 			,wrap3(gluco->elist[d.seq].result_unit)
+			,wrap3(gluco->elist[d.seq].result_dt)
 			,wrap3(gluco->elist[d.seq].verified_dt)
 			,wrap3(cnvtstring(gluco->elist[d.seq].event_id))
 			)
@@ -234,8 +247,10 @@ select into $outdev
 	,mrn = substring(1, 30, gluco->elist[d1.seq].mrn)
 	,cmrn = substring(1, 30, gluco->elist[d1.seq].cmrn)
 	,patient_name = substring(1, 50, gluco->elist[d1.seq].patient_name)
+	,measure = substring(1, 100, gluco->elist[d1.seq].measure_name)
 	,result_value = substring(1, 30, gluco->elist[d1.seq].result_value)
 	,result_unit = substring(1, 30, gluco->elist[d1.seq].result_unit)
+	,result_dt = substring(1, 30, gluco->elist[d1.seq].result_dt)
 	,verified_dt = substring(1, 30, gluco->elist[d1.seq].verified_dt)
 	,event_id = gluco->elist[d1.seq].event_id
  
@@ -243,6 +258,8 @@ from
 	(dummyt   d1  with seq = size(gluco->elist, 5))
  
 plan d1
+ 
+order by fin, event_id
  
 with nocounter, separator=" ", format
 */
@@ -252,6 +269,8 @@ with nocounter, separator=" ", format
 **************************************************************/
  
 %i cust_script:cov_CommonLibrary.inc
+ 
+#exitscript
  
 end
 go

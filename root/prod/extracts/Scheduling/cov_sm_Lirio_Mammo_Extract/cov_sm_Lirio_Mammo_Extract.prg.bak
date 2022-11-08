@@ -11,6 +11,11 @@
 	Request #:			13718
  
 	Program purpose:	Lists patients that qualify for mammography screenings.
+	
+						Report Types:
+							- Contacts
+							- Eligibility
+							- Scheduling
  
 	Executing from:		CCL
  
@@ -35,9 +40,10 @@ create program cov_sm_Lirio_Mammo_Extract:DBA
  
 prompt 
 	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "Report Type" = 0
 	, "Output To File" = 0                   ;* Output to file 
 
-with OUTDEV, output_file
+with OUTDEV, report_type, output_file
  
  
 /**************************************************************
@@ -88,17 +94,33 @@ declare completed_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 6004, "
 
 declare num						= i4 with noconstant(0)
 declare crlf					= vc with constant(build(char(13), char(10)))
- 
+
 declare file0_var				= vc with constant("lirio_contacts.csv")
 declare file1_var				= vc with constant("lirio_eligibility.csv")
 declare file2_var				= vc with constant("lirio_scheduling.csv")
-declare file_var				= vc with constant(file0_var)
+declare file_var				= vc with noconstant("")
+
+declare dir_var					= vc with constant("LirioExtracts/")
+
+
+if ($report_type = 0)
+	set file_var = file0_var
+	
+elseif ($report_type = 1)
+	set file_var = file1_var
+	
+elseif ($report_type = 2)
+	set file_var = file2_var
+	
+endif
+
  
 declare temppath_var			= vc with constant(build("cer_temp:", file_var))
 declare temppath2_var			= vc with constant(build("$cer_temp/", file_var))
  
 declare filepath_var			= vc with constant(build("/cerner/w_custom/", cnvtlower(curdomain),
-														 "_cust/to_client_site/RevenueCycle/Scheduling/LirioExtracts/", file_var))
+														 "_cust/to_client_site/RevenueCycle/Scheduling/", dir_var, file_var))
+														 
 declare output_var				= vc with noconstant("")
  
 declare cmd						= vc with noconstant("")
@@ -289,160 +311,175 @@ with nocounter, time = 300
  
 /**************************************************************/
 ; select email data
-select into "NL:"
-from
-	ADDRESS a
+if ($report_type = 0)
+
+	select into "NL:"
+	from
+		ADDRESS a
+		
+	where
+		expand(num, 1, patient_data->cnt, a.parent_entity_id, patient_data->list[num].person_id)
+		and a.parent_entity_name = "PERSON"
+		and a.address_type_cd = addr_email_var
+		and a.street_addr in ("*@*.*")
+		and a.street_addr not in ("*@.*")
+		and a.active_ind = 1
 	
-where
-	expand(num, 1, patient_data->cnt, a.parent_entity_id, patient_data->list[num].person_id)
-	and a.parent_entity_name = "PERSON"
-	and a.address_type_cd = addr_email_var
-	and a.street_addr in ("*@*.*")
-	and a.street_addr not in ("*@.*")
-	and a.active_ind = 1
-
-order by
-	a.parent_entity_id
+	order by
+		a.parent_entity_id
+		
 	
-
-; populate patient_data record structure
-head a.parent_entity_id
-	idx = 0
+	; populate patient_data record structure
+	head a.parent_entity_id
+		idx = 0
+		
+		idx = locateval(num, 1, patient_data->cnt, a.parent_entity_id, patient_data->list[num].person_id)
 	
-	idx = locateval(num, 1, patient_data->cnt, a.parent_entity_id, patient_data->list[num].person_id)
-
-detail
-	patient_data->list[idx].email = a.street_addr
-
-with nocounter, expand = 1, time = 300
-
-
-;call echorecord(patient_data)
-;go to exitscript
+	detail
+		patient_data->list[idx].email = a.street_addr
+	
+	with nocounter, expand = 1, time = 300
+	
+	
+	;call echorecord(patient_data)
+	;go to exitscript
+endif
  
  
 /**************************************************************/
 ; select phone data
-select into "NL:"
-from
-	PERSON p
+if ($report_type = 0)
+
+	select into "NL:"
+	from
+		PERSON p
+		
+		, (left join PHONE ph on ph.parent_entity_id = p.person_id
+			and ph.parent_entity_name = "PERSON"
+			and ph.phone_type_cd = phone_mobile_var
+			and ph.phone_num_key not in (
+				"0000000000", "1111111111", "2222222222", "3333333333",
+				"4444444444", "5555555555", "6666666666", "7777777777",
+				"8888888888", "9999999999", "1234567890"
+			)
+			and isnumeric(ph.phone_num_key) = 1
+			and ph.active_ind = 1)
+		
+		, (left join PHONE ph2 on ph2.parent_entity_id = p.person_id
+			and ph2.parent_entity_name = "PERSON"
+			and ph2.phone_type_cd = phone_home_var
+			and ph2.phone_num_key not in (
+				"0000000000", "1111111111", "2222222222", "3333333333",
+				"4444444444", "5555555555", "6666666666", "7777777777",
+				"8888888888", "9999999999", "1234567890"
+			)
+			and isnumeric(ph2.phone_num_key) = 1
+			and ph2.active_ind = 1)
+		
+	where
+		expand(num, 1, patient_data->cnt, p.person_id, patient_data->list[num].person_id)
 	
-	, (left join PHONE ph on ph.parent_entity_id = p.person_id
-		and ph.parent_entity_name = "PERSON"
-		and ph.phone_type_cd = phone_mobile_var
-		and ph.phone_num_key not in (
-			"0000000000", "1111111111", "2222222222", "3333333333",
-			"4444444444", "5555555555", "6666666666", "7777777777",
-			"8888888888", "9999999999", "1234567890"
-		)
-		and isnumeric(ph.phone_num_key) = 1
-		and ph.active_ind = 1)
+	order by
+		p.person_id
+		
 	
-	, (left join PHONE ph2 on ph2.parent_entity_id = p.person_id
-		and ph2.parent_entity_name = "PERSON"
-		and ph2.phone_type_cd = phone_home_var
-		and ph2.phone_num_key not in (
-			"0000000000", "1111111111", "2222222222", "3333333333",
-			"4444444444", "5555555555", "6666666666", "7777777777",
-			"8888888888", "9999999999", "1234567890"
-		)
-		and isnumeric(ph2.phone_num_key) = 1
-		and ph2.active_ind = 1)
+	; populate patient_data record structure
+	head p.person_id
+		idx = 0
+		
+		idx = locateval(num, 1, patient_data->cnt, p.person_id, patient_data->list[num].person_id)
 	
-where
-	expand(num, 1, patient_data->cnt, p.person_id, patient_data->list[num].person_id)
-
-order by
-	p.person_id
+	detail
+		patient_data->list[idx].mobile_phone = evaluate(textlen(ph.phone_num_key), 10, ph.phone_num_key, ph2.phone_num_key)
 	
-
-; populate patient_data record structure
-head p.person_id
-	idx = 0
+	with nocounter, expand = 1, time = 300
 	
-	idx = locateval(num, 1, patient_data->cnt, p.person_id, patient_data->list[num].person_id)
+	
+	;call echorecord(patient_data)
+	;go to exitscript
 
-detail
-	patient_data->list[idx].mobile_phone = evaluate(textlen(ph.phone_num_key), 10, ph.phone_num_key, ph2.phone_num_key)
-
-with nocounter, expand = 1, time = 300
-
-
-;call echorecord(patient_data)
-;go to exitscript
+endif
  
  
 /**************************************************************/
 ; select employer data
-select into "NL:"
-from
-	PERSON_ORG_RELTN por
+if ($report_type = 0)
 	
-where
-	expand(num, 1, patient_data->cnt, por.person_id, patient_data->list[num].person_id)
-	and por.person_org_reltn_cd = employer_var
-	and por.empl_status_cd > 0.0
-	and por.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
-	and por.active_ind = 1
-
-order by
-	por.person_id
+	select into "NL:"
+	from
+		PERSON_ORG_RELTN por
+		
+	where
+		expand(num, 1, patient_data->cnt, por.person_id, patient_data->list[num].person_id)
+		and por.person_org_reltn_cd = employer_var
+		and por.empl_status_cd > 0.0
+		and por.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
+		and por.active_ind = 1
 	
-
-; populate patient_data record structure
-head por.person_id
-	idx = 0
+	order by
+		por.person_id
+		
 	
-	idx = locateval(num, 1, patient_data->cnt, por.person_id, patient_data->list[num].person_id)
-
-detail
-	patient_data->list[idx].employer		= por.ft_org_name
-	patient_data->list[idx].title			= por.empl_title
-
-with nocounter, expand = 1, time = 300
-
-
-;call echorecord(patient_data)
-;go to exitscript
+	; populate patient_data record structure
+	head por.person_id
+		idx = 0
+		
+		idx = locateval(num, 1, patient_data->cnt, por.person_id, patient_data->list[num].person_id)
+	
+	detail
+		patient_data->list[idx].employer		= por.ft_org_name
+		patient_data->list[idx].title			= por.empl_title
+	
+	with nocounter, expand = 1, time = 300
+	
+	
+	;call echorecord(patient_data)
+	;go to exitscript
+	
+endif
 
 
 /**************************************************************/
 ; select pcp data
-select into "NL:"
-from
-	PERSON_PRSNL_RELTN ppr
-	
-	, (inner join PRSNL per on per.person_id = ppr.prsnl_person_id
-		and per.active_ind = 1)
-	
-	, (left join PRSNL_ALIAS pera on pera.person_id = per.person_id
-		and pera.prsnl_alias_type_cd = npi_var
-		and pera.active_ind = 1)
+if ($report_type = 0)
+
+	select into "NL:"
+	from
+		PERSON_PRSNL_RELTN ppr
 		
-where
-	expand(num, 1, patient_data->cnt, ppr.person_id, patient_data->list[num].person_id)
-	and ppr.person_prsnl_r_cd = pcp_var
-	and ppr.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
-	and ppr.active_ind = 1
-
-order by
-	ppr.person_id
+		, (inner join PRSNL per on per.person_id = ppr.prsnl_person_id
+			and per.active_ind = 1)
+		
+		, (left join PRSNL_ALIAS pera on pera.person_id = per.person_id
+			and pera.prsnl_alias_type_cd = npi_var
+			and pera.active_ind = 1)
+			
+	where
+		expand(num, 1, patient_data->cnt, ppr.person_id, patient_data->list[num].person_id)
+		and ppr.person_prsnl_r_cd = pcp_var
+		and ppr.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
+		and ppr.active_ind = 1
 	
-
-; populate patient_data record structure
-head ppr.person_id
-	idx = 0
+	order by
+		ppr.person_id
+		
 	
-	idx = locateval(num, 1, patient_data->cnt, ppr.person_id, patient_data->list[num].person_id)
-
-detail
-	patient_data->list[idx].pcp_npi = pera.alias
-
-with nocounter, expand = 1, time = 300
-
-
-;call echorecord(patient_data)
-;go to exitscript
+	; populate patient_data record structure
+	head ppr.person_id
+		idx = 0
+		
+		idx = locateval(num, 1, patient_data->cnt, ppr.person_id, patient_data->list[num].person_id)
+	
+	detail
+		patient_data->list[idx].pcp_npi = pera.alias
+	
+	with nocounter, expand = 1, time = 300
+	
+	
+	;call echorecord(patient_data)
+	;go to exitscript
+	
+endif
 
 
 /**************************************************************/
@@ -452,7 +489,7 @@ from
 	ORDERS o 
  
 where
-	expand(num, 1, patient_data->cnt, o.person_id, patient_data->list[num].person_id)	
+	expand(num, 1, patient_data->cnt, o.person_id, patient_data->list[num].person_id)
 	and o.catalog_type_cd = radiology_var
 	and o.catalog_cd in (
 		select cv.code_value
@@ -460,7 +497,7 @@ where
 			CODE_VALUE cv
 		where
 			cv.code_set = 200
-			and cv.display_key in ("MGDIGSCREENMAMMO*", "MGDIGDIAGMAMMO*")			
+			and cv.display_key in ("MGDIGSCREENMAMMO*", "MGDIGDIAGMAMMO*")
 			and cv.active_ind = 1
 	)
 	and o.order_status_cd in (ordered_var, future_var, completed_var)
@@ -578,7 +615,6 @@ plan d1
 ; populate patient_data record structure
 detail	
 	patient_data->list[d1.seq].channel_pref			= " "
-	patient_data->list[d1.seq].portal_username		= " "
 	patient_data->list[d1.seq].optout_ind			= 0
 	patient_data->list[d1.seq].rltn_ind				= " "
 	patient_data->list[d1.seq].consent_ind			= 0
@@ -592,68 +628,159 @@ call echorecord(patient_data)
 
  
 /**************************************************************/
-; select data
-if (validate(request->batch_selection) = 1 or $output_file = 1)
-	set modify filestream
-endif
- 
-select if (validate(request->batch_selection) = 1 or $output_file = 1)
-	with nocounter, pcformat (^"^, ^,^, 1), format = stream, format, time = 300
-else
-	with nocounter, separator = " ", format, time = 300
-endif
+; select contacts data
+if ($report_type = 0)
 
-into value(output_var)
-	unique_id					= trim(patient_data->list[d1.seq].cmrn, 3)
-	, prefix					= trim(patient_data->list[d1.seq].name_prefix, 3)
-	, first_name				= trim(patient_data->list[d1.seq].name_first, 3)
-	, last_name					= trim(patient_data->list[d1.seq].name_last, 3)
-	, suffix					= trim(patient_data->list[d1.seq].name_suffix, 3)
-	, sex						= trim(patient_data->list[d1.seq].birth_sex, 3)
-	, gender					= trim(patient_data->list[d1.seq].gender, 3)
-	, email						= trim(patient_data->list[d1.seq].email, 3)
-	, mobile_phone				= format(patient_data->list[d1.seq].mobile_phone, "###-###-####")
+	if (validate(request->batch_selection) = 1 or $output_file = 1)
+		set modify filestream
+	endif
+	 
+	select if (validate(request->batch_selection) = 1 or $output_file = 1)
+		with nocounter, pcformat (^"^, ^,^, 1), format = stream, format, time = 300
+	else
+		with nocounter, separator = " ", format, time = 300
+	endif
 	
-	, dob						= format(cnvtdatetimeutc(datetimezone(patient_data->list[d1.seq].dob,
-									patient_data->list[d1.seq].dob_tz), 1), "yyyy-mm-dd;;d")
-									
-	, language					= trim(patient_data->list[d1.seq].language, 3)
-	, address1					= trim(patient_data->list[d1.seq].street_addr, 3)
-	, address2					= trim(patient_data->list[d1.seq].street_addr2, 3)
-	, city						= trim(patient_data->list[d1.seq].city, 3)
-	, state						= trim(patient_data->list[d1.seq].state, 3)
-	, zip						= trim(patient_data->list[d1.seq].zipcode, 3)
-	, employer					= trim(patient_data->list[d1.seq].employer, 3)
-	, title						= trim(patient_data->list[d1.seq].title, 3)
-	, marital_status			= trim(patient_data->list[d1.seq].marital_status, 3)
-	, race						= trim(patient_data->list[d1.seq].race, 3)
-	, religion					= trim(patient_data->list[d1.seq].religion, 3)	
-	, channel_preference		= trim(patient_data->list[d1.seq].channel_pref, 3)
-	, primary_care_provider		= trim( patient_data->list[d1.seq].pcp_npi, 3)
-	, portal_username			= trim(patient_data->list[d1.seq].portal_username, 3)
-	, optout_indicator			= " " ;cnvtbool(patient_data->list[d1.seq].optout_ind)
-	, deceased_indicator		= cnvtbool(patient_data->list[d1.seq].deceased)
-	, relationship_indicator	= trim(patient_data->list[d1.seq].rltn_ind, 3)
-	, consent_indicator			= " " ;cnvtbool(patient_data->list[d1.seq].consent_ind)
-	, crm_id					= trim(patient_data->list[d1.seq].crm_id, 3)
+	into value(output_var)
+		unique_id					= trim(patient_data->list[d1.seq].cmrn, 3)
+		, prefix					= trim(patient_data->list[d1.seq].name_prefix, 3)
+		, first_name				= trim(patient_data->list[d1.seq].name_first, 3)
+		, last_name					= trim(patient_data->list[d1.seq].name_last, 3)
+		, suffix					= trim(patient_data->list[d1.seq].name_suffix, 3)
+		, sex						= trim(patient_data->list[d1.seq].birth_sex, 3)
+		, gender					= trim(patient_data->list[d1.seq].gender, 3)
+		, email						= trim(patient_data->list[d1.seq].email, 3)
+		, mobile_phone				= format(patient_data->list[d1.seq].mobile_phone, "###-###-####")
+		
+		, dob						= format(cnvtdatetimeutc(datetimezone(patient_data->list[d1.seq].dob,
+										patient_data->list[d1.seq].dob_tz), 1), "yyyy-mm-dd;;d")
+										
+		, language					= trim(patient_data->list[d1.seq].language, 3)
+		, address1					= trim(patient_data->list[d1.seq].street_addr, 3)
+		, address2					= trim(patient_data->list[d1.seq].street_addr2, 3)
+		, city						= trim(patient_data->list[d1.seq].city, 3)
+		, state						= trim(patient_data->list[d1.seq].state, 3)
+		, zip						= trim(patient_data->list[d1.seq].zipcode, 3)
+		, employer					= trim(patient_data->list[d1.seq].employer, 3)
+		, title						= trim(patient_data->list[d1.seq].title, 3)
+		, marital_status			= trim(patient_data->list[d1.seq].marital_status, 3)
+		, race						= trim(patient_data->list[d1.seq].race, 3)
+		, religion					= trim(patient_data->list[d1.seq].religion, 3)	
+		, channel_preference		= trim(patient_data->list[d1.seq].channel_pref, 3)
+		, primary_care_provider		= trim( patient_data->list[d1.seq].pcp_npi, 3)
+		, portal_username			= trim(patient_data->list[d1.seq].portal_username, 3)
+		, optout_indicator			= " " ;cnvtbool(patient_data->list[d1.seq].optout_ind)
+		, deceased_indicator		= cnvtbool(patient_data->list[d1.seq].deceased)
+		, relationship_indicator	= trim(patient_data->list[d1.seq].rltn_ind, 3)
+		, consent_indicator			= " " ;cnvtbool(patient_data->list[d1.seq].consent_ind)
+		, crm_id					= trim(patient_data->list[d1.seq].crm_id, 3)
+		
+		; TODO: TESTING
+	;	, has_order					= patient_data->list[d1.seq].has_order
+	;	, has_doc					= patient_data->list[d1.seq].has_doc
 	
-	; TODO: TESTING
-;	, has_order					= patient_data->list[d1.seq].has_order
-;	, has_doc					= patient_data->list[d1.seq].has_doc
+	from
+		(dummyt d1 with seq = value(patient_data->cnt))
+	 
+	plan d1
+	where
+		patient_data->list[d1.seq].has_order = 0
+		and patient_data->list[d1.seq].has_doc = 0
+	
+	order by
+		last_name
+		, first_name
+	
+	with nocounter
+	
+endif
 
-from
-	(dummyt d1 with seq = value(patient_data->cnt))
- 
-plan d1
-where
-	patient_data->list[d1.seq].has_order = 0
-	and patient_data->list[d1.seq].has_doc = 0
 
-order by
-	last_name
-	, first_name
+; select eligibility data
+if ($report_type = 1)
 
-with nocounter
+	if (validate(request->batch_selection) = 1 or $output_file = 1)
+		set modify filestream
+	endif
+	 
+	select if (validate(request->batch_selection) = 1 or $output_file = 1)
+		with nocounter, pcformat (^"^, ^,^, 1), format = stream, format, time = 300
+	else
+		with nocounter, separator = " ", format, time = 300
+	endif
+	
+	into value(output_var)
+		unique_id					= trim(patient_data->list[d1.seq].cmrn, 3)
+		, description				= " "
+		, status					= " "
+		, updated					= " "
+		
+		; TODO: TESTING
+	;	, has_order					= patient_data->list[d1.seq].has_order
+	;	, has_doc					= patient_data->list[d1.seq].has_doc
+	
+	from
+		(dummyt d1 with seq = value(patient_data->cnt))
+	 
+	plan d1
+	where
+		patient_data->list[d1.seq].has_order = 0
+		and patient_data->list[d1.seq].has_doc = 0
+	
+	order by
+		unique_id
+	
+	with nocounter
+	
+endif
+
+
+; select scheduling data
+if ($report_type = 2)
+
+	if (validate(request->batch_selection) = 1 or $output_file = 1)
+		set modify filestream
+	endif
+	 
+	select if (validate(request->batch_selection) = 1 or $output_file = 1)
+		with nocounter, pcformat (^"^, ^,^, 1), format = stream, format, time = 300
+	else
+		with nocounter, separator = " ", format, time = 300
+	endif
+	
+	into value(output_var)
+		unique_id					= trim(patient_data->list[d1.seq].cmrn, 3)
+		, appointment_id			= " "
+		, reason					= " "
+		, location					= " "
+		, category					= " "
+		, department				= " "
+		, department_specialty		= " "
+		, associated_codes			= " "
+		, appointment_created		= " "
+		, appointment_date			= " "
+		, appointment_status		= " "
+		, appointment_channel		= " "
+		
+		; TODO: TESTING
+	;	, has_order					= patient_data->list[d1.seq].has_order
+	;	, has_doc					= patient_data->list[d1.seq].has_doc
+	
+	from
+		(dummyt d1 with seq = value(patient_data->cnt))
+	 
+	plan d1
+	where
+		patient_data->list[d1.seq].has_order = 0
+		and patient_data->list[d1.seq].has_doc = 0
+	
+	order by
+		unique_id
+	
+	with nocounter
+	
+endif
+
  
  
 ; copy file to AStream

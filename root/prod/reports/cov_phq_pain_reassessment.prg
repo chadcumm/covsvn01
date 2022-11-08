@@ -23,6 +23,7 @@ Mod Date	Developer		     Comment
 01-14-20    Geetha      CR# 6849  - Add PNRC and PW, MHHS psych locations
 08/09/21    Geetha	CR# 10849 - Add 2 new DTAs to the report
 08/09/21    Geetha	CR# 10775 - Add Peninsula BH to the prompt
+11/01/22    Geetha      CR# 13041 - CMC added
 ******************************************************************************/
  
 drop program cov_phq_pain_reassessment:DBA go

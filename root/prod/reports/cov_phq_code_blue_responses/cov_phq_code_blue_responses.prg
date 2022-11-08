@@ -23,6 +23,7 @@ Mod Date	Developer			Comment
 03/21/22    Geetha      CR#12483    Include all instances of code blue documentaion
 06/02/22    Geetha      CR#12996    Add a column that shows if the Code Blue occurred within one hour from arrival to the dept.
 07/13/22    Geetha      CR#13230    New columns - Gender, BMI, Hypothermia...etc.
+11/01/22    Geetha      CR#13041    CMC added
 ****************************************************************************************************************/
  
  

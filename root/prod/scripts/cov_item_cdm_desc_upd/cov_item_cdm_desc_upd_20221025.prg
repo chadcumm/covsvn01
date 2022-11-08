@@ -1,0 +1,93 @@
+/*****************************************************************************
+  Covenant Health Information Technology
+  Knoxville, Tennessee
+******************************************************************************
+ 
+   Program:             cov_item_desc_upd
+   Folder:              CUST_SCRIPT
+   Owner:               Covenant
+   Author:              Dawn Greer, DBA
+   Created Date:        6/18/2020
+   Solution:			Supply Chain
+   Original CR:         7561
+ 
+   Purpose: Program to set the charge description to match the item
+            description.
+ 
+   Schedule:
+   Ops Job:
+   Step: 4
+ 
+   Executing from:		CCL
+ 
+   Special Notes:		x
+ 
+******************************************************************************
+  GENERATED MODIFICATION CONTROL LOG
+******************************************************************************
+ 
+Mod   Date	       Developer            Comment
+---   ----------   --------------------	---------------------------------------
+001   10/25/2022   Dawn Greer, DBA      CR 13876 - Added code to send the record
+                                        structure to a text file for troubleshooting
+                                        purposes                         
+******************************************************************************/
+drop program cov_item_cdm_desc_upd:dba go
+create program cov_item_cdm_desc_upd:dba
+ 
+record brec (
+     1 item_count = i4
+     1 list[*]
+       2 bill_item_id = f8
+       2 description = vc
+       2 class_name = vc
+       2 stock_nbr = vc)
+ 
+SELECT INTO "NL:"
+FROM MM_OMF_ITEM_MASTER im
+	, bill_item bi
+	, bill_item_modifier bm
+WHERE im.item_master_id = bi.ext_parent_reference_id
+AND bi.bill_item_id = bm.bill_item_id
+AND bm.bill_item_type_cd = 3459.00 /*Bill Code*/
+AND bm.key1_id = 2556027807.00  ;Hospital CDM Schedule
+AND bm.active_ind = 1
+AND im.active_ind = 1
+AND bi.active_ind = 1
+AND im.class_name IN ('IMPLANT','SUPPLY','SUPPLIES','TDC','SOLUTION','INSTRUMENTS','EQUIPMENT','MEDICATIONS','PROCEDURE CHARGE')
+AND im.description != bm.key7
+ 
+HEAD REPORT
+    brec->item_count = 0
+DETAIL
+    brec->item_count = brec->item_count+1
+    stat = alterlist(brec->list,brec->item_count)
+    brec->list[brec->item_count].bill_item_id = bm.bill_item_id
+    brec->list[brec->item_count].description = im.description
+    brec->list[brec->item_count].class_name = im.class_name
+    brec->list[brec->item_count].stock_nbr = im.stock_nbr
+WITH nocounter
+
+SET outfile = BUILD2("/cerner/d_p0665/temp/cov_item_cdm_desc_upd_",
+	FORMAT(CNVTDATETIME(CURDATE,CURTIME3), "YYYYMMDD;;d"), ".txt")
+
+CALL ECHORECORD(brec, outfile)
+ 
+IF (BREC->item_count > 0)
+	UPDATE INTO bill_item_modifier bm
+	    ,(DUMMYT D WITH SEQ = BREC->item_count)
+	SET bm.key7 = BREC->LIST[D.SEQ].description
+	,bm.updt_id = 17496723	/*Scripting Updates, Dawn Greer*/
+	,bm.updt_dt_tm = CNVTDATETIME(CURDATE,CURTIME3)
+	,bm.updt_cnt = bm.updt_cnt + 1
+	PLAN D
+	JOIN BM WHERE BM.BILL_ITEM_ID = BREC->LIST[D.SEQ].BILL_ITEM_ID
+	AND bm.key1_id = 2556027807.00  ;Hospital CDM Schedule
+	AND bm.active_ind = 1
+	WITH MAXCOMMIT = 1000
+	COMMIT
+ENDIF
+ 
+free record brec
+ 
+END GO

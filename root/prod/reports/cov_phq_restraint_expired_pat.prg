@@ -17,10 +17,12 @@
   GENERATED MODIFICATION CONTROL LOG
 ******************************************************************************
  
-Mod Date	Developer			     Comment
-----------	------------------     ------------------------------------------
-11/04/2019  Geetha                  CR# 6653 - change the report look into the discharge date and pull the patient 
-								if there is a deceased flag regardless of deceased date 
+CR     Mod Date	Developer			     Comment
+--------------------------------------------------------------------------------
+6653	11/04/2019  Geetha     Change the report look into the discharge date and pull the patient 
+				  	if there is a deceased flag regardless of deceased date 
+				  
+13041  11/01/22   Geetha     CMC added
 
 ******************************************************************************/
  
