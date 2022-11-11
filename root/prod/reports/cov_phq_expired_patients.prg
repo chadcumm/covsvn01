@@ -18,13 +18,14 @@
  
 Mod Date	Developer			     Comment
 ----------	-----------------------------------------------------------------------------------------------------
-01-09-20    Geetha    CR#6922 - Change Organ_Bank_Notify_Dt and Medical Examiner_Notify-DT from documentation 
+01-09-20    Geetha    CR#6922   - Change Organ_Bank_Notify_Dt and Medical Examiner_Notify-DT from documentation 
 							date to DTA responses.
-06-26-20    Geetha    CR#7800 -  Add DOA(death on arrival) column and arrival Date
+06-26-20    Geetha    CR#7800   -  Add DOA(death on arrival) column and arrival Date
+11-08-22    Geetha    CR#13041  -  Add CMC
 ***************************************************************************************************************/
  
-drop program cov_phq_expired_patients go
-create program cov_phq_expired_patients
+drop program cov_phq_expired_patients:dba go
+create program cov_phq_expired_patients:dba
  
 prompt
 	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.

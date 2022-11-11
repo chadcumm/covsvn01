@@ -29,6 +29,8 @@
 001	09/24/2018	Todd A. Blanchard		Changed logic to copy files directly to AStream.
 002	11/12/2020	Todd A. Blanchard		Changed date parameter values.
 003	02/19/2021	Todd A. Blanchard		Corrected issue with empty results not being exported.
+004	10/05/2022	Todd A. Blanchard		Added logic to remove carriage return line feeds.
+										Removed column Custom2 from output.
  
 ******************************************************************************/
  
@@ -97,7 +99,7 @@ record sched_fac (
 		2	proc_specialty	= vc	; procedure specialty
 		2	notes			= vc	; procedure name, additional procedure details, modifiers 1, 2, and 3
 		2	custom1			= vc	; private surgical comment
-		2	custom2			= vc	; patient age
+;		2	custom2			= vc	; patient age ;004
 		2	custom3			= vc	; empty
 )
  
@@ -236,15 +238,18 @@ detail
 	sched_fac->list[cnt].sched_stop		= format(sar.end_dt_tm, "hh:mm;;q")
 	sched_fac->list[cnt].consultant		= scpper.name_full_formatted
 	sched_fac->list[cnt].proc_specialty	= uar_get_code_display(scpperg.prsnl_group_type_cd)
+	
+	;004
 	sched_fac->list[cnt].notes			= build(
 		trim(o.order_mnemonic, 3), "|",
-		trim(od.oe_field_display_value, 3), "|",
-		trim(od1.oe_field_display_value, 3), "|",
-		trim(od2.oe_field_display_value, 3), "|",
-		trim(od3.oe_field_display_value, 3)
+		trim(replace(od.oe_field_display_value, crlf, " "), 3), "|",
+		trim(replace(od1.oe_field_display_value, crlf, " "), 3), "|",
+		trim(replace(od2.oe_field_display_value, crlf, " "), 3), "|",
+		trim(replace(od3.oe_field_display_value, crlf, " "), 3)
 		)
-	sched_fac->list[cnt].custom1		= trim(replace(lt.long_text, crlf, ""), 3)
-	sched_fac->list[cnt].custom2		= trim(cnvtage(p.birth_dt_tm), 3)
+		
+	sched_fac->list[cnt].custom1		= trim(replace(lt.long_text, crlf, " "), 3)
+;	sched_fac->list[cnt].custom2		= trim(cnvtage(p.birth_dt_tm), 3) ;004
 	sched_fac->list[cnt].custom3		= ""
  
 foot report
@@ -277,7 +282,7 @@ if (sched_fac->sched_cnt > 0)
 			, wrap2("Procedure Type")
 			, wrap2("Notes")
 			, wrap2("Custom1")
-			, wrap2("Custom2")
+;			, wrap2("Custom2") ;004
 			, wrap("Custom3")
 		)
  
@@ -297,7 +302,7 @@ if (sched_fac->sched_cnt > 0)
 			, wrap2(sched_fac->list[dt.seq].proc_specialty)
 			, wrap2(sched_fac->list[dt.seq].notes)
 			, wrap2(sched_fac->list[dt.seq].custom1)
-			, wrap2(sched_fac->list[dt.seq].custom2)
+;			, wrap2(sched_fac->list[dt.seq].custom2) ;004
 			, wrap(sched_fac->list[dt.seq].custom3)
 		)
  
@@ -330,7 +335,7 @@ else
 			, wrap2("Procedure Type")
 			, wrap2("Notes")
 			, wrap2("Custom1")
-			, wrap2("Custom2")
+;			, wrap2("Custom2") ;004
 			, wrap("Custom3")
 		)
  

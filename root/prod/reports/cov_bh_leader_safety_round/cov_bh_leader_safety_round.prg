@@ -387,7 +387,8 @@ Head o.catalog_cd
 	of code_green_pat_var:
 		pat->plist[idx].code_green = build2(trim(o.order_mnemonic),'-',format(o.orig_order_dt_tm, 'mm/dd/yy hh:mm ;;q'))
 	of dsch_order_var:	
-		pat->plist[idx].disch_order = build2(trim(o.order_mnemonic),'-',format(o.orig_order_dt_tm, 'mm/dd/yy hh:mm ;;q'))
+		pat->plist[idx].disch_order = format(o.orig_order_dt_tm, 'mm/dd/yy hh:mm ;;q')
+		;pat->plist[idx].disch_order = build2(trim(o.order_mnemonic),'-',format(o.orig_order_dt_tm, 'mm/dd/yy hh:mm ;;q'))
  	endcase
  	
 with nocounter

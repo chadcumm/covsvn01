@@ -87,6 +87,24 @@ and ema.module_name = 'COV_LH_STK_STATIN_DSCHMED'
 and ema.updt_dt_tm >= cnvtdatetime('25-OCT-2022 00:00:00')
 order by ema.module_name, emad.updt_dt_tm desc
  
+
+select 
+ emad.encntr_id,ema.module_name,emad.template_name,emad.template_alias, emad.template_return, emad.template_number
+, emad.template_type, ema.begin_dt_tm ';;Q', emad.logging, ema.*, emad.*
+from eks_module_audit ema, eks_module_audit_det emad
+where ema.rec_id = emad.module_audit_id
+and emad.encntr_id =   125489997
+and ema.module_name in('COV_SZ_SCHREG_INTERP', 'COV_SZ_INTERP_REMINDER')
+;and ema.updt_dt_tm >= cnvtdatetime('09-NOV-2022 00:00:00')
+order by ema.module_name, emad.updt_dt_tm desc
+
+
+select emad.encntr_id,emad.template_name,emad.template_alias, emad.template_return, emad.template_number, emad.updt_dt_tm
+, emad.template_type, emad.logging
+from eks_module_audit_det emad where emad.encntr_id =   125489997
+order by emad.updt_dt_tm
+with nocounter, separator=" ", format, format(date,"mm-dd-yyyy hh:mm:ss;;d"), uar_code(d,1);, time = 360;, maxrow = 10000
+
  
 ;-----------------------------------------------------------------------------------
 
