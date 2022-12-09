@@ -100,10 +100,8 @@ from  sch_appt sa
 	, order_entry_fields oef
 	, oe_field_meaning ofm
 
-plan sa where sa.beg_dt_tm >= cnvtdatetime("01-JUL-2022 00:00:00")
-	;sa.beg_dt_tm between cnvtdatetime($start_datetime) and cnvtdatetime($end_datetime)
-	;and operator(sa.appt_location_cd, opr_fac_var, $facility_list)
-	and sa.person_id =     20785859.00 ;ZZZTEST, SELENA
+plan sa where sa.beg_dt_tm between cnvtdatetime($start_datetime) and cnvtdatetime($end_datetime)
+	;nd operator(sa.appt_location_cd, opr_fac_var, $facility_list)
 	and sa.active_ind = 1
 	and sa.sch_state_cd = value(uar_get_code_by("DISPLAY", 14233, "Confirmed"))
 	and sa.sch_role_cd = value(uar_get_code_by("DISPLAY", 14250, "Patient"))

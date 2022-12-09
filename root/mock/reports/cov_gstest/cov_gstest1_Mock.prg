@@ -4160,9 +4160,12 @@ select * from bb_spec_expire_ovrd ov where ov.specimen_id in(321807566.00,321806
   order by pe.event_dt_tm desc, pr.product_cat_cd
    	
 =======================================================================================================================
+
+select * 
+from encntr_alias ea, orders o   	
    	
-   	
-select * from order_detail od where od.order_id in(4749161091,4749161089)
+select * from order_detail od where od.order_id in(4751951621, 4751951555,4751951581)
+and od.oe_field_id =       12703.00 ; sch/prn
 order by od.order_id
    	
    	

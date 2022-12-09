@@ -16,11 +16,10 @@
   GENERATED MODIFICATION CONTROL LOG
 ******************************************************************************
  
-Mod Date   Developer			Comment
+Mod Date        Developer			Comment
 --------------------------------------------------------------------------------------------------------------------
-
+11/09/2022      Geetha   	Initial release
 --------------------------------------------------------------------------------------------------------------------*/
- 
  
 drop program cov_bh_leader_safety_round:dba go
 create program cov_bh_leader_safety_round:dba
@@ -36,7 +35,7 @@ with OUTDEV, facility_list, nurse_unit
 /**************************************************************
 ; DVDev DECLARED VARIABLES
 **************************************************************/
-/*
+/* as per BH leadership
 Restraints - (caveat - we do not chart electronically yet but plan to transition after TJC survey - Feb/March 2023, 
 	so we would like to keep it for future use) Pull from same dtas currently that are used by INA
 
@@ -54,6 +53,7 @@ declare elope_preca_var      = f8 with constant(value(uar_get_code_by("DISPLAY",
 declare code_green_othr_var  = f8 with constant(value(uar_get_code_by("DISPLAY", 200, 'Code Green V - Other'))),protect
 declare code_green_pat_var   = f8 with constant(value(uar_get_code_by("DISPLAY", 200, 'Code Green V - Patient'))),protect
 declare dsch_order_var       = f8 with constant(value(uar_get_code_by("DISPLAY", 200, 'Discharge Patient'))),protect
+declare sitter_bed_var       = f8 with constant(value(uar_get_code_by("DISPLAY", 200, 'Sitter at Bedside'))),protect
  
 declare alert_var      = vc with noconstant('')
 declare ln_cnt = i4
@@ -108,6 +108,7 @@ RECORD pat(
 		2 admit_medrec = vc
 		2 disch_order = vc
 		2 weight_score = vc
+		2 siter_bedside = vc
 	)
  
 
@@ -361,7 +362,7 @@ plan d
  
 join o where o.encntr_id = pat->plist[d.seq].encntrid
 	and o.catalog_cd in(suicide_preca_var, clo_restraint_var, bh_co_obs_var, one_to_one_obs_var
-		, elope_preca_var, code_green_othr_var, code_green_pat_var, dsch_order_var)
+		, elope_preca_var, code_green_othr_var, code_green_pat_var, dsch_order_var, sitter_bed_var)
 	and o.order_status_cd = 2550
  
 order by o.encntr_id, o.catalog_cd
@@ -389,6 +390,8 @@ Head o.catalog_cd
 	of dsch_order_var:	
 		pat->plist[idx].disch_order = format(o.orig_order_dt_tm, 'mm/dd/yy hh:mm ;;q')
 		;pat->plist[idx].disch_order = build2(trim(o.order_mnemonic),'-',format(o.orig_order_dt_tm, 'mm/dd/yy hh:mm ;;q'))
+	of sitter_bed_var:	
+		pat->plist[idx].siter_bedside = build2(trim(o.order_mnemonic),'-',format(o.orig_order_dt_tm, 'mm/dd/yy hh:mm ;;q'))
  	endcase
  	
 with nocounter
@@ -447,6 +450,7 @@ select into $outdev
 	, bed = trim(substring(1, 5, pat->plist[d1.seq].bed_rs))
 	, constant_observation = trim(substring(1, 100, pat->plist[d1.seq].bh_co_obs))
 	, one_to_one_observation = trim(substring(1, 100, pat->plist[d1.seq].bh_1_to_1_obs))
+	, sitter_at_bedsie = trim(substring(1, 100, pat->plist[d1.seq].siter_bedside))
 	, suicide_precaution = trim(substring(1, 300, pat->plist[d1.seq].suicid_ordr))
 	, elopement_precaution = trim(substring(1, 100, pat->plist[d1.seq].elope_preca))
 	, broset_sm = trim(substring(1, 30, pat->plist[d1.seq].broset_sm))

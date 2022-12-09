@@ -2,39 +2,38 @@
   Covenant Health Information Technology
   Knoxville, Tennessee
 ******************************************************************************
- 	Author:			Geetha 
+ 	Author:			Geetha
 	Date Written:		May'2018
 	Solution:			population Health Quality
 	Source file name:  	cov_phq_restraint_expired_pat.prg
 	Object name:		cov_phq_restraint_expired_pat
 	Request#:			1047
- 
 	Program purpose:	      Report will show patients who had history of restraints and expired during hospital stay
 	Executing from:		CCL/DA2/Nursing
-  	Special Notes:
+  	Special Notes:		R2W Setup
  
 ******************************************************************************
   GENERATED MODIFICATION CONTROL LOG
 ******************************************************************************
  
 CR     Mod Date	Developer			     Comment
---------------------------------------------------------------------------------
-6653	11/04/2019  Geetha     Change the report look into the discharge date and pull the patient 
-				  	if there is a deceased flag regardless of deceased date 
-				  
+----------------------------------------------------------------------------------------------------------------------
+6653	11/04/2019  Geetha     Change the report look into the discharge date and pull the patient
+				  	if there is a deceased flag regardless of deceased date
 13041  11/01/22   Geetha     CMC added
-
-******************************************************************************/
+13949  11/16/22   Geetha     Ops job setup to R2W except BH locations
+ 
+**********************************************************************************************************************/
  
 drop program cov_phq_restraint_expired_pat:dba go
 create program cov_phq_restraint_expired_pat:dba
  
-prompt 
+prompt
 	"Output to File/Printer/MINE" = "MINE"      ;* Enter or select the printer or file name to send this report to.
 	, "Start Discharge Date/Time" = "SYSDATE"
 	, "End Discharge Date/Time" = "SYSDATE"
-	, "Select Facility" = 0 
-
+	, "Select Facility" = 0
+ 
 with OUTDEV, start_datetime, end_datetime, facility_list
  
  
@@ -56,6 +55,17 @@ declare deceased_var         = f8 with constant(uar_get_code_by("DISPLAY", 268, 
  
 declare ucnt = i4 with noconstant(0)
 declare pcnt = i4 with noconstant(0)
+declare idx = i4 with noconstant(0)
+declare opr_fac_var = vc with noconstant('')
+ 
+;Facility variable
+if(substring(1,1,reflect(parameter(parameter2($facility_list),0))) = "l");multiple values were selected
+	set opr_fac_var = "in"
+elseif(parameter(parameter2($facility_list),1)= 0.0)	;all[*] values were selected
+	set opr_fac_var = "!="
+else									;a single value was selected
+	set opr_fac_var = "="
+endif
  
  
 /**************************************************************
@@ -89,7 +99,53 @@ RECORD expired_log(
 				4 md_admit           = vc
 		)
  
-;--------------------------------------------------------------------------------------------------------- 
+ 
+RECORD facility(
+	1 rec_cnt =	i4
+	1 flist[*]
+		2 facility_cd   =	f8
+		2 facility_desc =	vc
+)
+ 
+;-----------------------------------------------------------------------------------------------------------------
+ 
+;Get facilities
+select into $outdev
+  facility_name = uar_get_code_display(l.location_cd), l.location_cd
+from location l
+where operator(l.location_cd, opr_fac_var, $facility_list)
+and l.location_type_cd = 783.00
+and l.active_ind = 1
+and l.location_cd in(2552503635.00, 21250403.00,2552503653.00,2552503639.00,2552503613.00,2552503645.00,2552503649.00
+				,2552503657.00 ,2553765707.00 ,2553765627.00 ,2553765571.00, 2553765371.00
+				,2553765579.00, 2553765475.00, 2553765531.00)
+  ;2553765579.00, 2553765475.00, 2553765531.00 	;BH patients shouldn't pull for all[*] prompt and R2W as well
+ ;PBH, MHHS Behavioral Health, PW Senior Behavioral Health
+ 
+order by facility_name
+ 
+Head report
+	cnt = 0
+Detail
+	cnt = cnt + 1
+	if (mod(cnt,10) = 1 or cnt = 1)
+ 		stat = alterlist(facility->flist, cnt + 9)
+ 	endif
+ 
+	facility->flist[cnt].facility_cd	= l.location_cd
+	facility->flist[cnt].facility_desc	= facility_name
+	facility->rec_cnt		      	= cnt
+ 
+Foot report
+	stat = alterlist(facility->flist, cnt)
+ 
+With nocounter
+ 
+ 
+;with nocounter, separator=" ", format
+;go to exitscript
+ 
+;---------------------------------------------------------------------------------------------------------
 ;Get all expired on Restraint patients
 select distinct into 'nl:'
  
@@ -133,7 +189,8 @@ from
 		and ce.event_cd = cv.code_value and cv.code_set = 72
 		and cv.display = "*Restraint*"
 		and ce.result_status_cd in(25, 34, 35)
-		and e.loc_facility_cd = $facility_list
+		;and e.loc_facility_cd = $facility_list
+		and expand(idx,1,size(facility->flist, 5), e.loc_facility_cd , facility->flist[idx].facility_cd)
 		and e.disch_disposition_cd in(638666.00, 2554369135) ;expired, expired(hospice claims only) 41
 		and e.data_status_cd in(25, 35)
 		and e.reg_dt_tm <= sysdate
@@ -151,7 +208,7 @@ from
 plan i
  
 join e where e.person_id = i.person_id
-	and e.loc_facility_cd = $facility_list
+	and expand(idx,1,size(facility->flist, 5), e.loc_facility_cd , facility->flist[idx].facility_cd)
 	and e.disch_disposition_cd in(638666.00, 2554369135) ;expired, expired(hospice claims only) 41
  
 join ce where ce.person_id = outerjoin(i.person_id)
@@ -245,8 +302,15 @@ FOOT REPORT
  
 WITH nocounter, maxtime = 120
  
+;------------------------------------------------------------------------------------------------------------------
 call echorecord(expired_log)
  
+;------------------------------------------------------------------------------------------------------------------
+ 
+ 
+ 
+ 
+#exitscript
  
 end
 go
@@ -255,29 +319,6 @@ go
 /*
 ;----------------------------------------------------------------------------------------------------------------------
  
-;Expired on restraint report - Troubleshoot - 10/30/2019
-select distinct fin = ea.alias,patient = p.name_full_formatted, admit_dt = e.reg_dt_tm "@SHORTDATETIME"
-,discharge_dt = e.disch_dt_tm  "@SHORTDATETIME" ,discharge_disposition = uar_get_code_display(e.disch_disposition_cd), e.*
-from encounter e, encntr_alias ea, person p
-where ea.encntr_id = e.encntr_id
-and p.person_id = e.person_id
-and ea.encntr_alias_type_cd = 1077
-and e.person_id = 15858262.00
-order by e.reg_dt_tm
- 
-;All updates on encounter table
-select * from encntr_flex_hist efh where efh.encntr_id =   115827330.00 order by efh.activity_dt_tm
- 
-;All updates on person table
-select deceased_dt_tm = efh.deceased_dt_tm "@SHORTDATETIME"
-,transaction_dt_tm = efh.transaction_dt_tm "@SHORTDATETIME"
-,deceased_cd = uar_get_code_display(efh.deceased_cd);, efh.*
-from person_flex_hist efh
-where efh.person_id = 15858262.00
-and efh.deceased_cd = 684729.00 ;deceased
-order by efh.transaction_dt_tm
- 
-;----------------------------------------------------------------------------------------------------------------------
  
  
  

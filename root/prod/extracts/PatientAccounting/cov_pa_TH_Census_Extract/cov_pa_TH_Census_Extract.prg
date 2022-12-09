@@ -425,29 +425,48 @@ endif
 
 select if (validate(request->batch_selection) = 1 or $output_file = 1)
 ;	with nocounter, outerjoin = d1, nullreport, pcformat (^"^, ^,^, 1), format = stream, format, landscape, compress, maxcol = 796
-	with nocounter, outerjoin = d1, nullreport, pcformat (^"^, ^,^, 1), format = stream, format, landscape, compress, maxcol = 198
+;	with nocounter, outerjoin = d1, nullreport, pcformat (^"^, ^,^, 1), format = stream, format, landscape, compress, maxcol = 198
+	with nocounter, outerjoin = d1, nullreport, pcformat (^"^, ^,^, 1), format = stream, format
 else
 ;	with nocounter, outerjoin = d1, nullreport, separator = " ", format, landscape, compress, maxcol = 796
-	with nocounter, outerjoin = d1, nullreport, separator = " ", format, landscape, compress, maxcol = 198
+;	with nocounter, outerjoin = d1, nullreport, separator = " ", format, landscape, compress, maxcol = 198
+	with nocounter, outerjoin = d1, nullreport, separator = " ", format
 endif
  
 distinct into value(output_var)
-	patient_name			= substring(1, 30, enc_data->list[d1.seq].patient_name)
-	, fin					= substring(1, 15, enc_data->list[d1.seq].fin)
-	, fac					= substring(1, 2, enc_data->list[d1.seq].fac)
-	, mrn					= substring(1, 15, enc_data->list[d1.seq].mrn)
-	, nurse_unit			= substring(1, 4, enc_data->list[d1.seq].nurse_unit)
-	, bed					= substring(1, 3, enc_data->list[d1.seq].bed)
-	, pat_type				= substring(1, 4, enc_data->list[d1.seq].pat_type)
-	, attend_phy_num		= substring(1, 19, enc_data->list[d1.seq].attend_phy_num)
-	, attend_phy			= substring(1, 30, enc_data->list[d1.seq].attend_phy)
-	, admit_phy_num			= substring(1, 10, enc_data->list[d1.seq].admit_phy_num)
-	, admit_phy				= substring(1, 26, enc_data->list[d1.seq].admit_phy)
+	pat_name				= trim(enc_data->list[d1.seq].patient_name, 3)
+	, pat_acct_nbr			= trim(enc_data->list[d1.seq].fin, 3)
+	, fac					= trim(enc_data->list[d1.seq].fac, 3)
+	, med_rec				= trim(enc_data->list[d1.seq].mrn, 3)
+	, station				= trim(enc_data->list[d1.seq].nurse_unit, 3)
+	, bed_nbr				= trim(enc_data->list[d1.seq].bed, 3)
+	, pat_type				= trim(enc_data->list[d1.seq].pat_type, 3)
+;	, attend_phy_num		= trim(enc_data->list[d1.seq].attend_phy_num, 3)
+	, attend_phy_nm			= trim(enc_data->list[d1.seq].attend_phy, 3)
+;	, adm_phy_num			= trim(enc_data->list[d1.seq].admit_phy_num, 3)
+	, adm_phy_nm			= trim(enc_data->list[d1.seq].admit_phy, 3)
 	
-	, admit_dt_tm			= substring(1, 19, build2(
+	, adm_dt_tm				= build2(
 								format(enc_data->list[d1.seq].admit_dt_tm, "mm/dd/yyyy;;d"), "@",
 								cnvtupper(format(enc_data->list[d1.seq].admit_dt_tm, "hh:mm;;s"))
-								))
+								)
+								
+;	pat_name				= substring(1, 30, enc_data->list[d1.seq].patient_name)
+;	, pat_acct_nbr			= substring(1, 15, enc_data->list[d1.seq].fin)
+;	, fac					= substring(1, 2, enc_data->list[d1.seq].fac)
+;	, med_rec				= substring(1, 15, enc_data->list[d1.seq].mrn)
+;	, station				= substring(1, 4, enc_data->list[d1.seq].nurse_unit)
+;	, bed_nbr				= substring(1, 3, enc_data->list[d1.seq].bed)
+;	, pat_type				= substring(1, 4, enc_data->list[d1.seq].pat_type)
+;;	, attend_phy_num		= substring(1, 19, enc_data->list[d1.seq].attend_phy_num)
+;	, attend_phy_nm			= substring(1, 30, enc_data->list[d1.seq].attend_phy)
+;;	, adm_phy_num			= substring(1, 10, enc_data->list[d1.seq].admit_phy_num)
+;	, adm_phy_nm			= substring(1, 26, enc_data->list[d1.seq].admit_phy)
+;	
+;	, adm_dt_tm				= substring(1, 19, build2(
+;								format(enc_data->list[d1.seq].admit_dt_tm, "mm/dd/yyyy;;d"), "@",
+;								cnvtupper(format(enc_data->list[d1.seq].admit_dt_tm, "hh:mm;;s"))
+;								))
 	
 ;	, pat_email				= substring(1, 60, enc_data->list[d1.seq].pat_email)
 ;	, alt_phone				= substring(1, 13, enc_data->list[d1.seq].alt_phone)
@@ -464,144 +483,144 @@ where
 
 order by
 	fac
-	, patient_name
-	, fin
+	, pat_name
+	, pat_acct_nbr
 	, enc_data->list[d1.seq].admit_dt_tm
-	, attend_phy_num
-	, admit_phy_num
+	, attend_phy_nm
+	, adm_phy_nm
 	
 
-; format report output
-head report
-	pagenum = 0
- 
-head fac
-	pagenum = pagenum + 1
- 
-	col 0	"Date:"
-	col 6	dt = format(sysdate, "mm/dd/yyyy;;d"), dt	
-	col 180	"Page:"
-	col 186	pagenum ";l;"
-	row + 1
- 
-	col 0	"Time:"
-	col 6	tm = cnvtupper(format(sysdate, "hh:mm;;s")), tm
-	row + 1
- 
-	col 0	"Report:"
-	col 8	prog = curprog, prog
-	row + 3
-
-	col 0	"FACILITY:"
-	col 10	fac
-	row + 2
-
+;; format report output
+;head report
+;	pagenum = 0
+; 
+;head fac
+;	pagenum = pagenum + 1
+; 
+;	col 0	"Date:"
+;	col 6	dt = format(sysdate, "mm/dd/yyyy;;d"), dt	
+;	col 180	"Page:"
+;	col 186	pagenum ";l;"
+;	row + 1
+; 
+;	col 0	"Time:"
+;	col 6	tm = cnvtupper(format(sysdate, "hh:mm;;s")), tm
+;	row + 1
+; 
+;	col 0	"Report:"
+;	col 8	prog = curprog, prog
+;	row + 3
+;
+;	col 0	"FACILITY:"
+;	col 10	fac
+;	row + 2
+;
+;;	col 0	"PAT_NAME"
+;;	col 30	"PAT_ACCT_NBR"
+;;	col 45	"FAC"
+;;	col 60	"MED_REC"
+;;;	col 75	"MED_REC2"
+;;;	col 90	"MED_REC3"
+;;;	col 105	"MED_REC4"
+;;;	col 120	"MED_REC5"
+;;;	col 135	"MED_REC6"
+;;;	col 150	"MED_REC7"
+;;	col 165	"STATION"
+;;	col 177	"BED_NBR"
+;;	col 186	"PAT_TYPE"
+;;;	col 196	"ATTEND_PHY"
+;;	col 217	"ATTEND_PHY_NM"
+;;;	col 249	"ADM_PHY_CD"
+;;	col 261	"ADM_PHY_NM"
+;;	col 298	"ADM_DT_TM"
+;;;	col 309	"CNS_CD1"
+;;;	col 318	"CONSULT1"
+;;;	col 350	"CNS_CD2"
+;;;	col 359	"CONSULT2"
+;;;	col 391	"CNS_CD3"
+;;;	col 400	"CONSULT3"
+;;;	col 432	"CNS_CD4"
+;;;	col 441	"CONSULT4"
+;;;	col 473	"CNS_CD5"
+;;;	col 482	"CONSULT5"
+;;;	col 514	"CNS_CD6"
+;;;	col 523	"CONSULT6"
+;;;	col 555	"CNS_CD7"
+;;;	col 564	"CONSULT7"
+;;;	col 596	"CNS_CD8"
+;;;	col 605	"CONSULT8"
+;;;	col 637	"CNS_CD9"
+;;;	col 646	"CONSULT9"
+;;;	col 678	"CNS_CD10"
+;;;	col 688	"CONSULT10"
+;;;	col 720	"PAT_EMAIL"
+;;;	col 782	"ALT_PHONE"	
+;
 ;	col 0	"PAT_NAME"
 ;	col 30	"PAT_ACCT_NBR"
 ;	col 45	"FAC"
 ;	col 60	"MED_REC"
-;;	col 75	"MED_REC2"
-;;	col 90	"MED_REC3"
-;;	col 105	"MED_REC4"
-;;	col 120	"MED_REC5"
-;;	col 135	"MED_REC6"
-;;	col 150	"MED_REC7"
-;	col 165	"STATION"
-;	col 177	"BED_NBR"
-;	col 186	"PAT_TYPE"
-;;	col 196	"ATTEND_PHY"
-;	col 217	"ATTEND_PHY_NM"
-;;	col 249	"ADM_PHY_CD"
-;	col 261	"ADM_PHY_NM"
-;	col 298	"ADM_DT_TM"
-;;	col 309	"CNS_CD1"
-;;	col 318	"CONSULT1"
-;;	col 350	"CNS_CD2"
-;;	col 359	"CONSULT2"
-;;	col 391	"CNS_CD3"
-;;	col 400	"CONSULT3"
-;;	col 432	"CNS_CD4"
-;;	col 441	"CONSULT4"
-;;	col 473	"CNS_CD5"
-;;	col 482	"CONSULT5"
-;;	col 514	"CNS_CD6"
-;;	col 523	"CONSULT6"
-;;	col 555	"CNS_CD7"
-;;	col 564	"CONSULT7"
-;;	col 596	"CNS_CD8"
-;;	col 605	"CONSULT8"
-;;	col 637	"CNS_CD9"
-;;	col 646	"CONSULT9"
-;;	col 678	"CNS_CD10"
-;;	col 688	"CONSULT10"
-;;	col 720	"PAT_EMAIL"
-;;	col 782	"ALT_PHONE"	
-
-	col 0	"PAT_NAME"
-	col 30	"PAT_ACCT_NBR"
-	col 45	"FAC"
-	col 60	"MED_REC"
-	col 75	"STATION"
-	col 87	"BED_NBR"
-	col 96	"PAT_TYPE"
-	col 106	"ATTEND_PHY_NM"
-	col 138	"ADM_PHY_NM"
-	col 175	"ADM_DT_TM"	
-	row + 1
-
-head patient_name
-	null
-	
-head fin
-	null
-	
-detail
+;	col 75	"STATION"
+;	col 87	"BED_NBR"
+;	col 96	"PAT_TYPE"
+;	col 106	"ATTEND_PHY_NM"
+;	col 138	"ADM_PHY_NM"
+;	col 175	"ADM_DT_TM"	
+;	row + 1
+;
+;head patient_name
+;	null
+;	
+;head fin
+;	null
+;	
+;detail
+;;	col 0	patient_name
+;;	col 30	fin
+;;	col 45	fac
+;;	col 60	mrn
+;;	col 165	nurse_unit
+;;	col 177	bed
+;;	col 186	pat_type
+;;;	col 196	attend_phy_num ";r;"
+;;	col 217	attend_phy
+;;;	col 249	admit_phy_num ";r;"
+;;	col 261	admit_phy
+;;	col 288	admit_dt_tm
+;;;	col 720	pat_email
+;;;	col 782	alt_phone
+;
 ;	col 0	patient_name
 ;	col 30	fin
 ;	col 45	fac
 ;	col 60	mrn
-;	col 165	nurse_unit
-;	col 177	bed
-;	col 186	pat_type
-;;	col 196	attend_phy_num ";r;"
-;	col 217	attend_phy
-;;	col 249	admit_phy_num ";r;"
-;	col 261	admit_phy
-;	col 288	admit_dt_tm
-;;	col 720	pat_email
-;;	col 782	alt_phone
-
-	col 0	patient_name
-	col 30	fin
-	col 45	fac
-	col 60	mrn
-	col 75	nurse_unit
-	col 87	bed
-	col 96	pat_type
-	col 106	attend_phy
-	col 138	admit_phy
-	col 175	admit_dt_tm
-	
-;	j = 0
+;	col 75	nurse_unit
+;	col 87	bed
+;	col 96	pat_type
+;	col 106	attend_phy
+;	col 138	admit_phy
+;	col 175	admit_dt_tm
 ;	
-;	for (i = 1 to enc_data->list[d1.seq].c_cnt)
-;		if (enc_data->list[d1.seq].consults[i].consult_phy_qualifies = 1)
-;			j = j + 1
-;			
-;			if (j <= 10)
-;				c1 = 309 + ((j - 1) * 41)
-;				c2 = 318 + ((j - 1) * 41)
-;				
-;				col c1 c_phynum = substring(1, 7, enc_data->list[d1.seq].consults[i].consult_phy_num), c_phynum ";r;"
-;				col c2 c_phy = substring(1, 30, enc_data->list[d1.seq].consults[i].consult_phy), c_phy
-;			endif
-;		endif
-;	endfor
-	
-	row + 1
- 
-foot fac
-	break
+;;	j = 0
+;;	
+;;	for (i = 1 to enc_data->list[d1.seq].c_cnt)
+;;		if (enc_data->list[d1.seq].consults[i].consult_phy_qualifies = 1)
+;;			j = j + 1
+;;			
+;;			if (j <= 10)
+;;				c1 = 309 + ((j - 1) * 41)
+;;				c2 = 318 + ((j - 1) * 41)
+;;				
+;;				col c1 c_phynum = substring(1, 7, enc_data->list[d1.seq].consults[i].consult_phy_num), c_phynum ";r;"
+;;				col c2 c_phy = substring(1, 30, enc_data->list[d1.seq].consults[i].consult_phy), c_phy
+;;			endif
+;;		endif
+;;	endfor
+;	
+;	row + 1
+; 
+;foot fac
+;	break
 
 with nocounter
 

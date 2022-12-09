@@ -9,7 +9,8 @@
 	Source file name:	cov_sm_Order_Appointment_TAT.prg
 	Object name:		cov_sm_Order_Appointment_TAT
 	Request #:			4670, 5456, 5536, 6739, 7510, 7807, 8309, 8361, 8496,
-						8652, 9030, 9876, 10860, 10972, 11683, 11958, 12349
+						8652, 9030, 9876, 10860, 10972, 11683, 11958, 12349,
+						14015
  
 	Program purpose:	Lists turnaround time between when the order is placed
 						and the appointment is scheduled.
@@ -81,6 +82,7 @@
 033	03/07/2022	Todd A. Blanchard		Changed practice site display to org name.
 034	03/24/2022	Todd A. Blanchard		Added logic to filter out patients with last name ZZZ*
 										when report type is 0, 1, or 3.
+035	11/17/2022	Todd A. Blanchard		Changed date parameters from 9 to 11 day timeframe for export options.
 ******************************************************************************/
  
 drop program cov_sm_Order_Appointment_TAT:DBA go
@@ -170,7 +172,7 @@ declare stat						= i4 with noconstant(0) ;017
 if (validate(request->batch_selection) = 1)
 	if (($report_type = 0) or ($report_type = 1)) ;027
 		set start_datetime = cnvtdatetime(start_datetime)
-		set end_datetime = cnvtlookahead("9,D", end_datetime) ;019 ;027 ;030
+		set end_datetime = cnvtlookahead("11,D", end_datetime) ;019 ;027 ;030 ;035
 	endif
 else
 	set start_datetime = cnvtdatetime($start_datetime)
@@ -784,6 +786,7 @@ select
 			)
 			and o.template_order_id = 0.0 ;006
 			and o.active_ind = 1 
+			and nullval(p.name_last_key, "") not in ("ZZZ*") ;034
 	endif
  
 into "NL:" ;010

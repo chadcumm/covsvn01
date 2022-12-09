@@ -71,11 +71,12 @@ order by ema.module_name, emad.updt_dt_tm
  
  
  
-select ema.module_name, EMAD.logging, EMAD.updt_dt_tm ';;q', emad.*
+select ema.module_name, emad.template_alias, emad.template_name, emad.template_return
+, EMAD.logging, EMAD.updt_dt_tm ';;q', emad.*
 from eks_module_audit ema, eks_module_audit_det emad
 where ema.rec_id = emad.module_audit_id
-and emad.encntr_id = 110353215.00
-;and ema.module_name = 'COV_GL_BLUECARE_INSU'
+and emad.encntr_id = 132572468
+and ema.module_name = 'COV_GL_BLUECARE_INSU'
 order by ema.module_name, emad.updt_dt_tm desc
  
  

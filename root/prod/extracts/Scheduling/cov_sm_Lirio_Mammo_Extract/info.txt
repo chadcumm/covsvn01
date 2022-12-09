@@ -1,0 +1,208 @@
+
+/**************************************************************/
+; Gather data to build record structure of patient population
+
+/**************************************************************/
+; select patient data
+
+	- born as female
+	
+	- have a CMRN
+	
+	- have an address
+		- for zip code 37922, 37923, 37932, or 37934
+		
+	- have a health plan
+		- named "BLUE*CROSS*EXCHANGE*" or "BLUE*CROSS*NETWORK*"
+		- plan_type_cd is "BLUECROSS" for code set 367
+		- financial_class_cd is "BLUECROSS" for code set 354
+
+	- last name is not "ZZZ*"
+	
+	- year of birth is between start_year (birth year for age 75) and end_year (birth year for age 40)
+	
+	- not opted out
+		- info_sub_type_cd is "EMAILDECLINEDREASON" for code set 356
+		- value_cd is "DOESNTWANTSOLICITATION" for code set 100269
+		
+	- refer to CCL for list of columns selected
+	
+	
+/**************************************************************/
+; select previous data - encounters - any type
+
+	- based on patient population
+	
+	- for reg_dt_tm between start_datetime (previous 12 months) and today
+	
+	- set has_enc flag to true
+	
+	
+/**************************************************************/
+; select email data (only for contacts extract)
+
+	- based on patient population
+	
+	- has valid format
+		- like *@*.*
+		- not like *@.*
+		
+	- refer to CCL for list of columns selected
+	
+	
+/**************************************************************/
+; select phone data (only for contacts extract)
+
+	- based on patient population
+	
+	- has valid format
+		- is numeric
+		- no invalid numbers
+			- "0000000000", "1111111111", "2222222222", "3333333333",
+			  "4444444444", "5555555555", "6666666666", "7777777777",
+			  "8888888888", "9999999999", "1234567890"
+	
+	- phone_type_cd is "MOBILE" or "HOME" for code set 43
+		
+	- refer to CCL for list of columns selected
+	
+	
+/**************************************************************/
+; select employer data (only for contacts extract)
+
+	- based on patient population
+	
+	- person_org_reltn_cd is "EMPLOYER" for code set 338
+		
+	- refer to CCL for list of columns selected
+	
+	
+/**************************************************************/
+; select pcp data (only for contacts extract)
+
+	- based on patient population
+	
+	- person_prsnl_r_cd is "PRIMARYCAREPHYSICIAN" for code set 331
+		
+	- refer to CCL for list of columns selected
+	
+	
+/**************************************************************/
+; select exclusion data - orders
+
+	- based on patient population
+	
+	- catalog_type_cd is "RADIOLOGY" for code set 6000
+	
+	- catalog_cd is in list of values
+		- for code set 200
+		- display_key like "MGDIGSCREENMAMMO*" or "MGDIGDIAGMAMMO*"
+		
+	- order_status_cd is "ORDERED", "FUTURE", or "COMPLETED" for code set 6004
+	
+	- current_start_dt_tm >= start_datetime (previous 12 months)
+	
+	- set has_order flag to true
+	
+	
+/**************************************************************/
+; select previous data - orders (only for eligibility extract)
+
+	- based on patient population
+	
+	- catalog_type_cd is "RADIOLOGY" for code set 6000
+	
+	- catalog_cd is in list of values
+		- for code set 200
+		- display_key like "MGDIGSCREENMAMMO*" or "MGDIGDIAGMAMMO*"
+		
+	- order_status_cd is "COMPLETED" for code set 6004
+	
+	- current_start_dt_tm < today
+		
+	- refer to CCL for list of columns selected
+	
+	
+/**************************************************************/
+; select exclusion data - documents
+
+	- based on patient population
+	
+	- event_cd is in list of values
+		- where event_set_name_key like "*MAMMO*"
+		- and parent_event_set_cd is "RADIOLOGY", "MAMMOGRAPHY", or "PATIENTVIEWABLERADIOLOGY" for code set 93
+	
+	- result_status_cd not in error
+	
+	- performed_dt_tm >= start_datetime (previous 12 months)
+	
+	- set has_doc flag to true
+	
+	
+/**************************************************************/
+; select previous data - documents (only for eligibility extract)
+
+	- based on patient population
+	
+	- event_cd is in list of values
+		- where event_set_name_key like "*MAMMO*"
+		- and parent_event_set_cd is "RADIOLOGY", "MAMMOGRAPHY", or "PATIENTVIEWABLERADIOLOGY" for code set 93
+	
+	- result_status_cd not in error
+	
+	- performed_dt_tm < today
+		
+	- refer to CCL for list of columns selected
+	
+	
+/**************************************************************/
+; select appointment data - mammo only - from go-live date (only for scheduling extract)
+
+	- based on patient population
+	
+	- appt_type_cd is "MGMAMMODIGSCREENINGO" or "MGMAMMODIGDIAGNOSTICO" for code set 14230
+	
+	- last sch_action_cd is "CONFIRM", "CHECKIN", "CHECKOUT", or "COMPLETE" for code set 14232
+	
+	- sch_state_cd is "CONFIRMED", "CHECKEDIN", "CHECKEDOUT", or "COMPLETE" for code set 14233
+	
+	- beg_dt_tm >= golive_date (currently set to 11/22/2022)
+		
+	- refer to CCL for list of columns selected
+	
+	
+	
+
+
+/**************************************************************/
+; Generate extract files
+
+; select contacts data
+
+	- based on patient population
+
+	- has previous encounters
+
+
+; select eligibility data
+
+	- based on patient population
+
+	- has previous encounters
+	
+	- does not have orders
+	
+	- does not have mammo documentation
+	
+
+; select scheduling data
+
+	- based on patient population
+
+	- has previous encounters
+
+	- has scheduled appointments
+	
+	
+	
+	

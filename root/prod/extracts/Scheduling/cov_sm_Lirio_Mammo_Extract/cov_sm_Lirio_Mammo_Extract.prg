@@ -59,7 +59,9 @@ declare max_age					= i4 with constant(75)
 
 declare start_year				= i4 with constant(datetimepart(cnvtagedatetime(max_age, 0, 0, 0), 1))
 declare end_year				= i4 with constant(datetimepart(cnvtagedatetime(min_age, 0, 0, 0), 1))
-declare start_datetime			= dq8 with constant(datetimefind(cnvtlookbehind("1,Y", cnvtdatetime(curdate, curtime)),'Y','B','B'))
+;declare start_datetime			= dq8 with constant(datetimefind(cnvtlookbehind("1,Y", cnvtdatetime(curdate, curtime)),'Y','B','B'))
+declare start_datetime			= dq8 with constant(datetimefind(cnvtlookbehind("1,Y", cnvtdatetime(curdate, curtime)),'D','B','B'))
+declare golive_date				= dq8 with constant(cnvtdatetime("22-NOV-2022 000000"))
 
 declare cmrn_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 4, "COMMUNITYMEDICALRECORDNUMBER"))
 declare messaging_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 4, "MESSAGING"))
@@ -93,6 +95,20 @@ declare radiology_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 6000, "
 declare ordered_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 6004, "ORDERED"))
 declare future_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 6004, "FUTURE"))
 declare completed_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 6004, "COMPLETED"))
+declare mgmammodigscro_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 14230, "MGMAMMODIGSCREENINGO"))
+declare mgmammodigdiago_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 14230, "MGMAMMODIGDIAGNOSTICO"))
+declare confirm_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 14232, "CONFIRM"))
+declare checkin_var				= f8 with constant(uar_get_code_by("DISPLAYKEY", 14232, "CHECKIN"))
+declare checkout_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 14232, "CHECKOUT"))
+declare complete1_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 14232, "COMPLETE"))
+declare confirmed_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 14233, "CONFIRMED"))
+declare checkedin_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 14233, "CHECKEDIN"))
+declare checkedout_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 14233, "CHECKEDOUT"))
+declare complete2_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 14233, "COMPLETE"))
+declare attach_type_var			= f8 with constant(uar_get_code_by("DISPLAYKEY", 16110, "ORDER"))
+declare cpt4_var				= f8 with constant(3362.00)
+declare cpt_hcpcs_var			= f8 with constant(9000.00)
+
 declare nosolicitation_var		= f8 with constant(uar_get_code_by("DISPLAYKEY", 100269, "DOESNTWANTSOLICITATION"))
 
 declare num						= i4 with noconstant(0)
@@ -150,6 +166,7 @@ record patient_data (
 	1 p_start_year				= i4
 	1 p_end_year				= i4
 	1 p_start_datetime			= dq8
+	1 p_golive_date				= dq8
  
 	1 cnt						= i4
 	1 list[*] 
@@ -181,15 +198,28 @@ record patient_data (
 		2 race					= c40
 		2 religion				= c40
 		
+		2 sch_appt_id			= f8
+		2 appt_type				= c100
+		2 appt_location			= c100
+		2 category				= c40
+		2 dept					= c40
+		2 dept_specialty		= c40
+		2 cpt_code				= c20
+		2 action_dt_tm			= dq8
+		2 beg_dt_tm				= dq8
+		2 sch_state				= c40
+		2 appt_channel			= c40
+		
 		2 channel_pref			= c40
 		2 pcp_npi				= c20
 		2 portal_username		= c20
 		2 optout_ind			= i2
 		2 rltn_ind				= c40
 		2 consent_ind			= i2
-		2 crm_id				= c10
+		2 crm_id				= c10		
 		
 		; exclusions
+		2 has_enc				= i2
 		2 has_order				= i2
 		2 has_doc				= i2
 		
@@ -206,6 +236,7 @@ set patient_data->p_max_age				= max_age
 set patient_data->p_start_year			= start_year
 set patient_data->p_end_year			= end_year
 set patient_data->p_start_datetime		= start_datetime
+set patient_data->p_golive_date			= golive_date
 
 
 /**************************************************************/
@@ -226,6 +257,7 @@ from
 		and pa.person_alias_type_cd = cmrn_var
 		and pa.active_ind = 1)
 	
+	; patient portal
 	, (left join PERSON_ALIAS pa2 on pa2.person_id = p.person_id
 		and pa2.person_alias_type_cd = messaging_var
 		and pa2.active_ind = 1)
@@ -233,13 +265,9 @@ from
 	, (inner join ADDRESS a on a.parent_entity_id = p.person_id
 		and a.parent_entity_name = "PERSON"
 		and a.address_type_cd = addr_home_var
-		and a.zipcode_key in ("37932")
-;		and a.zipcode_key in (
-;			"37772", "37902", "37909", "37916", "37919", "37921",
-;			"37922", "37923", "37931", "37932", "37934"
-;		)
+		and a.zipcode_key in ("37922", "37923", "37932", "37934")
 		and a.active_ind = 1)
-		
+	
 	, (inner join PERSON_PLAN_RELTN ppr on ppr.person_id = p.person_id
 		and ppr.health_plan_id in (
 			select hp.health_plan_id
@@ -254,7 +282,8 @@ from
 		)
 		and ppr.end_effective_dt_tm > cnvtdatetime(curdate, curtime)
 		and ppr.active_ind = 1)
-		
+	
+	; opt-out
 	, (left join PERSON_INFO pi on pi.person_id = p.person_id
 		and pi.info_type_cd = userdefined_var
 		and pi.info_sub_type_cd = emaildeclined_var
@@ -264,9 +293,8 @@ from
 where
 	p.name_last_key not in ("ZZZ*")
 	and year(p.birth_dt_tm) between start_year and end_year
-;	and p.deceased_cd in (no_var, 0.0)
 	and p.active_ind = 1
-	and pi.person_info_id is null
+	and pi.person_id is null
 	
 ;	and p.person_id = 15678757.00 ; TODO: TESTING
 	
@@ -316,11 +344,40 @@ head p.person_id
 foot report
 	call alterlist(patient_data->list, cnt)
  
-with nocounter, time = 300
-
+with nocounter, time = 900
 
 ;call echorecord(patient_data)
 ;go to exitscript
+
+
+/**************************************************************/
+; select previous data - encounters - any type
+select into "NL:"
+from
+	ENCOUNTER e
+	
+where	
+	expand(num, 1, patient_data->cnt, e.person_id, patient_data->list[num].person_id)
+	and e.reg_dt_tm between cnvtdatetime(start_datetime) and cnvtdatetime(curdate, curtime)
+	and e.active_ind = 1
+
+order by
+	e.person_id
+ 
+ 
+; populate patient_data record structure
+head e.person_id
+	idx = 0
+ 
+	idx = locateval(num, 1, patient_data->cnt, e.person_id, patient_data->list[num].person_id)
+	
+detail	
+	patient_data->list[idx].has_enc = 1
+ 
+with nocounter, expand = 1, time = 900
+
+;	call echorecord(patient_data)
+;	go to exitscript
  
  
 /**************************************************************/
@@ -352,8 +409,7 @@ if ($report_type = 0)
 	detail
 		patient_data->list[idx].email = a.street_addr
 	
-	with nocounter, expand = 1, time = 300
-	
+	with nocounter, expand = 1, time = 900	
 	
 	;call echorecord(patient_data)
 	;go to exitscript
@@ -406,8 +462,7 @@ if ($report_type = 0)
 	detail
 		patient_data->list[idx].mobile_phone = evaluate(textlen(ph.phone_num_key), 10, ph.phone_num_key, ph2.phone_num_key)
 	
-	with nocounter, expand = 1, time = 300
-	
+	with nocounter, expand = 1, time = 900	
 	
 	;call echorecord(patient_data)
 	;go to exitscript
@@ -444,8 +499,7 @@ if ($report_type = 0)
 		patient_data->list[idx].employer		= por.ft_org_name
 		patient_data->list[idx].title			= por.empl_title
 	
-	with nocounter, expand = 1, time = 300
-	
+	with nocounter, expand = 1, time = 900	
 	
 	;call echorecord(patient_data)
 	;go to exitscript
@@ -487,8 +541,7 @@ if ($report_type = 0)
 	detail
 		patient_data->list[idx].pcp_npi = pera.alias
 	
-	with nocounter, expand = 1, time = 300
-	
+	with nocounter, expand = 1, time = 900	
 	
 	;call echorecord(patient_data)
 	;go to exitscript
@@ -531,7 +584,10 @@ head o.person_id
 detail
 	patient_data->list[idx].has_order = 1
  
-with nocounter, expand = 1, time = 900
+with nocounter, expand = 1, time = 900	
+	
+;call echorecord(patient_data)
+;go to exitscript
 
 
 /**************************************************************/
@@ -555,11 +611,12 @@ if ($report_type = 1)
 				and cv.active_ind = 1
 		)
 		and o.order_status_cd in (completed_var)
-		and o.current_start_dt_tm < cnvtdatetime(start_datetime)
+		and o.current_start_dt_tm < cnvtdatetime(curdate, curtime)
 		and o.active_ind = 1
 	 
 	order by
 		o.person_id
+		, o.current_start_dt_tm
 	 
 	 
 	; populate patient_data record structure	
@@ -655,11 +712,12 @@ if ($report_type = 1)
 				vescn.parent_event_set_cd in (radiology_esh_var, mammography_esh_var, patviewrad_esh_var)
 		)
 		and ce.result_status_cd not in (in_error_var, inerrnomut_var, inerrnoview_var, inerror_var)
-		and ce.performed_dt_tm < cnvtdatetime(start_datetime)
+		and ce.performed_dt_tm < cnvtdatetime(curdate, curtime)
 		and ce.valid_until_dt_tm > cnvtdatetime(curdate, curtime)
 	
 	order by
 		ce.person_id
+		, ce.event_end_dt_tm
 	 
 	 
 	; populate patient_data record structure
@@ -671,11 +729,106 @@ if ($report_type = 1)
 	detail	
 		patient_data->list[idx].last_doc_dt_tm = ce.event_end_dt_tm
 	 
-	with nocounter, expand = 1, time = 900
-	
+	with nocounter, expand = 1, time = 900	
 	
 	;call echorecord(patient_data)
 	;go to exitscript
+
+endif
+
+
+/**************************************************************/
+; select appointment data - mammo only - from go-live date
+if ($report_type = 2)
+
+	select into "NL:"
+	from
+		SCH_APPT sa
+			
+		, (inner join SCH_EVENT sev on sev.sch_event_id = sa.sch_event_id
+			and sev.appt_type_cd in (mgmammodigscro_var, mgmammodigdiago_var)
+			and sev.version_dt_tm > cnvtdatetime(curdate, curtime))
+		
+		, (inner join SCH_EVENT_ACTION seva on seva.sch_event_id = sa.sch_event_id
+			and seva.sch_action_cd in (confirm_var, checkin_var, checkout_var, complete1_var)
+			and seva.action_dt_tm = (
+				select max(action_dt_tm)
+				from SCH_EVENT_ACTION
+				where
+					sch_event_id = seva.sch_event_id					
+					and version_dt_tm > cnvtdatetime(curdate, curtime)
+					and active_ind = 1
+				group by
+					sch_event_id
+			)
+			and seva.version_dt_tm > cnvtdatetime(curdate, curtime)
+			and seva.active_ind = 1)
+			
+		, (inner join LOCATION l on l.location_cd = sa.appt_location_cd)
+			
+		, (inner join ORGANIZATION org on org.organization_id = l.organization_id)		
+		
+		, (left join SCH_EVENT_ATTACH sea on sea.sch_event_id = sev.sch_event_id
+			and sea.attach_type_cd = attach_type_var
+			and sea.version_dt_tm > cnvtdatetime(curdate, curtime)
+			and sea.active_ind = 1)
+	 
+		, (left join ORDERS o on o.order_id = sea.order_id
+			and o.active_ind = 1)
+ 
+		, (left join ORDER_CATALOG_SYNONYM ocs on ocs.synonym_id = o.synonym_id
+			and ocs.active_ind = 1)
+	
+		, (left join ORDER_DETAIL od on od.order_id = o.order_id
+			and od.oe_field_meaning_id in (cpt4_var, cpt_hcpcs_var))
+	
+		, (left join ORDER_ENTRY_FIELDS oef on oef.oe_field_meaning_id = od.oe_field_meaning_id
+			and oef.oe_field_id = od.oe_field_id
+			and oef.description = "CPT/HCPCS Code")
+		
+	where	
+		expand(num, 1, patient_data->cnt, sa.person_id, patient_data->list[num].person_id)
+		and sa.role_meaning = "PATIENT"
+		and sa.sch_state_cd in (confirmed_var, checkedin_var, checkedout_var, complete2_var)
+		and sa.beg_dt_tm >= cnvtdatetime(golive_date)
+		and sa.version_dt_tm > cnvtdatetime(curdate, curtime)
+		and sa.active_ind = 1
+	
+	order by
+		sa.person_id
+	 
+	 
+	; populate patient_data record structure
+	head sa.person_id
+		idx = 0
+	 
+		idx = locateval(num, 1, patient_data->cnt, sa.person_id, patient_data->list[num].person_id)
+		
+	detail	
+		patient_data->list[idx].sch_appt_id			= sa.sch_appt_id
+		patient_data->list[idx].appt_type			= uar_get_code_description(sev.appt_type_cd)
+		patient_data->list[idx].appt_location		= org.org_name
+		patient_data->list[idx].category 			= uar_get_code_display(ocs.dcp_clin_cat_cd)
+		patient_data->list[idx].dept				= uar_get_code_display(sa.appt_location_cd)
+		patient_data->list[idx].dept_specialty		= uar_get_code_display(ocs.activity_subtype_cd)
+		
+		if (od.oe_field_meaning_id = cpt4_var)
+			patient_data->list[idx].cpt_code = trim(od.oe_field_display_value, 3)
+			
+		elseif ((od.oe_field_meaning_id = cpt_hcpcs_var) and (oef.description = "CPT/HCPCS Code"))
+			patient_data->list[idx].cpt_code = trim(od.oe_field_display_value, 3)
+			
+		endif
+	
+		patient_data->list[idx].action_dt_tm		= seva.action_dt_tm
+		patient_data->list[idx].beg_dt_tm			= sa.beg_dt_tm
+		patient_data->list[idx].sch_state			= uar_get_code_display(sa.sch_state_cd)
+		patient_data->list[idx].appt_channel		= " "
+	 
+	with nocounter, expand = 1, time = 900	
+	
+;	call echorecord(patient_data)
+;	go to exitscript
 
 endif
 
@@ -691,14 +844,13 @@ plan d1
  
 ; populate patient_data record structure
 detail	
-	patient_data->list[d1.seq].channel_pref			= " "
-	patient_data->list[d1.seq].optout_ind			= 0
-	patient_data->list[d1.seq].rltn_ind				= " "
-	patient_data->list[d1.seq].consent_ind			= 0
-	patient_data->list[d1.seq].crm_id				= " "
+	patient_data->list[d1.seq].channel_pref		= " "
+	patient_data->list[d1.seq].optout_ind		= 0
+	patient_data->list[d1.seq].rltn_ind			= " "
+	patient_data->list[d1.seq].consent_ind		= 0
+	patient_data->list[d1.seq].crm_id			= " "
  
-with nocounter, expand = 1, time = 300
-
+with nocounter, expand = 1, time = 900
 
 call echorecord(patient_data)
 ;go to exitscript
@@ -713,9 +865,9 @@ if ($report_type = 0)
 	endif
 	 
 	select if (validate(request->batch_selection) = 1 or $output_file = 1)
-		with nocounter, pcformat (^"^, ^,^, 1), format = stream, format, time = 300
+		with nocounter, pcformat (^"^, ^,^, 1), format = stream, format, time = 900
 	else
-		with nocounter, separator = " ", format, time = 300
+		with nocounter, separator = " ", format, time = 900
 	endif
 	
 	into value(output_var)
@@ -756,9 +908,8 @@ if ($report_type = 0)
 		(dummyt d1 with seq = value(patient_data->cnt))
 	 
 	plan d1
-;	where
-;		patient_data->list[d1.seq].has_order = 0
-;		and patient_data->list[d1.seq].has_doc = 0
+	where
+		patient_data->list[d1.seq].has_enc = 1
 	
 	order by
 		last_name
@@ -777,28 +928,29 @@ if ($report_type = 1)
 	endif
 	 
 	select if (validate(request->batch_selection) = 1 or $output_file = 1)
-		with nocounter, pcformat (^"^, ^,^, 1), format = stream, format, time = 300
+		with nocounter, pcformat (^"^, ^,^, 1), format = stream, format, time = 900
 	else
-		with nocounter, separator = " ", format, time = 300
+		with nocounter, separator = " ", format, time = 900
 	endif
 	
 	into value(output_var)
-		unique_id					= trim(patient_data->list[d1.seq].cmrn, 3)
-		, description				= "Mammography"
-		, status					= "ELIGIBLE"		
+		unique_id			= trim(patient_data->list[d1.seq].cmrn, 3)
+		, description		= "Mammography"
+		, status			= "ELIGIBLE"		
 									  
-		, updated					= if (patient_data->list[d1.seq].last_doc_dt_tm > patient_data->list[d1.seq].last_order_dt_tm)
-										format(patient_data->list[d1.seq].last_doc_dt_tm, "yyyy-mm-dd;;d")
-									  else
-									  	format(patient_data->list[d1.seq].last_order_dt_tm, "yyyy-mm-dd;;d")
-									  endif
+		, updated			= if (patient_data->list[d1.seq].last_doc_dt_tm > patient_data->list[d1.seq].last_order_dt_tm)
+								format(patient_data->list[d1.seq].last_doc_dt_tm, "yyyy-mm-dd;;d")
+							  else
+								format(patient_data->list[d1.seq].last_order_dt_tm, "yyyy-mm-dd;;d")
+							  endif
 	
 	from
 		(dummyt d1 with seq = value(patient_data->cnt))
 	 
 	plan d1
 	where
-		patient_data->list[d1.seq].has_order = 0
+		patient_data->list[d1.seq].has_enc = 1
+		and patient_data->list[d1.seq].has_order = 0
 		and patient_data->list[d1.seq].has_doc = 0
 	
 	order by
@@ -817,32 +969,32 @@ if ($report_type = 2)
 	endif
 	 
 	select if (validate(request->batch_selection) = 1 or $output_file = 1)
-		with nocounter, pcformat (^"^, ^,^, 1), format = stream, format, time = 300
+		with nocounter, pcformat (^"^, ^,^, 1), format = stream, format, time = 900
 	else
-		with nocounter, separator = " ", format, time = 300
+		with nocounter, separator = " ", format, time = 900
 	endif
 	
 	into value(output_var)
 		unique_id					= trim(patient_data->list[d1.seq].cmrn, 3)
-		, appointment_id			= " "
-		, reason					= " "
-		, location					= " "
-		, category					= " "
-		, department				= " "
-		, department_specialty		= " "
-		, associated_codes			= " "
-		, appointment_created		= " "
-		, appointment_date			= " "
-		, appointment_status		= " "
-		, appointment_channel		= " "
+		, appointment_id			= cnvtstring(patient_data->list[d1.seq].sch_appt_id)
+		, reason					= trim(patient_data->list[d1.seq].appt_type, 3)
+		, location					= trim(patient_data->list[d1.seq].appt_location, 3)
+		, category					= trim(patient_data->list[d1.seq].category, 3)
+		, department				= trim(patient_data->list[d1.seq].dept, 3)
+		, department_specialty		= trim(patient_data->list[d1.seq].dept_specialty, 3)
+		, associated_codes			= trim(patient_data->list[d1.seq].cpt_code, 3)
+		, appointment_created		= format(patient_data->list[d1.seq].action_dt_tm, "yyyy-mm-dd hh:mm:ss;;q")
+		, appointment_date			= format(patient_data->list[d1.seq].beg_dt_tm, "yyyy-mm-dd hh:mm:ss;;q")
+		, appointment_status		= trim(patient_data->list[d1.seq].sch_state, 3)
+		, appointment_channel		= " " ;trim(patient_data->list[d1.seq].appt_channel, 3)
 	
 	from
 		(dummyt d1 with seq = value(patient_data->cnt))
 	 
 	plan d1
 	where
-		patient_data->list[d1.seq].has_order = 0
-		and patient_data->list[d1.seq].has_doc = 0
+		patient_data->list[d1.seq].has_enc = 1
+		and patient_data->list[d1.seq].sch_appt_id > 0.0
 	
 	order by
 		unique_id
@@ -851,7 +1003,6 @@ if ($report_type = 2)
 	
 endif
 
- 
  
 ; copy file to AStream
 if (validate(request->batch_selection) = 1 or $output_file = 1)

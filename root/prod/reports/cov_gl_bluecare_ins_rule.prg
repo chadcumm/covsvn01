@@ -26,7 +26,7 @@ Mod Date	Developer			Comment
 06/26/2019   Geetha   CR# 5156 - Need to have the rule 1) look for BlueCare/Tenncare as the Primary insurance only and
 			    2) remove Medicare BlueCare Plus
  
-08/16/2202   Geetha   CR# 12200 - Modification applied to find the secondary insurance (i.erank = 2)
+08/16/2202   Geetha   CR# 12200 - Modification applied to find the primary insurance 
 
 ******************************************************************************/
  
@@ -48,7 +48,7 @@ set retval = 0
 ;--------------------------------------------------------------------------
  
 ;----- q1 ------------------------------------
-;Current encounter
+;Current encounter have Blue or Tenn?
 select distinct into 'nl:'
  
 	h.plan_name, h.active_ind, h.beg_effective_dt_tm, h.end_effective_dt_tm
@@ -57,6 +57,7 @@ from
 	health_plan h, encntr_plan_reltn epr
  
 plan epr where epr.encntr_id = encntrid
+	and epr.end_effective_dt_tm = cnvtdatetime("31-DEC-2100 00:00:00")
 	and epr.priority_seq = 1
 	and epr.active_ind = 1
  
@@ -72,7 +73,7 @@ detail
 with nocounter
  
 ;----- q2 -------------------------------------
-;Previous Encounter
+;Previous Encounter have Blue or Tenn?
  
 select distinct into 'nl:'
   h.plan_name, h.active_ind, h.beg_effective_dt_tm
@@ -85,13 +86,14 @@ from health_plan h, encntr_plan_reltn epr
 	from person p, encounter e
 	where e.person_id = (select e1.person_id from encounter e1 where e1.encntr_id = encntrid)
 	and p.person_id = e.person_id
-	and e.disch_dt_tm != null
+	;and e.disch_dt_tm != null
 	with sqltype("f8", "f8", "dq8", "i4") )i
  )
  
-plan i where i.erank = 2;1
+plan i where i.erank = 2
  
 join epr where epr.encntr_id = i.encntr_id
+	and epr.end_effective_dt_tm = cnvtdatetime("31-DEC-2100 00:00:00")
 	and epr.priority_seq = 1
 	and epr.active_ind = 1
  
@@ -102,7 +104,7 @@ join h where h.health_plan_id = epr.health_plan_id
  
 detail
 	q2_plan_name_var = h.plan_name
-	call echo(build2('q2 = ', q2_plan_name_var)) ;(previous encounter have BLUECARE as a primary)
+	call echo(build2('q2 = ', q2_plan_name_var)) ;(previous encounter have BLUECARE/TENN as a primary)
 with nocounter
  
 ;----- q3 ------------------------------------
@@ -115,6 +117,7 @@ from
 	health_plan h, encntr_plan_reltn epr
  
 plan epr where epr.encntr_id = encntrid
+	and epr.end_effective_dt_tm = cnvtdatetime("31-DEC-2100 00:00:00")
 	and epr.priority_seq = 1
 	and epr.active_ind = 1
  
@@ -139,9 +142,39 @@ elseif(q2_plan_name_var != '' and q3_plan_name_var = '') ;(currrent have no prim
  
 endif
  
+
+;--------------------------------------------------------------------------------------
+;Final 
+call echo(build2('Final section - retval = ',retval , '-- q1 = ', q1_plan_name_var)) 
+call echo(build2('Final section - retval = ',retval , '-- q2 = ', q2_plan_name_var)) 
+call echo(build2('Final section - retval = ',retval , '-- q3 = ', q3_plan_name_var)) 
+
+
+
 end
 go
  
  
+/* 11/18/22
+;Person level primary
+
+select ea.alias, e.person_id, e.encntr_id, e.reg_dt_tm, epr.priority_seq, epr.active_ind, epr.member_nbr
+from encounter e, encntr_alias ea,encntr_plan_reltn epr
+where e.person_id = 16419557.00
+and ea.encntr_id = e.encntr_id
+and ea.encntr_alias_type_cd = 1077
+and epr.encntr_id = e.encntr_id
+and epr.active_ind = 1
+and epr.priority_seq = 1
+and epr.end_effective_dt_tm = cnvtdatetime("31-DEC-2100 00:00:00")
+order by e.reg_dt_tm desc, ea.alias
  
+;----------------------------------------------------- 
+;History of insurance update
+
+select epr.* 
+from encntr_plan_reltn epr
+where epr.person_id = 16419557.00
+;where epr.encntr_id =     132500933.00
+order by epr.encntr_id
 
